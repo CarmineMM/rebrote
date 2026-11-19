@@ -21,13 +21,15 @@ Cómo se pinta y se anima Rebrote, para que todo lo nuevo (enemigos, mundos, efe
 | `src/game/view/quality.ts` | Niveles gráficos y modo automático |
 | `src/game/view/effects.ts` | Efectos de respuesta compartidos: ráfagas de partículas (tierra, chispas, hojas, píxeles, jugo, llamas, brasas, humo, copos, esquirlas de hielo, vaho), anillos (también tumbados en el suelo), destellos y textos flotantes |
 | `src/game/view/boardMarks.ts` | Marcas sobre el tablero que comparten cartas y arrastre: casilla (`drawCell`), área circular en perspectiva (`drawArea`, `areaSize`) y rótulo de lo que pasará al soltar (`BoardLabel`, `LABEL_TONES`) |
-| `src/game/view/plantView.ts` | Disparadora: brota, respira, retrocede al disparar, se encoge al recibir un mordisco, se marchita y muere (`PLANT_LOOK`). Al arrastrar otra: se atenúa, se levanta o da un saltito. Al fusionarse o infundirse: cambia de textura con un rebote. La de fuego suelta brasas y la de hielo, copos. Boca de cada cañón (`barrelMuzzle`) |
+| `src/game/view/plantView.ts` | Disparadora: brota, respira, retrocede al disparar, se encoge al recibir un mordisco, se marchita y muere (`PLANT_LOOK`). Al arrastrar otra: se atenúa, se levanta o da un saltito. Al fusionarse o infundirse: cambia de textura con un rebote. Al subir de nivel: estirón y medallita nueva (`levelUp`). La de fuego suelta brasas y la de hielo, copos. Boca de cada cañón (`barrelMuzzle`) |
+| `src/game/view/shooterShape.ts` | Forma de la disparadora, sin Phaser: pies (`SHOOTER_SIZE`), cañones (`SHOOTER_BARRELS`), puntos del tallo (`SHOOTER_DOTS`), cabeza (`shooterHead`) y ojo. `textures.ts` la reexporta |
+| `src/game/view/levelMedal.ts` | Medallita de nivel (T-003), sin Phaser y con test: dónde va (`MEDAL`, `medalCenter`), color de cada tramo (`MEDAL_TIERS`, `medalTier`) y cuáles la llevan (`showsMedal`) |
 | `src/game/view/mineView.ts` | Mina de fuego (T-004) y de hielo (T-005): se entierra, duerme, se arma con cuenta atrás visible, la muerden, explota (o estalla en escarcha) o se apaga si la destruyen |
 | `src/game/view/fusionDragView.ts` | Arrastre para fusionar (T-006): planta en la mano con su sombra, casillas de destino y rótulo (`DRAG_LOOK`, `dragGround`) |
 | `src/game/view/wormView.ts` | Gusano: sale del agujero, ondula, muerde, recibe golpes y explosiones, arde, tirita frenado, muere, se cuela y celebra |
 | `src/game/view/bulletView.ts` | Semilla en vuelo (normal, de fuego o de hielo), impacto y salida del tablero |
-| `src/game/scenes/BoardScene.ts` | Cartas (sembrar e infundir), monedas, combate (avanza la partida y anima sus eventos), fusionar por arrastre, resaltado, filtros de Ultra, ajuste de la vista, pausa y derrota |
-| `src/ui/` | HUD flotante (cartas con su precio, vidas, saldo), menú de pausa, ajustes y pantalla de derrota (React) |
+| `src/game/scenes/BoardScene.ts` | Cartas (sembrar e infundir), monedas, combate (avanza la partida y anima sus eventos), fusionar por arrastre, seleccionar y subir de nivel, resaltado, filtros de Ultra, ajuste de la vista, pausa y derrota |
+| `src/ui/` | HUD flotante (cartas con su precio, vidas, saldo), panel de nivel de la planta seleccionada (`LevelPanel`), menú de pausa, ajustes y pantalla de derrota (React) |
 
 ## 3. Coordenadas y perspectiva
 
@@ -96,7 +98,7 @@ Cómo se pinta y se anima Rebrote, para que todo lo nuevo (enemigos, mundos, efe
   - Las demás plantas se oscurecen (`PLANT_LOOK.dimTint`). Se oscurecen y no se transparentan, para que se sigan leyendo sobre el césped claro.
 - **Casilla bajo la sombra:** verde si se puede soltar, roja si no. Encima, un rótulo que sube y baja: "Fusionar: N cañones", "Quedará en nivel N" en ámbar si cambia el nivel, y "Otra variante" o "Máximo 3 cañones" en rojo. Sobre una casilla vacía no se marca nada.
 - **Soltar:**
-  - **En un destino válido:** la regla se aplica en el acto. La de la mano se mete en la de destino. La de origen se estira hacia arriba y deja tierra. La de destino se aplasta, destella, cambia de textura y rebota (`PlantView.fuse`) con anillo, chispas, hojas, destello del punto nuevo y "¡Fusión!". Esta animación va sobre el cuerpo y no sobre el contenedor: así un disparo o un mordisco a la vez no la cortan.
+  - **En un destino válido:** la regla se aplica en el acto. La de la mano se mete en la de destino. La de origen se estira hacia arriba y deja tierra. La de destino se aplasta, destella, cambia de textura y rebota (`PlantView.fuse`) con anillo, chispas, hojas, destello del punto nuevo y "¡Fusión!". Esta animación va sobre la figura (cuerpo y medallita) y no sobre el contenedor de reacciones: así un disparo o un mordisco a la vez no la cortan.
   - **En cualquier otro sitio:** la de la mano vuelve volando a su casilla y la de origen recupera su aspecto con un saltito.
 - **Cancelar:** pausa, clic derecho, tomar una carta o perder la partida devuelven la planta. Si la de origen muere, la de la mano se deshace en hojas.
 - **Capa:** la planta en la mano va casi arriba del todo (`DEPTH.floatText - 10`). Su sombra y las marcas de casilla van en la capa `highlight`.
@@ -123,7 +125,25 @@ Cómo se pinta y se anima Rebrote, para que todo lo nuevo (enemigos, mundos, efe
 - **Llamas con mezcla normal.** Las llamas de partículas no son aditivas: sobre el césped claro se quedarían blancas. Las brasas sí, solo con `quality.glows`.
 - **Hielo sin blancos.** Copos, esquirlas y vaho van con mezcla normal, y el copo (`TEX.snowflake`) lleva borde azul: un copo blanco liso no se leería sobre el césped claro.
 
-## 8. Capas
+## 8. Subir de nivel (T-003)
+
+- **Las reglas son de core.** Lo que cuesta y si se puede (`levelUpOffer`) y la subida (`levelUpPlant`) están en `src/game/core/match.ts`; el costo y lo que suma cada nivel, en `plants.ts` (`levelUpCost`, `levelBonus`). La escena selecciona, cobra en el acto y anima.
+- **Seleccionar:**
+  - Un clic sobre una planta sin arrastrarla (el arrastre empieza al moverse, sección 6). Otro clic sobre ella la deselecciona y un clic sobre otra la cambia.
+  - Se cierra al hacer clic fuera de las plantas, con Esc o clic derecho, al tomar una carta, al empezar a arrastrar, si la planta muere y al perder.
+  - La casilla se marca en dorado y late despacio (`LOOK.pickedColor`, capa `highlight`), y la planta da un saltito.
+- **Panel (React, `LevelPanel`).** Es HUD: lo pinta React, no Phaser.
+  - La escena le manda `plantPanel` con el nivel, el precio, si alcanza, el tramo de la medallita y dos puntos de la página: sobre la cabeza y bajo los pies. Lo reenvía cuando algo cambia, también si cambia la ventana: lo comprueba en cada `update` y solo avisa si cambió.
+  - El panel va encima de la cabeza; si ahí choca con el HUD, bajo los pies. Siempre dentro de la pantalla, con la flechita apuntando a la planta.
+  - El botón manda `levelUpRequested`. Con la pausa se oculta.
+  - Para pasar del mundo a la página: `worldToPage` en la escena, el inverso de lo que hacen las cartas (`cardCellAtPage`).
+- **Al subir (`PlantView.levelUp`):**
+  - La planta da un estirón y destella, sale un anillo dorado en el suelo con destellos, y la medallita sale girando con el número nuevo.
+  - Si la medallita cambia de color, un anillo y un brillo mayores de su color.
+  - Sin texto flotante: subiría por detrás del panel, que hace saltar la medallita y el nivel nuevos.
+- **Medallita:** cómo se pinta, en la sección 10. Va dentro de la figura que respira (`PlantView`: contenedor de reacciones > figura > cuerpo y medallita), así no se despega de la cabeza al respirar, brotar ni rebotar. Al fusionarse se recoloca en la cabeza nueva y toma el nivel resultante.
+
+## 9. Capas
 
 Orden de dibujo, de atrás hacia delante (`DEPTH` en `layout.ts`):
 
@@ -134,7 +154,7 @@ Orden de dibujo, de atrás hacia delante (`DEPTH` en `layout.ts`):
 | `canopy` | Copa del árbol |
 | `groundFx` | Efectos pegados al suelo: viento, sombras de nubes, brillos del suelo corrupto, rocío, haces de luz, chamuscado de una explosión, escarcha de la mina de hielo |
 | `highlight - 1` | Alcance de una mina armada |
-| `highlight` | Resaltado de casilla (y alcance de la mina que se va a sembrar). Justo encima, la onda de una explosión |
+| `highlight` | Resaltado de casilla (y alcance de la mina que se va a sembrar), casilla de la planta seleccionada (T-003). Justo encima, la onda de una explosión |
 | `entities + y` | Plantas, enemigos, balas (`+0,5`, delante de su planta), monedas, flores y cristales de la mina de hielo, ordenados por su `y` en pantalla |
 | `pollen`, `butterflies` | Partículas y bichos que flotan por encima |
 | `foreground` | Matas del primer plano |
@@ -142,7 +162,7 @@ Orden de dibujo, de atrás hacia delante (`DEPTH` en `layout.ts`):
 | `floatText - 5` | Cuenta atrás de las minas: no la tapa una planta del carril de delante |
 | `floatText` | Textos flotantes (+25), rótulos del arrastre y de las cartas, y monedas volando al marcador |
 
-## 9. Cómo se pinta el arte
+## 10. Cómo se pinta el arte
 
 - Cada pieza es una función pintora en `textures.ts` que recibe un contexto de Canvas 2D y su **tamaño de diseño**. Se registra con una clave en `TEX`.
 - **Estilo:**
@@ -162,8 +182,12 @@ Orden de dibujo, de atrás hacia delante (`DEPTH` en `layout.ts`):
 
 - Se ve un cañón por cada cañón de la planta, y el nivel se muestra con una medallita con número.
   - **Cañones:** la disparadora tiene una textura por número de cañones (`shooterTexture(1 | 2 | 3)`). Los tubos van apilados y sus medidas están en `SHOOTER_BARRELS`, de donde sale también la boca de cada uno. Al fusionarse crece un poco: cabeza algo mayor y una hoja más en la base y en el brote. La de 3 cañones lleva además una flor en la coronilla.
-  - **Puntos:** una semillita dorada en el tallo por cañón (`SHOOTER_DOTS`), también en la de 1 cañón.
-  - **Medallita de nivel (T-003):** no puede tapar los puntos. Tiene sitio libre en la nuca, arriba a la izquierda de la cabeza.
+  - **Puntos:** una semillita dorada en el tallo por cañón (`SHOOTER_DOTS`, en `shooterShape.ts`), también en la de 1 cañón.
+  - **Medallita de nivel (T-003):** un sello redondo con el borde ondulado, contorno oscuro y el número en blanco con borde, prendido en la nuca (arriba a la izquierda de la cabeza, medio fuera).
+    - Una textura por nivel, del 2 al 20 (`medalTexture`), pintada por `paintMedal`. Las de nivel 1 no llevan.
+    - Color por tramos (`MEDAL_TIERS`): bronce (2 a 4), plata (5 a 9), oro (10 a 14), rubí (15 a 19) y cristal irisado con dos destellos en el 20. El panel de React repite los mismos colores en CSS (`.medal-tier-N`).
+    - El contorno oscuro hace que se lea sobre la cabeza normal, la de fuego y la azul clarita del hielo. Tamaño pensado para leerse en el carril del fondo.
+    - `levelMedal.test.ts` comprueba que no tapa los puntos del tallo, el ojo ni los cañones con 1, 2 y 3 cañones. Si cambia la forma de la cabeza, se cambia en `shooterShape.ts` y el test lo vigila.
   - Las variantes de fuego y hielo (T-004, T-005) deben conservar los cañones y los puntos de cada textura.
   - **Variantes:** `paintShooter` recibe una paleta (`SHOOTER_PALETTES`). Tallo y hojas de la base son siempre verdes; cambian cabeza, cañones, boca, brillo del fondo del cañón, brote, flor y mejilla. `shooterTexture(cañones, elemento)` da la textura.
   - **Mina:** bulbo medio enterrado con un rabito de mecha (`MINE_SIZE` guarda pies, bulbo y punta de la mecha). `paintMine` recibe una paleta (`MINE_PALETTES`): guindilla con chispa (fuego) o bulbo escarchado con gorro de nieve y un copo (hielo). Una textura dormida y otra armada por elemento (`mineTexture`).
@@ -177,7 +201,7 @@ Orden de dibujo, de atrás hacia delante (`DEPTH` en `layout.ts`):
 - Lo que no se mueve va a una textura grande pintada una vez (cielo y terreno), no a cientos de objetos.
 - Las texturas muy grandes se limitan a 4096 px (límite seguro de WebGL). Si el nivel pide más, bajan algo de resolución: sus imágenes se escalan con `artInvOf(clave)` en vez de `artInv()`.
 
-## 10. Cómo se anima
+## 11. Cómo se anima
 
 - **Reposo:** `breathe(...)` hace un ida y vuelta infinito con `Sine.InOut`. Las plantas se aplastan y estiran un poco, y se mecen. Flores, matas y la copa del árbol se balancean con fases distintas (`delay` aleatorio) para que no vayan al unísono.
 - **Entradas:** con rebote (`Back.Out`, `Elastic.Out`). Ejemplos: la planta brota de la tierra con un estirón y un puñado de tierra; la moneda sale despedida, cae con `Bounce.Out` y se queda flotando y girando.
@@ -191,12 +215,13 @@ Orden de dibujo, de atrás hacia delante (`DEPTH` en `layout.ts`):
   - El saldo da un salto dorado al subir y rojo al bajar.
   - Los corazones de las vidas laten por turnos. El que se pierde se rompe y se apaga.
   - La pantalla de derrota entra como el menú de pausa, con un corazón que se parte en dos.
+  - El panel de nivel (T-003) entra con un salto desde la planta. Al subir saltan la medallita y el nivel. Sin saldo, el precio tiembla al pulsar.
   - El menú de pausa entra con un pequeño rebote.
   - La pantalla de carga muestra un brote que crece.
   - Con `prefers-reduced-motion` las animaciones CSS se apagan.
 - **Duraciones orientativas:** reacciones de 150 a 450 ms, reposo de 0,9 a 3,5 s por ciclo y cielo de 15 a 120 s.
 
-## 11. Niveles gráficos (ADR-0006)
+## 12. Niveles gráficos (ADR-0006)
 
 Todo efecto nuevo se engancha a un ajuste del perfil (`QualityProfile`):
 
@@ -213,7 +238,7 @@ Todo efecto nuevo se engancha a un ajuste del perfil (`QualityProfile`):
 - Hay que probar en **Bajo** (¿se sigue leyendo bien?) y en **Ultra** (¿aguanta y se ve mejor, no más oscuro?).
 - Para medir: menú de pausa (Esc o P) > Ajustes > "Mostrar FPS".
 
-## 12. Rendimiento
+## 13. Rendimiento
 
 - **Presupuesto (T-002):** con 60 enemigos y 20 plantas, el juego sigue fluido en Medio.
 - **Prueba de rendimiento:** en `npm run dev`, la tecla `H` siembra gratis las cuatro primeras columnas (20 disparadoras) y suelta 60 gusanos con mucha vida. Se mide con "Mostrar FPS".
@@ -223,7 +248,7 @@ Todo efecto nuevo se engancha a un ajuste del perfil (`QualityProfile`):
 - Los enemigos y las balas, si son muchos, conviene que sean imágenes de una textura compartida, no `Graphics`.
 - Nada de `setInterval` ni `setTimeout` en escenas: usar `this.time` y los tweens, que se pausan y se limpian con la escena. La excepción es la medición de fps, que necesita tiempo real.
 
-## 13. Listas de comprobación
+## 14. Listas de comprobación
 
 ### Enemigo nuevo
 - [ ] Forma y color propios que se lean de un vistazo, con cara simpática aunque sea un virus.
@@ -236,11 +261,11 @@ Todo efecto nuevo se engancha a un ajuste del perfil (`QualityProfile`):
 - [ ] Se mueve con el reloj y los tweens de la escena: con el menú de pausa abierto se queda quieto.
 
 ### Variante de planta nueva (fuego, hielo...)
-- [ ] Una textura por número de cañones (1, 2 y 3), con los tubos de `SHOOTER_BARRELS` y los puntos del tallo de `SHOOTER_DOTS`. Se distingue de la normal por el color (paleta de la sección 9), no por la forma.
+- [ ] Una textura por número de cañones (1, 2 y 3), con los tubos de `SHOOTER_BARRELS` y los puntos del tallo de `SHOOTER_DOTS`. Se distingue de la normal por el color (paleta de la sección 10), no por la forma.
 - [ ] Sus semillas salen de la boca de su cañón (`barrelMuzzle`) y se distinguen de las normales.
 - [ ] Al fusionarse, `PlantView.fuse` pasa a la textura de su variante con los cañones nuevos.
 - [ ] Se sigue leyendo marchita, oscurecida (mientras se arrastra otra planta) y medio transparente (mientras se arrastra ella).
-- [ ] La medallita de nivel (T-003) no tapa los puntos del tallo.
+- [ ] La medallita de nivel (T-003) no tapa los puntos del tallo (`levelMedal.test.ts`) y se lee sobre su cabeza.
 
 ### Elemento nuevo (mina e infusión, como el fuego de T-004)
 - [ ] Paleta en `SHOOTER_PALETTES` y colores de efecto en `VARIANT_FX`; `shooterVariant` y `mineTexture` dejan de caer en la normal.

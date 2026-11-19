@@ -8,6 +8,8 @@ import {
   fuseBlocker,
   infuse,
   infusionCost,
+  levelUp,
+  levelUpCost,
   plantMaxHp,
   type ElementType,
   type FuseBlocker,
@@ -219,6 +221,47 @@ export function fusePlants(state: MatchState, from: Cell, to: Cell): MatchState 
     }),
   );
   return { ...state, plants };
+}
+
+/** Por que no se puede subir de nivel una disparadora: ya esta en el maximo o el saldo no alcanza. */
+export type LevelUpBlocker = 'max-level' | 'insufficient-funds';
+
+/** Lo que ofrece el panel de una disparadora seleccionada (T-003): su nivel y lo que cuesta el siguiente. */
+export interface LevelUpOffer {
+  readonly level: number;
+  /** Lo que se cobra al subir: `levelUpCost`. Null en el nivel maximo. */
+  readonly cost: number | null;
+  /** Por cuanto se multiplica el costo de un canon: sus canones, como al infundir ("x3 = 225"). */
+  readonly multiplier: number;
+  /** Por que no se puede subir, o null si se puede. */
+  readonly blocker: LevelUpBlocker | null;
+}
+
+/** Que pasaria al subir de nivel la disparadora de la casilla, o null si en la casilla no hay una. */
+export function levelUpOffer(state: MatchState, cell: Cell): LevelUpOffer | null {
+  const plant = plantAt(state, cell);
+  if (!plant) return null;
+  const { shooter } = plant;
+  const cost = levelUpCost(shooter);
+  const blocker = cost === null ? 'max-level' : canAfford(state.balance, cost) ? null : 'insufficient-funds';
+  return { level: shooter.level, cost, multiplier: shooter.cannons, blocker };
+}
+
+/**
+ * Sube un nivel la disparadora de la casilla y cobra su costo. Conserva su vida y su recarga: el nivel nuevo
+ * cuenta desde el siguiente disparo. No modifica el estado recibido.
+ */
+export function levelUpPlant(state: MatchState, cell: Cell): MatchState {
+  const offer = levelUpOffer(state, cell);
+  if (!offer || offer.blocker || offer.cost === null) {
+    throw new Error(`No se puede subir de nivel: ${offer ? offer.blocker : 'no-plant'}`);
+  }
+  const plant = plantAt(state, cell) as Plant;
+  const leveled: Plant = { ...plant, shooter: levelUp(plant.shooter) };
+  const plants = state.plants.map((lane, laneIndex) =>
+    laneIndex === cell.lane ? lane.map((sown, col) => (col === cell.col ? leveled : sown)) : lane,
+  );
+  return { ...state, balance: state.balance - offer.cost, plants };
 }
 
 /** Suma moneda al saldo. Solo enteros no negativos: el juego no usa decimales. */

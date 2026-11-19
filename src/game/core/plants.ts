@@ -57,20 +57,42 @@ export function infuse(plant: Shooter, element: ElementType): Shooter {
   return { ...plant, element };
 }
 
+/** Subir de nivel: hasta el tope de `LIMITS.maxLevel`. */
 export function canLevelUp(plant: Shooter): boolean {
   return plant.level < LIMITS.maxLevel;
+}
+
+/**
+ * Lo que cuesta subirla un nivel (D-05): `baseCost` de nivel 1 a 2 y `costStep` mas por cada nivel siguiente,
+ * por canon, como infundir. Null si ya esta en el maximo.
+ */
+export function levelUpCost(plant: Shooter): number | null {
+  if (!canLevelUp(plant)) return null;
+  return (LEVELING.baseCost + (plant.level - 1) * LEVELING.costStep) * plant.cannons;
+}
+
+/** La misma planta un nivel mas arriba. No cambia canones ni elemento. */
+export function levelUp(plant: Shooter): Shooter {
+  if (!canLevelUp(plant)) {
+    throw new Error('Esta planta ya esta en el nivel maximo');
+  }
+  return { ...plant, level: plant.level + 1 };
+}
+
+/** Lo que suma el nivel sobre el de nivel 1, en fracciones (0,2 = un 20 % mas): dano del disparo y cadencia. */
+export function levelBonus(level: number): { damage: number; fireRate: number } {
+  return { damage: (level - 1) * LEVELING.damagePerLevel, fireRate: (level - 1) * LEVELING.fireRatePerLevel };
 }
 
 /** Dano total de cada disparo (todas sus balas juntas) respecto a una disparadora de un canon y nivel 1. */
 export function damageMultiplier(plant: Shooter): number {
   const byCannons = FUSION.damageByCannons[plant.cannons];
-  const byLevel = 1 + (plant.level - 1) * LEVELING.damagePerLevel;
-  return byCannons * byLevel;
+  return byCannons * (1 + levelBonus(plant.level).damage);
 }
 
 /** Disparos por unidad de tiempo respecto a una de nivel 1: cada nivel dispara un poco mas seguido. */
 export function fireRateMultiplier(plant: Shooter): number {
-  return 1 + (plant.level - 1) * LEVELING.fireRatePerLevel;
+  return 1 + levelBonus(plant.level).fireRate;
 }
 
 /** Vida maxima de la planta: la de la disparadora por cada canon (D-02: la suma de las partes). */

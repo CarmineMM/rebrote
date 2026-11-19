@@ -91,10 +91,22 @@ export const FUSION = {
   hpByCannons: { 1: 1, 2: 2, 3: 3 },
 } as const;
 
+/**
+ * Subir de nivel una disparadora (T-003). Los niveles duran la partida (D-03, cerrada el 19 nov 2026).
+ * Cada nivel suma sobre los valores de nivel 1: el dano del disparo entero (tambien la quemadura) y la cadencia.
+ * Lo que frena una de hielo no cambia con el nivel (depende de sus canones, ver `ICE`).
+ * Costo (D-05, cerrada el 19 nov 2026): creciente. De nivel 1 a 2 cuesta `baseCost` y cada nivel siguiente
+ * `costStep` mas (75, 100, 125...), por canon, como infundir: una de 3 canones paga el triple.
+ */
 export const LEVELING = {
-  /** Incremento por nivel sobre el valor base. PROVISIONAL. */
-  damagePerLevel: 0.04,
-  fireRatePerLevel: 0.02,
+  /** Dano que suma cada nivel sobre el de nivel 1. PROVISIONAL. */
+  damagePerLevel: 0.1,
+  /** Cadencia que suma cada nivel sobre la de nivel 1. PROVISIONAL. */
+  fireRatePerLevel: 0.03,
+  /** Subir de nivel 1 a 2 una disparadora de un canon. PROVISIONAL. */
+  baseCost: 75,
+  /** Cuanto mas cuesta cada nivel que el anterior, por canon. PROVISIONAL. */
+  costStep: 25,
 } as const;
 
 /**

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BOARD, COSTS, ECONOMY, LIVES, MINE, SHOOTER } from '../config/balance';
+import { BOARD, COSTS, ECONOMY, LEVELING, LIMITS, LIVES, MINE, SHOOTER } from '../config/balance';
 import type { Cell } from './board';
 import {
   canAfford,
@@ -11,6 +11,8 @@ import {
   fusedPlant,
   fusionBlocker,
   fusionTargets,
+  levelUpOffer,
+  levelUpPlant,
   mineAt,
   plantAt,
   playCard,
@@ -359,5 +361,81 @@ describe('hielo (T-005)', () => {
     const board = withPlants(createMatch(500), [fiery, { shooter: shooter({ element: 'fire' }) }]);
     expect(cardPlay(board, 'ice', fiery).blocker).toBe('has-element');
     expect(board.balance).toBe(500);
+  });
+});
+
+describe('subir de nivel', () => {
+  const at = { lane: 2, col: 3 };
+
+  it('ofrece el nivel de la planta y lo que cuesta el siguiente', () => {
+    const match = withPlants(createMatch(1000), [at, { shooter: shooter({ level: 3 }) }]);
+    expect(levelUpOffer(match, at)).toEqual({ level: 3, cost: LEVELING.baseCost + 2 * LEVELING.costStep, multiplier: 1, blocker: null });
+  });
+
+  it('una fusionada paga un nivel por canon', () => {
+    const match = withPlants(createMatch(1000), [at, { shooter: shooter({ cannons: 3 }) }]);
+    expect(levelUpOffer(match, at)).toMatchObject({ cost: 3 * LEVELING.baseCost, multiplier: 3, blocker: null });
+  });
+
+  it('sin disparadora en la casilla no hay nada que subir', () => {
+    expect(levelUpOffer(createMatch(), at)).toBeNull();
+    expect(levelUpOffer(playCard(createMatch(), 'fire', at), at)).toBeNull();
+    expect(levelUpOffer(createMatch(), { lane: -1, col: 0 })).toBeNull();
+    expect(() => levelUpPlant(createMatch(), at)).toThrow();
+  });
+
+  it('cobra el costo y sube un nivel, sin tocar la vida ni la recarga', () => {
+    const before = withPlants(createMatch(500), [at, { shooter: shooter({ element: 'fire', cannons: 2, level: 2 }), hp: 410, reloadMs: 300 }]);
+    const after = levelUpPlant(before, at);
+    expect(after.balance).toBe(500 - 2 * (LEVELING.baseCost + LEVELING.costStep));
+    expect(plantAt(after, at)).toEqual({
+      kind: 'shooter',
+      shooter: { element: 'fire', cannons: 2, level: 3 },
+      hp: 410,
+      reloadMs: 300,
+    });
+  });
+
+  it('no modifica el estado anterior', () => {
+    const before = withPlants(createMatch(500), [at, {}]);
+    levelUpPlant(before, at);
+    expect(before.balance).toBe(500);
+    expect(plantAt(before, at)?.shooter.level).toBe(1);
+  });
+
+  it('con el saldo justo se puede; con uno menos, no', () => {
+    const exact = withPlants(createMatch(LEVELING.baseCost), [at, {}]);
+    expect(levelUpOffer(exact, at)?.blocker).toBeNull();
+    expect(levelUpPlant(exact, at).balance).toBe(0);
+    const short = withPlants(createMatch(LEVELING.baseCost - 1), [at, {}]);
+    expect(levelUpOffer(short, at)?.blocker).toBe('insufficient-funds');
+    expect(() => levelUpPlant(short, at)).toThrow();
+  });
+
+  it('en el nivel maximo aparece como maximo y no se puede subir', () => {
+    const top = withPlants(createMatch(100_000), [at, { shooter: shooter({ level: LIMITS.maxLevel }) }]);
+    expect(levelUpOffer(top, at)).toEqual({ level: LIMITS.maxLevel, cost: null, multiplier: 1, blocker: 'max-level' });
+    expect(() => levelUpPlant(top, at)).toThrow();
+  });
+
+  it('subiendo de uno en uno llega al 20 y no pasa', () => {
+    let state = withPlants(createMatch(100_000), [at, {}]);
+    while (levelUpOffer(state, at)?.blocker === null) state = levelUpPlant(state, at);
+    expect(plantAt(state, at)?.shooter.level).toBe(LIMITS.maxLevel);
+    // 75 + 100 + ... + 525: 19 niveles.
+    expect(100_000 - state.balance).toBe(19 * LEVELING.baseCost + LEVELING.costStep * ((18 * 19) / 2));
+  });
+
+  it('reproduce la tabla de la task', () => {
+    // Nivel 1, subir: nivel 2 y saldo reducido.
+    const one = levelUpPlant(withPlants(createMatch(250), [at, {}]), at);
+    expect(plantAt(one, at)?.shooter.level).toBe(2);
+    expect(one.balance).toBe(250 - LEVELING.baseCost);
+    // Nivel 20, subir: no disponible, "Maximo".
+    expect(levelUpOffer(withPlants(createMatch(250), [at, { shooter: shooter({ level: 20 }) }]), at)?.blocker).toBe('max-level');
+    // Nivel 3 con saldo insuficiente: no disponible, saldo sin cambios.
+    const poor = withPlants(createMatch(50), [at, { shooter: shooter({ level: 3 }) }]);
+    expect(levelUpOffer(poor, at)?.blocker).toBe('insufficient-funds');
+    expect(poor.balance).toBe(50);
   });
 });

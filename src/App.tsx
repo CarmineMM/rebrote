@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { CardId } from './game/core/match';
-import { EventBus, GameEvents, type CardPreview } from './game/EventBus';
+import { EventBus, GameEvents, type CardPreview, type PlantPanel } from './game/EventBus';
 import { Balance } from './ui/Balance';
 import { Card } from './ui/Card';
 import { DefeatScreen } from './ui/DefeatScreen';
 import { GameCanvas } from './ui/GameCanvas';
+import { LevelPanel } from './ui/LevelPanel';
 import { Lives } from './ui/Lives';
 import { PauseMenu } from './ui/PauseMenu';
 import { NO_AUTO_FULLSCREEN, useFullscreen } from './ui/useFullscreen';
@@ -20,6 +21,8 @@ export function App() {
   const [lives, setLives] = useState<number | null>(null);
   const [selected, setSelected] = useState<CardId | null>(null);
   const [preview, setPreview] = useState<CardPreview | null>(null);
+  const [plantPanel, setPlantPanel] = useState<PlantPanel | null>(null);
+  const hudRef = useRef<HTMLElement>(null);
   const [paused, setPaused] = useState(false);
   const [lost, setLost] = useState(false);
   const lostRef = useRef(lost);
@@ -41,6 +44,7 @@ export function App() {
     EventBus.on(GameEvents.livesChanged, setLives);
     EventBus.on(GameEvents.selectionChanged, setSelected);
     EventBus.on(GameEvents.cardPreview, setPreview);
+    EventBus.on(GameEvents.plantPanel, setPlantPanel);
     EventBus.on(GameEvents.matchLost, onLost);
     // Si la escena arranco antes que el HUD, que reenvie el estado.
     EventBus.emit(GameEvents.stateRequested);
@@ -50,6 +54,7 @@ export function App() {
       EventBus.off(GameEvents.livesChanged, setLives);
       EventBus.off(GameEvents.selectionChanged, setSelected);
       EventBus.off(GameEvents.cardPreview, setPreview);
+      EventBus.off(GameEvents.plantPanel, setPlantPanel);
       EventBus.off(GameEvents.matchLost, onLost);
     };
   }, []);
@@ -78,7 +83,8 @@ export function App() {
       if (event.key === 'Escape') {
         if (fullscreen.exitedJustNow()) return;
         if (paused) resume();
-        else if (selected) EventBus.emit(GameEvents.selectionCancelled);
+        // Esc suelta la carta elegida o cierra el panel de nivel antes de abrir la pausa.
+        else if (selected || plantPanel) EventBus.emit(GameEvents.selectionCancelled);
         else setPaused(true);
       } else if (event.key === 'p' || event.key === 'P') {
         if (paused) resume();
@@ -87,7 +93,7 @@ export function App() {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [paused, selected, lost, resume, fullscreen]);
+  }, [paused, selected, plantPanel, lost, resume, fullscreen]);
 
   // Si el jugador cambia de pestana o minimiza, al volver encuentra el juego en pausa.
   useEffect(() => {
@@ -102,7 +108,7 @@ export function App() {
     <main className="app">
       <GameCanvas quality={level} paused={paused} />
 
-      <header className="hud" aria-hidden={paused || lost}>
+      <header ref={hudRef} className="hud" aria-hidden={paused || lost}>
         <div className="seed-tray" aria-label="Cartas">
           <Card card="shooter" label="Disparadora" balance={balance} selected={selected === 'shooter'} />
           <Card
@@ -135,6 +141,8 @@ export function App() {
           </button>
         </div>
       </header>
+
+      {plantPanel && !paused && !lost && <LevelPanel key={plantPanel.id} panel={plantPanel} avoid={hudRef} />}
 
       {settings.showFps && fps !== null && <div className="fps">{fps} FPS</div>}
 

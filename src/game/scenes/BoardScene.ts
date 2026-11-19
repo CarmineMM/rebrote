@@ -13,6 +13,8 @@ import {
   fusedPlant,
   fusionBlocker,
   fusionTargets,
+  levelUpOffer,
+  levelUpPlant,
   mineAt,
   plantAt,
   playCard,
@@ -25,13 +27,14 @@ import {
 } from '../core/match';
 import { plantMaxHp } from '../core/plants';
 import { stepSpawner } from '../core/spawner';
-import { EventBus, GameEvents, type CardPreview, type PagePoint } from '../EventBus';
+import { EventBus, GameEvents, type CardPreview, type PagePoint, type PlantPanel } from '../EventBus';
 import { createAmbience, type Ambience } from '../view/ambience';
 import { BoardLabel, drawArea, drawCell, type LabelLine } from '../view/boardMarks';
 import { BulletView } from '../view/bulletView';
 import { Effects } from '../view/effects';
 import { DRAG_LOOK, FusionDragView, dragGround } from '../view/fusionDragView';
 import { DEPTH, SCENERY, entityDepth, perspective, viewFor } from '../view/layout';
+import { medalTier, showsMedal } from '../view/levelMedal';
 import { MineView, mineAreaColor, mineScale } from '../view/mineView';
 import { PlantView, plantPlacement } from '../view/plantView';
 import { QUALITY_PROFILES, type QualityLevel, type QualityProfile } from '../view/quality';
@@ -58,6 +61,11 @@ const LOOK = {
   defeatDelayMs: 1100,
   /** Texto que salta sobre la planta al fusionar. */
   fusedText: { color: '#efffdf', stroke: '#24561c' },
+  /** Casilla de la disparadora seleccionada para subirla de nivel (T-003): dorada, late despacio. */
+  pickedColor: 0xffe36b,
+  /** Donde se apoya el panel de nivel: sobre la cabeza y bajo los pies de la planta, en anchos de casilla. */
+  panelAbove: 1.08,
+  panelBelow: 0.14,
 } as const;
 
 /** Prueba de rendimiento en desarrollo (tecla H): el presupuesto de T-002, 20 plantas y 60 enemigos. */
@@ -137,6 +145,11 @@ export class BoardScene extends Phaser.Scene {
   private passiveIncome?: Phaser.Time.TimerEvent;
   private press: PlantPress | null = null;
   private drag: PlantDrag | null = null;
+  /** Disparadora seleccionada con un clic para subirla de nivel (T-003), y su marca en el suelo. */
+  private picked: Cell | null = null;
+  private pickedMark!: Phaser.GameObjects.Graphics;
+  /** Ultimo panel enviado al HUD, para avisar solo cuando cambia. */
+  private panelKey = '';
   private cursor = 'default';
   /** Sin vidas: el combate se detiene y React muestra la derrota. */
   private defeated = false;
@@ -166,6 +179,8 @@ export class BoardScene extends Phaser.Scene {
     this.defeated = false;
     this.press = null;
     this.drag = null;
+    this.picked = null;
+    this.panelKey = '';
     this.cursor = 'default';
     // Reiniciar la partida vuelve a pasar por aqui: nada de la anterior debe sobrevivir.
     this.plantViews = new Map();
@@ -253,6 +268,8 @@ export class BoardScene extends Phaser.Scene {
     this.ambience.update(delta);
     this.drag?.view.update(delta);
     if (!this.defeated) this.advance(delta);
+    // El panel sigue a la planta aunque cambie la ventana (pantalla completa, giro del movil...).
+    if (this.picked) this.emitPlantPanel();
     this.sampleFps();
   }
 
@@ -312,6 +329,8 @@ export class BoardScene extends Phaser.Scene {
   private createCursorFeedback(): void {
     this.highlight = this.add.graphics().setDepth(DEPTH.highlight).setVisible(false);
     this.tweens.add({ targets: this.highlight, alpha: 0.55, duration: 650, yoyo: true, repeat: -1, ease: 'Sine.InOut' });
+    this.pickedMark = this.add.graphics().setDepth(DEPTH.highlight).setVisible(false);
+    this.tweens.add({ targets: this.pickedMark, alpha: 0.5, duration: 900, yoyo: true, repeat: -1, ease: 'Sine.InOut' });
 
     // Planta fantasma: muestra donde quedara la disparadora antes de soltarla.
     this.ghost = this.add
@@ -352,27 +371,38 @@ export class BoardScene extends Phaser.Scene {
         if (pointer.rightButtonDown()) {
           this.cancelDrag();
           this.select(null);
+          this.pickPlant(null);
           return;
         }
         // Un clic sobre una moneda la recoge; no debe sembrar en la casilla de debajo.
         if (over.length > 0 || this.drag) return;
-        // Sin carta elegida, pulsar una planta la prepara para arrastrarla (T-006).
+        // Sin carta elegida, pulsar una planta la prepara para arrastrarla (T-006) o, si se suelta sin moverla,
+        // para seleccionarla (T-003).
         const plantCell = this.canDragPlants() ? this.plantCellAtScreen(pointer.worldX, pointer.worldY) : null;
         if (plantCell) {
           this.press = { cell: plantCell, pointerId: pointer.id, x: pointer.worldX, y: pointer.worldY };
           return;
         }
+        // Un clic fuera de las plantas cierra el panel de nivel.
+        this.pickPlant(null);
         this.tryPlay(this.cardCellAt(pointer.worldX, pointer.worldY));
       },
     );
 
     // Soltar dentro del lienzo o fuera de el (sobre el HUD, por ejemplo).
-    const onUp = (pointer: Phaser.Input.Pointer) => {
-      if (this.press?.pointerId === pointer.id) this.press = null;
+    const onUp = (pointer: Phaser.Input.Pointer, inside: boolean) => {
+      const press = this.press;
+      if (press?.pointerId === pointer.id) {
+        this.press = null;
+        // Pulsar y soltar una planta sin arrastrarla la selecciona (otra vez, la deselecciona).
+        if (inside && this.canDragPlants() && plantAt(this.match, press.cell)) {
+          this.pickPlant(sameCell(this.picked, press.cell) ? null : press.cell);
+        }
+      }
       if (this.drag?.pointerId === pointer.id) this.dropDrag(pointer);
     };
-    this.input.on(Phaser.Input.Events.POINTER_UP, onUp);
-    this.input.on(Phaser.Input.Events.POINTER_UP_OUTSIDE, onUp);
+    this.input.on(Phaser.Input.Events.POINTER_UP, (pointer: Phaser.Input.Pointer) => onUp(pointer, true));
+    this.input.on(Phaser.Input.Events.POINTER_UP_OUTSIDE, (pointer: Phaser.Input.Pointer) => onUp(pointer, false));
 
     // Esc lo gestiona el HUD: cancela la carta elegida o abre el menu de pausa (que devuelve a su casilla una planta arrastrada).
   }
@@ -385,7 +415,11 @@ export class BoardScene extends Phaser.Scene {
       this.cancelDrag();
       this.select(card);
     };
-    const onCancelled = () => this.select(null);
+    const onCancelled = () => {
+      this.select(null);
+      this.pickPlant(null);
+    };
+    const onLevelUp = () => running() && this.tryLevelUp();
     const onDragged = (point: PagePoint) => running() && this.hover(this.cardCellAtPage(point));
     const onDropped = (point: PagePoint) => {
       if (!running()) return;
@@ -400,6 +434,7 @@ export class BoardScene extends Phaser.Scene {
 
     EventBus.on(GameEvents.cardPicked, onPicked);
     EventBus.on(GameEvents.selectionCancelled, onCancelled);
+    EventBus.on(GameEvents.levelUpRequested, onLevelUp);
     EventBus.on(GameEvents.cardDragged, onDragged);
     EventBus.on(GameEvents.cardDropped, onDropped);
     EventBus.on(GameEvents.stateRequested, onStateRequested);
@@ -409,6 +444,7 @@ export class BoardScene extends Phaser.Scene {
     const unbind = () => {
       EventBus.off(GameEvents.cardPicked, onPicked);
       EventBus.off(GameEvents.selectionCancelled, onCancelled);
+      EventBus.off(GameEvents.levelUpRequested, onLevelUp);
       EventBus.off(GameEvents.cardDragged, onDragged);
       EventBus.off(GameEvents.cardDropped, onDropped);
       EventBus.off(GameEvents.stateRequested, onStateRequested);
@@ -506,6 +542,8 @@ export class BoardScene extends Phaser.Scene {
         // La casilla vuelve a estar libre: si hay una carta elegida, el resaltado cambia.
         this.refreshHighlight();
         this.plantLostDuringDrag(event.cell);
+        // Si era la seleccionada, su panel se cierra.
+        if (sameCell(this.picked, event.cell)) this.pickPlant(null);
         break;
       }
       case 'mineArmed':
@@ -570,6 +608,7 @@ export class BoardScene extends Phaser.Scene {
     this.press = null;
     this.setCursor('default');
     this.select(null);
+    this.pickPlant(null);
     this.passiveIncome?.remove();
     this.bulletViews.forEach((bullet) => bullet.vanish());
     this.bulletViews.clear();
@@ -606,6 +645,8 @@ export class BoardScene extends Phaser.Scene {
 
   private select(card: CardId | null): void {
     this.selected = card;
+    // Tomar una carta cierra el panel de nivel: o se juega la carta o se sube la planta.
+    if (card) this.pickPlant(null);
     this.refreshHighlight();
     EventBus.emit(GameEvents.selectionChanged, card);
   }
@@ -760,6 +801,8 @@ export class BoardScene extends Phaser.Scene {
     const plant = plantAt(this.match, press.cell);
     const view = this.plantViews.get(cellKey(press.cell));
     if (!plant || !view) return;
+    // Arrastrar cierra el panel de nivel (de esta o de otra planta).
+    this.pickPlant(null);
 
     const { cellWidth } = plantPlacement(press.cell);
     const foot = view.foot();
@@ -853,7 +896,7 @@ export class BoardScene extends Phaser.Scene {
     const foot = toView.foot();
     const { cellWidth } = plantPlacement(to);
     drag.view.dropInto(foot, cellWidth);
-    toView.fuse(fused.shooter.cannons, fused.hp / plantMaxHp(fused.shooter));
+    toView.fuse(fused.shooter.cannons, fused.hp / plantMaxHp(fused.shooter), fused.shooter.level);
     this.fx.floatText('¡Fusión!', foot.x, foot.y - cellWidth * 1.05, LOOK.fusedText);
     this.refreshHighlight();
   }
@@ -903,6 +946,70 @@ export class BoardScene extends Phaser.Scene {
     drag.targets = fusionTargets(this.match, drag.from);
     drag.view.showTargets(drag.targets);
     this.refreshDragHover();
+  }
+
+  // -------------------------------------------------------------------------
+  // Subir de nivel (T-003). Las reglas son de core (levelUpOffer, levelUpPlant); aqui se selecciona y se anima.
+  // El panel (nivel, costo y boton) lo pinta React junto a la planta.
+
+  /** Selecciona la disparadora de `cell` (o ninguna): marca su casilla y abre o cierra el panel de nivel. */
+  private pickPlant(cell: Cell | null): void {
+    if (sameCell(this.picked, cell) || (this.picked === null && cell === null)) return;
+    this.picked = cell;
+    this.pickedMark.clear().setVisible(cell !== null);
+    if (cell) {
+      drawCell(this.pickedMark, cell, LOOK.pickedColor, 0.22, 4);
+      this.plantViews.get(cellKey(cell))?.beckon();
+    }
+    this.emitPlantPanel();
+  }
+
+  /** Sube un nivel la planta seleccionada si se puede: cobra en el acto y la planta lo celebra. */
+  private tryLevelUp(): void {
+    const cell = this.picked;
+    if (this.defeated || !cell) return;
+    const offer = levelUpOffer(this.match, cell);
+    if (!offer || offer.blocker) return;
+    this.match = levelUpPlant(this.match, cell);
+    const plant = plantAt(this.match, cell) as Plant;
+    this.plantViews.get(cellKey(cell))?.levelUp(plant.shooter.level);
+    this.emitBalance();
+  }
+
+  /** Avisa al HUD de como esta el panel de la planta seleccionada (o de que se cerro), solo si cambia. */
+  private emitPlantPanel(): void {
+    const cell = this.picked;
+    const offer = cell ? levelUpOffer(this.match, cell) : null;
+    const view = cell ? this.plantViews.get(cellKey(cell)) : undefined;
+    let panel: PlantPanel | null = null;
+    if (cell && offer && view) {
+      const foot = view.foot();
+      const { cellWidth } = plantPlacement(cell);
+      panel = {
+        id: cellKey(cell),
+        level: offer.level,
+        cost: offer.cost,
+        multiplier: offer.multiplier,
+        affordable: offer.blocker === null,
+        medalTier: showsMedal(offer.level) ? medalTier(offer.level) : null,
+        above: this.worldToPage(foot.x, foot.y - cellWidth * LOOK.panelAbove),
+        below: this.worldToPage(foot.x, foot.y + cellWidth * LOOK.panelBelow),
+      };
+    }
+    const key = panel ? JSON.stringify(panel) : '';
+    if (key === this.panelKey) return;
+    this.panelKey = key;
+    EventBus.emit(GameEvents.plantPanel, panel);
+  }
+
+  /** Inverso de `cardCellAtPage`: coordenadas de diseno (mundo) -> pixeles del lienzo -> coordenadas DOM. */
+  private worldToPage(x: number, y: number): PagePoint {
+    const canvas = this.cameras.main.matrixCombined.transformPoint(x, y, { x: 0, y: 0 });
+    const bounds = this.scale.canvasBounds;
+    return {
+      pageX: Math.round(bounds.left + canvas.x / this.scale.displayScale.x),
+      pageY: Math.round(bounds.top + canvas.y / this.scale.displayScale.y),
+    };
   }
 
   // -------------------------------------------------------------------------
@@ -1045,6 +1152,8 @@ export class BoardScene extends Phaser.Scene {
 
   private emitBalance(): void {
     EventBus.emit(GameEvents.balanceChanged, this.match.balance);
+    // Con el saldo nuevo el boton de subir de nivel puede pasar a alcanzar (o dejar de hacerlo).
+    this.emitPlantPanel();
   }
 
   private emitLives(): void {
@@ -1058,5 +1167,7 @@ export class BoardScene extends Phaser.Scene {
     // El precio de infusion que tuviera el HUD era de la escena anterior (por ejemplo, al cambiar la calidad).
     this.previewKey = '';
     EventBus.emit(GameEvents.cardPreview, null);
+    this.panelKey = 'stale';
+    this.emitPlantPanel();
   }
 }

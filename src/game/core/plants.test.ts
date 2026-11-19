@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { COSTS, SHOOTER } from '../config/balance';
+import { COSTS, ENEMIES, LEVELING, LIMITS, SHOOTER } from '../config/balance';
 import {
   canFuse,
   canInfuse,
+  canLevelUp,
   createShooter,
   damageMultiplier,
   fireRateMultiplier,
@@ -10,6 +11,9 @@ import {
   fuseBlocker,
   infuse,
   infusionCost,
+  levelBonus,
+  levelUp,
+  levelUpCost,
   plantMaxHp,
   type Shooter,
 } from './plants';
@@ -88,5 +92,68 @@ describe('cadencia', () => {
     expect(fireRateMultiplier(shooter())).toBe(1);
     expect(fireRateMultiplier(shooter({ level: 2 }))).toBeGreaterThan(1);
     expect(fireRateMultiplier(shooter({ level: 20 }))).toBeGreaterThan(fireRateMultiplier(shooter({ level: 10 })));
+  });
+});
+
+describe('subir de nivel', () => {
+  it('sube un nivel sin tocar canones ni elemento', () => {
+    expect(levelUp(shooter())).toEqual({ element: null, cannons: 1, level: 2 });
+    expect(levelUp(shooter({ element: 'ice', cannons: 3, level: 7 }))).toEqual({ element: 'ice', cannons: 3, level: 8 });
+  });
+
+  it('no pasa del nivel maximo', () => {
+    expect(canLevelUp(shooter({ level: LIMITS.maxLevel - 1 }))).toBe(true);
+    expect(levelUp(shooter({ level: LIMITS.maxLevel - 1 })).level).toBe(LIMITS.maxLevel);
+    expect(canLevelUp(shooter({ level: LIMITS.maxLevel }))).toBe(false);
+    expect(() => levelUp(shooter({ level: LIMITS.maxLevel }))).toThrow();
+  });
+
+  it('cuesta mas cuanto mas nivel tiene (D-05): 75, 100, 125...', () => {
+    expect(levelUpCost(shooter())).toBe(LEVELING.baseCost);
+    expect(levelUpCost(shooter({ level: 2 }))).toBe(LEVELING.baseCost + LEVELING.costStep);
+    expect(levelUpCost(shooter({ level: 3 }))).toBe(LEVELING.baseCost + 2 * LEVELING.costStep);
+    expect(levelUpCost(shooter({ level: LIMITS.maxLevel - 1 }))).toBe(LEVELING.baseCost + 18 * LEVELING.costStep);
+  });
+
+  it('cuesta un nivel por canon, como infundir', () => {
+    expect(levelUpCost(shooter({ cannons: 2 }))).toBe(2 * LEVELING.baseCost);
+    expect(levelUpCost(shooter({ cannons: 3, level: 4 }))).toBe(3 * (LEVELING.baseCost + 3 * LEVELING.costStep));
+  });
+
+  it('el elemento no cambia el costo', () => {
+    expect(levelUpCost(shooter({ element: 'fire', level: 5 }))).toBe(levelUpCost(shooter({ level: 5 })));
+  });
+
+  it('en el nivel maximo no tiene costo', () => {
+    expect(levelUpCost(shooter({ level: LIMITS.maxLevel }))).toBeNull();
+  });
+
+  it('siempre cuesta moneda entera', () => {
+    for (let level = 1; level < LIMITS.maxLevel; level++) {
+      for (const cannons of [1, 2, 3] as const) expect(Number.isInteger(levelUpCost(shooter({ cannons, level })))).toBe(true);
+    }
+  });
+
+  it('cada nivel suma dano y cadencia sobre el nivel 1', () => {
+    expect(levelBonus(1)).toEqual({ damage: 0, fireRate: 0 });
+    expect(levelBonus(3).damage).toBeCloseTo(2 * LEVELING.damagePerLevel);
+    expect(levelBonus(3).fireRate).toBeCloseTo(2 * LEVELING.fireRatePerLevel);
+    expect(damageMultiplier(shooter({ level: 2 }))).toBeCloseTo(1 + LEVELING.damagePerLevel);
+    expect(fireRateMultiplier(shooter({ level: 2 }))).toBeCloseTo(1 + LEVELING.fireRatePerLevel);
+  });
+
+  it('en una fusionada el nivel multiplica el disparo entero', () => {
+    expect(damageMultiplier(shooter({ cannons: 3, level: 5 }))).toBeCloseTo(damageMultiplier(shooter({ cannons: 3 })) * (1 + 4 * LEVELING.damagePerLevel));
+  });
+
+  it('se nota: con dos niveles mas un gusano cae antes, y en nivel 4 ya con una semilla menos', () => {
+    // Con los valores de balance.ts: semillas que necesita un gusano de vida completa.
+    const seeds = (level: number) => Math.ceil(ENEMIES.worm.hp / (SHOOTER.damage * damageMultiplier(shooter({ level }))));
+    expect(seeds(4)).toBeLessThan(seeds(1));
+    expect(fireRateMultiplier(shooter({ level: 3 }))).toBeGreaterThan(1.05);
+  });
+
+  it('subir de nivel no cambia la vida maxima', () => {
+    expect(plantMaxHp(shooter({ level: 12 }))).toBe(plantMaxHp(shooter()));
   });
 });

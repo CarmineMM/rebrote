@@ -1,9 +1,19 @@
 import * as Phaser from 'phaser';
-import { BOARD } from '../config/balance';
+import { BOARD, LIMITS } from '../config/balance';
 import type { BoardPoint } from '../core/board';
 import type { ElementType } from '../core/plants';
 import type { ScreenPoint } from './perspective';
 import { SCENERY, VIEW, WORLD, perspective } from './layout';
+import { MEDAL, MEDAL_TIERS, medalTier } from './levelMedal';
+import {
+  SHOOTER_BARRELS,
+  SHOOTER_DOTS,
+  SHOOTER_DOT_RADIUS,
+  SHOOTER_EYE,
+  SHOOTER_SIZE,
+  shooterHead,
+  type ShooterCannons,
+} from './shooterShape';
 
 /**
  * Arte hecho por codigo (ADR-0004): todo se pinta con Canvas 2D una sola vez al arrancar
@@ -48,6 +58,8 @@ export const TEX = {
     ice: { idle: 'unit-mine-ice', armed: 'unit-mine-ice-armed' },
   },
   coin: 'unit-coin',
+  /** Medallita de nivel de la disparadora (T-003), una por nivel con su numero (usar `medalTexture`). */
+  medal: 'ui-medal',
   /** Semilla normal, de fuego y de hielo (usar `seedTexture`). */
   seed: 'unit-seed',
   fireSeed: 'unit-seed-fire',
@@ -58,40 +70,10 @@ export const TEX = {
   wormSegment: 'unit-worm-segment',
 } as const;
 
-/** Punto de apoyo de la disparadora dentro de su textura (los pies). 160 de ancho: una casilla. */
-export const SHOOTER_SIZE = { width: 160, height: 180, footX: 80, footY: 174 } as const;
+// La forma de la disparadora (pies, canones, puntos del tallo y cabeza) vive en shooterShape.ts, sin Phaser.
+export { SHOOTER_BARRELS, SHOOTER_DOTS, SHOOTER_SIZE, type ShooterCannons } from './shooterShape';
 
-/**
- * Canones de la disparadora segun cuantos tenga (T-006), de arriba abajo, en pixeles de su textura:
- * centro en altura (`y`), desde donde sale de la cara (`fromX`), boca (`mouthX`) y alto del tubo (`h`).
- * La vista saca de aqui de donde sale cada semilla (`barrelMuzzle` en plantView.ts).
- */
-export const SHOOTER_BARRELS = {
-  1: [{ y: 79, fromX: 96, mouthX: 148, h: 32 }],
-  2: [
-    { y: 70, fromX: 94, mouthX: 145, h: 25 },
-    { y: 97, fromX: 96, mouthX: 150, h: 25 },
-  ],
-  3: [
-    { y: 61, fromX: 92, mouthX: 143, h: 21 },
-    { y: 84, fromX: 94, mouthX: 151, h: 21 },
-    { y: 107, fromX: 92, mouthX: 145, h: 21 },
-  ],
-} as const;
-
-/**
- * Puntos del tallo, uno por canon, de abajo arriba (pixeles de la textura). La medallita de nivel (T-003)
- * no debe taparlos: tiene sitio libre en la nuca, arriba a la izquierda de la cabeza.
- */
-export const SHOOTER_DOTS = [
-  { x: 76, y: 158 },
-  { x: 73, y: 147 },
-  { x: 71.5, y: 136 },
-] as const;
-
-export type ShooterCannons = keyof typeof SHOOTER_BARRELS;
-
-/** Variantes que tienen arte propio. Se distinguen por el color, no por la forma (guia de graficos, seccion 9). */
+/** Variantes que tienen arte propio. Se distinguen por el color, no por la forma (guia de graficos, seccion 10). */
 export type ShooterVariant = keyof typeof TEX.shooter;
 
 /** Variante de textura de una planta segun su elemento: la normal si no tiene. */
@@ -115,6 +97,9 @@ export const MINE_SIZE = { width: 112, height: 124, footX: 56, footY: 112, bulbY
 
 /** Textura de la mina de `element`: dormida o en cuenta atras. */
 export const mineTexture = (element: ElementType, armed: boolean): string => TEX.mine[element][armed ? 'armed' : 'idle'];
+
+/** Medallita del nivel `level` (2 a 20): el numero y el color de su tramo van pintados (levelMedal.ts). */
+export const medalTexture = (level: number): string => `${TEX.medal}-${level}`;
 
 /** Llama suelta: los pies van abajo, en el centro. */
 export const FLAME_SIZE = { width: 32, height: 48, footY: 46 } as const;
@@ -221,6 +206,9 @@ export function registerTextures(scene: Phaser.Scene, scale = 1): void {
     paint(TEX.mine[element].armed, MINE_SIZE.width, MINE_SIZE.height, (ctx) => paintMine(ctx, true, MINE_PALETTES[element]));
   }
   paint(TEX.coin, 72, 72, paintCoin);
+  for (let level = 2; level <= LIMITS.maxLevel; level++) {
+    paint(medalTexture(level), MEDAL.size, MEDAL.size, (ctx) => paintMedal(ctx, level));
+  }
   paint(TEX.seed, SEED_SIZE.width, SEED_SIZE.height, paintSeed);
   paint(TEX.fireSeed, SEED_SIZE.width, SEED_SIZE.height, paintFireSeed);
   paint(TEX.iceSeed, SEED_SIZE.width, SEED_SIZE.height, paintIceSeed);
@@ -1295,9 +1283,7 @@ const LEAF_OUTLINE = '#2a6b22';
 function paintShooter(ctx: Ctx, cannons: ShooterCannons, palette: ShooterPalette): void {
   const { footX, footY } = SHOOTER_SIZE;
   const { outline } = palette;
-  const headX = 76;
-  const headY = 80;
-  const headR = 44 + cannons * 2;
+  const { x: headX, y: headY, r: headR } = shooterHead(cannons);
 
   // Hojas de la base: dos, y una mas por cada fusion, mas cortas y levantadas.
   const baseLeaves: Array<readonly [number, number, number]> = [
@@ -1335,15 +1321,15 @@ function paintShooter(ctx: Ctx, cannons: ShooterCannons, palette: ShooterPalette
 
   // Un punto por canon en el tallo: semillitas doradas, de abajo arriba.
   for (const dot of SHOOTER_DOTS.slice(0, cannons)) {
-    const g = ctx.createRadialGradient(dot.x - 1.5, dot.y - 1.5, 0.5, dot.x, dot.y, 5);
+    const g = ctx.createRadialGradient(dot.x - 1.5, dot.y - 1.5, 0.5, dot.x, dot.y, SHOOTER_DOT_RADIUS);
     g.addColorStop(0, '#fffbe0');
     g.addColorStop(0.6, '#ffe36b');
     g.addColorStop(1, '#e0a92a');
-    circle(ctx, dot.x, dot.y, 5, g);
+    circle(ctx, dot.x, dot.y, SHOOTER_DOT_RADIUS, g);
     ctx.strokeStyle = LEAF_OUTLINE;
     ctx.lineWidth = 1.6;
     ctx.beginPath();
-    ctx.arc(dot.x, dot.y, 5, 0, Math.PI * 2);
+    ctx.arc(dot.x, dot.y, SHOOTER_DOT_RADIUS, 0, Math.PI * 2);
     ctx.stroke();
   }
 
@@ -1405,11 +1391,12 @@ function paintShooter(ctx: Ctx, cannons: ShooterCannons, palette: ShooterPalette
   }
 
   // Ojo mirando a la derecha, con brillo, y mejilla sonrojada. Con 3 canones, una ceja decidida.
-  ellipse(ctx, 72, 70, 13, 15, '#ffffff');
+  const eye = SHOOTER_EYE;
+  ellipse(ctx, eye.x, eye.y, eye.rx, eye.ry, '#ffffff');
   ctx.strokeStyle = outline;
   ctx.lineWidth = 2;
   ctx.beginPath();
-  ctx.ellipse(72, 70, 13, 15, 0, 0, Math.PI * 2);
+  ctx.ellipse(eye.x, eye.y, eye.rx, eye.ry, 0, 0, Math.PI * 2);
   ctx.stroke();
   circle(ctx, 77, 72, 7, '#1a2614');
   circle(ctx, 80, 68, 2.6, '#ffffff');
@@ -1424,6 +1411,88 @@ function paintShooter(ctx: Ctx, cannons: ShooterCannons, palette: ShooterPalette
   ellipse(ctx, 58, 96, 8, 4.5, palette.cheek);
   // Reflejo en la cabeza
   ellipse(ctx, headX - 22, headY - 28, 12, 7, 'rgba(255, 255, 255, 0.35)', -0.6);
+}
+
+/**
+ * Medallita de nivel (T-003): disco con el borde ondulado como un sello, contorno oscuro para que se lea sobre
+ * cualquier cabeza (tambien la azul clarita del hielo), un brillo y el numero en blanco con borde.
+ * El color cambia cada 5 niveles (`medalTier`); la del nivel maximo es de cristal irisado con dos destellos.
+ */
+function paintMedal(ctx: Ctx, level: number): void {
+  const palette = MEDAL_TIERS[medalTier(level)];
+  const c = MEDAL.size / 2;
+  const r = MEDAL.radius;
+  const top = medalTier(level) === MEDAL_TIERS.length - 1;
+
+  // Borde ondulado: 14 ondas algo mas oscuras que el disco.
+  const waves = 14;
+  ctx.beginPath();
+  for (let i = 0; i <= waves * 8; i++) {
+    const a = (i / (waves * 8)) * Math.PI * 2;
+    const radius = r + 1.6 + 1.4 * Math.cos(a * waves);
+    const x = c + Math.cos(a) * radius;
+    const y = c + Math.sin(a) * radius;
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+  ctx.closePath();
+  ctx.fillStyle = palette.dark;
+  ctx.fill();
+  ctx.strokeStyle = palette.outline;
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // Disco con la luz arriba a la izquierda.
+  const disc = ctx.createRadialGradient(c - 4, c - 5, 1, c, c, r);
+  disc.addColorStop(0, palette.light);
+  disc.addColorStop(0.5, palette.mid);
+  disc.addColorStop(1, palette.dark);
+  circle(ctx, c, c, r - 1, disc);
+  ctx.strokeStyle = palette.outline;
+  ctx.lineWidth = 1.4;
+  ctx.beginPath();
+  ctx.arc(c, c, r - 1, 0, Math.PI * 2);
+  ctx.stroke();
+  // Aro claro por dentro y reflejo.
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
+  ctx.lineWidth = 1.2;
+  ctx.beginPath();
+  ctx.arc(c, c, r - 3.6, Math.PI * 0.95, Math.PI * 1.75);
+  ctx.stroke();
+  ellipse(ctx, c - 5, c - 6.5, 4.2, 2.2, 'rgba(255, 255, 255, 0.55)', -0.6);
+
+  // Numero: blanco con el borde del contorno, algo mas pequeno con dos cifras.
+  const text = String(level);
+  ctx.font = `900 ${text.length > 1 ? 17 : 21}px ui-rounded, "Nunito", system-ui, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.lineJoin = 'round';
+  ctx.strokeStyle = palette.outline;
+  ctx.lineWidth = 4;
+  ctx.strokeText(text, c, c + 1);
+  ctx.fillStyle = '#ffffff';
+  ctx.fillText(text, c, c + 1);
+
+  if (top) {
+    sparkleStar(ctx, c + r - 1, c - r + 2, 4.5);
+    sparkleStar(ctx, c - r + 2, c + r - 3, 3);
+  }
+}
+
+/** Destello de cuatro puntas, blanco con borde claro. */
+function sparkleStar(ctx: Ctx, x: number, y: number, size: number): void {
+  ctx.beginPath();
+  for (let i = 0; i < 8; i++) {
+    const a = (i / 8) * Math.PI * 2 - Math.PI / 2;
+    const radius = i % 2 === 0 ? size : size * 0.32;
+    ctx.lineTo(x + Math.cos(a) * radius, y + Math.sin(a) * radius);
+  }
+  ctx.closePath();
+  ctx.fillStyle = '#ffffff';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(122, 98, 255, 0.8)';
+  ctx.lineWidth = 0.9;
+  ctx.stroke();
 }
 
 /** Colores y detalles de la mina de cada elemento. La forma es la misma: bulbo medio enterrado con un rabito de mecha. */

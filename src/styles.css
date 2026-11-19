@@ -205,6 +205,74 @@ body {
 @keyframes leaves-sway { from { transform: translateY(14px) rotate(-8deg) scale(0.8); } to { transform: rotate(8deg) scale(1); } }
 @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
 
+/* ---------- Panel de nivel (T-003): flota junto a la disparadora seleccionada y la apunta con una flechita ---------- */
+.level-panel {
+  position: absolute; z-index: 3; width: max-content; min-width: 168px; max-width: calc(100vw - 16px);
+  display: grid; gap: 6px; padding: 9px 12px 12px;
+  border-radius: 16px; border: 2px solid rgba(255, 224, 102, 0.6);
+  background: linear-gradient(180deg, #2e5233 0%, #1b3020 100%);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35), inset 0 2px 0 rgba(255, 255, 255, 0.1);
+  transform-origin: var(--arrow-x) calc(100% + 9px);
+  animation: panel-pop 0.26s cubic-bezier(0.2, 1.5, 0.4, 1) both;
+  user-select: none; -webkit-user-select: none;
+}
+.level-panel.is-below { transform-origin: var(--arrow-x) -9px; }
+/* Flechita: un rombo con el borde del panel, asomando por abajo (o por arriba si el panel va bajo los pies). */
+.level-panel::after {
+  content: ''; position: absolute; left: var(--arrow-x); top: 100%; width: 14px; height: 14px;
+  background: #1b3020; border: 2px solid rgba(255, 224, 102, 0.6); border-top: 0; border-left: 0;
+  transform: translate(-50%, -6px) rotate(45deg);
+}
+.level-panel.is-below::after { top: 0; background: #2e5233; transform: translate(-50%, -8px) rotate(-135deg); }
+@keyframes panel-pop { from { opacity: 0; transform: scale(0.6) translateY(8px); } to { opacity: 1; transform: none; } }
+
+.level-panel-title { display: flex; align-items: center; gap: 8px; font-size: 1.1rem; font-weight: 900; color: #e9ffd6; text-shadow: 0 2px 0 #17301a; }
+.level-panel-title small { font-size: 0.75rem; font-weight: 800; color: #ffe066; }
+/* Al subir de nivel el texto salta como la medallita. */
+.level-panel-level { display: inline-block; animation: cost-pop 0.35s cubic-bezier(0.2, 1.6, 0.4, 1); transform-origin: left center; }
+.level-panel-stats { margin: 0; font-size: 0.78rem; font-weight: 700; color: #cfe8c2; white-space: nowrap; }
+
+/* La misma medallita que en la planta: disco con borde ondulado, color por tramo de 5 niveles. */
+.medal {
+  --medal-light: #ffe2c2; --medal-mid: #e3965a; --medal-dark: #a65a26; --medal-outline: #4f250b;
+  flex: none; display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%;
+  background: radial-gradient(circle at 36% 30%, var(--medal-light) 0%, var(--medal-mid) 50%, var(--medal-dark) 100%);
+  border: 2px solid var(--medal-outline); box-shadow: 0 0 0 3px var(--medal-dark), 0 0 0 4.5px var(--medal-outline);
+  margin: 4px; color: #fff; font-size: 0.8rem; font-weight: 900; font-variant-numeric: tabular-nums;
+  text-shadow: -1px -1px 0 var(--medal-outline), 1px -1px 0 var(--medal-outline), -1px 1px 0 var(--medal-outline), 1px 1px 0 var(--medal-outline);
+  animation: medal-pop 0.45s cubic-bezier(0.2, 1.8, 0.4, 1) both;
+}
+.medal-tier-1 { --medal-light: #ffffff; --medal-mid: #cdd6e2; --medal-dark: #8592a6; --medal-outline: #2f3846; }
+.medal-tier-2 { --medal-light: #fff6c0; --medal-mid: #ffd23f; --medal-dark: #d1920f; --medal-outline: #6b4505; }
+.medal-tier-3 { --medal-light: #ffd3df; --medal-mid: #ff5c80; --medal-dark: #b3173e; --medal-outline: #55061b; }
+.medal-tier-4 { --medal-light: #ffffff; --medal-mid: #9fe9ff; --medal-dark: #7a62ff; --medal-outline: #24186b; }
+/* Nivel 1: en la planta no lleva medallita; en el panel, una lisa y apagada. */
+.medal-plain { --medal-light: #a9c79c; --medal-mid: #6f8f63; --medal-dark: #4b6342; --medal-outline: #22331d; }
+@keyframes medal-pop { from { transform: scale(0.2) rotate(-50deg); } to { transform: none; } }
+
+.level-up {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 7px 12px; border-radius: 12px; border: 2px solid #b07a0e;
+  background: linear-gradient(180deg, #ffe48a, #f2b632); color: #4a3000; box-shadow: 0 3px 0 #8a5d08;
+  font: inherit; font-size: 0.95rem; font-weight: 900; cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.12s ease;
+}
+.level-up:hover { transform: translateY(-1px); filter: brightness(1.06); }
+.level-up:active { transform: translateY(2px); box-shadow: 0 1px 0 #8a5d08; }
+.level-up:focus-visible { outline: 3px solid #ffe066; outline-offset: 2px; }
+.level-up-arrow { width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent; border-bottom: 8px solid currentColor; }
+.level-up-cost {
+  display: inline-flex; align-items: center; gap: 4px; padding: 1px 7px 1px 3px; border-radius: 999px;
+  background: rgba(74, 48, 0, 0.16); font-variant-numeric: tabular-nums; white-space: nowrap;
+  animation: cost-pop 0.3s cubic-bezier(0.2, 1.6, 0.4, 1);
+}
+.coin-small { width: 14px; height: 14px; border-width: 2px; box-shadow: none; }
+.level-up.is-short { background: linear-gradient(180deg, #5a6b55, #3e4c3a); border-color: #2b3528; color: #d9e6d2; box-shadow: 0 3px 0 #1f281c; cursor: not-allowed; }
+.level-up.is-short:hover, .level-up.is-short:active { transform: none; filter: none; }
+.level-up.is-short .level-up-cost { background: rgba(0, 0, 0, 0.2); color: #ff8a8a; animation: cost-pop 0.3s cubic-bezier(0.2, 1.6, 0.4, 1), cost-shake 0.35s 0.15s ease-out; }
+.level-up.is-max { background: linear-gradient(180deg, #3f6f43, #2c5030); border-color: #5fa54f; color: #ffe066; box-shadow: 0 3px 0 #142a17; cursor: default; }
+.level-up.is-max:hover, .level-up.is-max:active { transform: none; filter: none; }
+
 /* ---------- Menu de pausa ---------- */
 .pause-overlay {
   position: absolute; inset: 0; z-index: 4; display: grid; place-items: center; padding: 16px;

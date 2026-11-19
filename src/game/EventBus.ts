@@ -22,14 +22,21 @@ export const GameEvents = {
   cardPreview: 'card-preview',
   /** Phaser -> React. Sin payload: la partida se perdio; React muestra la pantalla de derrota. */
   matchLost: 'match-lost',
+  /**
+   * Phaser -> React. Payload: PlantPanel | null. Disparadora seleccionada con un clic (T-003): su nivel, lo que cuesta
+   * el siguiente y donde esta en la pagina, para pintar el panel de subir de nivel junto a ella. Null al cerrarlo.
+   */
+  plantPanel: 'plant-panel',
   /** React -> Phaser. Payload: carta que el jugador toma del HUD (CardId). */
   cardPicked: 'card-picked',
   /** React -> Phaser. Payload: posicion del puntero mientras arrastra la carta (PagePoint). */
   cardDragged: 'card-dragged',
   /** React -> Phaser. Payload: posicion donde suelta la carta (PagePoint). */
   cardDropped: 'card-dropped',
-  /** React -> Phaser. Sin payload: soltar la carta elegida (Esc). */
+  /** React -> Phaser. Sin payload: soltar la carta elegida o cerrar el panel de la planta seleccionada (Esc). */
   selectionCancelled: 'selection-cancelled',
+  /** React -> Phaser. Sin payload: subir un nivel la disparadora seleccionada (boton del panel). */
+  levelUpRequested: 'level-up-requested',
   /** React -> Phaser. Payload: si el juego queda en pausa (boolean). El menu de pausa lo controla. */
   pauseChanged: 'pause-changed',
   /** React -> Phaser. Sin payload: el HUD se monto y pide el estado actual. */
@@ -46,6 +53,26 @@ export interface CardPreview {
   cost: number;
   /** Si el saldo alcanza. Si no, la carta se pone en rojo y soltarla no hace nada. */
   affordable: boolean;
+}
+
+/**
+ * Panel de la disparadora seleccionada (T-003). Sale de `levelUpOffer` en core; la escena solo anade donde esta.
+ */
+export interface PlantPanel {
+  /** Casilla de la planta ("carril:columna"): cambia al seleccionar otra. */
+  id: string;
+  level: number;
+  /** Lo que cuesta subir un nivel; null en el nivel maximo (el boton dice "Maximo"). */
+  cost: number | null;
+  /** Por cuanto se multiplica el costo de un canon: sus canones ("x3 = 225"). */
+  multiplier: number;
+  /** Si el saldo alcanza para subir. */
+  affordable: boolean;
+  /** Tramo de color de la medallita (cambia cada 5 niveles), para pintar la misma en el panel; null en nivel 1, que no lleva. */
+  medalTier: number | null;
+  /** Donde se apoya el panel: sobre la cabeza de la planta, o bajo sus pies si arriba no cabe. */
+  above: PagePoint;
+  below: PagePoint;
 }
 
 /** Coordenadas DOM de pagina; la escena las traduce a coordenadas del juego. */

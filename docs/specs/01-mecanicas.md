@@ -79,17 +79,23 @@ El elemento solo siempre tiene un efecto mayor que su versión infundida, a camb
 - La fusionada conserva el ritmo de disparo de la planta de destino, que no se mueve de su casilla.
 - No se puede deshacer una fusión ni mover una planta a una casilla vacía.
 
-### Nivel
+### Nivel (T-003)
 - Tope de 20. No se espera alcanzarlo en las 7 rondas.
-- Cada nivel sube un poco el daño y la cadencia.
-- Sin cambio visual grande: una medallita que cambia cada tanto y, como mucho, el color. Tiene que verse bien también en plantas fusionadas.
+- **Por partida (D-03, cerrada el 19 nov 2026 con la recomendación):** los niveles se pierden al acabar la partida. No hay guardado.
+- Se sube seleccionando la disparadora con un clic (sin arrastrarla) y pulsando "Subir" en su panel. Se cobra en el acto.
+- **Cuánto mejora:** cada nivel suma un 10 % de daño y un 3 % de cadencia sobre los de nivel 1 (decidido el 19 nov 2026). El daño es el del disparo entero: en una fusionada se multiplica con el de los cañones, y la quemadura de una de fuego crece igual.
+  - Lo que frena una de hielo no cambia con el nivel: depende de sus cañones.
+  - Subir no cura ni recarga: la planta conserva su vida y su recarga.
+- **Cuánto cuesta (D-05, cerrada el 19 nov 2026):** creciente. De nivel 1 a 2 cuesta 75 y cada nivel siguiente 25 más (75, 100, 125… hasta 525 de 19 a 20). Se paga por cañón, como al infundir: una de 3 cañones paga el triple, y el panel lo muestra como "×3 = 225".
+- No se puede subir sin saldo suficiente ni pasar del 20; en el 20 el botón dice "Máximo".
+- **Medallita:** sin cambio visual grande en la planta, solo una medallita con el número en la nuca. Cambia de color cada 5 niveles: bronce, plata (desde el 5), oro (10), rubí (15) y cristal irisado en el 20. Las de nivel 1 no llevan. Se ve también en las fusionadas y no tapa los puntos del tallo.
+- Al fusionar, la planta se queda con el nivel más bajo de las dos (ver "Fusionar").
+- Los valores están como PROVISIONAL en `LEVELING` de `balance.ts`.
 
 ## Decisiones pendientes
 
 | # | Pregunta | Opciones | Recomendación | Decide |
 |---|---|---|---|---|
-| D-03 | ¿Los niveles se reinician en cada partida o son permanentes? | a) Por partida. b) Permanentes | a para el prototipo. b es mejor gancho de retención pero pide guardado y economía aparte | Carmine |
-| D-05 | ¿Cuánto cuesta cada nivel? | Fijo o creciente | Creciente suave, para que subir una sola planta al máximo no sea siempre lo óptimo | Carmine |
 | D-07 | ¿Cómo se pierde? | a) Un enemigo cruza y pierdes. b) Vidas | b con 3 vidas: perdona un error mientras se aprende | Carmine |
 | D-08 | Nombre del juego | "Rebrote" es de trabajo | Decidir antes de publicarlo | Carmine |
 
@@ -98,6 +104,8 @@ Los valores recomendados ya están como PROVISIONAL en `src/game/config/balance.
 ## Reglas ya implementadas
 
 Las reglas de fusionar e infundir y el multiplicador de daño están en `src/game/core/plants.ts`, con tests en `plants.test.ts`. Fusionar dos plantas del tablero (destinos válidos, vida resultante, quién deja la casilla) está en `src/game/core/match.ts` (`fusionBlocker`, `fusionTargets`, `fusePlants`). El reparto del daño entre las balas de una fusionada, en `combat.ts` (`bulletDamage`). Los valores de D-02 están en `FUSION` de `balance.ts`.
+
+Subir de nivel (T-003): el costo, la subida y lo que suma cada nivel están en `plants.ts` (`levelUpCost`, `levelUp`, `levelBonus`), y lo que ofrece el panel de una planta del tablero y la subida con su cobro, en `match.ts` (`levelUpOffer`, `levelUpPlant`). Los valores de D-05 están en `LEVELING` de `balance.ts`.
 
 Saldo, siembra, infusión y ocupación de casillas están en `src/game/core/match.ts`: qué pasa al soltar una carta en una casilla lo dice `cardPlay` y lo aplica `playCard`. Una casilla puede tener una disparadora o una mina (`Sown`); la recompensa por enemigo y la moneda soltada, en `src/game/core/economy.ts`. Los valores están en `ECONOMY` de `balance.ts`.
 
