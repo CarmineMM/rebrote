@@ -32,7 +32,7 @@ import { BulletView } from '../view/bulletView';
 import { Effects } from '../view/effects';
 import { DRAG_LOOK, FusionDragView, dragGround } from '../view/fusionDragView';
 import { DEPTH, SCENERY, entityDepth, perspective, viewFor } from '../view/layout';
-import { MineView, mineScale } from '../view/mineView';
+import { MineView, mineAreaColor, mineScale } from '../view/mineView';
 import { PlantView, plantPlacement } from '../view/plantView';
 import { QUALITY_PROFILES, type QualityLevel, type QualityProfile } from '../view/quality';
 import { MINE_SIZE, SHOOTER_SIZE, TEX, registerTextures, shooterTexture, mineTexture } from '../view/textures';
@@ -42,10 +42,8 @@ import { WormView } from '../view/wormView';
 const LOOK = {
   highlightOk: 0xfff7d6,
   highlightBlocked: 0xff5a5f,
-  /** Casilla de una disparadora que se puede infundir con fuego. */
-  highlightInfuse: 0xffa04d,
-  /** Alcance de la explosion de la mina que se va a sembrar. */
-  mineArea: 0xff7a3d,
+  /** Casilla de una disparadora que se puede infundir, del color del elemento. */
+  highlightInfuse: { fire: 0xffa04d, ice: 0x6cc4ff },
   coinSize: 0.42,
   /** Altura a la que flota la moneda sobre el suelo, en anchos de casilla. */
   coinHover: 0.36,
@@ -517,8 +515,14 @@ export class BoardScene extends Phaser.Scene {
         const key = cellKey(event.cell);
         this.mineViews.get(key)?.explode();
         this.mineViews.delete(key);
-        event.enemyIds.forEach((id) => this.wormViews.get(id)?.blasted());
-        this.cameras.main.shake(180, 0.0035);
+        // La de fuego sacude a los alcanzados; la de hielo los deja tiesos y tiritando, con un temblor mas corto.
+        if (event.element === 'fire') {
+          event.enemyIds.forEach((id) => this.wormViews.get(id)?.blasted());
+          this.cameras.main.shake(180, 0.0035);
+        } else {
+          event.enemyIds.forEach((id) => this.wormViews.get(id)?.frosted());
+          this.cameras.main.shake(120, 0.002);
+        }
         this.refreshHighlight();
         break;
       }
@@ -615,7 +619,7 @@ export class BoardScene extends Phaser.Scene {
    * Con una carta elegida, resalta la casilla a la que apunta y cuenta que pasara al soltar (las reglas son de
    * `cardPlay`):
    * - Sembrar: casilla clara con la planta o la mina fantasma (la mina, con el alcance de su explosion).
-   * - Infundir: casilla naranja y rotulo con el precio ("Infundir: x3 = 225"); el HUD muestra el mismo precio (D-04).
+   * - Infundir: casilla del color del elemento y rotulo con el precio ("Infundir: x3 = 225"); el HUD muestra el mismo precio (D-04).
    * - No se puede: casilla roja, y sobre una disparadora, el motivo.
    */
   private refreshHighlight(): void {
@@ -631,12 +635,17 @@ export class BoardScene extends Phaser.Scene {
     }
     const play = cardPlay(this.match, card, cell);
     const blocked = play.blocker !== null;
-    const color = blocked ? LOOK.highlightBlocked : play.action === 'infuse' ? LOOK.highlightInfuse : LOOK.highlightOk;
+    const element = cardElement(card);
+    const color = blocked
+      ? LOOK.highlightBlocked
+      : play.action === 'infuse' && element
+        ? LOOK.highlightInfuse[element]
+        : LOOK.highlightOk;
     drawCell(this.highlight, cell, color, 0.25, 4);
     this.highlight.setVisible(true);
 
     if (play.action === 'sow' && !blocked) {
-      if (cardElement(card)) drawArea(this.highlight, cellCenter(cell), MINE.blastRadius, LOOK.mineArea, 0.1, 2);
+      if (element) drawArea(this.highlight, cellCenter(cell), MINE.blastRadius, mineAreaColor(element), 0.1, 2);
       this.showGhost(cell, card);
     } else {
       this.ghost.setVisible(false);

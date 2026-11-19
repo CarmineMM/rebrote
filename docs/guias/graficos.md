@@ -19,13 +19,13 @@ Cómo se pinta y se anima Rebrote, para que todo lo nuevo (enemigos, mundos, efe
 | `src/game/view/textures.ts` | Todo el arte pintado con Canvas 2D, una vez al arrancar (`TEX`, `registerTextures`, `artInv`) |
 | `src/game/view/ambience.ts` | Lo que se mueve en el escenario: sol, nubes, pájaros, viento, partículas, flores |
 | `src/game/view/quality.ts` | Niveles gráficos y modo automático |
-| `src/game/view/effects.ts` | Efectos de respuesta compartidos: ráfagas de partículas (tierra, chispas, hojas, píxeles, jugo, llamas, brasas, humo), anillos (también tumbados en el suelo), destellos y textos flotantes |
+| `src/game/view/effects.ts` | Efectos de respuesta compartidos: ráfagas de partículas (tierra, chispas, hojas, píxeles, jugo, llamas, brasas, humo, copos, esquirlas de hielo, vaho), anillos (también tumbados en el suelo), destellos y textos flotantes |
 | `src/game/view/boardMarks.ts` | Marcas sobre el tablero que comparten cartas y arrastre: casilla (`drawCell`), área circular en perspectiva (`drawArea`, `areaSize`) y rótulo de lo que pasará al soltar (`BoardLabel`, `LABEL_TONES`) |
-| `src/game/view/plantView.ts` | Disparadora: brota, respira, retrocede al disparar, se encoge al recibir un mordisco, se marchita y muere (`PLANT_LOOK`). Al arrastrar otra: se atenúa, se levanta o da un saltito. Al fusionarse o infundirse: cambia de textura con un rebote. La de fuego suelta brasas. Boca de cada cañón (`barrelMuzzle`) |
-| `src/game/view/mineView.ts` | Mina (T-004): se entierra, duerme, se arma con cuenta atrás visible, la muerden, explota o se apaga si la destruyen |
+| `src/game/view/plantView.ts` | Disparadora: brota, respira, retrocede al disparar, se encoge al recibir un mordisco, se marchita y muere (`PLANT_LOOK`). Al arrastrar otra: se atenúa, se levanta o da un saltito. Al fusionarse o infundirse: cambia de textura con un rebote. La de fuego suelta brasas y la de hielo, copos. Boca de cada cañón (`barrelMuzzle`) |
+| `src/game/view/mineView.ts` | Mina de fuego (T-004) y de hielo (T-005): se entierra, duerme, se arma con cuenta atrás visible, la muerden, explota (o estalla en escarcha) o se apaga si la destruyen |
 | `src/game/view/fusionDragView.ts` | Arrastre para fusionar (T-006): planta en la mano con su sombra, casillas de destino y rótulo (`DRAG_LOOK`, `dragGround`) |
-| `src/game/view/wormView.ts` | Gusano: sale del agujero, ondula, muerde, recibe golpes y explosiones, arde, muere, se cuela y celebra |
-| `src/game/view/bulletView.ts` | Semilla en vuelo (normal o de fuego), impacto y salida del tablero |
+| `src/game/view/wormView.ts` | Gusano: sale del agujero, ondula, muerde, recibe golpes y explosiones, arde, tirita frenado, muere, se cuela y celebra |
+| `src/game/view/bulletView.ts` | Semilla en vuelo (normal, de fuego o de hielo), impacto y salida del tablero |
 | `src/game/scenes/BoardScene.ts` | Cartas (sembrar e infundir), monedas, combate (avanza la partida y anima sus eventos), fusionar por arrastre, resaltado, filtros de Ultra, ajuste de la vista, pausa y derrota |
 | `src/ui/` | HUD flotante (cartas con su precio, vidas, saldo), menú de pausa, ajustes y pantalla de derrota (React) |
 
@@ -68,17 +68,17 @@ Cómo se pinta y se anima Rebrote, para que todo lo nuevo (enemigos, mundos, efe
 | Evento | Cómo se anima |
 |---|---|
 | `shot` | La planta retrocede y se aplasta un instante. Fogonazo en la boca del cañón y la semilla nace ahí. Una planta de N cañones manda N eventos a la vez, uno por cañón (`cannon`, 0 es el de arriba), con fogonazos algo más pequeños |
-| `hit` | La semilla revienta en jugo con un anillo lima pequeño (la de fuego, en brasas con un anillo naranja). El gusano destella en blanco, retrocede y pone cara de "ay" |
+| `hit` | La semilla revienta en jugo con un anillo lima pequeño (la de fuego, en brasas con un anillo naranja; la de hielo, en copitos con un anillo azul). El gusano destella en blanco, retrocede y pone cara de "ay" |
 | `bulletGone` | La semilla se apaga mientras sigue un poco |
 | `bite` | El gusano se echa atrás con la boca abierta y se lanza. La planta se encoge, destella, suelta hojas y amarillea según la vida que le queda. La mina se aplasta y destella |
 | `plantDestroyed` | La planta se aplasta contra el suelo con hojas y tierra. La mina se hunde y su mecha se apaga con un hilo de humo: no explota |
 | `mineArmed` | La mina abre los ojos de susto, salta, sale un "!", aparece la cuenta atrás ("2", "1") y su alcance en el suelo (sección 7) |
-| `mineExploded` | Bola de fuego, llamas, brasas, humo, onda en el suelo del tamaño del alcance y chamuscado que se apaga. Los gusanos alcanzados saltan (`blasted`) y la cámara tiembla un poco |
+| `mineExploded` | Fuego: bola de fuego, llamas, brasas, humo, onda en el suelo del tamaño del alcance y chamuscado que se apaga. Los gusanos alcanzados saltan (`blasted`) y la cámara tiembla un poco. Hielo (T-005): destello helado, copos, esquirlas, vaho, onda azul, cristales que brotan del suelo y escarcha que se derrite. Los gusanos alcanzados se quedan tiesos con un destello azul y tiritan (`frosted`), y la cámara tiembla menos |
 | `enemyKilled` | El gusano se infla, se encoge y se deshace en píxeles verdes y morados. Sale su moneda (`rewardKill`) |
 | `enemyEscaped` | El gusano se mete bajo tierra en el camino. "−1 ♥", un temblor corto y React rompe un corazón |
 | Derrota | Las balas se apagan y los gusanos saltan de contentos. A los 1,1 s React muestra la pantalla de derrota |
 
-- **Lo que dura, sale del estado, no de un evento.** La quemadura (`enemy.burn`) y la cuenta atrás de la mina (`mine.fuseMs`) se leen en `sync`. Así una partida que se continúa (cambio de calidad) se pinta igual sin repetir eventos.
+- **Lo que dura, sale del estado, no de un evento.** La quemadura (`enemy.burn`), la ralentización (`enemy.slow`) y la cuenta atrás de la mina (`mine.fuseMs`) se leen en `sync`. Así una partida que se continúa (cambio de calidad) se pinta igual sin repetir eventos.
 
 - **Varios efectos en el mismo sitio.** Varias plantas pueden dar a la vez al mismo gusano. Los efectos que se repiten mucho (impactos) van pequeños y translúcidos para no tapar la cara del enemigo.
 
@@ -101,23 +101,27 @@ Cómo se pinta y se anima Rebrote, para que todo lo nuevo (enemigos, mundos, efe
 - **Cancelar:** pausa, clic derecho, tomar una carta o perder la partida devuelven la planta. Si la de origen muere, la de la mano se deshace en hojas.
 - **Capa:** la planta en la mano va casi arriba del todo (`DEPTH.floatText - 10`). Su sombra y las marcas de casilla van en la capa `highlight`.
 
-## 7. Cartas, minas e infundir (T-004)
+## 7. Cartas, minas e infundir (T-004, T-005)
 
 - **Las reglas son de core.** Qué pasa al soltar una carta en una casilla lo dice `cardPlay` (`match.ts`): sembrar o infundir, cuánto cuesta, por cuánto se multiplica el precio y por qué no se puede. `playCard` lo aplica. La escena no tiene reglas propias.
 - **A qué apunta la carta.** La disparadora y las minas se siembran en la casilla del suelo bajo el puntero. Con una carta de elemento, si el puntero está sobre una disparadora (su cabeza asoma sobre la casilla de detrás), apunta a esa planta para infundirla.
 - **Resaltado con una carta elegida:**
-  - Sembrar: casilla clara con la planta o la mina fantasma. La mina, además, con su alcance de explosión pintado en el suelo (`drawArea`, naranja).
-  - Infundir: casilla naranja y rótulo "Infundir: 75" o "Infundir: ×3 = 225".
-  - No se puede: casilla roja. Sobre una disparadora, el rótulo dice por qué: "Ya tiene fuego", o "Infundir: ×3 = 225" y "No alcanza la moneda".
+  - Sembrar: casilla clara con la planta o la mina fantasma. La mina, además, con su alcance de explosión pintado en el suelo (`drawArea`, del color de su elemento: `mineAreaColor`).
+  - Infundir: casilla del color del elemento (naranja el fuego, azul el hielo) y rótulo "Infundir: 75" o "Infundir: ×3 = 225".
+  - No se puede: casilla roja. Sobre una disparadora, el rótulo dice por qué: "Ya tiene fuego" o "Ya tiene hielo", o "Infundir: ×3 = 225" y "No alcanza la moneda".
 - **Precio en el HUD (D-04).** Mientras la carta apunta a una disparadora que se puede infundir, la escena manda `cardPreview` y la carta muestra "×3 = 225" con un salto, en rojo y con un temblor si no alcanza. Soltar ahí no hace nada y la carta sigue elegida.
-- **Infundir.** La regla se aplica en el acto. La planta se aplasta, destella, cambia a la textura de su variante y rebota (`PlantView.infuse`), con llamas que suben, brasas, anillo y "¡Fuego!". Desde entonces suelta una brasa cada tanto, aunque no dispare.
+- **Infundir.** La regla se aplica en el acto. La planta se aplasta, destella, cambia a la textura de su variante y rebota (`PlantView.infuse`), con anillo y su texto. El fuego, con llamas que suben, brasas y "¡Fuego!"; el hielo, con copos que suben, vaho y "¡Hielo!". Desde entonces suelta una brasa (fuego) o un copo que cae (hielo) cada tanto, aunque no dispare.
 - **La mina:**
-  - Se siembra con un saltito, tierra y unas brasas. Dormida, respira despacio con los ojos cerrados.
-  - Armada: cara de susto, mecha que chisporrotea, número de cuenta atrás que salta en cada segundo, alcance en el suelo que late y un brillo al rojo cada vez más rápido. El brillo es un tinte aditivo (`TintModes.ADD`), no un destello blanco, para que la cara se siga leyendo.
-  - Explota o se apaga según el evento (sección 5).
+  - Se siembra con un saltito, tierra y unas brasas (o copos). Dormida, respira despacio con los ojos cerrados.
+  - Armada: cara de susto, punta de la mecha que suelta chispas (fuego) o copitos (hielo), número de cuenta atrás que salta en cada segundo, alcance en el suelo que late y un brillo cada vez más rápido, al rojo o azul helado. El brillo es un tinte aditivo (`TintModes.ADD`), no un destello blanco, para que la cara se siga leyendo.
+  - Lo que cambia con el elemento (alcance, brillo, cuenta atrás, partículas de la punta) está en `ELEMENT_LOOK` de `mineView.ts`.
+  - Explota o se apaga según el evento (sección 5). Destruida antes de tiempo, la de fuego se apaga con humo y la de hielo se deshace en vaho.
 - **Gusano quemado.** Mientras `enemy.burn` existe: dos llamas titilan sobre la cabeza y el lomo, el cuerpo tira a rojo (tinte aditivo `WORM_LOOK.burnTint`) y cada 0,7 s pone cara de "ay" y suelta brasas, para que se vea que sigue perdiendo vida. Si muere quemado, queda tostado y humea.
-- **Colores de efecto por variante.** El fogonazo del cañón y los destellos de fusionar o infundir salen de `VARIANT_FX` (`plantView.ts`): lima la normal, naranja la de fuego.
+- **Gusano frenado (T-005).** Mientras `enemy.slow` existe: cristales de escarcha en la nuca y la cola, el cuerpo tira a azul frío (tinte multiplicado `WORM_LOOK.chillTint`) y cada 0,9 s tirita y suelta un copo. Ondula más despacio sin código extra, porque ondula según lo que avanza. Si muere frenado (y no ardía), queda congelado y se rompe en esquirlas.
+  - Quemado y frenado a la vez: se ven las llamas y la escarcha (no se tapan: llamas en la coronilla y el lomo, escarcha en la nuca y la cola), con el cuerpo azul.
+- **Colores de efecto por variante.** El fogonazo del cañón y los destellos de fusionar o infundir salen de `VARIANT_FX` (`plantView.ts`): lima la normal, naranja la de fuego, azul claro la de hielo.
 - **Llamas con mezcla normal.** Las llamas de partículas no son aditivas: sobre el césped claro se quedarían blancas. Las brasas sí, solo con `quality.glows`.
+- **Hielo sin blancos.** Copos, esquirlas y vaho van con mezcla normal, y el copo (`TEX.snowflake`) lleva borde azul: un copo blanco liso no se leería sobre el césped claro.
 
 ## 8. Capas
 
@@ -128,10 +132,10 @@ Orden de dibujo, de atrás hacia delante (`DEPTH` en `layout.ts`):
 | `sky`, `sun`, `clouds`, `birds` | Cielo y todo lo que pasa por él |
 | `land` | Textura fija: colinas, ciudad, seto, laterales, césped, corte de tierra |
 | `canopy` | Copa del árbol |
-| `groundFx` | Efectos pegados al suelo: viento, sombras de nubes, brillos del suelo corrupto, rocío, haces de luz, chamuscado de una explosión |
+| `groundFx` | Efectos pegados al suelo: viento, sombras de nubes, brillos del suelo corrupto, rocío, haces de luz, chamuscado de una explosión, escarcha de la mina de hielo |
 | `highlight - 1` | Alcance de una mina armada |
 | `highlight` | Resaltado de casilla (y alcance de la mina que se va a sembrar). Justo encima, la onda de una explosión |
-| `entities + y` | Plantas, enemigos, balas (`+0,5`, delante de su planta), monedas y flores, ordenados por su `y` en pantalla |
+| `entities + y` | Plantas, enemigos, balas (`+0,5`, delante de su planta), monedas, flores y cristales de la mina de hielo, ordenados por su `y` en pantalla |
 | `pollen`, `butterflies` | Partículas y bichos que flotan por encima |
 | `foreground` | Matas del primer plano |
 | `floatText - 10` | La planta que se arrastra para fusionar |
@@ -154,15 +158,15 @@ Orden de dibujo, de atrás hacia delante (`DEPTH` en `layout.ts`):
   | Moneda | `#ffd23f` a `#dc9d16`, borde `#b07a0e` |
   | Corrupción | verde neón `#39ff88`, morado `#b48cff` sobre `#2b2034` |
   | Fuego (T-004) | cabeza `#fff0b0` a `#ff8f3a` a `#e0401c`, contorno `#8a2410`, cañones `#ffd27a` a `#e2581f` con una brasa `#ffcf4a` dentro, brote `#ffb22e` |
-  | Hielo (T-005) | azules claros |
+  | Hielo (T-005) | cabeza `#f4fcff` a `#9fdcff` a `#4a9fd8`, contorno `#1f5a8a`, cañones `#e4f7ff` a `#6cbce8` con escarcha `#c8f4ff` dentro, brote `#d4f2ff`. Copos blancos con borde `#3f8fc8` |
 
 - Se ve un cañón por cada cañón de la planta, y el nivel se muestra con una medallita con número.
   - **Cañones:** la disparadora tiene una textura por número de cañones (`shooterTexture(1 | 2 | 3)`). Los tubos van apilados y sus medidas están en `SHOOTER_BARRELS`, de donde sale también la boca de cada uno. Al fusionarse crece un poco: cabeza algo mayor y una hoja más en la base y en el brote. La de 3 cañones lleva además una flor en la coronilla.
   - **Puntos:** una semillita dorada en el tallo por cañón (`SHOOTER_DOTS`), también en la de 1 cañón.
   - **Medallita de nivel (T-003):** no puede tapar los puntos. Tiene sitio libre en la nuca, arriba a la izquierda de la cabeza.
   - Las variantes de fuego y hielo (T-004, T-005) deben conservar los cañones y los puntos de cada textura.
-  - **Variantes:** `paintShooter` recibe una paleta (`SHOOTER_PALETTES`). Tallo y hojas de la base son siempre verdes; cambian cabeza, cañones, boca, brote, flor y mejilla. `shooterTexture(cañones, elemento)` da la textura. Mientras el hielo no tenga paleta (T-005), `shooterVariant` lo pinta como la normal.
-  - **Mina:** bulbo de guindilla medio enterrado con una mecha (`MINE_SIZE` guarda pies, bulbo y punta de la mecha). Una textura dormida y otra armada (`mineTexture`).
+  - **Variantes:** `paintShooter` recibe una paleta (`SHOOTER_PALETTES`). Tallo y hojas de la base son siempre verdes; cambian cabeza, cañones, boca, brillo del fondo del cañón, brote, flor y mejilla. `shooterTexture(cañones, elemento)` da la textura.
+  - **Mina:** bulbo medio enterrado con un rabito de mecha (`MINE_SIZE` guarda pies, bulbo y punta de la mecha). `paintMine` recibe una paleta (`MINE_PALETTES`): guindilla con chispa (fuego) o bulbo escarchado con gorro de nieve y un copo (hielo). Una textura dormida y otra armada por elemento (`mineTexture`).
 - **Escala de arte (obligatorio):** las texturas se pintan a la resolución del nivel gráfico.
   - Al crear una imagen, su escala se multiplica por `artInv()`.
   - Las partículas también: `scale: { start: 1 * artInv(), ... }`.
@@ -182,6 +186,7 @@ Orden de dibujo, de atrás hacia delante (`DEPTH` en `layout.ts`):
 - **Avisos:** lo que va a desaparecer avisa antes. La moneda soltada parpadea durante el último 30 % de su vida.
 - **HUD y menús (React):** transiciones y animaciones CSS.
   - La bandeja y el saldo caen al empezar.
+  - Con menos de 860 px de ancho, las cartas pierden el nombre y el HUD se aprieta para que quepan tres cartas, vidas, saldo y pausa (probado hasta 568 px).
   - La carta elegida flota.
   - El saldo da un salto dorado al subir y rojo al bajar.
   - Los corazones de las vidas laten por turnos. El que se pierde se rompe y se apaga.

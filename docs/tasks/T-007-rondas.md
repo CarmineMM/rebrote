@@ -39,6 +39,10 @@ Con las mecánicas listas falta la progresión. El diseño está en `docs/specs/
 - **T-004:**
   - Las minas ocupan casilla en `MatchState.plants` (`Sown`) y tienen vida (`MINE.hp`). El escupidor puede atacar a lo primero que haya en su carril con `sownAt`, sea planta o mina. Si la destruye, sale `plantDestroyed` y la mina no explota.
   - Para desbloquear "fuego solo" (ronda 3) antes que "infundir fuego" (ronda 4), `cardPlay` tendrá que saber qué acciones están desbloqueadas. Hoy la carta de fuego siembra e infunde siempre.
+- **T-005:**
+  - La carta de hielo siembra (mina) e infunde siempre, como la de fuego. La ronda 5 la desbloquea entera.
+  - La ralentización (`enemy.slow`) frena el avance y el mordisco de cualquier enemigo, porque multiplica su reloj: vale para el acorazado sin cambios. El escupidor debería disparar más despacio mientras va frenado, igual que muerde más despacio (`ICE.slowsBites`).
+  - El HUD ya tiene tres cartas y un modo compacto para pantallas estrechas. Un aviso de ronda ("Nuevo: hielo") no debe tapar la bandeja.
 
 ## Casos límite y riesgos
 - Perder en mitad de una ronda reinicia desde la ronda 1 en el prototipo.

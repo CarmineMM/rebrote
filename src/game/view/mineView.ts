@@ -1,32 +1,46 @@
 import * as Phaser from 'phaser';
-import { MINE } from '../config/balance';
+import { BOARD, MINE } from '../config/balance';
 import type { Cell } from '../core/board';
 import type { Mine } from '../core/match';
+import type { ElementType } from '../core/plants';
 import { areaSize, drawArea } from './boardMarks';
 import { mixColor, type Effects } from './effects';
 import { DEPTH, entityDepth, perspective } from './layout';
 import type { ScreenPoint } from './perspective';
 import { PLANT_LOOK } from './plantView';
-import { MINE_SIZE, TEX, artInv, mineTexture } from './textures';
+import { FROST_SIZE, MINE_SIZE, TEX, artInv, mineTexture } from './textures';
 
 /** Aspecto de la mina (T-004). Medidas en anchos de casilla salvo que se diga otra cosa. */
 const MINE_LOOK = {
   /** Ancho de la textura en pantalla. */
   width: 0.7,
-  /** Alcance de la explosion pintado en el suelo durante la cuenta atras. */
-  areaColor: 0xff7a3d,
-  /**
-   * Se pone al rojo a golpes cada vez mas rapidos al acercarse el final (periodo en ms, al empezar y al final).
-   * El color se suma al de la textura (tinte aditivo), asi conserva la cara; crece hasta `blinkHot`.
-   */
+  /** Parpadeo cada vez mas rapido al acercarse el final (periodo en ms, al empezar y al final). */
   blinkFromMs: 460,
   blinkToMs: 90,
-  blinkWarm: 0x5a2a08,
-  blinkHot: 0xa8641c,
-  /** Chispas de la mecha en cuenta atras (ms entre una y otra en Alto). */
-  sparkEveryMs: 110,
-  countdownText: { color: '#ffe066', stroke: '#8a2410' },
+  /** Cristales que brotan del suelo al estallar la mina de hielo: tamano en anchos de casilla y cuanto duran. */
+  iceCrystalSize: 0.42,
+  iceCrystalHoldMs: 650,
 } as const;
+
+/**
+ * Lo que cambia con el elemento: color del alcance pintado en el suelo, parpadeo de la cuenta atras (el color se suma
+ * al de la textura, tinte aditivo, asi conserva la cara; crece de `blinkWarm` a `blinkHot`), ms entre particulas de la
+ * punta de la mecha en Alto y colores de la cuenta atras.
+ */
+const ELEMENT_LOOK: Record<
+  ElementType,
+  { areaColor: number; blinkWarm: number; blinkHot: number; tipEveryMs: number; countdownText: { color: string; stroke: string } }
+> = {
+  // Fuego (T-004): se pone al rojo y la mecha echa chispas.
+  fire: { areaColor: 0xff7a3d, blinkWarm: 0x5a2a08, blinkHot: 0xa8641c, tipEveryMs: 110, countdownText: { color: '#ffe066', stroke: '#8a2410' } },
+  // Hielo (T-005): brilla en azul helado y el copo de la punta suelta copitos.
+  ice: { areaColor: 0x5cb8f0, blinkWarm: 0x0a2a48, blinkHot: 0x3a78b0, tipEveryMs: 200, countdownText: { color: '#e6f7ff', stroke: '#1f5a8a' } },
+};
+
+/** Color del alcance de la mina de `element` pintado en el suelo (tambien al ir a sembrarla). */
+export function mineAreaColor(element: ElementType): number {
+  return ELEMENT_LOOK[element].areaColor;
+}
 
 /** Escala de la textura de la mina en una casilla de ancho `cellWidth` (tambien para la mina fantasma). */
 export function mineScale(cellWidth: number): number {
@@ -83,7 +97,12 @@ export class MineView {
     this.body = scene.add.image(0, 0, mineTexture(element, false)).setOrigin(0.5, MINE_SIZE.footY / MINE_SIZE.height).setScale(this.scale);
     this.holder = scene.add.container(this.base.x, this.base.y, [this.body]).setDepth(depth);
     this.count = scene.add
-      .text(this.base.x, this.base.y - this.cellWidth * 0.95, '', fx.textStyle({ fontSize: Math.round(this.cellWidth * 0.3), ...MINE_LOOK.countdownText }))
+      .text(
+        this.base.x,
+        this.base.y - this.cellWidth * 0.95,
+        '',
+        fx.textStyle({ fontSize: Math.round(this.cellWidth * 0.3), ...ELEMENT_LOOK[element].countdownText }),
+      )
       .setOrigin(0.5)
       .setDepth(DEPTH.floatText - 5)
       .setVisible(false);
@@ -104,7 +123,8 @@ export class MineView {
       this.holder.setScale(1.3, 0.2);
       scene.tweens.add({ targets: this.holder, scaleX: 1, scaleY: 1, duration: 460, ease: 'Elastic.Out', easeParams: [1.1, 0.5] });
       fx.dirt(this.base.x, this.base.y, 12);
-      fx.embers(this.base.x, this.base.y - this.cellWidth * 0.3, 4);
+      if (element === 'fire') fx.embers(this.base.x, this.base.y - this.cellWidth * 0.3, 4);
+      else fx.frost(this.base.x, this.base.y - this.cellWidth * 0.3, 4);
     }
     if (mine.fuseMs !== null) this.arm(false);
     this.sync(mine);
@@ -134,29 +154,33 @@ export class MineView {
     if (!this.flashTimer) {
       const period = Phaser.Math.Linear(MINE_LOOK.blinkFromMs, MINE_LOOK.blinkToMs, t);
       const on = left % period < period * 0.4;
-      if (on) this.body.setTintMode(Phaser.TintModes.ADD).setTint(mixColor(MINE_LOOK.blinkWarm, MINE_LOOK.blinkHot, t));
+      const look = ELEMENT_LOOK[this.element];
+      if (on) this.body.setTintMode(Phaser.TintModes.ADD).setTint(mixColor(look.blinkWarm, look.blinkHot, t));
       else this.body.clearTint();
     }
   }
 
   /**
    * Un enemigo entro en su radio: abre los ojos de susto, da un salto, aparece la cuenta atras y el alcance
-   * de la explosion en el suelo, y la mecha empieza a chisporrotear. `fanfare` a false al continuar la partida.
+   * de la explosion en el suelo, y la punta de la mecha empieza a soltar chispas (fuego) o copitos (hielo).
+   * `fanfare` a false al continuar la partida.
    */
   arm(fanfare = true): void {
     if (this.armed) return;
     this.armed = true;
+    const look = ELEMENT_LOOK[this.element];
     this.body.setTexture(mineTexture(this.element, true));
-    drawArea(this.area, this.center, MINE.blastRadius, MINE_LOOK.areaColor, 0.12, 3);
+    drawArea(this.area, this.center, MINE.blastRadius, look.areaColor, 0.12, 3);
     this.area.setVisible(true).setAlpha(0);
     this.scene.tweens.add({ targets: this.area, alpha: { from: 0.55, to: 1 }, duration: 300, yoyo: true, repeat: -1, ease: 'Sine.InOut' });
     this.count.setVisible(true);
-    const delay = this.fx.ambientDelay(MINE_LOOK.sparkEveryMs);
-    this.sparks = this.scene.time.addEvent({ delay, loop: true, callback: () => this.fx.ember(...this.tip()) });
+    const delay = this.fx.ambientDelay(look.tipEveryMs);
+    const emit = this.element === 'fire' ? () => this.fx.ember(...this.tip()) : () => this.fx.flake(...this.tip());
+    this.sparks = this.scene.time.addEvent({ delay, loop: true, callback: emit });
     if (!fanfare) return;
     this.pulse(this.jump, 300);
     this.fx.sparkles(...this.tip(), 8);
-    this.fx.floatText('!', this.base.x + this.cellWidth * 0.3, this.base.y - this.cellWidth * 0.7, MINE_LOOK.countdownText);
+    this.fx.floatText('!', this.base.x + this.cellWidth * 0.3, this.base.y - this.cellWidth * 0.7, look.countdownText);
   }
 
   /** Mordisco de un gusano: se aplasta, destella y suelta algo de tierra. */
@@ -167,11 +191,15 @@ export class MineView {
   }
 
   /**
-   * Explota: destello, llamas, brasas y humo, una onda en el suelo del tamano de su alcance y una mancha
-   * de chamuscado que se apaga poco a poco. La mina desaparece.
+   * Explota y desaparece. La de fuego: destello, llamas, brasas y humo, una onda en el suelo del tamano de su alcance
+   * y una mancha de chamuscado que se apaga poco a poco. La de hielo, ver `burstIce`.
    */
   explode(): void {
     this.stop();
+    if (this.element === 'ice') {
+      this.burstIce();
+      return;
+    }
     const w = this.cellWidth;
     const at = perspective.toScreen(this.center);
     const area = areaSize(this.center, MINE.blastRadius);
@@ -208,11 +236,90 @@ export class MineView {
     this.fadeOut(160);
   }
 
-  /** Destruida antes de terminar el conteo: la mecha se apaga con un hilo de humo y se hunde en la tierra. No explota. */
+  /**
+   * Estalla la de hielo: destello helado, copos, esquirlas y vaho, una onda azul en el suelo del tamano de su alcance,
+   * cristales que brotan del suelo y se deshacen, y una capa de escarcha que se derrite poco a poco.
+   */
+  private burstIce(): void {
+    const w = this.cellWidth;
+    const at = perspective.toScreen(this.center);
+    const area = areaSize(this.center, MINE.blastRadius);
+    const depth = this.holder.depth + 1;
+    const middle = { x: this.base.x, y: this.base.y - w * 0.3 };
+
+    const rime = this.scene.add
+      .image(at.x, at.y, TEX.glow)
+      .setTint(0xbfe8ff)
+      .setDisplaySize(area.width * 0.85, area.height * 0.85)
+      .setAlpha(0)
+      .setDepth(DEPTH.groundFx);
+    this.scene.tweens.add({ targets: rime, alpha: 0.8, duration: 160 });
+    this.scene.tweens.add({ targets: rime, alpha: 0, delay: 1300, duration: 2200, onComplete: () => rime.destroy() });
+    this.iceCrystals();
+    this.fx.groundRing(at.x, at.y, area.width, area.height, 0x8fd8ff, DEPTH.highlight + 1, 460, 0.95);
+    this.fx.ring(middle.x, middle.y, w * 1.6, 0xffffff, depth, 320, 0.9);
+    this.fx.glow(middle.x, middle.y, w * 3, 0x9fdcff, depth, 460);
+    this.fx.frost(middle.x, middle.y, 22);
+    this.fx.frost(at.x, at.y, 8);
+    this.fx.shards(middle.x, middle.y, 14);
+    this.fx.mist(middle.x, middle.y - w * 0.1, 10);
+    this.fx.dirt(this.base.x, this.base.y, 8);
+
+    // Revienta como una bola de nieve.
+    this.body.setTintMode(Phaser.TintModes.FILL).setTint(0xeaf8ff);
+    this.scene.tweens.add({
+      targets: this.holder,
+      scaleX: 1.6,
+      scaleY: 1.45,
+      alpha: 0,
+      duration: 160,
+      ease: 'Quad.Out',
+      onComplete: () => this.holder.destroy(),
+    });
+    this.fadeOut(160);
+  }
+
+  /** Cristales de hielo que brotan del suelo en el alcance de la explosion, aguantan un momento y se deshacen. */
+  private iceCrystals(): void {
+    const n = this.fx.count(7);
+    for (let i = 0; i < n; i++) {
+      const angle = (i / n) * Math.PI * 2 + Phaser.Math.FloatBetween(-0.3, 0.3);
+      const r = MINE.blastRadius * Phaser.Math.FloatBetween(0.35, 0.8);
+      const point = {
+        x: Phaser.Math.Clamp(this.center.x + Math.cos(angle) * r, 0.1, BOARD.columns - 0.1),
+        y: Phaser.Math.Clamp(this.center.y + Math.sin(angle) * r, 0.15, BOARD.lanes - 0.05),
+      };
+      const at = perspective.toScreen(point);
+      const scale = ((perspective.cellWidthAt(point) * MINE_LOOK.iceCrystalSize) / FROST_SIZE.width) * artInv() * Phaser.Math.FloatBetween(0.8, 1.2);
+      const crystal = this.scene.add
+        .image(at.x, at.y, TEX.frost)
+        .setOrigin(0.5, FROST_SIZE.footY / FROST_SIZE.height)
+        .setAngle(Phaser.Math.Between(-25, 25))
+        .setScale(scale * 0.1, 0)
+        .setDepth(entityDepth(at.y));
+      this.scene.tweens.add({ targets: crystal, scaleX: scale, scaleY: scale, delay: i * 25, duration: 240, ease: 'Back.Out' });
+      this.scene.tweens.add({
+        targets: crystal,
+        scaleY: 0,
+        alpha: 0,
+        delay: MINE_LOOK.iceCrystalHoldMs + i * 25,
+        duration: 320,
+        ease: 'Quad.In',
+        onStart: () => this.fx.shards(at.x, at.y - scale * 20, 2),
+        onComplete: () => crystal.destroy(),
+      });
+    }
+  }
+
+  /**
+   * Destruida antes de terminar el conteo: no explota. La mecha se apaga con un hilo de humo (fuego) o el copo
+   * se deshace en vaho (hielo), y se hunde en la tierra.
+   */
   die(): void {
     this.stop();
     this.body.clearTint().setTexture(mineTexture(this.element, false));
-    this.fx.smoke(...this.tip(), 4);
+    if (this.element === 'fire') this.fx.smoke(...this.tip(), 4);
+    else this.fx.mist(...this.tip(), 4);
     this.fx.dirt(this.base.x, this.base.y, 10);
     this.scene.tweens.add({
       targets: this.holder,

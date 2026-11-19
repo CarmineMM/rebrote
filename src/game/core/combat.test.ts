@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BOARD, ENEMIES, FIRE, LIVES, MINE, SHOOTER } from '../config/balance';
+import { BOARD, ENEMIES, FIRE, ICE, LIVES, MINE, SHOOTER } from '../config/balance';
 import type { Cell } from './board';
 import {
   MAX_STEP_MS,
@@ -10,7 +10,9 @@ import {
   fireIntervalMs,
   hasTarget,
   isDefeated,
+  mineBlast,
   refreshBurn,
+  refreshSlow,
   spawnEnemy,
   stepCombat,
   type Bullet,
@@ -18,7 +20,7 @@ import {
   type Enemy,
 } from './combat';
 import { createMatch, createMine, createPlant, mineAt, type MatchState, type Mine } from './match';
-import { createShooter, damageMultiplier, plantMaxHp, type Shooter } from './plants';
+import { createShooter, damageMultiplier, plantMaxHp, type ElementType, type Shooter } from './plants';
 
 const worm = ENEMIES.worm;
 /** Donde salen los gusanos en el juego (el agujero de su carril). */
@@ -33,8 +35,8 @@ function withPlant(state: MatchState, cell: Cell, plant: Shooter = createShooter
   return { ...state, plants };
 }
 
-function withMine(state: MatchState, cell: Cell, over: Partial<Mine> = {}): MatchState {
-  const plants = state.plants.map((lane, l) => lane.map((p, c) => (l === cell.lane && c === cell.col ? { ...createMine('fire'), ...over } : p)));
+function withMine(state: MatchState, cell: Cell, over: Partial<Mine> = {}, element: ElementType = 'fire'): MatchState {
+  const plants = state.plants.map((lane, l) => lane.map((p, c) => (l === cell.lane && c === cell.col ? { ...createMine(element), ...over } : p)));
   return { ...state, plants };
 }
 
@@ -79,8 +81,8 @@ describe('gusano', () => {
     const one = spawnEnemy(createMatch(), 'worm', 2, HOLE_X);
     const two = spawnEnemy(one, 'worm', 4, HOLE_X);
     expect(two.enemies).toEqual([
-      { id: 1, kind: 'worm', lane: 2, x: HOLE_X, hp: worm.hp, biteMs: null, burn: null },
-      { id: 2, kind: 'worm', lane: 4, x: HOLE_X, hp: worm.hp, biteMs: null, burn: null },
+      { id: 1, kind: 'worm', lane: 2, x: HOLE_X, hp: worm.hp, biteMs: null, burn: null, slow: null },
+      { id: 2, kind: 'worm', lane: 4, x: HOLE_X, hp: worm.hp, biteMs: null, burn: null, slow: null },
     ]);
     expect(() => spawnEnemy(createMatch(), 'worm', BOARD.lanes, HOLE_X)).toThrow();
   });
@@ -460,7 +462,7 @@ describe('quemadura (T-004)', () => {
 
   it('cada semilla de una fusionada de fuego quema con la fuerza del disparo entero', () => {
     const plant = fireShooter({ cannons: 3, level: 2 });
-    expect(bulletEffect(plant)?.burn.dps).toBeCloseTo(FIRE.burnDps * damageMultiplier(plant));
+    expect(bulletEffect(plant)).toEqual({ element: 'fire', burn: { dps: expect.closeTo(FIRE.burnDps * damageMultiplier(plant)), ms: FIRE.burnMs } });
     let state = withPlant(createMatch(), { lane: 0, col: 0 }, plant);
     state = spawnEnemy(state, 'worm', 0, 6, TOUGH);
     const { bullets } = stepCombat(state, 16).state;
@@ -522,5 +524,178 @@ describe('quemadura (T-004)', () => {
     expect(t).toBe(500);
     expect(event).toMatchObject({ type: 'enemyKilled', enemyId: 1, at: { y: 0.5 } });
     expect(after.enemies).toHaveLength(0);
+  });
+});
+
+describe('mina de hielo (T-005)', () => {
+  const cell = { lane: 2, col: 4 };
+  const center = cell.col + 0.5;
+  const blastSlow = { amount: ICE.blastSlow, ms: ICE.blastSlowMs };
+
+  it('sigue el mismo conteo de 2 s que la de fuego', () => {
+    const countdown = (element: ElementType) => {
+      let state = withMine(createMatch(), cell, {}, element);
+      state = spawnEnemy(state, 'worm', 2, center + 3, TOUGH);
+      const armed = runUntil(state, 'mineArmed', 60_000, 50);
+      const boom = runUntil(armed.state, 'mineExploded', 60_000, 50);
+      return { armedAt: armed.t, after: boom.t, event: boom.event };
+    };
+    const ice = countdown('ice');
+    expect(ice).toEqual({ ...countdown('fire'), event: { type: 'mineExploded', cell, element: 'ice', enemyIds: [1] } });
+    expect(ice.after).toBe(MINE.countdownMs);
+  });
+
+  it('al explotar no hace dano y ralentiza a todos los enemigos de su radio, tambien en los carriles de al lado', () => {
+    let state = withMine(createMatch(), cell, { fuseMs: 10 }, 'ice');
+    const placed: Array<[number, number]> = [
+      [2, center + 1.4], // su carril, dentro
+      [2, center - 1.4], // su carril, por detras y dentro
+      [1, center + 1.0], // carril de al lado, dentro
+      [3, center - 0.5], // carril de al lado, dentro
+      [2, center + 1.6], // su carril, fuera
+      [1, center + 1.2], // carril de al lado, fuera
+      [0, center], // dos carriles mas atras, fuera
+    ];
+    for (const [lane, x] of placed) state = spawnEnemy(state, 'worm', lane, x);
+    const { state: after, events } = stepCombat(state, 10);
+    expect(events).toEqual([{ type: 'mineExploded', cell, element: 'ice', enemyIds: [1, 2, 3, 4] }]);
+    expect(after.plants[cell.lane][cell.col]).toBeNull();
+    after.enemies.forEach((e) => {
+      const original = state.enemies.find((o) => o.id === e.id) as Enemy;
+      expect(e.hp).toBe(worm.hp);
+      expect(e.slow).toEqual(distanceToCell(original, cell) <= MINE.blastRadius ? blastSlow : null);
+    });
+    expect(mineBlast('ice')).toEqual({ damage: 0, slow: blastSlow });
+  });
+
+  it('los alcanzados avanzan un 70 % mas despacio durante 4 s y luego vuelven a su velocidad (D-06)', () => {
+    expect(ICE.blastSlow).toBe(0.7);
+    expect(ICE.blastSlowMs).toBe(4000);
+    let state = withMine(createMatch(), cell, { fuseMs: 10 }, 'ice');
+    state = spawnEnemy(state, 'worm', 2, center + 1, TOUGH);
+    const blasted = stepCombat(state, 10).state;
+    const x0 = blasted.enemies[0].x;
+    const slowed = run(blasted, ICE.blastSlowMs - 10, 50).state.enemies[0];
+    expect(x0 - slowed.x).toBeCloseTo((worm.speed * (1 - ICE.blastSlow) * ICE.blastSlowMs) / 1000);
+    const back = run(blasted, ICE.blastSlowMs + 1000, 50).state.enemies[0];
+    expect(back.slow).toBeNull();
+    expect(slowed.x - back.x).toBeCloseTo((worm.speed * 1000) / 1000);
+  });
+
+  it('un enemigo ralentizado tambien muerde mas despacio, en la misma proporcion', () => {
+    expect(ICE.slowsBites).toBe(true);
+    const plantCell = { lane: 0, col: 3 };
+    const x = plantCell.col + 0.5 + worm.reach;
+    const start = spawnEnemy(withPlant(createMatch(), plantCell), 'worm', 0, x, TOUGH);
+    const slowed = { ...start, enemies: [{ ...start.enemies[0], slow: { amount: 0.5, ms: 60_000 } }] };
+    expect(runUntil(start, 'bite', 10_000, 10).t).toBe(worm.firstBiteMs);
+    expect(runUntil(slowed, 'bite', 10_000, 10).t).toBe(worm.firstBiteMs * 2);
+  });
+});
+
+describe('balas de hielo (T-005)', () => {
+  const iceShooter = (over: Partial<Shooter> = {}) => shooter({ element: 'ice', ...over });
+  const iceBullet = (id: number, x: number, plant: Shooter = iceShooter()): Bullet => ({
+    id,
+    lane: 0,
+    x,
+    damage: bulletDamage(plant),
+    effect: bulletEffect(plant),
+  });
+
+  it('las balas de una disparadora de hielo frenan, mas cuantos mas canones', () => {
+    for (const cannons of [1, 2, 3] as const) {
+      const plant = iceShooter({ cannons, level: 5 });
+      expect(bulletEffect(plant)).toEqual({ element: 'ice', slow: { amount: ICE.bulletSlowByCannons[cannons], ms: ICE.bulletSlowMs } });
+      expect(bulletDamage(plant)).toBe(bulletDamage(shooter({ cannons, level: 5 })));
+    }
+    expect(ICE.bulletSlowByCannons[2]).toBeGreaterThan(ICE.bulletSlowByCannons[1]);
+    expect(ICE.bulletSlowByCannons[3]).toBeGreaterThan(ICE.bulletSlowByCannons[2]);
+    let state = withPlant(createMatch(), { lane: 0, col: 0 }, iceShooter({ cannons: 3 }));
+    state = spawnEnemy(state, 'worm', 0, 6, TOUGH);
+    const { bullets } = stepCombat(state, 16).state;
+    expect(bullets).toHaveLength(3);
+    bullets.forEach((b) => expect(b.effect).toEqual(bulletEffect(iceShooter({ cannons: 3 }))));
+  });
+
+  it('la mina frena mas y durante mas tiempo que cualquier bala', () => {
+    for (const cannons of [1, 2, 3] as const) expect(ICE.blastSlow).toBeGreaterThan(ICE.bulletSlowByCannons[cannons]);
+    expect(ICE.blastSlowMs).toBeGreaterThan(ICE.bulletSlowMs);
+  });
+
+  it('el impacto hace su dano y frena al enemigo durante un tiempo', () => {
+    let state = spawnEnemy(createMatch(), 'worm', 0, 3, TOUGH);
+    state = { ...state, bullets: [iceBullet(100, 2)] };
+    const hit = runUntil(state, 'hit', 5000, 50);
+    const target = hit.state.enemies[0];
+    expect(target.hp).toBe(TOUGH - SHOOTER.damage);
+    expect(target.slow).toEqual({ amount: ICE.bulletSlowByCannons[1], ms: ICE.bulletSlowMs });
+    expect(target.burn).toBeNull();
+
+    const slowed = run(hit.state, 1000, 50).state.enemies[0];
+    expect(target.x - slowed.x).toBeCloseTo(worm.speed * (1 - ICE.bulletSlowByCannons[1]));
+    const done = run(hit.state, ICE.bulletSlowMs + 1000, 50).state.enemies[0];
+    expect(done.slow).toBeNull();
+  });
+
+  it('el gusano frenado tarda mas en llegar a la planta que con una disparadora normal', () => {
+    const lane = 0;
+    const arrival = (plant: Shooter) => {
+      let state = withPlant(createMatch(), { lane, col: 0 }, plant);
+      state = spawnEnemy(state, 'worm', lane, 5, TOUGH);
+      return runUntil(state, 'bite', 60_000, 50).t;
+    };
+    expect(arrival(iceShooter())).toBeGreaterThan(arrival(createShooter()) * 1.3);
+  });
+
+  it('no se acumula: se aplica la mas fuerte y se reinicia la duracion', () => {
+    const weak = { amount: 0.3, ms: ICE.bulletSlowMs };
+    const strong = { amount: 0.7, ms: ICE.blastSlowMs };
+    expect(refreshSlow(null, weak)).toEqual(weak);
+    // Igual o mas fuerte: la que llega, con la duracion entera.
+    expect(refreshSlow({ amount: 0.3, ms: 200 }, weak)).toEqual(weak);
+    expect(refreshSlow({ amount: 0.3, ms: 200 }, strong)).toEqual(strong);
+    // Mas debil: la que habia sigue como estaba (ni se acorta ni se alarga).
+    expect(refreshSlow({ amount: 0.7, ms: 200 }, weak)).toEqual({ amount: 0.7, ms: 200 });
+    expect(refreshSlow({ amount: 0.7, ms: 3900 }, weak)).toEqual({ amount: 0.7, ms: 3900 });
+  });
+
+  it('dos impactos seguidos: el segundo reinicia la duracion', () => {
+    const gap = 1000;
+    let state = spawnEnemy(createMatch(), 'worm', 0, 3, TOUGH);
+    state = { ...state, bullets: [iceBullet(100, 2)] };
+    const first = runUntil(state, 'hit', 5000, 50);
+    const later = run(first.state, gap, 50).state;
+    expect(later.enemies[0].slow?.ms).toBe(ICE.bulletSlowMs - gap);
+    const second = runUntil({ ...later, bullets: [iceBullet(101, later.enemies[0].x - 0.5)] }, 'hit', 5000, 50);
+    expect(second.state.enemies[0].slow).toEqual({ amount: ICE.bulletSlowByCannons[1], ms: ICE.bulletSlowMs });
+  });
+
+  it('una bala no acorta la ralentizacion de la mina', () => {
+    let state = spawnEnemy(createMatch(), 'worm', 0, 3, TOUGH);
+    state = { ...state, enemies: [{ ...state.enemies[0], slow: { amount: ICE.blastSlow, ms: ICE.blastSlowMs } }] };
+    state = { ...state, bullets: [iceBullet(100, 2)] };
+    const hit = runUntil(state, 'hit', 5000, 50);
+    expect(hit.state.enemies[0].slow).toEqual({ amount: ICE.blastSlow, ms: ICE.blastSlowMs - hit.t });
+  });
+
+  it('quemado y ralentizado a la vez: los dos efectos conviven', () => {
+    let state = spawnEnemy(createMatch(), 'worm', 0, 3, TOUGH);
+    const burn = { dps: FIRE.burnDps, ms: 10_000 };
+    state = { ...state, enemies: [{ ...state.enemies[0], burn }], bullets: [iceBullet(100, 2)] };
+    const hit = runUntil(state, 'hit', 5000, 50);
+    const target = hit.state.enemies[0];
+    expect(target.burn).toEqual({ ...burn, ms: burn.ms - hit.t });
+    expect(target.slow).toEqual({ amount: ICE.bulletSlowByCannons[1], ms: ICE.bulletSlowMs });
+
+    const later = run(hit.state, 1000, 50).state.enemies[0];
+    expect(target.hp - later.hp).toBeCloseTo(FIRE.burnDps);
+    expect(target.x - later.x).toBeCloseTo(worm.speed * (1 - ICE.bulletSlowByCannons[1]));
+    // Y al reves: una de fuego sobre un gusano frenado le deja las dos.
+    const fire = shooter({ element: 'fire' });
+    const fired = { ...hit.state, bullets: [{ id: 200, lane: 0, x: target.x - 0.5, damage: bulletDamage(fire), effect: bulletEffect(fire) }] };
+    const both = runUntil(fired, 'hit', 5000, 50).state.enemies[0];
+    expect(both.burn?.ms).toBe(FIRE.burnMs);
+    expect(both.slow).not.toBeNull();
   });
 });

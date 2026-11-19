@@ -3,7 +3,7 @@ import { ENEMIES } from '../config/balance';
 import type { Enemy } from '../core/combat';
 import type { Effects } from './effects';
 import { entityDepth, perspective } from './layout';
-import { FLAME_SIZE, TEX, WORM_SIZE, artInv } from './textures';
+import { FLAME_SIZE, FROST_SIZE, TEX, WORM_SIZE, artInv } from './textures';
 
 /**
  * Aspecto del gusano. Las medidas locales son pixeles de diseno con 160 por casilla, como la disparadora.
@@ -35,6 +35,20 @@ const WORM_LOOK = {
   burnWinceMs: 700,
   /** Muerto quemado: queda tostado un instante antes de deshacerse. */
   charredTint: 0x8a6458,
+  /**
+   * Ralentizado (T-005): cristales de escarcha en la nuca y en la cola (respecto a la cabeza y al ultimo anillo).
+   * No tapan las llamas del quemado, que van en la coronilla y el lomo: los dos efectos se ven a la vez.
+   */
+  frost: [
+    { x: 24, y: -12, scale: 1.1, angle: 50 },
+    { x: 4, y: -10, scale: 0.85, angle: 20 },
+  ],
+  /** Mientras va lento el cuerpo tira a azul frio (tinte multiplicado). Gana al rojizo del quemado; las llamas siguen. */
+  chillTint: 0x9fd0ff,
+  /** Mientras va lento tirita cada tanto y suelta un copo: asi se ve que sigue frenado. */
+  shiverMs: 900,
+  /** Alcanzado por la mina de hielo: destello azul helado. Muerto ralentizado: queda congelado y se rompe. */
+  frozenTint: 0xd8f3ff,
 } as const;
 
 /** Valor animable suelto: cada reaccion tiene el suyo y se puede cortar sin tocar las demas. */
@@ -66,10 +80,15 @@ export class WormView {
   private readonly kick: Pulse = { v: 0 };
   /** Salto al recibir una explosion. */
   private readonly hop: Pulse = { v: 0 };
+  /** Tiritona del ralentizado. */
+  private readonly shiver: Pulse = { v: 0 };
   private flashTimer?: Phaser.Time.TimerEvent;
   private readonly flames: Phaser.GameObjects.Image[];
   private burning = false;
   private burnTimer?: Phaser.Time.TimerEvent;
+  private readonly frost: Phaser.GameObjects.Image[];
+  private chilled = false;
+  private chillTimer?: Phaser.Time.TimerEvent;
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -100,8 +119,16 @@ export class WormView {
         .setOrigin(0.5, FLAME_SIZE.footY / FLAME_SIZE.height)
         .setVisible(false),
     );
-    // De la cola a la cabeza: cada anillo tapa al de atras y la cabeza va encima de todo.
-    this.holder = scene.add.container(ground.x, ground.y, [...this.segments, this.head, ...this.flames]).setDepth(depth);
+    // Escarcha del ralentizado: oculta hasta que va lento.
+    this.frost = WORM_LOOK.frost.map((f) =>
+      scene.add
+        .image(0, 0, TEX.frost)
+        .setOrigin(0.5, FROST_SIZE.footY / FROST_SIZE.height)
+        .setAngle(f.angle)
+        .setVisible(false),
+    );
+    // De la cola a la cabeza: cada anillo tapa al de atras y la cabeza va encima de todo, con la escarcha y las llamas.
+    this.holder = scene.add.container(ground.x, ground.y, [...this.segments, this.head, ...this.frost, ...this.flames]).setDepth(depth);
 
     if (emerge) this.emerge(ground);
     this.sync(enemy);
@@ -123,8 +150,9 @@ export class WormView {
 
     const grow = this.scale * (0.3 + 0.7 * rise);
     const hop = Math.sin(this.hop.v * Math.PI) * 26 * this.scale;
+    const shiver = Math.sin(this.shiver.v * Math.PI * 9) * 3.5 * this.shiver.v;
     this.holder
-      .setPosition(ground.x + this.kick.v * 10 * this.scale, ground.y + (1 - rise) * 20 * this.scale - hop)
+      .setPosition(ground.x + (this.kick.v * 10 + shiver) * this.scale, ground.y + (1 - rise) * 20 * this.scale - hop)
       .setScale(grow * (1 + hurt * 0.1), grow * (1 - hurt * 0.1));
     this.shadow.setPosition(ground.x, ground.y).setAlpha(Math.min(1, rise));
 
@@ -148,6 +176,12 @@ export class WormView {
       this.flames[0].setPosition(this.head.x + onHead.x, this.head.y + onHead.y);
       this.flames[1].setPosition(this.segments[1].x + onBack.x, this.segments[1].y + onBack.y);
     }
+    this.setChilled(enemy.slow !== null);
+    if (this.chilled) {
+      const [onNape, onTail] = WORM_LOOK.frost;
+      this.frost[0].setPosition(this.head.x + onNape.x, this.head.y + onNape.y);
+      this.frost[1].setPosition(this.segments[0].x + onTail.x, this.segments[0].y + onTail.y);
+    }
   }
 
   /** Mordisco: la cabeza se lanza hacia delante y cierra la boca. */
@@ -170,12 +204,24 @@ export class WormView {
     this.flash();
   }
 
-  /** Sin vida: destello, se infla un instante y se encoge soltando pixeles. Si ardia, queda tostado y humea. */
+  /** Alcanzado por la mina de hielo (T-005): se queda tieso de golpe, destella en azul helado, tirita y suelta copos. */
+  frosted(): void {
+    this.pulse(this.hurt, 320);
+    this.pulse(this.shiver, 520);
+    this.flash(WORM_LOOK.frozenTint, 160);
+    this.fx.frost(this.holder.x, this.holder.y - 50 * this.scale, 6);
+  }
+
+  /**
+   * Sin vida: destello, se infla un instante y se encoge soltando pixeles. Si ardia, queda tostado y humea;
+   * si iba ralentizado (y no ardia), queda congelado y se rompe en esquirlas.
+   */
   die(): void {
     const charred = this.burning;
+    const frozen = this.chilled && !charred;
     this.stopReactions();
     const parts = [this.head, ...this.segments];
-    parts.forEach((part) => part.setTint(0xffffff).setTintMode(Phaser.TintModes.FILL));
+    parts.forEach((part) => part.setTint(frozen ? WORM_LOOK.frozenTint : 0xffffff).setTintMode(Phaser.TintModes.FILL));
     this.head.setTexture(TEX.wormHeadHurt);
     const x = this.holder.x;
     const y = this.holder.y - 45 * this.scale;
@@ -184,8 +230,12 @@ export class WormView {
       this.fx.smoke(x, y, 6);
       this.fx.embers(x, y, 8);
     }
+    if (frozen) {
+      this.fx.shards(x, y, 10);
+      this.fx.frost(x, y, 5);
+    }
     this.fx.bits(x, y, 16);
-    this.fx.ring(x, y, this.cellWidth * 0.9, 0xd6b8ff, depth, 300);
+    this.fx.ring(x, y, this.cellWidth * 0.9, frozen ? 0xbfeaff : 0xd6b8ff, depth, 300);
     this.fx.glow(x, y, this.cellWidth, 0x39ff88, depth, 320);
     this.scene.tweens.add({
       targets: this.holder,
@@ -194,7 +244,11 @@ export class WormView {
       duration: 90,
       ease: 'Quad.Out',
       onComplete: () => {
-        parts.forEach((part) => (charred ? part.setTintMode(Phaser.TintModes.MULTIPLY).setTint(WORM_LOOK.charredTint) : part.clearTint()));
+        parts.forEach((part) => {
+          if (charred) part.setTintMode(Phaser.TintModes.MULTIPLY).setTint(WORM_LOOK.charredTint);
+          else if (frozen) part.setTintMode(Phaser.TintModes.MULTIPLY).setTint(WORM_LOOK.chillTint);
+          else part.clearTint();
+        });
         this.scene.tweens.add({
           targets: this.holder,
           scaleX: 0,
@@ -304,10 +358,60 @@ export class WormView {
     if (!this.flashTimer) this.applyRestingTint();
   }
 
-  /** Tinte de reposo: anaranjado mientras arde. */
+  /**
+   * Empieza o deja de ir lento (T-005): le salen cristales de escarcha, el cuerpo tira a azul y cada tanto tirita
+   * y suelta un copo. Al acabarse, la escarcha se derrite con un poco de vaho. Sigue al estado (`enemy.slow`).
+   * Lo mas lento del gusano no hay que animarlo: ondula segun lo que avanza, asi que ondula mas despacio solo.
+   */
+  private setChilled(chilled: boolean): void {
+    if (chilled === this.chilled) return;
+    this.chilled = chilled;
+    this.scene.tweens.killTweensOf(this.frost);
+    if (chilled) {
+      this.frost.forEach((crystal, i) => {
+        const base = WORM_LOOK.frost[i].scale * artInv();
+        crystal.setVisible(true).setAlpha(1).setScale(base * 0.2);
+        this.scene.tweens.add({ targets: crystal, scaleX: base, scaleY: base, duration: 260, delay: i * 70, ease: 'Back.Out' });
+        this.scene.tweens.add({
+          targets: crystal,
+          alpha: { from: 1, to: 0.78 },
+          duration: Phaser.Math.Between(600, 800),
+          yoyo: true,
+          repeat: -1,
+          delay: 330 + i * 120,
+          ease: 'Sine.InOut',
+        });
+      });
+      this.fx.frost(this.holder.x, this.holder.y - 50 * this.scale, 4);
+      this.chillTimer = this.scene.time.addEvent({
+        delay: WORM_LOOK.shiverMs,
+        loop: true,
+        callback: () => {
+          this.pulse(this.shiver, 340);
+          this.fx.flake(this.holder.x - 20 * this.scale, this.holder.y - 85 * this.scale);
+        },
+      });
+    } else {
+      this.chillTimer?.remove();
+      this.chillTimer = undefined;
+      this.scene.tweens.add({
+        targets: this.frost,
+        scaleX: 0,
+        scaleY: 0,
+        alpha: 0,
+        duration: 260,
+        onComplete: () => this.frost.forEach((crystal) => crystal.setVisible(false)),
+      });
+      this.fx.mist(this.holder.x, this.holder.y - 50 * this.scale, 2);
+    }
+    if (!this.flashTimer) this.applyRestingTint();
+  }
+
+  /** Tinte de reposo: azul frio mientras va lento, anaranjado mientras arde (con las dos cosas, el frio). */
   private applyRestingTint(): void {
     for (const part of [this.head, ...this.segments]) {
-      if (this.burning) part.setTintMode(Phaser.TintModes.ADD).setTint(WORM_LOOK.burnTint);
+      if (this.chilled) part.setTintMode(Phaser.TintModes.MULTIPLY).setTint(WORM_LOOK.chillTint);
+      else if (this.burning) part.setTintMode(Phaser.TintModes.ADD).setTint(WORM_LOOK.burnTint);
       else part.clearTint();
     }
   }
@@ -318,11 +422,11 @@ export class WormView {
     this.scene.tweens.add({ targets: value, v: 0, duration: durationMs, ease: 'Quad.Out' });
   }
 
-  private flash(): void {
+  private flash(color = 0xffffff, durationMs = 70): void {
     const parts = [this.head, ...this.segments];
     this.flashTimer?.remove();
-    parts.forEach((part) => part.setTint(0xffffff).setTintMode(Phaser.TintModes.FILL));
-    this.flashTimer = this.scene.time.delayedCall(70, () => {
+    parts.forEach((part) => part.setTint(color).setTintMode(Phaser.TintModes.FILL));
+    this.flashTimer = this.scene.time.delayedCall(durationMs, () => {
       this.flashTimer = undefined;
       this.applyRestingTint();
     });
@@ -333,7 +437,9 @@ export class WormView {
     this.flashTimer = undefined;
     this.burnTimer?.remove();
     this.burnTimer = undefined;
-    this.scene.tweens.killTweensOf([this.rise, this.lunge, this.hurt, this.kick, this.hop]);
+    this.chillTimer?.remove();
+    this.chillTimer = undefined;
+    this.scene.tweens.killTweensOf([this.rise, this.lunge, this.hurt, this.kick, this.hop, this.shiver]);
   }
 
   private fadeShadow(durationMs: number): void {

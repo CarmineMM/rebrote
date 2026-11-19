@@ -112,6 +112,13 @@ export function App() {
             selected={selected === 'fire'}
             preview={preview?.card === 'fire' ? preview : null}
           />
+          <Card
+            card="ice"
+            label="Hielo"
+            balance={balance}
+            selected={selected === 'ice'}
+            preview={preview?.card === 'ice' ? preview : null}
+          />
         </div>
         <div className="hud-right">
           <Lives lives={lives} />

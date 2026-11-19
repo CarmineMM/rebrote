@@ -21,14 +21,16 @@ export const PLANT_LOOK = {
   dimAmount: 0.55,
   /** La planta que se esta arrastrando se queda en su casilla (sigue en combate), medio transparente. */
   liftedAlpha: 0.35,
-  /** La de fuego suelta una brasa cada tanto (ms en Alto; mas espaciadas en Bajo). */
+  /** La de fuego suelta una brasa cada tanto y la de hielo un copo (ms en Alto; mas espaciados en Bajo). */
   emberEveryMs: 900,
+  flakeEveryMs: 1100,
 } as const;
 
 /** Colores de los efectos de cada variante: fogonazo del canon y destellos al fusionarse o infundirse. */
 const VARIANT_FX: Record<ShooterVariant, { muzzle: number; muzzleGlow: number; burst: number; burstGlow: number }> = {
   normal: { muzzle: 0xd6ff96, muzzleGlow: 0xc8ff8a, burst: 0xc8ff8a, burstGlow: 0xd6ff96 },
   fire: { muzzle: 0xffc46b, muzzleGlow: 0xff9a3d, burst: 0xffa04d, burstGlow: 0xffd27a },
+  ice: { muzzle: 0xc8f0ff, muzzleGlow: 0x8fd8ff, burst: 0x8fd8ff, burstGlow: 0xd8f6ff },
 };
 
 /** Texto que salta al infundir cada elemento. */
@@ -78,8 +80,8 @@ export class PlantView {
   private cannons: CannonCount;
   private element: ElementType | null;
   private wiltTint = 0xffffff;
-  /** Brasas en reposo de la planta de fuego. */
-  private embers?: Phaser.Time.TimerEvent;
+  /** Brasas (fuego) o copos (hielo) que suelta en reposo la planta infundida. */
+  private aura?: Phaser.Time.TimerEvent;
   private dimmed = false;
   private flashTimer?: Phaser.Time.TimerEvent;
   private liftTween?: Phaser.Tweens.Tween;
@@ -108,7 +110,7 @@ export class PlantView {
     this.body = scene.add.image(0, 0, shooterTexture(this.cannons, this.element)).setOrigin(0.5, SHOOTER_SIZE.footY / SHOOTER_SIZE.height);
     this.holder = scene.add.container(screen.x, screen.y, [this.body]).setDepth(depth);
     this.setWilt(hpRatio);
-    this.startEmbers();
+    this.startAura();
 
     if (!sprout) {
       this.body.setScale(scale);
@@ -241,8 +243,8 @@ export class PlantView {
   }
 
   /**
-   * Infundida con un elemento (T-004): las llamas suben por la planta, que se aplasta, destella,
-   * cambia a la textura de su variante y rebota. Como al fusionarse, va sobre el cuerpo.
+   * Infundida con un elemento (T-004): las llamas (fuego) o la escarcha (hielo) suben por la planta, que se aplasta,
+   * destella, cambia a la textura de su variante y rebota. Como al fusionarse, va sobre el cuerpo.
    */
   infuse(element: ElementType): void {
     this.element = element;
@@ -256,19 +258,21 @@ export class PlantView {
       this.fx.fire(middle.x, middle.y, 8);
       this.fx.embers(middle.x, middle.y, 12);
     } else {
-      // El hielo (T-005) pondra su escarcha.
-      this.fx.sparkles(middle.x, middle.y, 16);
+      this.fx.frost(this.base.x, this.base.y - w * 0.1, 12);
+      this.fx.frost(middle.x, middle.y, 8);
+      this.fx.mist(this.base.x, this.base.y - w * 0.2, 6);
+      this.fx.sparkles(middle.x, middle.y, 8);
     }
     this.fx.ring(middle.x, middle.y, w * 1.3, colors.burst, depth, 460, 0.9);
     this.fx.glow(middle.x, middle.y, w * 1.5, colors.burstGlow, depth, 460);
     const label = INFUSED_TEXT[element];
     this.fx.floatText(label.text, this.base.x, this.base.y - w * 1.05, label);
-    this.startEmbers();
+    this.startAura();
   }
 
   /** Se fue a fusionarse con otra: sale de su casilla estirandose hacia arriba y deja un poco de tierra. */
   uproot(): void {
-    this.embers?.remove();
+    this.aura?.remove();
     this.flashTimer?.remove();
     this.scene.tweens.killTweensOf([this.holder, this.body, this.shadow]);
     this.fx.dirt(this.base.x, this.base.y, 10);
@@ -287,7 +291,7 @@ export class PlantView {
 
   /** Destruida: se aplasta contra el suelo soltando hojas y tierra. */
   die(): void {
-    this.embers?.remove();
+    this.aura?.remove();
     this.flashTimer?.remove();
     this.scene.tweens.killTweensOf([this.holder, this.body, this.shadow]);
     this.body.setTintMode(Phaser.TintModes.MULTIPLY).setTint(this.wiltTint);
@@ -331,17 +335,24 @@ export class PlantView {
     });
   }
 
-  /** La de fuego suelta brasas de la cabeza de vez en cuando; asi se ve que arde aunque no dispare. */
-  private startEmbers(): void {
-    if (this.element !== 'fire' || this.embers) return;
-    const delay = this.fx.ambientDelay(PLANT_LOOK.emberEveryMs);
-    this.embers = this.scene.time.addEvent({
+  /**
+   * La de fuego suelta brasas de la cabeza de vez en cuando y la de hielo, copos que caen: asi se ve su elemento
+   * aunque no dispare.
+   */
+  private startAura(): void {
+    if (!this.element || this.aura) return;
+    const fire = this.element === 'fire';
+    const delay = this.fx.ambientDelay(fire ? PLANT_LOOK.emberEveryMs : PLANT_LOOK.flakeEveryMs);
+    this.aura = this.scene.time.addEvent({
       delay,
       startAt: Math.random() * delay,
       loop: true,
       callback: () => {
         const w = this.cellWidth;
-        this.fx.ember(this.base.x + Phaser.Math.FloatBetween(-0.2, 0.15) * w, this.base.y - w * Phaser.Math.FloatBetween(0.75, 0.95));
+        const x = this.base.x + Phaser.Math.FloatBetween(-0.2, 0.15) * w;
+        const y = this.base.y - w * Phaser.Math.FloatBetween(0.75, 0.95);
+        if (fire) this.fx.ember(x, y);
+        else this.fx.flake(x, y);
       },
     });
   }

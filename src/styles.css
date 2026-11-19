@@ -162,6 +162,26 @@ body {
 }
 @keyframes flame-flicker { from { transform: rotate(-45deg) scale(1); } to { transform: rotate(-40deg) scale(1.08, 0.94); } }
 
+/* Carta de hielo (T-005): borde y fondo de escarcha, y un copo que gira despacio y brilla sobre el montoncito.
+   El copo son tres barras cruzadas (el span y sus pseudoelementos); el contorno azul sale del filtro, de una pieza. */
+.card-ice { border-color: #8fd8ff; background: linear-gradient(180deg, #2f5f80 0%, #1d3c55 100%); box-shadow: 0 4px 0 #0f2233, 0 6px 12px rgba(0, 0, 0, 0.3); }
+.card-ice[aria-pressed='true'] { box-shadow: 0 4px 0 #0f2233, 0 0 0 3px rgba(143, 216, 255, 0.4), 0 0 18px rgba(143, 216, 255, 0.55); }
+.card-icon-flake {
+  position: absolute; left: 9px; top: 0; width: 24px; height: 24px;
+  filter: drop-shadow(1.5px 0 0 #2f74a8) drop-shadow(-1.5px 0 0 #2f74a8) drop-shadow(0 1.5px 0 #2f74a8) drop-shadow(0 -1.5px 0 #2f74a8)
+    drop-shadow(0 0 4px rgba(160, 225, 255, 0.8));
+  animation: flake-spin 6s linear infinite, flake-twinkle 1.6s ease-in-out infinite alternate;
+}
+.card-icon-flake > span, .card-icon-flake > span::before, .card-icon-flake > span::after {
+  position: absolute; left: 9.5px; top: 0; width: 5px; height: 24px; border-radius: 3px;
+  background: linear-gradient(90deg, #ffffff, #cdeeff);
+}
+.card-icon-flake > span::before, .card-icon-flake > span::after { content: ''; left: 0; }
+.card-icon-flake > span::before { transform: rotate(60deg); }
+.card-icon-flake > span::after { transform: rotate(-60deg); }
+@keyframes flake-spin { to { transform: rotate(360deg); } }
+@keyframes flake-twinkle { from { opacity: 0.85; } to { opacity: 1; } }
+
 /* ---------- Carga ---------- */
 .loading {
   position: absolute; inset: 0; z-index: 3; display: grid; place-content: center; justify-items: center; gap: 18px;
@@ -268,11 +288,23 @@ body {
 .switch-text { display: grid; gap: 2px; }
 .switch-text small { opacity: 0.7; }
 
-@media (max-width: 560px) {
+/* HUD compacto: con tres cartas (T-005), en un movil en horizontal no cabian bandeja, vidas, saldo y pausa. */
+@media (max-width: 860px) {
   .card-label { display: none; }
-  .hud-balance { font-size: 1.2rem; }
+  .card { padding: 5px 10px 5px 6px; column-gap: 6px; }
+  .seed-tray { gap: 6px; padding: 6px; }
+  .hud { gap: 8px; }
+  .hud-right { gap: 6px; }
+  .hud-balance { font-size: 1.2rem; padding: 5px 12px 5px 8px; gap: 6px; }
+  .coin { width: 22px; height: 22px; }
   .hud-lives { padding: 6px 8px; }
   .heart { width: 20px; height: 20px; }
+  .round-button { width: 42px; height: 42px; }
+}
+@media (max-width: 600px) {
+  /* zoom y no transform: la carta elegida anima el transform del icono. */
+  .card-icon { zoom: 0.8; }
+  .hud-balance-value { min-width: 0; }
 }
 
 @media (prefers-reduced-motion: reduce) {

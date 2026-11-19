@@ -76,15 +76,26 @@ export function Card({ card, label, balance, selected, preview = null }: CardPro
 const CARD_TITLES: Record<CardId, string> = {
   shooter: 'Sembrar disparadora',
   fire: 'Fuego: en una casilla vacía, mina; sobre una disparadora, la infunde (un fuego por cañón)',
+  ice: 'Hielo: en una casilla vacía, mina que frena; sobre una disparadora, la infunde (un hielo por cañón)',
 };
 
-/** Dibujo de la carta, en CSS: la disparadora o una llama sobre un montoncito de tierra. */
+/** Dibujo de la carta, en CSS: la disparadora, o una llama o un copo sobre un montoncito de tierra. */
 function CardIcon({ card }: { card: CardId }) {
   if (card === 'fire') {
     return (
       <span className="card-icon" aria-hidden="true">
         <span className="card-icon-mound" />
         <span className="card-icon-flame" />
+      </span>
+    );
+  }
+  if (card === 'ice') {
+    return (
+      <span className="card-icon" aria-hidden="true">
+        <span className="card-icon-mound" />
+        <span className="card-icon-flake">
+          <span />
+        </span>
       </span>
     );
   }

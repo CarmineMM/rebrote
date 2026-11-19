@@ -10,6 +10,10 @@ Desde T-006:
 - **Medallita:** los puntos de los cañones van en el tallo (`SHOOTER_DOTS` en `textures.ts`). La nuca, arriba a la izquierda de la cabeza, queda libre para la medallita (ver `docs/guias/graficos.md`, sección 9).
 - **Aviso de nivel al fusionar:** ya existe. Al arrastrar una planta sobre otra de nivel distinto sale "Quedará en nivel N". Con niveles reales hay que comprobarlo jugando.
 
+Desde T-005:
+- **Hielo y nivel:** lo que frena una disparadora de hielo depende de sus cañones (`ICE.bulletSlowByCannons`), no del nivel. La quemadura sí crece con el nivel (`damageMultiplier`). Si subir de nivel una de hielo tiene que frenar más, se decide aquí.
+- **Medallita:** la disparadora de hielo tiene la cabeza muy clara (`#f4fcff` a `#9fdcff`). Comprobar que la medallita se lee también sobre ella.
+
 ## Objetivos
 1. **Mejorar una planta sembrada** pagando con la moneda única.
 2. **Mostrar el nivel** con una medallita discreta, válida también en plantas fusionadas.

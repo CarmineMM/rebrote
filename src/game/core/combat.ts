@@ -1,4 +1,4 @@
-import { BOARD, ENEMIES, FIRE, MINE, SHOOTER } from '../config/balance';
+import { BOARD, ENEMIES, FIRE, ICE, MINE, SHOOTER } from '../config/balance';
 import type { BoardPoint, Cell } from './board';
 import type { MatchState, Mine, Sown } from './match';
 import { damageMultiplier, fireRateMultiplier, type ElementType, type Shooter } from './plants';
@@ -17,6 +17,14 @@ export interface Burn {
   readonly ms: number;
 }
 
+/** Ralentizacion (T-005): parte de la velocidad que pierde mientras le quede tiempo. */
+export interface Slow {
+  /** De 0 a 1: 0,7 es un 70 % mas lento. */
+  readonly amount: number;
+  /** En una bala o una mina, lo que dura al alcanzar; en un enemigo, lo que le queda. */
+  readonly ms: number;
+}
+
 export interface Enemy {
   readonly id: number;
   readonly kind: EnemyKind;
@@ -28,10 +36,12 @@ export interface Enemy {
   readonly biteMs: number | null;
   /** Quemadura activa, o null si no arde. */
   readonly burn: Burn | null;
+  /** Ralentizacion activa, o null si va a su velocidad. Convive con la quemadura. */
+  readonly slow: Slow | null;
 }
 
-/** Lo que deja una bala infundida al impactar, ademas de su dano. El hielo (T-005) anadira su variante. */
-export type BulletEffect = { readonly element: 'fire'; readonly burn: Burn };
+/** Lo que deja una bala infundida al impactar, ademas de su dano: la de fuego quema y la de hielo frena. */
+export type BulletEffect = { readonly element: 'fire'; readonly burn: Burn } | { readonly element: 'ice'; readonly slow: Slow };
 
 export interface Bullet {
   readonly id: number;
@@ -81,13 +91,23 @@ export function bulletDamage(shooter: Shooter): number {
  * Lo que deja cada bala al impactar segun el elemento de la planta. Cada semilla lleva la quemadura del disparo
  * entero (`damageMultiplier`): asi una de 3 canones, que costo 3 fuegos, quema en proporcion. Como no se acumula,
  * que las tres semillas la lleven solo importa si la primera mata y la siguiente da a otro enemigo.
+ * La de hielo frena segun los canones (`ICE.bulletSlowByCannons`), siempre menos que la mina.
  */
 export function bulletEffect(shooter: Shooter): BulletEffect | null {
   if (shooter.element === 'fire') {
     return { element: 'fire', burn: { dps: FIRE.burnDps * damageMultiplier(shooter), ms: FIRE.burnMs } };
   }
-  // El hielo (T-005) todavia no hace nada.
+  if (shooter.element === 'ice') {
+    return { element: 'ice', slow: { amount: ICE.bulletSlowByCannons[shooter.cannons], ms: ICE.bulletSlowMs } };
+  }
   return null;
+}
+
+/** Lo que hace la explosion de la mina de cada elemento a cada enemigo alcanzado: la de fuego dana y la de hielo frena. */
+export function mineBlast(element: ElementType): { readonly damage: number; readonly slow: Slow | null } {
+  return element === 'fire'
+    ? { damage: FIRE.blastDamage, slow: null }
+    : { damage: ICE.blastDamage, slow: { amount: ICE.blastSlow, ms: ICE.blastSlowMs } };
 }
 
 /**
@@ -96,6 +116,21 @@ export function bulletEffect(shooter: Shooter): BulletEffect | null {
  */
 export function refreshBurn(current: Burn | null, incoming: Burn): Burn {
   return { dps: Math.max(current?.dps ?? 0, incoming.dps), ms: incoming.ms };
+}
+
+/**
+ * Ralentizacion que queda tras recibir `incoming` (de una semilla o de una mina). No se acumula: se queda la mas
+ * fuerte. Si la que llega es igual o mas fuerte, la duracion vuelve a empezar; si es mas debil, la que habia sigue
+ * como estaba. Asi una semilla no acorta lo que frena una mina, ni la alarga sin fin disparando sin parar.
+ */
+export function refreshSlow(current: Slow | null, incoming: Slow): Slow {
+  return current && current.amount > incoming.amount ? current : incoming;
+}
+
+/** Aplica a un enemigo lo que deja una bala infundida al impactar. */
+function applyBulletEffect(enemy: Mutable<Enemy>, effect: BulletEffect | null): void {
+  if (effect?.element === 'fire') enemy.burn = refreshBurn(enemy.burn, effect.burn);
+  else if (effect?.element === 'ice') enemy.slow = refreshSlow(enemy.slow, effect.slow);
 }
 
 /** Tiempo entre disparos: el base de la disparadora, mas corto con cada nivel. */
@@ -121,7 +156,7 @@ export function spawnEnemy(state: MatchState, kind: EnemyKind, lane: number, x: 
   if (!Number.isInteger(lane) || lane < 0 || lane >= BOARD.lanes) {
     throw new Error(`Carril invalido: ${lane}`);
   }
-  const enemy: Enemy = { id: state.nextId, kind, lane, x, hp, biteMs: null, burn: null };
+  const enemy: Enemy = { id: state.nextId, kind, lane, x, hp, biteMs: null, burn: null, slow: null };
   return { ...state, enemies: [...state.enemies, enemy], nextId: state.nextId + 1 };
 }
 
@@ -148,16 +183,16 @@ export function stepCombat(state: MatchState, dtMs: number): CombatStep {
 }
 
 /**
- * Un paso: primero arden, se mueven y muerden los enemigos; luego cuentan y explotan las minas; despues vuelan
- * las balas y al final disparan las plantas.
+ * Un paso: primero arden, se mueven y muerden los enemigos (mas despacio si estan ralentizados); luego cuentan
+ * y explotan las minas; despues vuelan las balas y al final disparan las plantas.
  */
 function substep(state: MatchState, dtMs: number, events: CombatEvent[]): MatchState {
   const plants = state.plants.map((lane) => [...lane]);
   let lives = state.lives;
   let nextId = state.nextId;
 
-  // Enemigos: arden si tienen una quemadura, y muerden lo que tocan (planta o mina) o avanzan.
-  // Los que cruzan el borde izquierdo restan una vida.
+  // Enemigos: arden si tienen una quemadura, y muerden lo que tocan (planta o mina) o avanzan, mas despacio si
+  // estan ralentizados. Los que cruzan el borde izquierdo restan una vida.
   const enemies: Array<Mutable<Enemy>> = [];
   for (const enemy of state.enemies) {
     const stats = ENEMIES[enemy.kind];
@@ -171,9 +206,12 @@ function substep(state: MatchState, dtMs: number, events: CombatEvent[]): MatchS
         continue;
       }
     }
+    // Ralentizado, su reloj de avanzar (y de morder) va mas despacio, solo el tiempo que le queda al hielo.
+    const walkMs = e.slow ? dtMs - e.slow.amount * Math.min(dtMs, e.slow.ms) : dtMs;
+    if (e.slow) e.slow = e.slow.ms > dtMs ? { ...e.slow, ms: e.slow.ms - dtMs } : null;
     const col = bittenColumn(plants[e.lane], e.x, stats.reach);
     if (col !== null) {
-      e.biteMs = (e.biteMs ?? stats.firstBiteMs) - dtMs;
+      e.biteMs = (e.biteMs ?? stats.firstBiteMs) - (ICE.slowsBites ? walkMs : dtMs);
       if (e.biteMs <= 0) {
         e.biteMs += stats.biteIntervalMs;
         const cell = { lane: e.lane, col };
@@ -189,7 +227,7 @@ function substep(state: MatchState, dtMs: number, events: CombatEvent[]): MatchS
       }
     } else {
       e.biteMs = null;
-      e.x -= (stats.speed * dtMs) / 1000;
+      e.x -= (stats.speed * walkMs) / 1000;
       if (e.x < 0) {
         lives = Math.max(0, lives - 1);
         events.push({ type: 'enemyEscaped', enemyId: e.id, lane: e.lane });
@@ -230,7 +268,7 @@ function substep(state: MatchState, dtMs: number, events: CombatEvent[]): MatchS
     const target = firstInPath(enemies, bullet.lane, from, to);
     if (target) {
       target.hp -= bullet.damage;
-      if (bullet.effect?.element === 'fire') target.burn = refreshBurn(target.burn, bullet.effect.burn);
+      applyBulletEffect(target, bullet.effect);
       events.push({
         type: 'hit',
         bulletId: bullet.id,
@@ -281,14 +319,17 @@ export function distanceToCell(enemy: Enemy, cell: Cell): number {
   return Math.hypot(enemy.x - (cell.col + 0.5), enemy.lane - cell.lane);
 }
 
-/** La mina explota: alcanza a todos los enemigos vivos de su radio, en cualquier carril. */
+/**
+ * La mina explota: alcanza a todos los enemigos vivos de su radio, en cualquier carril, con lo que hace la de su
+ * elemento (`mineBlast`): la de fuego dana y la de hielo frena.
+ */
 function explode(mine: Mine, cell: Cell, enemies: Array<Mutable<Enemy>>, events: CombatEvent[]): void {
   const hit = enemies.filter((e) => e.hp > 0 && distanceToCell(e, cell) <= MINE.blastRadius);
-  // El hielo (T-005) ralentizara en vez de danar.
-  const damage = mine.element === 'fire' ? FIRE.blastDamage : 0;
+  const { damage, slow } = mineBlast(mine.element);
   events.push({ type: 'mineExploded', cell, element: mine.element, enemyIds: hit.map((e) => e.id) });
   for (const e of hit) {
     e.hp -= damage;
+    if (slow) e.slow = refreshSlow(e.slow, slow);
     if (e.hp <= 0) events.push({ type: 'enemyKilled', enemyId: e.id, at: { x: e.x, y: e.lane + 0.5 } });
   }
 }

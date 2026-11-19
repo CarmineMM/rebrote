@@ -43,6 +43,10 @@ export class Effects {
   private readonly fireBurst: Phaser.GameObjects.Particles.ParticleEmitter;
   private readonly emberBurst: Phaser.GameObjects.Particles.ParticleEmitter;
   private readonly smokeBurst: Phaser.GameObjects.Particles.ParticleEmitter;
+  private readonly frostBurst: Phaser.GameObjects.Particles.ParticleEmitter;
+  private readonly shardBurst: Phaser.GameObjects.Particles.ParticleEmitter;
+  private readonly mistBurst: Phaser.GameObjects.Particles.ParticleEmitter;
+  private readonly flakeDrift: Phaser.GameObjects.Particles.ParticleEmitter;
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -158,6 +162,61 @@ export class Effects {
       },
       DEPTH.foreground - 2,
     );
+    // Hielo (T-005): copos que saltan y caen despacio, esquirlas que caen deprisa y vaho frio. Todo con mezcla
+    // normal y colores con algo de azul: sobre el cesped claro, lo aditivo o lo muy palido se quedaria blanco.
+    this.frostBurst = burst(
+      TEX.snowflake,
+      {
+        speed: { min: 50, max: 190 },
+        angle: { min: -175, max: -5 },
+        gravityY: 140,
+        rotate: { min: -180, max: 180 },
+        lifespan: { min: 550, max: 950 },
+        scale: { start: 0.95 * artInv(), end: 0.3 * artInv() },
+        alpha: { start: 1, end: 0, ease: 'Quad.In' },
+      },
+      DEPTH.foreground - 1,
+    );
+    this.shardBurst = burst(
+      TEX.pixel,
+      {
+        speed: { min: 80, max: 260 },
+        angle: { min: -170, max: -10 },
+        gravityY: 560,
+        rotate: { min: 0, max: 180 },
+        lifespan: { min: 380, max: 700 },
+        scale: { start: 1.5 * artInv(), end: 0.3 * artInv() },
+        alpha: { start: 1, end: 0 },
+        tint: [0xffffff, 0xa8e4ff, 0x6cbce8, 0x3f92d0],
+      },
+      DEPTH.foreground - 1,
+    );
+    this.mistBurst = burst(
+      TEX.glow,
+      {
+        speed: { min: 15, max: 80 },
+        angle: { min: -160, max: -20 },
+        gravityY: -20,
+        lifespan: { min: 650, max: 1100 },
+        scale: { start: 0.3 * artInv(), end: 0.85 * artInv() },
+        alpha: { start: 0.55, end: 0 },
+        tint: [0xc8ecff, 0xa8dcff, 0xe0f6ff],
+      },
+      DEPTH.foreground - 2,
+    );
+    this.flakeDrift = burst(
+      TEX.snowflake,
+      {
+        speedX: { min: -14, max: 14 },
+        speedY: { min: 4, max: 18 },
+        gravityY: 22,
+        rotate: { start: 0, end: 160 },
+        lifespan: { min: 1100, max: 1600 },
+        scale: { start: 0.65 * artInv(), end: 0.25 * artInv() },
+        alpha: { start: 1, end: 0, ease: 'Quad.In' },
+      },
+      DEPTH.foreground - 1,
+    );
   }
 
   /** Particulas de respuesta a una accion: menos en Bajo, pero nunca ninguna (son parte del gesto). */
@@ -195,6 +254,29 @@ export class Effects {
 
   smoke(x: number, y: number, base: number): void {
     this.smokeBurst.explode(this.count(base), x, y);
+  }
+
+  /** Copos que saltan: mina de hielo, infundir hielo, impacto de una semilla de hielo. */
+  frost(x: number, y: number, base: number): void {
+    this.frostBurst.explode(this.count(base), x, y);
+  }
+
+  /** Esquirlas de hielo que caen: una mina de hielo que estalla o un gusano congelado que se rompe. */
+  shards(x: number, y: number, base: number): void {
+    this.shardBurst.explode(this.count(base), x, y);
+  }
+
+  /** Vaho frio que se abre y se desvanece. */
+  mist(x: number, y: number, base: number): void {
+    this.mistBurst.explode(this.count(base), x, y);
+  }
+
+  /**
+   * Un solo copo que cae despacio, para lo que esta frio en reposo (disparadora de hielo, gusano ralentizado,
+   * mina de hielo armada). Es ambiente: quien lo llama lo espacia con `ambientDelay`.
+   */
+  flake(x: number, y: number): void {
+    this.flakeDrift.explode(1, x, y);
   }
 
   /**

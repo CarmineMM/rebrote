@@ -128,6 +128,29 @@ export const FIRE = {
   burnMs: 3000,
 } as const;
 
+/**
+ * Hielo (T-005). Solo, la mina no dana: frena con fuerza en area. Infundido, cada semilla frena al enemigo que toca,
+ * menos que la mina. `slow` es la parte de la velocidad que se pierde (0,7 = va al 30 %).
+ * La ralentizacion no se acumula: se queda la mas fuerte y, si el impacto es igual o mas fuerte, la duracion vuelve
+ * a empezar. Un enemigo ralentizado avanza y muerde mas despacio, en la misma proporcion.
+ */
+export const ICE = {
+  /** Dano de la explosion de la mina de hielo: ninguno, solo frena. */
+  blastDamage: 0,
+  /** Mina de hielo (D-06, cerrada el 19 nov 2026 con la recomendacion): 70 % mas lento durante 4 s. PROVISIONAL. */
+  blastSlow: 0.7,
+  blastSlowMs: 4000,
+  /**
+   * Lo que frena cada semilla segun los canones de la planta: infundir N canones cuesta N hielos y frena algo mas,
+   * siempre menos que la mina. PROVISIONAL.
+   */
+  bulletSlowByCannons: { 1: 0.3, 2: 0.4, 3: 0.5 },
+  /** Lo que dura la ralentizacion de una semilla desde el impacto: mas que la recarga de la planta. PROVISIONAL. */
+  bulletSlowMs: 2500,
+  /** Si el enemigo ralentizado tambien muerde mas despacio (en la misma proporcion que avanza). */
+  slowsBites: true,
+} as const;
+
 export const WORLD_1 = {
   rounds: 7,
   boss: 'creeper',

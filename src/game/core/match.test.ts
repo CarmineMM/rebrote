@@ -308,3 +308,56 @@ describe('fuego (T-004)', () => {
     expect(board.balance).toBe(start);
   });
 });
+
+describe('hielo (T-005)', () => {
+  const ice = COSTS.ice;
+  const empty = { lane: 2, col: 3 };
+  const plantCell = { lane: 1, col: 5 };
+
+  it('sobre una casilla vacia siembra una mina de hielo y cobra el hielo', () => {
+    const before = createMatch();
+    expect(cardPlay(before, 'ice', empty)).toEqual({ action: 'sow', cost: ice, multiplier: 1, blocker: null });
+    const after = playCard(before, 'ice', empty);
+    expect(mineAt(after, empty)).toEqual({ kind: 'mine', element: 'ice', hp: MINE.hp, fuseMs: null });
+    expect(after.balance).toBe(before.balance - ice);
+  });
+
+  it('sobre una disparadora sin elemento la infunde: un hielo por canon', () => {
+    for (const cannons of [1, 2, 3] as const) {
+      const match = withPlants(createMatch(1000), [plantCell, { shooter: shooter({ cannons, level: 2 }) }]);
+      expect(cardPlay(match, 'ice', plantCell)).toEqual({ action: 'infuse', cost: ice * cannons, multiplier: cannons, blocker: null });
+      const after = playCard(match, 'ice', plantCell);
+      expect(plantAt(after, plantCell)?.shooter).toEqual({ element: 'ice', cannons, level: 2 });
+      expect(after.balance).toBe(1000 - ice * cannons);
+    }
+  });
+
+  it('no se infunde hielo en una disparadora de fuego ni fuego en una de hielo', () => {
+    const fiery = { lane: 0, col: 0 };
+    const icy = { lane: 4, col: 8 };
+    const board = withPlants(createMatch(1000), [fiery, { shooter: shooter({ element: 'fire' }) }], [icy, { shooter: shooter({ element: 'ice' }) }]);
+    expect(cardPlay(board, 'ice', fiery).blocker).toBe('has-element');
+    expect(cardPlay(board, 'fire', icy).blocker).toBe('has-element');
+    expect(cardPlay(board, 'ice', icy).blocker).toBe('has-element');
+    expect(() => playCard(board, 'ice', fiery)).toThrow();
+    expect(() => playCard(board, 'fire', icy)).toThrow();
+  });
+
+  it('las de hielo se fusionan entre si, pero no con las de fuego ni con las normales', () => {
+    const a = { lane: 0, col: 0 };
+    const b = { lane: 0, col: 1 };
+    const icy = (over: Partial<Shooter> = {}) => ({ shooter: shooter({ element: 'ice', ...over }) });
+    const pair = withPlants(createMatch(), [a, icy()], [b, icy({ cannons: 2 })]);
+    expect(plantAt(fusePlants(pair, a, b), b)?.shooter).toEqual({ element: 'ice', cannons: 3, level: 1 });
+    expect(fusionBlocker(withPlants(createMatch(), [a, icy()], [b, { shooter: shooter({ element: 'fire' }) }]), a, b)).toBe('variant');
+    expect(fusionBlocker(withPlants(createMatch(), [a, icy()], [b, {}]), a, b)).toBe('variant');
+  });
+
+  it('reproduce la tabla de la task', () => {
+    // Hielo sobre disparadora de fuego: no permitido, saldo sin cambios.
+    const fiery = { lane: 3, col: 3 };
+    const board = withPlants(createMatch(500), [fiery, { shooter: shooter({ element: 'fire' }) }]);
+    expect(cardPlay(board, 'ice', fiery).blocker).toBe('has-element');
+    expect(board.balance).toBe(500);
+  });
+});

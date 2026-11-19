@@ -15,8 +15,8 @@ import {
 } from './plants';
 import { createSpawner, type SpawnerState } from './spawner';
 
-/** Cartas que se pueden jugar desde el HUD: la disparadora y los elementos. El hielo llega en T-005. */
-export type CardId = 'shooter' | 'fire';
+/** Cartas que se pueden jugar desde el HUD: la disparadora y los elementos. */
+export type CardId = 'shooter' | ElementType;
 
 /** Disparadora sembrada: lo que es (`shooter`) y como esta en el combate. */
 export interface Plant {

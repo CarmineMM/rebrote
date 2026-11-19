@@ -57,6 +57,17 @@ El elemento solo siempre tiene un efecto mayor que su versión infundida, a camb
   - Un enemigo que muere quemado da su moneda como cualquier otro.
 - Los valores están como PROVISIONAL en `MINE` y `FIRE` de `balance.ts`.
 
+### Hielo (T-005)
+- **Mina de hielo (hielo sembrado solo):** la misma mina que la de fuego (vida propia, radio de detección, conteo de 2 s, explosión en área y casilla libre). Al explotar no hace daño: frena a todos los enemigos del radio de explosión.
+  - **Cuánto (D-06, cerrada el 19 nov 2026 con la recomendación):** un 70 % más lentos durante 4 s.
+- **Disparadora de hielo (infundida):** cada semilla hace su daño de impacto y frena al enemigo que toca, menos que la mina.
+  - Frena más cuantos más cañones tiene la planta (30, 40 y 50 %), porque infundir N cañones cuesta N hielos. El nivel no cambia lo que frena.
+  - Dura más que la recarga de la planta, así que un enemigo al que le dispara sin parar va frenado todo el rato.
+- **Un enemigo frenado** avanza y muerde más despacio, en la misma proporción.
+- **No se acumula:** si llega una ralentización igual o más fuerte, se queda la nueva con la duración entera. Si llega una más débil, la que tenía sigue como estaba: una semilla no acorta ni alarga lo que frena una mina.
+- Un enemigo puede ir quemado y frenado a la vez: los dos efectos conviven.
+- Los valores están como PROVISIONAL en `ICE` de `balance.ts`.
+
 ### Fusionar
 - Se hace arrastrando una disparadora sobre otra. La arrastrada deja su casilla y la de destino se queda con el resultado. No cuesta moneda.
 - Solo entre la misma variante: normal con normal, fuego con fuego, hielo con hielo.
@@ -79,7 +90,6 @@ El elemento solo siempre tiene un efecto mayor que su versión infundida, a camb
 |---|---|---|---|---|
 | D-03 | ¿Los niveles se reinician en cada partida o son permanentes? | a) Por partida. b) Permanentes | a para el prototipo. b es mejor gancho de retención pero pide guardado y economía aparte | Carmine |
 | D-05 | ¿Cuánto cuesta cada nivel? | Fijo o creciente | Creciente suave, para que subir una sola planta al máximo no sea siempre lo óptimo | Carmine |
-| D-06 | ¿Cuánto dura y cuánto frena el hielo solo? | Valores libres | Probar 70 % de ralentización durante 4 s | Carmine |
 | D-07 | ¿Cómo se pierde? | a) Un enemigo cruza y pierdes. b) Vidas | b con 3 vidas: perdona un error mientras se aprende | Carmine |
 | D-08 | Nombre del juego | "Rebrote" es de trabajo | Decidir antes de publicarlo | Carmine |
 
@@ -91,4 +101,4 @@ Las reglas de fusionar e infundir y el multiplicador de daño están en `src/gam
 
 Saldo, siembra, infusión y ocupación de casillas están en `src/game/core/match.ts`: qué pasa al soltar una carta en una casilla lo dice `cardPlay` y lo aplica `playCard`. Una casilla puede tener una disparadora o una mina (`Sown`); la recompensa por enemigo y la moneda soltada, en `src/game/core/economy.ts`. Los valores están en `ECONOMY` de `balance.ts`.
 
-El combate (disparo, balas, mordisco, minas, quemadura, vidas y derrota) está en `src/game/core/combat.ts`, y el generador de gusanos de prueba hasta T-007, en `src/game/core/spawner.ts`. Los valores están en `LIVES`, `SHOOTER`, `ENEMIES`, `MINE`, `FIRE` y `TEST_SPAWNER` de `balance.ts`. Cómo funciona la simulación: ADR-0008.
+El combate (disparo, balas, mordisco, minas, quemadura, ralentización, vidas y derrota) está en `src/game/core/combat.ts`, y el generador de gusanos de prueba hasta T-007, en `src/game/core/spawner.ts`. Los valores están en `LIVES`, `SHOOTER`, `ENEMIES`, `MINE`, `FIRE`, `ICE` y `TEST_SPAWNER` de `balance.ts`. Cómo funciona la simulación: ADR-0008.

@@ -10,7 +10,7 @@ describe('generador de prueba', () => {
     const waiting = stepSpawner(createMatch(), TEST_SPAWNER.firstDelayMs - 1, HOLE_X, () => 0.5);
     expect(waiting.spawned).toHaveLength(0);
     const out = stepSpawner(waiting.state, 1, HOLE_X, () => 0.5);
-    expect(out.spawned).toEqual([{ id: 1, kind: 'worm', lane: 2, x: HOLE_X, hp: ENEMIES.worm.hp, biteMs: null, burn: null }]);
+    expect(out.spawned).toEqual([{ id: 1, kind: 'worm', lane: 2, x: HOLE_X, hp: ENEMIES.worm.hp, biteMs: null, burn: null, slow: null }]);
     expect(out.state.enemies).toEqual(out.spawned);
     expect(out.state.spawner).toEqual({ spawned: 1, untilNextMs: spawnIntervalMs(1) });
   });
