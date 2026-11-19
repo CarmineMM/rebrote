@@ -43,11 +43,15 @@ El elemento solo siempre tiene un efecto mayor que su versión infundida, a camb
 - Infundir una planta de N cañones cuesta N elementos.
 
 ### Fusionar
-- Se hace arrastrando una disparadora sobre otra.
+- Se hace arrastrando una disparadora sobre otra. La arrastrada deja su casilla y la de destino se queda con el resultado. No cuesta moneda.
 - Solo entre la misma variante: normal con normal, fuego con fuego, hielo con hielo.
 - Máximo 3 cañones. Combinaciones válidas: 1+1 y 2+1.
-- La planta resultante queda con el nivel más bajo de las dos.
+- La planta resultante queda con el nivel más bajo de las dos. Si los niveles son distintos, se avisa antes de soltar ("Quedará en nivel 7").
 - Qué gana el jugador: ahorra casillas y obtiene más ataque que la suma de las partes.
+- **Cuánto (D-02, cerrada el 19 nov 2026):** cada disparo de una fusionada hace 2,2 veces el daño de una de un cañón si tiene 2 cañones y 3,5 veces si tiene 3. Dispara una bala por cañón, a la vez, y ese daño se reparte entre ellas. Su vida máxima es la suma de las partes (2 y 3 veces la de una disparadora). Los valores se ajustan jugando.
+- **Plantas dañadas:** la vida al fusionar es la suma de la vida actual de las dos.
+- La fusionada conserva el ritmo de disparo de la planta de destino, que no se mueve de su casilla.
+- No se puede deshacer una fusión ni mover una planta a una casilla vacía.
 
 ### Nivel
 - Tope de 20. No se espera alcanzarlo en las 7 rondas.
@@ -58,7 +62,6 @@ El elemento solo siempre tiene un efecto mayor que su versión infundida, a camb
 
 | # | Pregunta | Opciones | Recomendación | Decide |
 |---|---|---|---|---|
-| D-02 | ¿Cuánto más pega una planta fusionada? | Valores libres | Daño x2,2 con 2 cañones y x3,5 con 3; vida igual a la suma. Ajustar jugando | Carmine |
 | D-03 | ¿Los niveles se reinician en cada partida o son permanentes? | a) Por partida. b) Permanentes | a para el prototipo. b es mejor gancho de retención pero pide guardado y economía aparte | Carmine |
 | D-04 | ¿Cómo se ve en la interfaz infundir una planta de 2 o 3 cañones? | a) Arrastrar N veces. b) Un solo arrastre con precio xN | b: al pasar la carta sobre la planta, el precio de la carta cambia a "x3 = 225"; si no alcanza la moneda, se pone en rojo y no deja soltar | Carmine |
 | D-05 | ¿Cuánto cuesta cada nivel? | Fijo o creciente | Creciente suave, para que subir una sola planta al máximo no sea siempre lo óptimo | Carmine |
@@ -70,7 +73,7 @@ Los valores recomendados ya están como PROVISIONAL en `src/game/config/balance.
 
 ## Reglas ya implementadas
 
-Fusionar, infundir y multiplicador de daño están en `src/game/core/plants.ts` con tests en `plants.test.ts`.
+Las reglas de fusionar e infundir y el multiplicador de daño están en `src/game/core/plants.ts`, con tests en `plants.test.ts`. Fusionar dos plantas del tablero (destinos válidos, vida resultante, quién deja la casilla) está en `src/game/core/match.ts` (`fusionBlocker`, `fusionTargets`, `fusePlants`). El reparto del daño entre las balas de una fusionada, en `combat.ts` (`bulletDamage`). Los valores de D-02 están en `FUSION` de `balance.ts`.
 
 Saldo, siembra y ocupación de casillas están en `src/game/core/match.ts`; la recompensa por enemigo y la moneda soltada, en `src/game/core/economy.ts`. Los valores están en `ECONOMY` de `balance.ts`.
 

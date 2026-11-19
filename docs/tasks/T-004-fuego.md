@@ -5,6 +5,12 @@
 ## Contexto
 Las reglas de infusión ya existen y están probadas: `canInfuse`, `infuse` e `infusionCost` en `src/game/core/plants.ts`. El conteo de la mina está en `FIRE_MINE.countdownMs` (2000 ms). Falta todo lo visible.
 
+Desde T-006:
+- **Plantas fusionadas:** ya existen plantas de 2 y 3 cañones. Disparan una semilla por cañón a la vez, y el daño del disparo se reparte entre ellas (`bulletDamage` en `combat.ts`). Hay que decidir si la quemadura va en cada semilla o una vez por disparo. Como no se acumula, da casi igual.
+- **Arrastre:** con una carta elegida, pulsar una planta no la arrastra para fusionar. Queda libre para infundir.
+- **Fusión entre variantes:** de fuego con fuego ya funciona en core. El rótulo "Otra variante" ya sale al intentar fusionar una de fuego con una normal.
+- **Aspecto:** la disparadora de fuego necesita sus texturas de 1, 2 y 3 cañones (lista "Variante de planta nueva" en `docs/guias/graficos.md`).
+
 ## Objetivos
 1. **Fuego solo.** Sembrado en casilla vacía es una mina con conteo de 2 s.
 2. **Fuego infundido.** Soltado sobre una disparadora sin elemento, sus balas aplican daño progresivo.

@@ -3,11 +3,11 @@ import { BOARD, ENEMIES, LIVES, SHOOTER } from '../config/balance';
 import type { Cell } from './board';
 import {
   MAX_STEP_MS,
+  bulletDamage,
   enemyFront,
   fireIntervalMs,
   hasTarget,
   isDefeated,
-  shotDamage,
   spawnEnemy,
   stepCombat,
   type CombatEvent,
@@ -147,7 +147,7 @@ describe('disparo', () => {
     let state = withPlant(createMatch(), { lane: 2, col: 1 });
     state = spawnEnemy(state, 'worm', 2, 6, TOUGH);
     const { state: after, events } = stepCombat(state, 16);
-    expect(events).toEqual([{ type: 'shot', cell: { lane: 2, col: 1 }, bullet: after.bullets[0] }]);
+    expect(events).toEqual([{ type: 'shot', cell: { lane: 2, col: 1 }, bullet: after.bullets[0], cannon: 0 }]);
     expect(after.bullets[0]).toMatchObject({ lane: 2, x: 1.5, damage: SHOOTER.damage });
   });
 
@@ -218,12 +218,38 @@ describe('disparo', () => {
     expect(count(events, 'enemyKilled')).toBe(1);
   });
 
-  it('el dano de cada bala usa damageMultiplier', () => {
+  it('una planta fusionada dispara a la vez una bala por canon', () => {
+    for (const cannons of [2, 3] as const) {
+      let state = withPlant(createMatch(), { lane: 4, col: 0 }, shooter({ cannons }));
+      state = spawnEnemy(state, 'worm', 4, 5, TOUGH);
+      const { state: after, events } = stepCombat(state, 16);
+      expect(events.map((e) => e.type === 'shot' && e.cannon)).toEqual([0, 1, 2].slice(0, cannons));
+      expect(after.bullets).toHaveLength(cannons);
+      expect(after.bullets.every((b) => b.lane === 4 && b.x === 0.5)).toBe(true);
+      expect(new Set(after.bullets.map((b) => b.id)).size).toBe(cannons);
+    }
+  });
+
+  it('el dano del disparo usa damageMultiplier y se reparte entre sus balas', () => {
     const plant = shooter({ cannons: 2, level: 5 });
-    expect(shotDamage(plant)).toBeCloseTo(SHOOTER.damage * damageMultiplier(plant));
+    expect(bulletDamage(plant) * plant.cannons).toBeCloseTo(SHOOTER.damage * damageMultiplier(plant));
     let state = withPlant(createMatch(), { lane: 4, col: 0 }, plant);
     state = spawnEnemy(state, 'worm', 4, 5, TOUGH);
-    expect(stepCombat(state, 16).state.bullets[0].damage).toBeCloseTo(shotDamage(plant));
+    const { bullets } = stepCombat(state, 16).state;
+    bullets.forEach((b) => expect(b.damage).toBeCloseTo(bulletDamage(plant)));
+    expect(bulletDamage(createShooter())).toBe(SHOOTER.damage);
+  });
+
+  it('una fusionada hace mas dano que las plantas sueltas que la forman', () => {
+    const lane = 0;
+    const tough = (state: MatchState) => spawnEnemy(state, 'worm', lane, 8.5, TOUGH);
+    const damageDone = (state: MatchState) => TOUGH - (enemy(run(state, 20_000, 50).state, 1)?.hp ?? 0);
+    const two = tough(withPlant(withPlant(createMatch(), { lane, col: 0 }), { lane, col: 1 }));
+    const fused2 = tough(withPlant(createMatch(), { lane, col: 0 }, shooter({ cannons: 2 })));
+    const three = tough(withPlant(withPlant(withPlant(createMatch(), { lane, col: 0 }), { lane, col: 1 }), { lane, col: 2 }));
+    const fused3 = tough(withPlant(createMatch(), { lane, col: 0 }, shooter({ cannons: 3 })));
+    expect(damageDone(fused2)).toBeGreaterThan(damageDone(two));
+    expect(damageDone(fused3)).toBeGreaterThan(damageDone(three));
   });
 
   it('la cadencia sube con el nivel', () => {

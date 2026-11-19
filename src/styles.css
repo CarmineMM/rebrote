@@ -11,7 +11,8 @@ body {
 /* ---------- Pantalla completa (ADR-0007): el juego ocupa todo y el HUD flota encima ---------- */
 .app { position: fixed; inset: 0; overflow: hidden; }
 /* contain: size evita que el tamano natural del canvas (antes de que Phaser lo escale) agrande el contenedor. */
-.game-canvas { position: absolute; inset: 0; contain: size; }
+/* touch-action: none: en movil, arrastrar una planta (T-006) no debe hacer scroll ni zoom en la pagina. */
+.game-canvas { position: absolute; inset: 0; contain: size; touch-action: none; }
 .game-host { width: 100%; height: 100%; }
 
 .hud {

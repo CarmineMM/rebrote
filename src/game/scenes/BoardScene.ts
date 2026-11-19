@@ -1,19 +1,34 @@
 import * as Phaser from 'phaser';
-import { BOARD, ECONOMY, ENEMIES } from '../config/balance';
+import { BOARD, ECONOMY, ENEMIES, LIMITS } from '../config/balance';
 import { cellAt, type BoardPoint, type Cell } from '../core/board';
 import { isDefeated, spawnEnemy, stepCombat, type CombatEvent, type Enemy } from '../core/combat';
 import { rollKillReward } from '../core/economy';
-import { cardCost, createMatch, earn, plantAt, plantBlocker, plantShooter, type CardId, type MatchState, type Plant } from '../core/match';
+import {
+  cardCost,
+  createMatch,
+  earn,
+  fusePlants,
+  fusedPlant,
+  fusionBlocker,
+  fusionTargets,
+  plantAt,
+  plantBlocker,
+  plantShooter,
+  type CardId,
+  type MatchState,
+  type Plant,
+} from '../core/match';
 import { plantMaxHp } from '../core/plants';
 import { stepSpawner } from '../core/spawner';
 import { EventBus, GameEvents, type PagePoint } from '../EventBus';
 import { createAmbience, type Ambience } from '../view/ambience';
 import { BulletView } from '../view/bulletView';
 import { Effects } from '../view/effects';
+import { DRAG_LOOK, FusionDragView, dragGround, drawCell, type DragLabelLine } from '../view/fusionDragView';
 import { DEPTH, SCENERY, entityDepth, perspective, viewFor } from '../view/layout';
 import { PlantView, plantPlacement } from '../view/plantView';
 import { QUALITY_PROFILES, type QualityLevel, type QualityProfile } from '../view/quality';
-import { SHOOTER_SIZE, TEX, registerTextures } from '../view/textures';
+import { SHOOTER_SIZE, TEX, registerTextures, shooterTexture } from '../view/textures';
 import { WormView } from '../view/wormView';
 
 /** Solo aspecto y ritmo de las animaciones. Los numeros de juego viven en balance.ts. */
@@ -32,6 +47,8 @@ const LOOK = {
   lifeLostText: { color: '#ff8fa3', stroke: '#5a0d1a' },
   /** Tiempo entre perder la ultima vida y la pantalla de derrota: deja ver como se cuela el gusano. */
   defeatDelayMs: 1100,
+  /** Texto que salta sobre la planta al fusionar. */
+  fusedText: { color: '#efffdf', stroke: '#24561c' },
 } as const;
 
 /** Prueba de rendimiento en desarrollo (tecla H): el presupuesto de T-002, 20 plantas y 60 enemigos. */
@@ -45,8 +62,35 @@ const STRESS = {
   hpFactor: 20,
 } as const;
 
-const P = (x: number, y: number) => perspective.toScreen({ x, y });
 const cellKey = (cell: Cell) => `${cell.lane}:${cell.col}`;
+const keyCell = (key: string): Cell => {
+  const [lane, col] = key.split(':').map(Number);
+  return { lane, col };
+};
+const sameCell = (a: Cell | null, b: Cell | null) => a !== null && b !== null && a.lane === b.lane && a.col === b.col;
+
+/** Planta pulsada con el boton aun abajo: si el puntero se mueve lo bastante, empieza a arrastrarse (T-006). */
+interface PlantPress {
+  cell: Cell;
+  pointerId: number;
+  x: number;
+  y: number;
+}
+
+/** Arrastre en curso de una planta para fusionarla con otra (T-006). Mientras dura, la planta sigue en su casilla. */
+interface PlantDrag {
+  from: Cell;
+  pointerId: number;
+  /** Del punto pulsado a los pies de la planta, en anchos de casilla (ver `dragGround`). */
+  grab: { x: number; y: number };
+  view: FusionDragView;
+  /** Casillas de las plantas con las que se puede fusionar ahora mismo. */
+  targets: Cell[];
+  /** Casilla bajo la planta arrastrada, si cae en el tablero. */
+  over: Cell | null;
+  /** Ancho de casilla de la ultima posicion valida (para cuando el puntero sale por encima del horizonte). */
+  cellWidth: number;
+}
 
 /** Datos con los que arranca la escena (ver createGame). */
 export interface BoardSceneData {
@@ -77,6 +121,9 @@ export class BoardScene extends Phaser.Scene {
   private wormViews = new Map<number, WormView>();
   private bulletViews = new Map<number, BulletView>();
   private passiveIncome?: Phaser.Time.TimerEvent;
+  private press: PlantPress | null = null;
+  private drag: PlantDrag | null = null;
+  private cursor = 'default';
   /** Sin vidas: el combate se detiene y React muestra la derrota. */
   private defeated = false;
   /** Medicion de fps en tiempo real (el reloj del juego se frena cuando va lento, no sirve para esto). */
@@ -103,6 +150,9 @@ export class BoardScene extends Phaser.Scene {
     this.selected = null;
     this.hoverCell = null;
     this.defeated = false;
+    this.press = null;
+    this.drag = null;
+    this.cursor = 'default';
     // Reiniciar la partida vuelve a pasar por aqui: nada de la anterior debe sobrevivir.
     this.plantViews = new Map();
     this.wormViews = new Map();
@@ -165,6 +215,8 @@ export class BoardScene extends Phaser.Scene {
   private applyPause(paused: boolean): void {
     this.wantPaused = paused;
     if (!this.created) return;
+    // Un arrastre a medias no sobrevive a la pausa: la planta vuelve a su casilla.
+    if (paused) this.cancelDrag();
     if (paused && this.sys.isActive()) {
       this.scene.pause();
     } else if (!paused && this.sys.isPaused()) {
@@ -182,6 +234,7 @@ export class BoardScene extends Phaser.Scene {
 
   update(_time: number, delta: number): void {
     this.ambience.update(delta);
+    this.drag?.view.update(delta);
     if (!this.defeated) this.advance(delta);
     this.sampleFps();
   }
@@ -244,7 +297,7 @@ export class BoardScene extends Phaser.Scene {
 
     // Planta fantasma: muestra donde quedara la disparadora antes de soltarla.
     this.ghost = this.add
-      .image(0, 0, TEX.shooter)
+      .image(0, 0, shooterTexture(1))
       .setOrigin(0.5, SHOOTER_SIZE.footY / SHOOTER_SIZE.height)
       .setAlpha(0.55)
       .setVisible(false);
@@ -255,30 +308,65 @@ export class BoardScene extends Phaser.Scene {
     this.input.mouse?.disableContextMenu();
 
     this.input.on(Phaser.Input.Events.POINTER_MOVE, (pointer: Phaser.Input.Pointer) => {
+      if (this.drag) {
+        if (pointer.id === this.drag.pointerId) this.moveDrag(pointer);
+        return;
+      }
+      const press = this.press;
+      if (press && pointer.id === press.pointerId) {
+        if (!pointer.isDown) {
+          this.press = null;
+        } else if (Phaser.Math.Distance.Between(press.x, press.y, pointer.worldX, pointer.worldY) >= DRAG_LOOK.startDistance) {
+          this.startDrag(pointer);
+          return;
+        }
+      }
       this.hover(this.cellAtScreen(pointer.worldX, pointer.worldY));
+      this.setCursor(this.canDragPlants() && this.plantCellAtScreen(pointer.worldX, pointer.worldY) ? 'grab' : 'default');
     });
-    this.input.on(Phaser.Input.Events.GAME_OUT, () => this.hover(null));
+    this.input.on(Phaser.Input.Events.GAME_OUT, () => {
+      if (!this.drag) this.hover(null);
+    });
 
     this.input.on(
       Phaser.Input.Events.POINTER_DOWN,
       (pointer: Phaser.Input.Pointer, over: Phaser.GameObjects.GameObject[]) => {
         if (pointer.rightButtonDown()) {
+          this.cancelDrag();
           this.select(null);
           return;
         }
         // Un clic sobre una moneda la recoge; no debe sembrar en la casilla de debajo.
-        if (over.length > 0) return;
+        if (over.length > 0 || this.drag) return;
+        // Sin carta elegida, pulsar una planta la prepara para arrastrarla (T-006).
+        const plantCell = this.canDragPlants() ? this.plantCellAtScreen(pointer.worldX, pointer.worldY) : null;
+        if (plantCell) {
+          this.press = { cell: plantCell, pointerId: pointer.id, x: pointer.worldX, y: pointer.worldY };
+          return;
+        }
         this.tryPlant(this.cellAtScreen(pointer.worldX, pointer.worldY));
       },
     );
 
-    // Esc lo gestiona el HUD: cancela la carta elegida o abre el menu de pausa.
+    // Soltar dentro del lienzo o fuera de el (sobre el HUD, por ejemplo).
+    const onUp = (pointer: Phaser.Input.Pointer) => {
+      if (this.press?.pointerId === pointer.id) this.press = null;
+      if (this.drag?.pointerId === pointer.id) this.dropDrag(pointer);
+    };
+    this.input.on(Phaser.Input.Events.POINTER_UP, onUp);
+    this.input.on(Phaser.Input.Events.POINTER_UP_OUTSIDE, onUp);
+
+    // Esc lo gestiona el HUD: cancela la carta elegida o abre el menu de pausa (que devuelve a su casilla una planta arrastrada).
   }
 
   private bindHud(): void {
     // En pausa o con la partida perdida la escena no atiende ordenes del HUD (los menus las tapan, pero por si acaso).
     const running = () => this.sys.isActive() && !this.defeated;
-    const onPicked = (card: CardId) => running() && this.select(card);
+    const onPicked = (card: CardId) => {
+      if (!running()) return;
+      this.cancelDrag();
+      this.select(card);
+    };
     const onCancelled = () => this.select(null);
     const onDragged = (point: PagePoint) => running() && this.hover(this.cellAtPage(point));
     const onDropped = (point: PagePoint) => {
@@ -322,6 +410,8 @@ export class BoardScene extends Phaser.Scene {
   /** Siembra gratis las 4 primeras columnas (20 plantas) y suelta 60 gusanos con mucha vida. */
   private stressTest(): void {
     if (this.defeated) return;
+    // Siembra en casillas que un arrastre a medias daria por vacias.
+    this.cancelDrag();
     for (let lane = 0; lane < BOARD.lanes; lane++) {
       for (let col = 0; col < STRESS.plantColumns; col++) {
         const cell = { lane, col };
@@ -362,10 +452,12 @@ export class BoardScene extends Phaser.Scene {
   /** La regla ya esta aplicada en el estado; aqui solo se anima. */
   private showEvent(event: CombatEvent): void {
     switch (event.type) {
-      case 'shot':
-        this.plantViews.get(cellKey(event.cell))?.recoil();
-        this.bulletViews.set(event.bullet.id, new BulletView(this, this.fx, event.bullet, true));
+      case 'shot': {
+        const plant = this.plantViews.get(cellKey(event.cell));
+        plant?.recoil(event.cannon);
+        this.bulletViews.set(event.bullet.id, new BulletView(this, this.fx, event.bullet, true, plant?.muzzleOffset(event.cannon)));
         break;
+      }
       case 'hit':
         this.bulletViews.get(event.bulletId)?.impact();
         this.bulletViews.delete(event.bulletId);
@@ -386,6 +478,7 @@ export class BoardScene extends Phaser.Scene {
         this.plantViews.delete(cellKey(event.cell));
         // La casilla vuelve a estar libre: si hay una carta elegida, el resaltado cambia.
         this.refreshHighlight();
+        this.plantLostDuringDrag(event.cell);
         break;
       case 'enemyKilled':
         this.wormViews.get(event.enemyId)?.die();
@@ -405,12 +498,13 @@ export class BoardScene extends Phaser.Scene {
   }
 
   private addPlantView(cell: Cell, plant: Plant, sprout: boolean): void {
-    this.plantViews.set(cellKey(cell), new PlantView(this, this.fx, cell, plant.hp / plantMaxHp(plant.shooter), sprout));
+    const view = new PlantView(this, this.fx, cell, plant.shooter.cannons, plant.hp / plantMaxHp(plant.shooter), sprout);
+    this.plantViews.set(cellKey(cell), view);
   }
 
   /** Un gusano se colo: aviso en el camino y un temblor corto. React quita el corazon. */
   private showLifeLost(lane: number): void {
-    const at = P(LOOK.lifeLostX, lane + 0.5);
+    const at = perspective.toScreen({ x: LOOK.lifeLostX, y: lane + 0.5 });
     this.fx.floatText('−1 ♥', at.x, at.y - perspective.cellWidthAt({ x: LOOK.lifeLostX, y: lane + 0.5 }) * 0.6, LOOK.lifeLostText);
     this.cameras.main.shake(220, 0.004);
   }
@@ -422,6 +516,9 @@ export class BoardScene extends Phaser.Scene {
   private enterDefeat(delayMs: number): void {
     if (this.defeated) return;
     this.defeated = true;
+    this.cancelDrag();
+    this.press = null;
+    this.setCursor('default');
     this.select(null);
     this.passiveIncome?.remove();
     this.bulletViews.forEach((bullet) => bullet.vanish());
@@ -469,12 +566,8 @@ export class BoardScene extends Phaser.Scene {
       return;
     }
     const blocked = plantBlocker(this.match, cell) !== null;
-    const color = blocked ? LOOK.highlightBlocked : LOOK.highlightOk;
-    const corners = [P(cell.col, cell.lane), P(cell.col + 1, cell.lane), P(cell.col + 1, cell.lane + 1), P(cell.col, cell.lane + 1)];
-    this.highlight.fillStyle(color, 0.25).lineStyle(4, color, 0.95).beginPath();
-    this.highlight.moveTo(corners[0].x, corners[0].y);
-    for (const c of corners.slice(1)) this.highlight.lineTo(c.x, c.y);
-    this.highlight.closePath().fillPath().strokePath().setVisible(true);
+    drawCell(this.highlight, cell, blocked ? LOOK.highlightBlocked : LOOK.highlightOk, 0.25, 4);
+    this.highlight.setVisible(true);
 
     if (blocked) {
       this.ghost.setVisible(false);
@@ -490,6 +583,193 @@ export class BoardScene extends Phaser.Scene {
     this.addPlantView(cell, plantAt(this.match, cell) as Plant, true);
     this.select(null);
     this.emitBalance();
+  }
+
+  // -------------------------------------------------------------------------
+  // Fusionar por arrastre (T-006). Las reglas son de core (fusionBlocker, fusionTargets, fusePlants);
+  // aqui se lleva el puntero y se anima.
+
+  /** Se arrastran plantas sin carta elegida y con la partida en juego. */
+  private canDragPlants(): boolean {
+    return !this.selected && !this.defeated && this.sys.isActive();
+  }
+
+  /**
+   * Planta bajo un punto de pantalla. Primero la que se ve ahi (las de delante tapan a las de atras,
+   * y la cabeza asoma sobre la casilla de detras); si no, la de la casilla bajo el punto.
+   */
+  private plantCellAtScreen(x: number, y: number): Cell | null {
+    let best: string | null = null;
+    let bestFootY = -Infinity;
+    for (const [key, view] of this.plantViews) {
+      const footY = view.foot().y;
+      if (footY > bestFootY && view.contains(x, y)) {
+        best = key;
+        bestFootY = footY;
+      }
+    }
+    if (best) return keyCell(best);
+    const cell = this.cellAtScreen(x, y);
+    return cell && plantAt(this.match, cell) ? cell : null;
+  }
+
+  private setCursor(cursor: string): void {
+    if (cursor === this.cursor) return;
+    this.cursor = cursor;
+    this.input.setDefaultCursor(cursor);
+  }
+
+  /** Empieza el arrastre: la planta sale a la mano, sus destinos se marcan en verde y el resto se atenua. */
+  private startDrag(pointer: Phaser.Input.Pointer): void {
+    const press = this.press;
+    this.press = null;
+    if (!press) return;
+    const plant = plantAt(this.match, press.cell);
+    const view = this.plantViews.get(cellKey(press.cell));
+    if (!plant || !view) return;
+
+    const { cellWidth } = plantPlacement(press.cell);
+    const foot = view.foot();
+    const grab = { x: (foot.x - press.x) / cellWidth, y: (foot.y - press.y) / cellWidth };
+    const targets = fusionTargets(this.match, press.cell);
+    const dragView = new FusionDragView(this, this.fx, plant.shooter.cannons, foot, cellWidth);
+    this.drag = { from: press.cell, pointerId: pointer.id, grab, view: dragView, targets, over: null, cellWidth };
+    view.setLifted(true);
+    this.markTargets(true);
+    this.plantViews.forEach((other, key) => {
+      if (targets.some((t) => cellKey(t) === key)) other.beckon();
+    });
+    this.hover(null);
+    this.setCursor('grabbing');
+    this.moveDrag(pointer);
+  }
+
+  /** Marca los destinos validos y atenua el resto de plantas (o lo deshace con `on` a false). */
+  private markTargets(on: boolean): void {
+    const drag = this.drag;
+    if (on && drag) drag.view.showTargets(drag.targets);
+    const from = drag ? cellKey(drag.from) : '';
+    this.plantViews.forEach((view, key) => {
+      view.setDimmed(on && key !== from && !drag?.targets.some((t) => cellKey(t) === key));
+    });
+  }
+
+  private moveDrag(pointer: Phaser.Input.Pointer): void {
+    const drag = this.drag;
+    if (!drag) return;
+    const ground = dragGround({ x: pointer.worldX, y: pointer.worldY }, drag.grab, drag.cellWidth);
+    drag.cellWidth = ground.cellWidth;
+    drag.view.moveTo(ground);
+    const over = ground.board ? cellAt(ground.board) : null;
+    if (!sameCell(over, drag.over)) {
+      drag.over = over;
+      this.refreshDragHover();
+    }
+  }
+
+  /** Marca la casilla bajo la planta arrastrada y cuenta que pasara al soltar (o por que no se puede). */
+  private refreshDragHover(): void {
+    const drag = this.drag;
+    if (!drag) return;
+    const to = drag.over;
+    const toView = to ? this.plantViews.get(cellKey(to)) : undefined;
+    if (!to || !toView) {
+      // Casilla vacia o fuera del tablero: soltar ahi no hace nada.
+      drag.view.hover(null, null);
+      return;
+    }
+    const blocker = fusionBlocker(this.match, drag.from, to);
+    if (blocker === null) {
+      const source = plantAt(this.match, drag.from) as Plant;
+      const target = plantAt(this.match, to) as Plant;
+      const result = fusedPlant(source, target).shooter;
+      const lines: DragLabelLine[] = [{ text: `Fusionar: ${result.cannons} cañones`, tone: 'ok' }];
+      // Aviso de perdida de nivel: el resultado se queda con el nivel mas bajo de las dos.
+      if (source.shooter.level !== target.shooter.level) lines.push({ text: `Quedará en nivel ${result.level}`, tone: 'warn' });
+      drag.view.hover(to, 'ok', lines, toView.foot());
+    } else if (blocker === 'variant') {
+      drag.view.hover(to, 'blocked', [{ text: 'Otra variante', tone: 'blocked' }], toView.foot());
+    } else if (blocker === 'max-cannons') {
+      drag.view.hover(to, 'blocked', [{ text: `Máximo ${LIMITS.maxCannons} cañones`, tone: 'blocked' }], toView.foot());
+    } else {
+      // Su propia casilla: soltar ahi no hace nada.
+      drag.view.hover(null, null);
+    }
+  }
+
+  /** Suelta la planta: si cae sobre un destino valido se fusionan; si no, vuelve a su casilla sin cambios. */
+  private dropDrag(pointer: Phaser.Input.Pointer): void {
+    const drag = this.drag;
+    if (!drag) return;
+    this.moveDrag(pointer);
+    this.endDrag();
+    const to = drag.over;
+    if (!to || fusionBlocker(this.match, drag.from, to) !== null) {
+      this.returnDrag(drag);
+      return;
+    }
+
+    // La regla se aplica en el acto; la animacion acompana.
+    this.match = fusePlants(this.match, drag.from, to);
+    const fused = plantAt(this.match, to) as Plant;
+    const fromView = this.plantViews.get(cellKey(drag.from));
+    this.plantViews.delete(cellKey(drag.from));
+    fromView?.uproot();
+    const toView = this.plantViews.get(cellKey(to));
+    if (!toView) return;
+    const foot = toView.foot();
+    const { cellWidth } = plantPlacement(to);
+    drag.view.dropInto(foot, cellWidth);
+    toView.fuse(fused.shooter.cannons, fused.hp / plantMaxHp(fused.shooter));
+    this.fx.floatText('¡Fusión!', foot.x, foot.y - cellWidth * 1.05, LOOK.fusedText);
+    this.refreshHighlight();
+  }
+
+  /** Corta el arrastre sin fusionar: la planta vuelve a su casilla. */
+  private cancelDrag(): void {
+    this.press = null;
+    const drag = this.drag;
+    if (!drag) return;
+    this.endDrag();
+    this.returnDrag(drag);
+  }
+
+  /** Quita marcas y atenuado y deja de seguir al puntero. */
+  private endDrag(): void {
+    this.markTargets(false);
+    this.drag = null;
+    this.setCursor('default');
+  }
+
+  /** La planta de la mano vuelve volando a su casilla y la de la casilla recupera su aspecto. */
+  private returnDrag(drag: PlantDrag): void {
+    const key = cellKey(drag.from);
+    const view = this.plantViews.get(key);
+    if (!view) {
+      drag.view.poof();
+      return;
+    }
+    drag.view.returnTo(view.foot(), plantPlacement(drag.from).cellWidth, () => {
+      // Si mientras volaba murio o se empezo a arrastrar otra vez, no hay nada que devolver.
+      if (this.plantViews.get(key) === view && !sameCell(this.drag?.from ?? null, drag.from)) view.setLifted(false);
+    });
+  }
+
+  /**
+   * Una planta murio en mitad de un arrastre. Si era la arrastrada, el arrastre se cancela.
+   * Si era un destino, deja de serlo: soltar ahi ya no fusiona.
+   */
+  private plantLostDuringDrag(cell: Cell): void {
+    const drag = this.drag;
+    if (!drag) return;
+    if (sameCell(cell, drag.from)) {
+      this.endDrag();
+      drag.view.poof();
+      return;
+    }
+    drag.targets = fusionTargets(this.match, drag.from);
+    drag.view.showTargets(drag.targets);
+    this.refreshDragHover();
   }
 
   // -------------------------------------------------------------------------

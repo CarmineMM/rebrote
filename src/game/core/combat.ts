@@ -31,7 +31,8 @@ export interface Bullet {
 
 /** Lo que paso durante un paso. La vista lo anima; la regla ya esta aplicada en el estado. */
 export type CombatEvent =
-  | { readonly type: 'shot'; readonly cell: Cell; readonly bullet: Bullet }
+  /** Una planta de N canones dispara N balas a la vez, un evento por bala. `cannon` es el canon (0 es el de arriba). */
+  | { readonly type: 'shot'; readonly cell: Cell; readonly bullet: Bullet; readonly cannon: number }
   | { readonly type: 'hit'; readonly bulletId: number; readonly enemyId: number; readonly at: BoardPoint }
   | { readonly type: 'bulletGone'; readonly bulletId: number }
   | { readonly type: 'bite'; readonly enemyId: number; readonly cell: Cell }
@@ -49,9 +50,12 @@ export const MAX_STEP_MS = 50;
 
 type Mutable<T> = { -readonly [K in keyof T]: T[K] };
 
-/** Dano de cada bala: el base de la disparadora por lo que suman canones y nivel. */
-export function shotDamage(shooter: Shooter): number {
-  return SHOOTER.damage * damageMultiplier(shooter);
+/**
+ * Dano de cada bala. El disparo entero (una bala por canon) hace el dano base de la disparadora por lo que
+ * suman canones y nivel (`damageMultiplier`), repartido a partes iguales entre sus balas.
+ */
+export function bulletDamage(shooter: Shooter): number {
+  return (SHOOTER.damage * damageMultiplier(shooter)) / shooter.cannons;
 }
 
 /** Tiempo entre disparos: el base de la disparadora, mas corto con cada nivel. */
@@ -167,8 +171,8 @@ function substep(state: MatchState, dtMs: number, events: CombatEvent[]): MatchS
   }
   const alive = enemies.filter((e) => e.hp > 0);
 
-  // Plantas: recargan y disparan si tienen a quien. Si la recarga acaba a mitad de paso, lo que sobra
-  // cuenta para el siguiente disparo; una planta que esperaba lista no acumula nada.
+  // Plantas: recargan y disparan si tienen a quien, una bala por canon. Si la recarga acaba a mitad de paso,
+  // lo que sobra cuenta para el siguiente disparo; una planta que esperaba lista no acumula nada.
   plants.forEach((lane, laneIndex) =>
     lane.forEach((plant, col) => {
       if (!plant) return;
@@ -176,9 +180,12 @@ function substep(state: MatchState, dtMs: number, events: CombatEvent[]): MatchS
       let reloadMs = plant.reloadMs - dtMs;
       if (reloadMs <= 0) {
         if (hasTarget(alive, cell)) {
-          const bullet: Bullet = { id: nextId++, lane: laneIndex, x: col + 0.5, damage: shotDamage(plant.shooter) };
-          bullets.push(bullet);
-          events.push({ type: 'shot', cell, bullet });
+          const damage = bulletDamage(plant.shooter);
+          for (let cannon = 0; cannon < plant.shooter.cannons; cannon++) {
+            const bullet: Bullet = { id: nextId++, lane: laneIndex, x: col + 0.5, damage };
+            bullets.push(bullet);
+            events.push({ type: 'shot', cell, bullet, cannon });
+          }
           reloadMs = (plant.reloadMs > 0 ? reloadMs : 0) + fireIntervalMs(plant.shooter);
         } else {
           reloadMs = 0;

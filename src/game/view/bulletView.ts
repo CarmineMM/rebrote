@@ -2,7 +2,7 @@ import * as Phaser from 'phaser';
 import type { Bullet } from '../core/combat';
 import type { Effects } from './effects';
 import { entityDepth, perspective } from './layout';
-import { PLANT_LOOK } from './plantView';
+import { PLANT_LOOK, barrelMuzzle, type Muzzle } from './plantView';
 import { SEED_SIZE, TEX, artInv } from './textures';
 
 const BULLET_LOOK = {
@@ -13,8 +13,9 @@ const BULLET_LOOK = {
 } as const;
 
 /**
- * Semilla en vuelo. Vuela a la altura del canon por su carril y lleva una sombrita en el suelo.
- * La logica la saca del centro de la planta; en pantalla nace en la boca del canon.
+ * Semilla en vuelo. Vuela a la altura del canon del que salio por su carril y lleva una sombrita en el suelo.
+ * La logica la saca del centro de la planta; en pantalla nace en la boca del canon. Una semilla que se vuelve
+ * a pintar al continuar la partida (cambio de calidad) no sabe de que canon salio y vuela a la altura del central.
  */
 export class BulletView {
   private readonly seed: Phaser.GameObjects.Image;
@@ -23,16 +24,20 @@ export class BulletView {
   private readonly cellWidth: number;
   /** Hasta que la bala no pasa la boca del canon, se pinta en la boca. */
   private readonly minX: number;
+  /** Altura de vuelo sobre el suelo, en anchos de casilla: la de la boca del canon. */
+  private readonly up: number;
 
   constructor(
     private readonly scene: Phaser.Scene,
     private readonly fx: Effects,
     bullet: Bullet,
     fresh: boolean,
+    muzzle: Muzzle = barrelMuzzle(1),
   ) {
     this.footY = bullet.lane + PLANT_LOOK.footY;
     this.cellWidth = perspective.cellWidthAt({ x: bullet.x, y: this.footY });
-    this.minX = fresh ? bullet.x + PLANT_LOOK.muzzle.x : -Infinity;
+    this.minX = fresh ? bullet.x + muzzle.x : -Infinity;
+    this.up = muzzle.up;
     const depth = entityDepth(perspective.toScreen({ x: bullet.x, y: this.footY }).y) + 0.5;
     const scale = (this.cellWidth / BULLET_LOOK.unitsPerCell) * BULLET_LOOK.size * artInv();
 
@@ -52,7 +57,7 @@ export class BulletView {
 
   sync(bullet: Bullet): void {
     const ground = perspective.toScreen({ x: Math.max(bullet.x, this.minX), y: this.footY });
-    this.seed.setPosition(ground.x, ground.y - PLANT_LOOK.muzzle.up * this.cellWidth);
+    this.seed.setPosition(ground.x, ground.y - this.up * this.cellWidth);
     this.shadow.setPosition(ground.x, ground.y);
   }
 

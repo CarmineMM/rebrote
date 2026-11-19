@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { COSTS } from '../config/balance';
+import { COSTS, SHOOTER } from '../config/balance';
 import {
   canFuse,
   canInfuse,
@@ -7,8 +7,10 @@ import {
   damageMultiplier,
   fireRateMultiplier,
   fuse,
+  fuseBlocker,
   infuse,
   infusionCost,
+  plantMaxHp,
   type Shooter,
 } from './plants';
 
@@ -33,6 +35,32 @@ describe('fusionar', () => {
     expect(canFuse(shooter({ cannons: 2 }), shooter({ cannons: 2 }))).toBe(false);
     expect(canFuse(shooter({ cannons: 3 }), shooter())).toBe(false);
   });
+
+  it('dice por que no se puede', () => {
+    expect(fuseBlocker(shooter(), shooter())).toBeNull();
+    expect(fuseBlocker(shooter({ cannons: 2 }), shooter())).toBeNull();
+    expect(fuseBlocker(shooter({ element: 'ice' }), shooter())).toBe('variant');
+    expect(fuseBlocker(shooter({ cannons: 2 }), shooter({ cannons: 2 }))).toBe('max-cannons');
+    // Con otra variante, aunque tambien sobren canones, el motivo es la variante.
+    expect(fuseBlocker(shooter({ element: 'fire', cannons: 2 }), shooter({ cannons: 2 }))).toBe('variant');
+  });
+
+  it('entre plantas de fuego o de hielo tambien se puede', () => {
+    expect(fuse(shooter({ element: 'fire' }), shooter({ element: 'fire' }))).toEqual({ element: 'fire', cannons: 2, level: 1 });
+    expect(canFuse(shooter({ element: 'ice', cannons: 2 }), shooter({ element: 'ice' }))).toBe(true);
+  });
+
+  it('no permite fusionar lo que no se puede', () => {
+    expect(() => fuse(shooter({ element: 'fire' }), shooter())).toThrow();
+  });
+});
+
+describe('vida', () => {
+  it('una de un canon tiene la vida de la disparadora y una fusionada, la suma de sus partes (D-02)', () => {
+    expect(plantMaxHp(shooter())).toBe(SHOOTER.hp);
+    expect(plantMaxHp(shooter({ cannons: 2 }))).toBe(2 * SHOOTER.hp);
+    expect(plantMaxHp(shooter({ cannons: 3 }))).toBe(3 * SHOOTER.hp);
+  });
 });
 
 describe('infundir', () => {
@@ -50,6 +78,7 @@ describe('infundir', () => {
 
 describe('dano', () => {
   it('fusionar rinde mas que la suma de las partes', () => {
+    expect(damageMultiplier(shooter({ cannons: 2 }))).toBeGreaterThan(2 * damageMultiplier(shooter()));
     expect(damageMultiplier(shooter({ cannons: 3 }))).toBeGreaterThan(3 * damageMultiplier(shooter()));
   });
 });

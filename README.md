@@ -14,7 +14,8 @@ Defensa por carriles: plantas contra virus informáticos históricos que una IA 
 - Los gusanos salen de los agujeros de la derecha y avanzan por su carril. Si un gusano cruza el césped, pierdes una vida; con 3 vidas perdidas se acaba la partida.
 - Arrastra la carta de la bandeja a una casilla del césped, o haz clic en la carta y luego en la casilla. Cada disparadora dispara solo a los gusanos de su carril.
 - Cada gusano eliminado da moneda. A veces la suelta en el suelo: haz clic en ella para recogerla, vale un poco más.
-- Esc o clic derecho suelta la carta elegida.
+- Arrastra una disparadora sobre otra de la misma variante para fusionarlas: la de destino suma los cañones (hasta 3) y pega más que las dos por separado. Las plantas con las que se puede fusionar se marcan en verde. Si sueltas en otro sitio, vuelve a su casilla.
+- Esc o clic derecho suelta la carta elegida (o devuelve a su casilla la planta que arrastras).
 - Esc (sin carta elegida), P o el botón de pausa abren el menú de pausa, con los ajustes: pantalla completa, calidad gráfica y FPS.
 - En desarrollo, `H` lanza la prueba de rendimiento: 20 disparadoras gratis y 60 gusanos con mucha vida.
 

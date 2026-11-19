@@ -5,6 +5,8 @@
 ## Contexto
 El hielo reutiliza todo lo construido en T-004 (carta, mina, infusión). Cambia el efecto: ralentiza en lugar de quemar. El tipo `ElementType` ya incluye `ice` (verificado en `src/game/core/plants.ts`).
 
+Desde T-006, la disparadora de hielo necesita sus texturas de 1, 2 y 3 cañones (lista "Variante de planta nueva" en `docs/guias/graficos.md`).
+
 ## Objetivos
 1. **Hielo solo.** Mina que al explotar ralentiza con fuerza en área.
 2. **Hielo infundido.** Las balas ralentizan al enemigo impactado.

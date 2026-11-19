@@ -5,6 +5,11 @@
 ## Contexto
 `Shooter` ya tiene el campo `level` y `damageMultiplier` ya lo usa (verificado en `src/game/core/plants.ts`). El tope de 20 está en `LIMITS.maxLevel`. Falta la acción del jugador y la medallita.
 
+Desde T-006:
+- **Selección:** un clic sobre una planta, sin arrastrarla, no hace nada. Queda libre para seleccionarla aquí. El arrastre empieza al mover el puntero con el botón pulsado.
+- **Medallita:** los puntos de los cañones van en el tallo (`SHOOTER_DOTS` en `textures.ts`). La nuca, arriba a la izquierda de la cabeza, queda libre para la medallita (ver `docs/guias/graficos.md`, sección 8).
+- **Aviso de nivel al fusionar:** ya existe. Al arrastrar una planta sobre otra de nivel distinto sale "Quedará en nivel N". Con niveles reales hay que comprobarlo jugando.
+
 ## Objetivos
 1. **Mejorar una planta sembrada** pagando con la moneda única.
 2. **Mostrar el nivel** con una medallita discreta, válida también en plantas fusionadas.

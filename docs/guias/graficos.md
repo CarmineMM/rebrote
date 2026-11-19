@@ -20,10 +20,11 @@ Cómo se pinta y se anima Rebrote, para que todo lo nuevo (enemigos, mundos, efe
 | `src/game/view/ambience.ts` | Lo que se mueve en el escenario: sol, nubes, pájaros, viento, partículas, flores |
 | `src/game/view/quality.ts` | Niveles gráficos y modo automático |
 | `src/game/view/effects.ts` | Efectos de respuesta compartidos: ráfagas de partículas (tierra, chispas, hojas, píxeles, jugo), anillos, destellos y textos flotantes |
-| `src/game/view/plantView.ts` | Disparadora: brota, respira, retrocede al disparar, se encoge al recibir un mordisco, se marchita y muere (`PLANT_LOOK`) |
+| `src/game/view/plantView.ts` | Disparadora: brota, respira, retrocede al disparar, se encoge al recibir un mordisco, se marchita y muere (`PLANT_LOOK`). Al arrastrar otra: se atenúa, se levanta o da un saltito. Al fusionarse: cambia de textura con un rebote. Boca de cada cañón (`barrelMuzzle`) |
+| `src/game/view/fusionDragView.ts` | Arrastre para fusionar (T-006): planta en la mano con su sombra, casillas de destino, rótulo de lo que pasará al soltar (`DRAG_LOOK`, `dragGround`, `drawCell`) |
 | `src/game/view/wormView.ts` | Gusano: sale del agujero, ondula, muerde, recibe golpes, muere, se cuela y celebra |
 | `src/game/view/bulletView.ts` | Semilla en vuelo, impacto y salida del tablero |
-| `src/game/scenes/BoardScene.ts` | Siembra, monedas, combate (avanza la partida y anima sus eventos), resaltado, filtros de Ultra, ajuste de la vista, pausa y derrota |
+| `src/game/scenes/BoardScene.ts` | Siembra, monedas, combate (avanza la partida y anima sus eventos), fusionar por arrastre, resaltado, filtros de Ultra, ajuste de la vista, pausa y derrota |
 | `src/ui/` | HUD flotante (cartas, vidas, saldo), menú de pausa, ajustes y pantalla de derrota (React) |
 
 ## 3. Coordenadas y perspectiva
@@ -39,7 +40,7 @@ Cómo se pinta y se anima Rebrote, para que todo lo nuevo (enemigos, mundos, efe
 - **Dónde apoya cada cosa en su carril:**
   - Las plantas, en `carril + 0,62` (`PLANT_LOOK.footY`).
   - Los gusanos, en `carril + 0,64`: un pelo por delante, para que tapen a la planta que muerden.
-  - Las balas vuelan a la altura del cañón (`PLANT_LOOK.muzzle`) sobre la línea de las plantas, con una sombrita en el suelo.
+  - Las balas vuelan a la altura del cañón del que salen (`barrelMuzzle`) sobre la línea de las plantas, con una sombrita en el suelo. Una semilla que se vuelve a pintar al cambiar la calidad no sabe de qué cañón salió y vuela a la altura del central.
 - **Lo que mide en casillas pero se dibuja en píxeles de textura** (plantas, gusanos, semillas) usa 160 píxeles de diseño por casilla, el ancho de la textura de la disparadora.
 - Velocidades y distancias de juego van en casillas por segundo y en casillas, en `balance.ts`.
 
@@ -64,7 +65,7 @@ Cómo se pinta y se anima Rebrote, para que todo lo nuevo (enemigos, mundos, efe
 
 | Evento | Cómo se anima |
 |---|---|
-| `shot` | La planta retrocede y se aplasta un instante. Fogonazo en la boca del cañón y la semilla nace ahí |
+| `shot` | La planta retrocede y se aplasta un instante. Fogonazo en la boca del cañón y la semilla nace ahí. Una planta de N cañones manda N eventos a la vez, uno por cañón (`cannon`, 0 es el de arriba), con fogonazos algo más pequeños |
 | `hit` | La semilla revienta en jugo con un anillo lima pequeño. El gusano destella en blanco, retrocede y pone cara de "ay" |
 | `bulletGone` | La semilla se apaga mientras sigue un poco |
 | `bite` | El gusano se echa atrás con la boca abierta y se lanza. La planta se encoge, destella, suelta hojas y amarillea según la vida que le queda |
@@ -75,7 +76,26 @@ Cómo se pinta y se anima Rebrote, para que todo lo nuevo (enemigos, mundos, efe
 
 - **Varios efectos en el mismo sitio.** Varias plantas pueden dar a la vez al mismo gusano. Los efectos que se repiten mucho (impactos) van pequeños y translúcidos para no tapar la cara del enemigo.
 
-## 6. Capas
+## 6. Arrastrar y fusionar (T-006)
+
+- **Las reglas son de core.** Qué plantas sirven de destino (`fusionTargets`), por qué no se puede (`fusionBlocker`), cómo queda la planta (`fusedPlant`) y la fusión (`fusePlants`) están en `src/game/core/match.ts`. La escena solo lleva el puntero, pinta y anima.
+- **Mientras se arrastra, el combate sigue.** La planta arrastrada sigue en su casilla: dispara y la muerden. Se ve medio transparente (`PLANT_LOOK.liftedAlpha`).
+- **La planta en la mano:**
+  - Flota `DRAG_LOOK.lift` sobre el suelo, lo bastante para no tapar a la planta de destino.
+  - Sigue al puntero con un poco de retraso y se inclina hacia donde va.
+  - Se agarra por donde se pulsó (`dragGround`).
+  - Su sombra marca la casilla donde caerá y solo se pinta sobre el césped.
+- **Destinos:**
+  - Las casillas de las plantas con las que se puede fusionar se marcan en verde (laten) y esas plantas dan un saltito al empezar.
+  - Las demás plantas se oscurecen (`PLANT_LOOK.dimTint`). Se oscurecen y no se transparentan, para que se sigan leyendo sobre el césped claro.
+- **Casilla bajo la sombra:** verde si se puede soltar, roja si no. Encima, un rótulo que sube y baja: "Fusionar: N cañones", "Quedará en nivel N" en ámbar si cambia el nivel, y "Otra variante" o "Máximo 3 cañones" en rojo. Sobre una casilla vacía no se marca nada.
+- **Soltar:**
+  - **En un destino válido:** la regla se aplica en el acto. La de la mano se mete en la de destino. La de origen se estira hacia arriba y deja tierra. La de destino se aplasta, destella, cambia de textura y rebota (`PlantView.fuse`) con anillo, chispas, hojas, destello del punto nuevo y "¡Fusión!". Esta animación va sobre el cuerpo y no sobre el contenedor: así un disparo o un mordisco a la vez no la cortan.
+  - **En cualquier otro sitio:** la de la mano vuelve volando a su casilla y la de origen recupera su aspecto con un saltito.
+- **Cancelar:** pausa, clic derecho, tomar una carta o perder la partida devuelven la planta. Si la de origen muere, la de la mano se deshace en hojas.
+- **Capa:** la planta en la mano va casi arriba del todo (`DEPTH.floatText - 10`). Su sombra y las marcas de casilla van en la capa `highlight`.
+
+## 7. Capas
 
 Orden de dibujo, de atrás hacia delante (`DEPTH` en `layout.ts`):
 
@@ -89,9 +109,10 @@ Orden de dibujo, de atrás hacia delante (`DEPTH` en `layout.ts`):
 | `entities + y` | Plantas, enemigos, balas (`+0,5`, delante de su planta), monedas y flores, ordenados por su `y` en pantalla |
 | `pollen`, `butterflies` | Partículas y bichos que flotan por encima |
 | `foreground` | Matas del primer plano |
-| `floatText` | Textos flotantes (+25) y monedas volando al marcador |
+| `floatText - 10` | La planta que se arrastra para fusionar |
+| `floatText` | Textos flotantes (+25) y rótulos del arrastre, y monedas volando al marcador |
 
-## 7. Cómo se pinta el arte
+## 8. Cómo se pinta el arte
 
 - Cada pieza es una función pintora en `textures.ts` que recibe un contexto de Canvas 2D y su **tamaño de diseño**. Se registra con una clave en `TEX`.
 - **Estilo:**
@@ -110,6 +131,10 @@ Orden de dibujo, de atrás hacia delante (`DEPTH` en `layout.ts`):
   | Hielo (T-005) | azules claros |
 
 - Se ve un cañón por cada cañón de la planta, y el nivel se muestra con una medallita con número.
+  - **Cañones:** la disparadora tiene una textura por número de cañones (`shooterTexture(1 | 2 | 3)`). Los tubos van apilados y sus medidas están en `SHOOTER_BARRELS`, de donde sale también la boca de cada uno. Al fusionarse crece un poco: cabeza algo mayor y una hoja más en la base y en el brote. La de 3 cañones lleva además una flor en la coronilla.
+  - **Puntos:** una semillita dorada en el tallo por cañón (`SHOOTER_DOTS`), también en la de 1 cañón.
+  - **Medallita de nivel (T-003):** no puede tapar los puntos. Tiene sitio libre en la nuca, arriba a la izquierda de la cabeza.
+  - Las variantes de fuego y hielo (T-004, T-005) deben conservar los cañones y los puntos de cada textura.
 - **Escala de arte (obligatorio):** las texturas se pintan a la resolución del nivel gráfico.
   - Al crear una imagen, su escala se multiplica por `artInv()`.
   - Las partículas también: `scale: { start: 1 * artInv(), ... }`.
@@ -120,7 +145,7 @@ Orden de dibujo, de atrás hacia delante (`DEPTH` en `layout.ts`):
 - Lo que no se mueve va a una textura grande pintada una vez (cielo y terreno), no a cientos de objetos.
 - Las texturas muy grandes se limitan a 4096 px (límite seguro de WebGL). Si el nivel pide más, bajan algo de resolución: sus imágenes se escalan con `artInvOf(clave)` en vez de `artInv()`.
 
-## 8. Cómo se anima
+## 9. Cómo se anima
 
 - **Reposo:** `breathe(...)` hace un ida y vuelta infinito con `Sine.InOut`. Las plantas se aplastan y estiran un poco, y se mecen. Flores, matas y la copa del árbol se balancean con fases distintas (`delay` aleatorio) para que no vayan al unísono.
 - **Entradas:** con rebote (`Back.Out`, `Elastic.Out`). Ejemplos: la planta brota de la tierra con un estirón y un puñado de tierra; la moneda sale despedida, cae con `Bounce.Out` y se queda flotando y girando.
@@ -138,7 +163,7 @@ Orden de dibujo, de atrás hacia delante (`DEPTH` en `layout.ts`):
   - Con `prefers-reduced-motion` las animaciones CSS se apagan.
 - **Duraciones orientativas:** reacciones de 150 a 450 ms, reposo de 0,9 a 3,5 s por ciclo y cielo de 15 a 120 s.
 
-## 9. Niveles gráficos (ADR-0006)
+## 10. Niveles gráficos (ADR-0006)
 
 Todo efecto nuevo se engancha a un ajuste del perfil (`QualityProfile`):
 
@@ -155,7 +180,7 @@ Todo efecto nuevo se engancha a un ajuste del perfil (`QualityProfile`):
 - Hay que probar en **Bajo** (¿se sigue leyendo bien?) y en **Ultra** (¿aguanta y se ve mejor, no más oscuro?).
 - Para medir: menú de pausa (Esc o P) > Ajustes > "Mostrar FPS".
 
-## 10. Rendimiento
+## 11. Rendimiento
 
 - **Presupuesto (T-002):** con 60 enemigos y 20 plantas, el juego sigue fluido en Medio.
 - **Prueba de rendimiento:** en `npm run dev`, la tecla `H` siembra gratis las cuatro primeras columnas (20 disparadoras) y suelta 60 gusanos con mucha vida. Se mide con "Mostrar FPS".
@@ -165,7 +190,7 @@ Todo efecto nuevo se engancha a un ajuste del perfil (`QualityProfile`):
 - Los enemigos y las balas, si son muchos, conviene que sean imágenes de una textura compartida, no `Graphics`.
 - Nada de `setInterval` ni `setTimeout` en escenas: usar `this.time` y los tweens, que se pausan y se limpian con la escena. La excepción es la medición de fps, que necesita tiempo real.
 
-## 11. Listas de comprobación
+## 12. Listas de comprobación
 
 ### Enemigo nuevo
 - [ ] Forma y color propios que se lean de un vistazo, con cara simpática aunque sea un virus.
@@ -176,6 +201,13 @@ Todo efecto nuevo se engancha a un ajuste del perfil (`QualityProfile`):
 - [ ] Al morir llama a `rewardKill(punto)`.
 - [ ] Partículas según el nivel gráfico; probado en Bajo y en Ultra.
 - [ ] Se mueve con el reloj y los tweens de la escena: con el menú de pausa abierto se queda quieto.
+
+### Variante de planta nueva (fuego, hielo...)
+- [ ] Una textura por número de cañones (1, 2 y 3), con los tubos de `SHOOTER_BARRELS` y los puntos del tallo de `SHOOTER_DOTS`. Se distingue de la normal por el color (paleta de la sección 8), no por la forma.
+- [ ] Sus semillas salen de la boca de su cañón (`barrelMuzzle`) y se distinguen de las normales.
+- [ ] Al fusionarse, `PlantView.fuse` pasa a la textura de su variante con los cañones nuevos.
+- [ ] Se sigue leyendo marchita, oscurecida (mientras se arrastra otra planta) y medio transparente (mientras se arrastra ella).
+- [ ] La medallita de nivel (T-003) no tapa los puntos del tallo.
 
 ### Mundo o escenario nuevo
 - [ ] Pintores propios de cielo y terreno (o variantes), respetando `SKY_HEIGHT` y `LAND_TOP`, y cubriendo `WORLD` entero.

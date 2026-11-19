@@ -13,9 +13,19 @@ export function createShooter(): Shooter {
   return { element: null, cannons: 1, level: 1 };
 }
 
+/** Por que no se pueden fusionar dos disparadoras: otra variante o mas canones de los permitidos. */
+export type FuseBlocker = 'variant' | 'max-cannons';
+
+/** Motivo por el que no se pueden fusionar `a` y `b`, o null si se puede. */
+export function fuseBlocker(a: Shooter, b: Shooter): FuseBlocker | null {
+  if (a.element !== b.element) return 'variant';
+  if (a.cannons + b.cannons > LIMITS.maxCannons) return 'max-cannons';
+  return null;
+}
+
 /** Fusionar: misma variante (normal, fuego o hielo) y sin pasar del maximo de canones. */
 export function canFuse(a: Shooter, b: Shooter): boolean {
-  return a.element === b.element && a.cannons + b.cannons <= LIMITS.maxCannons;
+  return fuseBlocker(a, b) === null;
 }
 
 /** El resultado suma canones y se queda con el nivel mas bajo de las dos. */
@@ -51,6 +61,7 @@ export function canLevelUp(plant: Shooter): boolean {
   return plant.level < LIMITS.maxLevel;
 }
 
+/** Dano total de cada disparo (todas sus balas juntas) respecto a una disparadora de un canon y nivel 1. */
 export function damageMultiplier(plant: Shooter): number {
   const byCannons = FUSION.damageByCannons[plant.cannons];
   const byLevel = 1 + (plant.level - 1) * LEVELING.damagePerLevel;
@@ -62,7 +73,7 @@ export function fireRateMultiplier(plant: Shooter): number {
   return 1 + (plant.level - 1) * LEVELING.fireRatePerLevel;
 }
 
-/** Vida maxima de la planta sembrada. Con un solo canon es la de la disparadora; fusionar (T-006, D-02) la cambiara. */
-export function plantMaxHp(_plant: Shooter): number {
-  return SHOOTER.hp;
+/** Vida maxima de la planta: la de la disparadora por cada canon (D-02: la suma de las partes). */
+export function plantMaxHp(plant: Shooter): number {
+  return SHOOTER.hp * FUSION.hpByCannons[plant.cannons];
 }

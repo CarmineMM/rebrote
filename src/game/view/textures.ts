@@ -29,7 +29,8 @@ export const TEX = {
   sparkle: 'fx-sparkle',
   beam: 'fx-beam',
   ring: 'fx-ring',
-  shooter: 'unit-shooter',
+  /** Disparadora con 1, 2 y 3 canones (usar `shooterTexture`). */
+  shooter: ['unit-shooter-1', 'unit-shooter-2', 'unit-shooter-3'],
   coin: 'unit-coin',
   seed: 'unit-seed',
   wormHead: 'unit-worm-head',
@@ -38,8 +39,42 @@ export const TEX = {
   wormSegment: 'unit-worm-segment',
 } as const;
 
-/** Punto de apoyo de la disparadora dentro de su textura (los pies). */
-export const SHOOTER_SIZE = { width: 160, height: 180, footY: 174 } as const;
+/** Punto de apoyo de la disparadora dentro de su textura (los pies). 160 de ancho: una casilla. */
+export const SHOOTER_SIZE = { width: 160, height: 180, footX: 80, footY: 174 } as const;
+
+/**
+ * Canones de la disparadora segun cuantos tenga (T-006), de arriba abajo, en pixeles de su textura:
+ * centro en altura (`y`), desde donde sale de la cara (`fromX`), boca (`mouthX`) y alto del tubo (`h`).
+ * La vista saca de aqui de donde sale cada semilla (`barrelMuzzle` en plantView.ts).
+ */
+export const SHOOTER_BARRELS = {
+  1: [{ y: 79, fromX: 96, mouthX: 148, h: 32 }],
+  2: [
+    { y: 70, fromX: 94, mouthX: 145, h: 25 },
+    { y: 97, fromX: 96, mouthX: 150, h: 25 },
+  ],
+  3: [
+    { y: 61, fromX: 92, mouthX: 143, h: 21 },
+    { y: 84, fromX: 94, mouthX: 151, h: 21 },
+    { y: 107, fromX: 92, mouthX: 145, h: 21 },
+  ],
+} as const;
+
+/**
+ * Puntos del tallo, uno por canon, de abajo arriba (pixeles de la textura). La medallita de nivel (T-003)
+ * no debe taparlos: tiene sitio libre en la nuca, arriba a la izquierda de la cabeza.
+ */
+export const SHOOTER_DOTS = [
+  { x: 76, y: 158 },
+  { x: 73, y: 147 },
+  { x: 71.5, y: 136 },
+] as const;
+
+export type ShooterCannons = keyof typeof SHOOTER_BARRELS;
+
+/** Textura de la disparadora con `cannons` canones. */
+export const shooterTexture = (cannons: ShooterCannons): string => TEX.shooter[cannons - 1];
+
 /**
  * Gusano (T-002): la cabeza y los anillos van en texturas separadas para que el cuerpo ondule.
  * `head.cx, cy` es el centro de la cabeza dentro de su textura. Medidas de diseno: 160 px por casilla.
@@ -126,7 +161,7 @@ export function registerTextures(scene: Phaser.Scene, scale = 1): void {
   paint(TEX.sparkle, 32, 32, paintSparkle);
   paint(TEX.beam, 200, 900, paintBeam);
   paint(TEX.ring, 64, 64, paintRing);
-  paint(TEX.shooter, SHOOTER_SIZE.width, SHOOTER_SIZE.height, paintShooter);
+  TEX.shooter.forEach((key, i) => paint(key, SHOOTER_SIZE.width, SHOOTER_SIZE.height, (ctx) => paintShooter(ctx, (i + 1) as ShooterCannons)));
   paint(TEX.coin, 72, 72, paintCoin);
   paint(TEX.seed, SEED_SIZE.width, SEED_SIZE.height, paintSeed);
   paint(TEX.wormHead, WORM_SIZE.head.width, WORM_SIZE.head.height, (ctx) => paintWormHead(ctx, 'idle'));
@@ -1125,18 +1160,27 @@ function paintFlower(ctx: Ctx, w: number, h: number, variant: number): void {
 // ---------------------------------------------------------------------------
 // Unidades
 
-/** Disparadora: cabeza verde redonda, un canon, hojas a los pies. Mira hacia la derecha, por donde llegan los gusanos. */
-function paintShooter(ctx: Ctx): void {
-  const footX = 80;
-  const footY = SHOOTER_SIZE.footY;
+/**
+ * Disparadora: cabeza verde redonda, canones y hojas a los pies. Mira hacia la derecha, por donde llegan los gusanos.
+ * Al fusionarse (T-006) crece un poco: mas canones, cabeza algo mayor, una hoja mas en la base y en el brote,
+ * y la de 3 canones luce una flor en la coronilla. Un punto en el tallo por canon.
+ */
+function paintShooter(ctx: Ctx, cannons: ShooterCannons): void {
+  const { footX, footY } = SHOOTER_SIZE;
   const outline = '#2a6b22';
+  const headX = 76;
+  const headY = 80;
+  const headR = 44 + cannons * 2;
 
-  // Hojas de la base
-  for (const [angle, length] of [
-    [Math.PI + 0.35, 52],
-    [-0.35, 50],
-  ] as const) {
-    leafShape(ctx, footX, footY - 4, length, 15, angle);
+  // Hojas de la base: dos, y una mas por cada fusion, mas cortas y levantadas.
+  const baseLeaves: Array<readonly [number, number, number]> = [
+    [Math.PI + 0.35, 52, 15],
+    [-0.35, 50, 15],
+  ];
+  if (cannons >= 2) baseLeaves.unshift([-0.95, 36, 11]);
+  if (cannons >= 3) baseLeaves.unshift([Math.PI + 0.95, 34, 11]);
+  for (const [angle, length, width] of baseLeaves) {
+    leafShape(ctx, footX, footY - 4, length, width, angle);
     const g = ctx.createLinearGradient(footX - 50, footY - 30, footX + 50, footY);
     g.addColorStop(0, '#5fb846');
     g.addColorStop(1, '#2f7a26');
@@ -1162,46 +1206,75 @@ function paintShooter(ctx: Ctx): void {
   ctx.quadraticCurveTo(footX - 10, footY - 44, footX + 1, footY - 72);
   ctx.stroke();
 
-  // Canon (va detras de la cabeza para que salga de la cara)
-  const tube = ctx.createLinearGradient(0, 62, 0, 96);
-  tube.addColorStop(0, '#9be36c');
-  tube.addColorStop(1, '#3f9a35');
-  ctx.fillStyle = tube;
-  ctx.strokeStyle = outline;
-  ctx.lineWidth = 3;
-  ctx.beginPath();
-  ctx.roundRect(96, 63, 52, 32, 10);
-  ctx.fill();
-  ctx.stroke();
-  ellipse(ctx, 148, 79, 9, 19, '#6cc24a');
-  ctx.beginPath();
-  ctx.ellipse(148, 79, 9, 19, 0, 0, Math.PI * 2);
-  ctx.stroke();
-  ellipse(ctx, 150, 79, 5, 12, '#1c3d15');
+  // Un punto por canon en el tallo: semillitas doradas, de abajo arriba.
+  for (const dot of SHOOTER_DOTS.slice(0, cannons)) {
+    const g = ctx.createRadialGradient(dot.x - 1.5, dot.y - 1.5, 0.5, dot.x, dot.y, 5);
+    g.addColorStop(0, '#fffbe0');
+    g.addColorStop(0.6, '#ffe36b');
+    g.addColorStop(1, '#e0a92a');
+    circle(ctx, dot.x, dot.y, 5, g);
+    ctx.strokeStyle = outline;
+    ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    ctx.arc(dot.x, dot.y, 5, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+
+  // Canones (van detras de la cabeza para que salgan de la cara)
+  for (const barrel of SHOOTER_BARRELS[cannons]) {
+    const { y, fromX, mouthX, h } = barrel;
+    const tube = ctx.createLinearGradient(0, y - h / 2, 0, y + h / 2);
+    tube.addColorStop(0, '#9be36c');
+    tube.addColorStop(1, '#3f9a35');
+    ctx.fillStyle = tube;
+    ctx.strokeStyle = outline;
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.roundRect(fromX, y - h / 2, mouthX - fromX, h, h * 0.31);
+    ctx.fill();
+    ctx.stroke();
+    ellipse(ctx, mouthX, y, h * 0.28, h * 0.6, '#6cc24a');
+    ctx.beginPath();
+    ctx.ellipse(mouthX, y, h * 0.28, h * 0.6, 0, 0, Math.PI * 2);
+    ctx.stroke();
+    ellipse(ctx, mouthX + 2, y, h * 0.16, h * 0.375, '#1c3d15');
+  }
 
   // Cabeza
-  const head = ctx.createRadialGradient(60, 60, 6, 76, 80, 50);
+  const head = ctx.createRadialGradient(headX - 16, headY - 20, 6, headX, headY, headR + 4);
   head.addColorStop(0, '#d0f59a');
   head.addColorStop(0.45, '#80d153');
   head.addColorStop(1, '#4aa236');
-  circle(ctx, 76, 80, 46, head);
+  circle(ctx, headX, headY, headR, head);
   ctx.strokeStyle = outline;
   ctx.lineWidth = 3.5;
   ctx.beginPath();
-  ctx.arc(76, 80, 46, 0, Math.PI * 2);
+  ctx.arc(headX, headY, headR, 0, Math.PI * 2);
   ctx.stroke();
 
-  // Brote en la coronilla
-  for (const angle of [-2.0, -1.15]) {
-    leafShape(ctx, 74, 36, 26, 8, angle);
+  // Brote en la coronilla: dos hojas, tres al fusionar, y la de 3 canones con una flor.
+  const sproutY = headY - headR + 2;
+  const sprout = cannons >= 2 ? [-2.15, -1.6, -1.0] : [-2.0, -1.15];
+  for (const angle of sprout) {
+    leafShape(ctx, 74, sproutY, 26, 8, angle);
     ctx.fillStyle = '#62c046';
     ctx.fill();
     ctx.strokeStyle = outline;
     ctx.lineWidth = 2;
     ctx.stroke();
   }
+  if (cannons === 3) {
+    const fx = 74 + Math.cos(-1.6) * 26;
+    const fy = sproutY + Math.sin(-1.6) * 26;
+    smallFlower(ctx, fx, fy, 6, '#ffb3d1', '#ffd23f');
+    ctx.strokeStyle = 'rgba(176, 60, 110, 0.55)';
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.arc(fx, fy, 4.2, 0, Math.PI * 2);
+    ctx.stroke();
+  }
 
-  // Ojo mirando a la derecha, con brillo, y mejilla sonrojada
+  // Ojo mirando a la derecha, con brillo, y mejilla sonrojada. Con 3 canones, una ceja decidida.
   ellipse(ctx, 72, 70, 13, 15, '#ffffff');
   ctx.strokeStyle = outline;
   ctx.lineWidth = 2;
@@ -1210,9 +1283,17 @@ function paintShooter(ctx: Ctx): void {
   ctx.stroke();
   circle(ctx, 77, 72, 7, '#1a2614');
   circle(ctx, 80, 68, 2.6, '#ffffff');
+  if (cannons === 3) {
+    ctx.strokeStyle = outline;
+    ctx.lineWidth = 3.5;
+    ctx.beginPath();
+    ctx.moveTo(61, 50);
+    ctx.quadraticCurveTo(72, 46, 84, 53);
+    ctx.stroke();
+  }
   ellipse(ctx, 58, 96, 8, 4.5, 'rgba(255, 130, 130, 0.38)');
   // Reflejo en la cabeza
-  ellipse(ctx, 54, 52, 12, 7, 'rgba(255, 255, 255, 0.35)', -0.6);
+  ellipse(ctx, headX - 22, headY - 28, 12, 7, 'rgba(255, 255, 255, 0.35)', -0.6);
 }
 
 function paintCoin(ctx: Ctx, w: number, h: number): void {

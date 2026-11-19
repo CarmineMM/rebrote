@@ -79,9 +79,16 @@ export const TEST_SPAWNER = {
   minIntervalMs: 3_000,
 } as const;
 
+/**
+ * Planta fusionada (D-02, cerrada el 19 nov 2026; se ajusta jugando). Ver docs/specs/01-mecanicas.md.
+ * Cada canon dispara una bala y el dano total del disparo se reparte entre ellas: con 2 canones cada bala
+ * lleva 2,2 / 2 = 1,1 veces el dano base, con 3 canones, 3,5 / 3.
+ */
 export const FUSION = {
-  /** Multiplicador de dano por cantidad de canones. PROVISIONAL (ver D-02 en docs/specs/01-mecanicas.md). */
+  /** Dano total de cada disparo respecto a una disparadora de un canon. */
   damageByCannons: { 1: 1, 2: 2.2, 3: 3.5 },
+  /** Vida maxima respecto a una disparadora de un canon: la suma de las partes. */
+  hpByCannons: { 1: 1, 2: 2, 3: 3 },
 } as const;
 
 export const LEVELING = {
