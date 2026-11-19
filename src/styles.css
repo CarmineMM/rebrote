@@ -1,0 +1,6 @@
+* { box-sizing: border-box; }
+html, body, #root { height: 100%; margin: 0; }
+body { background: #121a13; color: #e8f1e4; font-family: system-ui, sans-serif; }
+.app { height: 100%; display: flex; flex-direction: column; }
+.hud { display: flex; justify-content: space-between; padding: 10px 16px; background: #1d2b1f; }
+.game-canvas { flex: 1; min-height: 0; }
