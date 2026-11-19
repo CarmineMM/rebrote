@@ -1,6 +1,6 @@
 import { BOARD, COSTS, ECONOMY, LIVES, MINE } from '../config/balance';
 import { isOnBoard, type Cell } from './board';
-import type { Bullet, Enemy } from './combat';
+import type { Bullet, Enemy, Spit } from './combat';
 import {
   canInfuse,
   createShooter,
@@ -15,7 +15,7 @@ import {
   type FuseBlocker,
   type Shooter,
 } from './plants';
-import { createSpawner, type SpawnerState } from './spawner';
+import { createRound, infuseFeature, isUnlocked, sowFeature, type RoundState } from './rounds';
 
 /** Cartas que se pueden jugar desde el HUD: la disparadora y los elementos. */
 export type CardId = 'shooter' | ElementType;
@@ -55,15 +55,31 @@ export interface MatchState {
   readonly plants: ReadonlyArray<ReadonlyArray<Sown | null>>;
   readonly enemies: readonly Enemy[];
   readonly bullets: readonly Bullet[];
-  readonly spawner: SpawnerState;
+  /** Escupitajos de los escupidores en vuelo (T-007). */
+  readonly spits: readonly Spit[];
+  /** Ronda en curso: preparacion o ataque, y que grupos del guion ya salieron (T-007). */
+  readonly round: RoundState;
   /** Siguiente id libre para enemigos y balas: la vista sigue a cada uno por su id. */
   readonly nextId: number;
 }
 
-export function createMatch(balance: number = ECONOMY.startingBalance): MatchState {
+/**
+ * Partida nueva, en la preparacion de la ronda `roundIndex` (desde 0) con el tablero vacio. El juego siempre empieza
+ * en la primera; empezar en otra sirve para probar lo que desbloquean las siguientes.
+ */
+export function createMatch(balance: number = ECONOMY.startingBalance, roundIndex = 0): MatchState {
   assertWholeAmount(balance);
   const plants = Array.from({ length: BOARD.lanes }, () => Array.from({ length: BOARD.columns }, (): Sown | null => null));
-  return { balance, lives: LIVES.start, plants, enemies: [], bullets: [], spawner: createSpawner(), nextId: 1 };
+  return {
+    balance,
+    lives: LIVES.start,
+    plants,
+    enemies: [],
+    bullets: [],
+    spits: [],
+    round: createRound(roundIndex),
+    nextId: 1,
+  };
 }
 
 /** Elemento de la carta, o null si es la disparadora. */
@@ -113,10 +129,11 @@ export function createMine(element: ElementType): Mine {
 }
 
 /**
- * Por que no se puede jugar una carta en una casilla: fuera del tablero, casilla ocupada (para sembrar,
- * o una mina para infundir), disparadora que ya tiene elemento, o saldo que no alcanza.
+ * Por que no se puede jugar una carta en una casilla: fuera del tablero, lo que haria aun no esta desbloqueado
+ * en esta ronda (T-007), casilla ocupada (para sembrar, o una mina para infundir), disparadora que ya tiene
+ * elemento, o saldo que no alcanza.
  */
-export type PlayBlocker = 'off-board' | 'occupied' | 'has-element' | 'insufficient-funds';
+export type PlayBlocker = 'off-board' | 'locked' | 'occupied' | 'has-element' | 'insufficient-funds';
 
 /** Lo que pasaria al soltar una carta en una casilla. */
 export interface CardPlay {
@@ -133,16 +150,26 @@ export interface CardPlay {
 /**
  * Que pasa al soltar `card` en `cell`. La disparadora se siembra en una casilla vacia. Un elemento se siembra
  * en una casilla vacia (mina) o se infunde en una disparadora sin elemento, y cuesta un elemento por canon.
+ * Sembrar e infundir cada elemento se desbloquean por separado (T-007: el fuego solo llega antes que infundirlo).
  */
 export function cardPlay(state: MatchState, card: CardId, cell: Cell): CardPlay {
   const sow = (blocker: PlayBlocker | null): CardPlay => ({ action: 'sow', cost: cardCost(card), multiplier: 1, blocker });
   if (!isOnBoard(cell)) return sow('off-board');
   const sown = sownAt(state, cell);
-  if (!sown) return sow(canAfford(state.balance, cardCost(card)) ? null : 'insufficient-funds');
+  if (!sown) {
+    if (!isUnlocked(state, sowFeature(card))) return sow('locked');
+    return sow(canAfford(state.balance, cardCost(card)) ? null : 'insufficient-funds');
+  }
   if (card === 'shooter' || sown.kind !== 'shooter') return sow('occupied');
   const { shooter } = sown;
   const cost = infusionCost(shooter, card);
-  const blocker = !canInfuse(shooter) ? 'has-element' : canAfford(state.balance, cost) ? null : 'insufficient-funds';
+  const blocker = !isUnlocked(state, infuseFeature(card))
+    ? 'locked'
+    : !canInfuse(shooter)
+      ? 'has-element'
+      : canAfford(state.balance, cost)
+        ? null
+        : 'insufficient-funds';
   return { action: 'infuse', cost, multiplier: shooter.cannons, blocker };
 }
 
@@ -167,13 +194,15 @@ export function playCard(state: MatchState, card: CardId, cell: Cell): MatchStat
 }
 
 /**
- * Por que no se puede fusionar la planta de una casilla sobre la de otra: fuera del tablero, la misma casilla,
- * alguna de las dos sin disparadora (vacia o con una mina), o las reglas de `fuseBlocker` (otra variante, mas de 3 canones).
+ * Por que no se puede fusionar la planta de una casilla sobre la de otra: fusionar aun no esta desbloqueado (T-007),
+ * fuera del tablero, la misma casilla, alguna de las dos sin disparadora (vacia o con una mina), o las reglas de
+ * `fuseBlocker` (otra variante, mas de 3 canones).
  */
-export type FusionBlocker = 'off-board' | 'same-cell' | 'no-plant' | FuseBlocker;
+export type FusionBlocker = 'locked' | 'off-board' | 'same-cell' | 'no-plant' | FuseBlocker;
 
 /** Motivo por el que no se puede arrastrar la planta de `from` sobre la de `to` para fusionarlas, o null si se puede. */
 export function fusionBlocker(state: MatchState, from: Cell, to: Cell): FusionBlocker | null {
+  if (!isUnlocked(state, 'fuse')) return 'locked';
   if (!isOnBoard(from) || !isOnBoard(to)) return 'off-board';
   if (from.lane === to.lane && from.col === to.col) return 'same-cell';
   const source = plantAt(state, from);
@@ -223,8 +252,11 @@ export function fusePlants(state: MatchState, from: Cell, to: Cell): MatchState 
   return { ...state, plants };
 }
 
-/** Por que no se puede subir de nivel una disparadora: ya esta en el maximo o el saldo no alcanza. */
-export type LevelUpBlocker = 'max-level' | 'insufficient-funds';
+/**
+ * Por que no se puede subir de nivel una disparadora: aun no esta desbloqueado (T-007), ya esta en el maximo
+ * o el saldo no alcanza.
+ */
+export type LevelUpBlocker = 'locked' | 'max-level' | 'insufficient-funds';
 
 /** Lo que ofrece el panel de una disparadora seleccionada (T-003): su nivel y lo que cuesta el siguiente. */
 export interface LevelUpOffer {
@@ -243,7 +275,13 @@ export function levelUpOffer(state: MatchState, cell: Cell): LevelUpOffer | null
   if (!plant) return null;
   const { shooter } = plant;
   const cost = levelUpCost(shooter);
-  const blocker = cost === null ? 'max-level' : canAfford(state.balance, cost) ? null : 'insufficient-funds';
+  const blocker = !isUnlocked(state, 'levelUp')
+    ? 'locked'
+    : cost === null
+      ? 'max-level'
+      : canAfford(state.balance, cost)
+        ? null
+        : 'insufficient-funds';
   return { level: shooter.level, cost, multiplier: shooter.cannons, blocker };
 }
 

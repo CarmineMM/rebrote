@@ -1,6 +1,6 @@
 import * as Phaser from 'phaser';
 import { ENEMIES } from '../config/balance';
-import type { Enemy } from '../core/combat';
+import type { Enemy, EnemyKind } from '../core/combat';
 import type { Effects } from './effects';
 import { entityDepth, perspective } from './layout';
 import { FLAME_SIZE, FROST_SIZE, TEX, WORM_SIZE, artInv } from './textures';
@@ -49,7 +49,34 @@ const WORM_LOOK = {
   shiverMs: 900,
   /** Alcanzado por la mina de hielo: destello azul helado. Muerto ralentizado: queda congelado y se rompe. */
   frozenTint: 0xd8f3ff,
+  /** Escupidor (T-007): lo que dura la carga antes de cada escupitajo (se echa atras e hincha los mofletes). */
+  spitChargeMs: 650,
+  /** Boca del escupidor respecto a la cabeza (pixeles de la textura de la cabeza, desde su centro). */
+  mouth: { x: -20, y: 17 },
 } as const;
+
+/**
+ * Lo que cambia con cada enemigo (T-007): texturas de la cabeza (tranquila, atacando y dolorida) y del anillo,
+ * tamano, y si lleva armadura. El acorazado es un gusano mas grande con casco y una placa por anillo.
+ */
+const KIND_LOOK: Record<EnemyKind, { head: { idle: string; attack: string; hurt: string }; segment: string; size: number; armor: boolean }> = {
+  worm: { head: { idle: TEX.wormHead, attack: TEX.wormHeadBite, hurt: TEX.wormHeadHurt }, segment: TEX.wormSegment, size: 1, armor: false },
+  armored: { head: { idle: TEX.wormHead, attack: TEX.wormHeadBite, hurt: TEX.wormHeadHurt }, segment: TEX.wormSegment, size: 1.12, armor: true },
+  spitter: {
+    head: { idle: TEX.spitterHead, attack: TEX.spitterHeadCharge, hurt: TEX.spitterHeadHurt },
+    segment: TEX.spitterSegment,
+    size: 1,
+    armor: false,
+  },
+};
+
+/** Armadura del acorazado: el casco y una placa por anillo, de la cola a la cabeza. Las placas se caen con la vida. */
+interface Armor {
+  readonly helmet: Phaser.GameObjects.Image;
+  readonly plates: Phaser.GameObjects.Image[];
+  /** Placas que ya se cayeron, empezando por la cola. */
+  lost: number;
+}
 
 /** Valor animable suelto: cada reaccion tiene el suyo y se puede cortar sin tocar las demas. */
 interface Pulse {
@@ -73,7 +100,9 @@ export class WormView {
   private phase = 0;
   /** 1 mientras avanza, 0 mientras muerde; se suaviza para que el cuerpo no salte al pararse. */
   private walk = 1;
-  private headKey: string = TEX.wormHead;
+  private readonly look: (typeof KIND_LOOK)[EnemyKind];
+  private headKey: string;
+  private readonly armor: Armor | null = null;
   private readonly rise: Pulse = { v: 1 };
   private readonly lunge: Pulse = { v: 0 };
   private readonly hurt: Pulse = { v: 0 };
@@ -89,6 +118,8 @@ export class WormView {
   private readonly frost: Phaser.GameObjects.Image[];
   private chilled = false;
   private chillTimer?: Phaser.Time.TimerEvent;
+  /** Ya se pinto una vez: desde entonces, lo que cambia en el estado se anima. */
+  private synced = false;
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -96,22 +127,30 @@ export class WormView {
     enemy: Enemy,
     emerge: boolean,
   ) {
+    this.look = KIND_LOOK[enemy.kind];
+    this.headKey = this.look.head.idle;
     this.footY = enemy.lane + WORM_LOOK.footY;
     const ground = perspective.toScreen({ x: enemy.x, y: this.footY });
     this.cellWidth = perspective.cellWidthAt({ x: enemy.x, y: this.footY });
-    this.scale = this.cellWidth / WORM_LOOK.unitsPerCell;
+    this.scale = (this.cellWidth / WORM_LOOK.unitsPerCell) * this.look.size;
     const depth = entityDepth(ground.y);
 
     this.shadow = scene.add
       .image(ground.x, ground.y, TEX.shadow)
-      .setDisplaySize(this.cellWidth * 0.95, this.cellWidth * 0.24)
+      .setDisplaySize(this.cellWidth * 0.95 * this.look.size, this.cellWidth * 0.24 * this.look.size)
       .setDepth(depth - 0.5);
-    this.segments = WORM_LOOK.segments.map((s) => scene.add.image(s.x, s.y, TEX.wormSegment).setScale(s.scale * artInv()));
+    this.segments = WORM_LOOK.segments.map((s) => scene.add.image(s.x, s.y, this.look.segment).setScale(s.scale * artInv()));
     const { head } = WORM_SIZE;
-    this.head = scene.add
-      .image(WORM_LOOK.head.x, WORM_LOOK.head.y, TEX.wormHead)
-      .setOrigin(head.cx / head.width, head.cy / head.height)
-      .setScale(artInv());
+    const headOrigin = { x: head.cx / head.width, y: head.cy / head.height };
+    this.head = scene.add.image(WORM_LOOK.head.x, WORM_LOOK.head.y, this.headKey).setOrigin(headOrigin.x, headOrigin.y).setScale(artInv());
+    // Acorazado: casco sobre la cabeza y una placa sobre cada anillo, que tapa el anillo siguiente (hacia la cabeza).
+    if (this.look.armor) {
+      this.armor = {
+        helmet: scene.add.image(0, 0, TEX.armorHelmet).setOrigin(headOrigin.x, headOrigin.y).setScale(artInv()),
+        plates: WORM_LOOK.segments.map((s) => scene.add.image(s.x, s.y, TEX.armorPlate).setScale(s.scale * artInv())),
+        lost: 0,
+      };
+    }
     // Llamas del quemado: ocultas hasta que arde. Van por encima del cuerpo.
     this.flames = WORM_LOOK.flames.map(() =>
       scene.add
@@ -127,8 +166,12 @@ export class WormView {
         .setAngle(f.angle)
         .setVisible(false),
     );
-    // De la cola a la cabeza: cada anillo tapa al de atras y la cabeza va encima de todo, con la escarcha y las llamas.
-    this.holder = scene.add.container(ground.x, ground.y, [...this.segments, this.head, ...this.frost, ...this.flames]).setDepth(depth);
+    // De la cola a la cabeza: cada anillo (con su placa) tapa al de atras y la cabeza va encima de todo, con el casco,
+    // la escarcha y las llamas.
+    const armor = this.armor;
+    const body = this.segments.flatMap((segment, i) => (armor ? [segment, armor.plates[i]] : [segment]));
+    const top = armor ? [this.head, armor.helmet] : [this.head];
+    this.holder = scene.add.container(ground.x, ground.y, [...body, ...top, ...this.frost, ...this.flames]).setDepth(depth);
 
     if (emerge) this.emerge(ground);
     this.sync(enemy);
@@ -138,12 +181,15 @@ export class WormView {
   sync(enemy: Enemy): void {
     const stats = ENEMIES[enemy.kind];
     const ground = perspective.toScreen({ x: enemy.x, y: this.footY });
-    const walking = enemy.biteMs === null;
+    const walking = enemy.attackMs === null;
     this.walk += ((walking ? 1 : 0) - this.walk) * 0.25;
     if (walking) this.phase = this.phaseOffset - enemy.x * WORM_LOOK.wavesPerCell * Math.PI * 2;
-    // Se echa atras mientras espera el mordisco y se lanza al morder (ver chomp).
-    const windup = walking ? 0 : Phaser.Math.Clamp(1 - (enemy.biteMs ?? 0) / stats.firstBiteMs, 0, 1);
+    // Se echa atras mientras espera el mordisco (o carga el escupitajo) y se lanza al atacar (ver chomp y spat).
+    const chargeMs = stats.attack === 'spit' ? WORM_LOOK.spitChargeMs : stats.firstBiteMs;
+    const windup = walking ? 0 : Phaser.Math.Clamp(1 - (enemy.attackMs ?? 0) / chargeMs, 0, 1);
     const lean = windup * windup;
+    // El escupidor se yergue para escupir: la cabeza sube mas que al morder.
+    const rear = stats.attack === 'spit' ? 2 : 1;
     const rise = this.rise.v;
     const hurt = this.hurt.v;
     const lunge = this.lunge.v;
@@ -166,9 +212,11 @@ export class WormView {
     });
     const bob = Math.sin(this.phase * 2) * 2.5 * this.walk;
     this.head
-      .setPosition(WORM_LOOK.head.x + lean * 10 - lunge * 16, WORM_LOOK.head.y - lean * 7 + lunge * 9 + bob)
-      .setAngle(lean * 10 - lunge * 12 + Math.sin(this.phase) * 4 * this.walk);
-    this.setHead(hurt > 0.25 ? TEX.wormHeadHurt : lunge > 0.45 ? TEX.wormHead : windup > 0.35 ? TEX.wormHeadBite : TEX.wormHead);
+      .setPosition(WORM_LOOK.head.x + lean * 10 - lunge * 16, WORM_LOOK.head.y - lean * 7 * rear + lunge * 9 + bob)
+      .setAngle(lean * 10 * rear - lunge * 12 + Math.sin(this.phase) * 4 * this.walk);
+    const { head } = this.look;
+    this.setHead(hurt > 0.25 ? head.hurt : lunge > 0.45 ? head.idle : windup > 0.35 ? head.attack : head.idle);
+    if (this.armor) this.syncArmor(enemy.hp / stats.hp);
 
     this.setBurning(enemy.burn !== null);
     if (this.burning) {
@@ -189,11 +237,33 @@ export class WormView {
     this.pulse(this.lunge, 300);
   }
 
-  /** Golpe recibido: destello blanco, retroceso y cara de "ay". */
+  /**
+   * Escupe (T-007): la cabeza se lanza hacia delante con un chorrito de moco en la boca. El escupitajo lo pinta
+   * su propia vista.
+   */
+  spat(): void {
+    this.pulse(this.lunge, 280);
+    const mouth = this.mouth();
+    this.fx.goo(mouth.x, mouth.y, 4);
+  }
+
+  /** Golpe recibido: destello blanco, retroceso y cara de "ay". Contra la armadura, ademas, saltan esquirlas de acero. */
   hit(): void {
     this.pulse(this.hurt, 260);
     this.pulse(this.kick, 200);
     this.flash();
+    if (this.armor && this.armor.lost < this.armor.plates.length) {
+      this.fx.scrap(this.holder.x - 30 * this.scale, this.holder.y - 60 * this.scale, 2);
+    }
+  }
+
+  /** Boca en pantalla: de ahi salen los escupitajos. */
+  mouth(): { x: number; y: number } {
+    const k = this.holder.scaleX;
+    return {
+      x: this.holder.x + (this.head.x + WORM_LOOK.mouth.x) * k,
+      y: this.holder.y + (this.head.y + WORM_LOOK.mouth.y) * this.holder.scaleY,
+    };
   }
 
   /** Alcanzado por una explosion (mina, T-004): golpe fuerte, salto y retroceso. */
@@ -220,9 +290,11 @@ export class WormView {
     const charred = this.burning;
     const frozen = this.chilled && !charred;
     this.stopReactions();
-    const parts = [this.head, ...this.segments];
+    // Al acorazado le sale volando el casco.
+    if (this.armor) this.fling(this.armor.helmet, -1, 1.4);
+    const parts = this.bodyParts();
     parts.forEach((part) => part.setTint(frozen ? WORM_LOOK.frozenTint : 0xffffff).setTintMode(Phaser.TintModes.FILL));
-    this.head.setTexture(TEX.wormHeadHurt);
+    this.head.setTexture(this.look.head.hurt);
     const x = this.holder.x;
     const y = this.holder.y - 45 * this.scale;
     const depth = this.holder.depth + 0.5;
@@ -289,7 +361,7 @@ export class WormView {
   /** Derrota: los gusanos que quedan saltan de contentos. */
   cheer(): void {
     this.stopReactions();
-    this.setHead(TEX.wormHead);
+    this.setHead(this.look.head.idle);
     this.scene.tweens.add({
       targets: this.holder,
       y: this.holder.y - this.cellWidth * 0.12,
@@ -407,9 +479,70 @@ export class WormView {
     if (!this.flashTimer) this.applyRestingTint();
   }
 
+  /**
+   * Armadura del acorazado (T-007): sigue a la cabeza y a los anillos, y suelta placas de la cola hacia la cabeza
+   * segun la vida que le queda (`hpRatio`). Sale del estado, asi que una partida continuada se pinta igual.
+   */
+  private syncArmor(hpRatio: number): void {
+    const armor = this.armor as Armor;
+    const keep = Math.ceil(Phaser.Math.Clamp(hpRatio, 0, 1) * armor.plates.length);
+    while (armor.lost < armor.plates.length - keep) {
+      const plate = armor.plates[armor.lost++];
+      // La primera vez que se pinta (partida continuada) se quitan sin animar.
+      if (this.synced) this.fling(plate, 1, 1);
+      plate.setVisible(false);
+    }
+    armor.plates.forEach((plate, i) => plate.setPosition(this.segments[i].x, this.segments[i].y));
+    armor.helmet.setPosition(this.head.x, this.head.y).setAngle(this.head.angle);
+    this.synced = true;
+  }
+
+  /**
+   * Una pieza de la armadura sale despedida: una copia suelta salta, gira y cae mientras se desvanece, con
+   * esquirlas. La pieza del cuerpo se oculta. `dir` es hacia donde gira (1, hacia atras) y `lift`, cuanto salta.
+   */
+  private fling(part: Phaser.GameObjects.Image, dir: number, lift: number): void {
+    if (!part.visible) return;
+    const kx = this.holder.scaleX;
+    const ky = this.holder.scaleY;
+    const x = this.holder.x + part.x * kx;
+    const y = this.holder.y + part.y * ky;
+    part.setVisible(false);
+    const piece = this.scene.add
+      .image(x, y, part.texture.key)
+      .setOrigin(part.originX, part.originY)
+      .setScale(part.scaleX * kx, part.scaleY * ky)
+      .setAngle(part.angle)
+      .setDepth(this.holder.depth + 0.4);
+    this.fx.scrap(x, y, 5);
+    const rise = this.cellWidth * 0.32 * lift;
+    this.scene.tweens.add({ targets: piece, x: x + dir * this.cellWidth * 0.35, angle: part.angle + dir * 220, duration: 620 });
+    this.scene.tweens.add({
+      targets: piece,
+      y: y - rise,
+      duration: 220,
+      ease: 'Quad.Out',
+      onComplete: () =>
+        this.scene.tweens.add({
+          targets: piece,
+          y: y + this.cellWidth * 0.18,
+          alpha: 0,
+          duration: 400,
+          ease: 'Quad.In',
+          onComplete: () => piece.destroy(),
+        }),
+    });
+  }
+
+  /** Lo que se tine y destella: cabeza, anillos y, en el acorazado, su armadura. */
+  private bodyParts(): Phaser.GameObjects.Image[] {
+    const armor = this.armor ? [this.armor.helmet, ...this.armor.plates] : [];
+    return [this.head, ...this.segments, ...armor];
+  }
+
   /** Tinte de reposo: azul frio mientras va lento, anaranjado mientras arde (con las dos cosas, el frio). */
   private applyRestingTint(): void {
-    for (const part of [this.head, ...this.segments]) {
+    for (const part of this.bodyParts()) {
       if (this.chilled) part.setTintMode(Phaser.TintModes.MULTIPLY).setTint(WORM_LOOK.chillTint);
       else if (this.burning) part.setTintMode(Phaser.TintModes.ADD).setTint(WORM_LOOK.burnTint);
       else part.clearTint();
@@ -423,7 +556,7 @@ export class WormView {
   }
 
   private flash(color = 0xffffff, durationMs = 70): void {
-    const parts = [this.head, ...this.segments];
+    const parts = this.bodyParts();
     this.flashTimer?.remove();
     parts.forEach((part) => part.setTint(color).setTintMode(Phaser.TintModes.FILL));
     this.flashTimer = this.scene.time.delayedCall(durationMs, () => {

@@ -28,6 +28,14 @@ Se redactan cuando J-01 a J-05 estén cerradas. Lo ya confirmado:
 - [ ] El jefe cambia de carril durante el combate.
 - [ ] Al derrotarlo se muestra la pantalla de victoria del mundo 1.
 
+## Notas de tareas anteriores
+- **T-007:**
+  - Ya hay una victoria provisional al superar la ronda 7: la fase `won` de `RoundState` (`rounds.ts`), el evento `won`, `GameEvents.matchWon` y `VictoryScreen` en React. El jefe tiene que meterse entre la última ronda y la victoria, por ejemplo con una fase nueva en `RoundState` que lo saque al despejarse la ronda 7.
+  - Los enemigos se definen en `ENEMIES` de `balance.ts`, con su forma de atacar (`attack: 'bite' | 'spit'`). `stepCombat` decide qué hace cada uno según eso. El salto de carril del Creeper sería un comportamiento nuevo en el paso de enemigos, con su evento.
+  - La vista de los enemigos está en `wormView.ts`, con lo que cambia por tipo en `KIND_LOOK` (texturas, tamaño, armadura). Un jefe con barra de vida probablemente merezca su propia vista.
+  - La pantalla de victoria y la derrota dicen la ronda (`RoundInfo` por `GameEvents.roundChanged`). Para el jefe hará falta decir que se está en el combate final.
+  - Atajos de desarrollo: N salta a la ronda siguiente y M da 500 de moneda. Con ellos se llega rápido al final.
+
 ## Casos límite y riesgos
 - Un jugador con una sola planta de 3 cañones en un carril debe poder perder contra el jefe: esa es la lección.
 - Balas en vuelo cuando el jefe salta: siguen por su carril y fallan.

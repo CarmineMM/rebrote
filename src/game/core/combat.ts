@@ -32,8 +32,11 @@ export interface Enemy {
   /** Centro del cuerpo, en casillas. Avanza hacia la izquierda, hacia x = 0. */
   readonly x: number;
   readonly hp: number;
-  /** Mientras muerde una planta o una mina: milisegundos hasta el siguiente mordisco. Null si avanza. */
-  readonly biteMs: number | null;
+  /**
+   * Mientras ataca (muerde lo que toca o, el escupidor, escupe a distancia): milisegundos hasta el siguiente
+   * mordisco o escupitajo. Null si avanza.
+   */
+  readonly attackMs: number | null;
   /** Quemadura activa, o null si no arde. */
   readonly burn: Burn | null;
   /** Ralentizacion activa, o null si va a su velocidad. Convive con la quemadura. */
@@ -53,6 +56,18 @@ export interface Bullet {
   readonly effect: BulletEffect | null;
 }
 
+/**
+ * Escupitajo de un escupidor (T-007). Sale del centro del escupidor y vuela hacia la izquierda por su carril hasta
+ * lo primero sembrado (planta o mina) que encuentra, o hasta salir del tablero.
+ */
+export interface Spit {
+  readonly id: number;
+  readonly lane: number;
+  /** En casillas. Avanza hacia la izquierda, hacia x = 0. */
+  readonly x: number;
+  readonly damage: number;
+}
+
 /** Lo que paso durante un paso. La vista lo anima; la regla ya esta aplicada en el estado. */
 export type CombatEvent =
   /** Una planta de N canones dispara N balas a la vez, un evento por bala. `cannon` es el canon (0 es el de arriba). */
@@ -60,7 +75,13 @@ export type CombatEvent =
   | { readonly type: 'hit'; readonly bulletId: number; readonly enemyId: number; readonly at: BoardPoint }
   | { readonly type: 'bulletGone'; readonly bulletId: number }
   | { readonly type: 'bite'; readonly enemyId: number; readonly cell: Cell }
-  /** Una disparadora o una mina se quedo sin vida. Una mina destruida asi no explota. */
+  /** Un escupidor escupe (T-007): el escupitajo nace en su centro. */
+  | { readonly type: 'spat'; readonly enemyId: number; readonly spit: Spit }
+  /** Un escupitajo dio a lo sembrado en `cell` (planta o mina) y le quito vida. */
+  | { readonly type: 'spitHit'; readonly spitId: number; readonly cell: Cell }
+  /** Un escupitajo salio del tablero por la izquierda sin dar a nada. */
+  | { readonly type: 'spitGone'; readonly spitId: number }
+  /** Una disparadora o una mina se quedo sin vida (a mordiscos o a escupitajos). Una mina destruida asi no explota. */
   | { readonly type: 'plantDestroyed'; readonly cell: Cell }
   | { readonly type: 'enemyKilled'; readonly enemyId: number; readonly at: BoardPoint }
   | { readonly type: 'enemyEscaped'; readonly enemyId: number; readonly lane: number }
@@ -156,7 +177,7 @@ export function spawnEnemy(state: MatchState, kind: EnemyKind, lane: number, x: 
   if (!Number.isInteger(lane) || lane < 0 || lane >= BOARD.lanes) {
     throw new Error(`Carril invalido: ${lane}`);
   }
-  const enemy: Enemy = { id: state.nextId, kind, lane, x, hp, biteMs: null, burn: null, slow: null };
+  const enemy: Enemy = { id: state.nextId, kind, lane, x, hp, attackMs: null, burn: null, slow: null };
   return { ...state, enemies: [...state.enemies, enemy], nextId: state.nextId + 1 };
 }
 
@@ -166,7 +187,12 @@ export function spawnEnemy(state: MatchState, kind: EnemyKind, lane: number, x: 
  */
 export function hasTarget(enemies: readonly Enemy[], cell: Cell): boolean {
   const plantX = cell.col + 0.5;
-  return enemies.some((e) => e.lane === cell.lane && e.hp > 0 && e.x > plantX && enemyFront(e) <= BOARD.columns);
+  return enemies.some((e) => e.lane === cell.lane && e.hp > 0 && e.x > plantX && onLawn(e));
+}
+
+/** Ya pisa el cesped: las plantas le pueden disparar (y el escupidor puede pararse a escupir). */
+export function onLawn(enemy: Enemy): boolean {
+  return enemyFront(enemy) <= BOARD.columns;
 }
 
 /** Avanza el combate `dtMs` milisegundos. No modifica el estado recibido. */
@@ -183,17 +209,19 @@ export function stepCombat(state: MatchState, dtMs: number): CombatStep {
 }
 
 /**
- * Un paso: primero arden, se mueven y muerden los enemigos (mas despacio si estan ralentizados); luego cuentan
- * y explotan las minas; despues vuelan las balas y al final disparan las plantas.
+ * Un paso: primero arden, se mueven y atacan los enemigos (muerden o escupen, mas despacio si estan ralentizados);
+ * luego vuelan los escupitajos; despues cuentan y explotan las minas, vuelan las balas y al final disparan las plantas.
  */
 function substep(state: MatchState, dtMs: number, events: CombatEvent[]): MatchState {
   const plants = state.plants.map((lane) => [...lane]);
   let lives = state.lives;
   let nextId = state.nextId;
 
-  // Enemigos: arden si tienen una quemadura, y muerden lo que tocan (planta o mina) o avanzan, mas despacio si
-  // estan ralentizados. Los que cruzan el borde izquierdo restan una vida.
+  // Enemigos: arden si tienen una quemadura, y atacan o avanzan, mas despacio si estan ralentizados. Los que muerden
+  // atacan lo que tocan (planta o mina); el escupidor, lo primero sembrado en su carril a su distancia. Los que
+  // cruzan el borde izquierdo restan una vida.
   const enemies: Array<Mutable<Enemy>> = [];
+  const launched: Spit[] = [];
   for (const enemy of state.enemies) {
     const stats = ENEMIES[enemy.kind];
     const e: Mutable<Enemy> = { ...enemy };
@@ -206,35 +234,64 @@ function substep(state: MatchState, dtMs: number, events: CombatEvent[]): MatchS
         continue;
       }
     }
-    // Ralentizado, su reloj de avanzar (y de morder) va mas despacio, solo el tiempo que le queda al hielo.
+    // Ralentizado, su reloj de avanzar (y de atacar) va mas despacio, solo el tiempo que le queda al hielo.
     const walkMs = e.slow ? dtMs - e.slow.amount * Math.min(dtMs, e.slow.ms) : dtMs;
     if (e.slow) e.slow = e.slow.ms > dtMs ? { ...e.slow, ms: e.slow.ms - dtMs } : null;
-    const col = bittenColumn(plants[e.lane], e.x, stats.reach);
-    if (col !== null) {
-      e.biteMs = (e.biteMs ?? stats.firstBiteMs) - (ICE.slowsBites ? walkMs : dtMs);
-      if (e.biteMs <= 0) {
-        e.biteMs += stats.biteIntervalMs;
-        const cell = { lane: e.lane, col };
-        const sown = plants[e.lane][col] as Sown;
-        const hp = sown.hp - stats.biteDamage;
-        events.push({ type: 'bite', enemyId: e.id, cell });
-        if (hp > 0) {
-          plants[e.lane][col] = { ...sown, hp };
-        } else {
-          plants[e.lane][col] = null;
-          events.push({ type: 'plantDestroyed', cell });
+    const attackClockMs = ICE.slowsAttacks ? walkMs : dtMs;
+    const lane = plants[e.lane];
+    if (stats.attack === 'spit') {
+      const col = spitColumn(lane, e, stats.range);
+      if (col !== null) {
+        e.attackMs = (e.attackMs ?? stats.firstSpitMs) - attackClockMs;
+        if (e.attackMs <= 0) {
+          e.attackMs += stats.spitIntervalMs;
+          const spit: Spit = { id: nextId++, lane: e.lane, x: e.x, damage: stats.spitDamage };
+          launched.push(spit);
+          events.push({ type: 'spat', enemyId: e.id, spit });
         }
+        enemies.push(e);
+        continue;
       }
     } else {
-      e.biteMs = null;
-      e.x -= (stats.speed * walkMs) / 1000;
-      if (e.x < 0) {
-        lives = Math.max(0, lives - 1);
-        events.push({ type: 'enemyEscaped', enemyId: e.id, lane: e.lane });
+      const col = bittenColumn(lane, e.x, stats.reach);
+      if (col !== null) {
+        e.attackMs = (e.attackMs ?? stats.firstBiteMs) - attackClockMs;
+        if (e.attackMs <= 0) {
+          e.attackMs += stats.biteIntervalMs;
+          const cell = { lane: e.lane, col };
+          events.push({ type: 'bite', enemyId: e.id, cell });
+          damageSown(plants, cell, stats.biteDamage, events);
+        }
+        enemies.push(e);
         continue;
       }
     }
+    e.attackMs = null;
+    e.x -= (stats.speed * walkMs) / 1000;
+    if (e.x < 0) {
+      lives = Math.max(0, lives - 1);
+      events.push({ type: 'enemyEscaped', enemyId: e.id, lane: e.lane });
+      continue;
+    }
     enemies.push(e);
+  }
+
+  // Escupitajos: dan a lo primero sembrado que encuentran en su carril (planta o mina) o desaparecen al salir
+  // del tablero. Los que acaban de salir esperan al siguiente paso. Una mina destruida asi ya no explota.
+  const spits: Spit[] = [];
+  for (const spit of state.spits) {
+    const from = spit.x;
+    const to = from - (ENEMIES.spitter.spitSpeed * dtMs) / 1000;
+    const col = firstSownInPath(plants[spit.lane], from, to);
+    if (col !== null) {
+      const cell = { lane: spit.lane, col };
+      events.push({ type: 'spitHit', spitId: spit.id, cell });
+      damageSown(plants, cell, spit.damage, events);
+    } else if (to < 0) {
+      events.push({ type: 'spitGone', spitId: spit.id });
+    } else {
+      spits.push({ ...spit, x: to });
+    }
   }
 
   // Minas: la que detecta a un enemigo empieza a contar; la que acaba el conteo explota y deja su casilla,
@@ -311,7 +368,7 @@ function substep(state: MatchState, dtMs: number, events: CombatEvent[]): MatchS
     }),
   );
 
-  return { ...state, lives, plants, enemies: alive, bullets, nextId };
+  return { ...state, lives, plants, enemies: alive, bullets, spits: [...spits, ...launched], nextId };
 }
 
 /** Distancia del centro del enemigo al centro de la casilla, en casillas. Cuenta tambien en otros carriles. */
@@ -332,6 +389,41 @@ function explode(mine: Mine, cell: Cell, enemies: Array<Mutable<Enemy>>, events:
     if (slow) e.slow = refreshSlow(e.slow, slow);
     if (e.hp <= 0) events.push({ type: 'enemyKilled', enemyId: e.id, at: { x: e.x, y: e.lane + 0.5 } });
   }
+}
+
+/** Quita vida a lo sembrado en `cell` (planta o mina). Si se queda sin vida, deja la casilla libre. */
+function damageSown(plants: Array<Array<Sown | null>>, cell: Cell, damage: number, events: CombatEvent[]): void {
+  const sown = plants[cell.lane][cell.col] as Sown;
+  const hp = sown.hp - damage;
+  if (hp > 0) {
+    plants[cell.lane][cell.col] = { ...sown, hp };
+  } else {
+    plants[cell.lane][cell.col] = null;
+    events.push({ type: 'plantDestroyed', cell });
+  }
+}
+
+/**
+ * Columna de lo sembrado (planta o mina) a la que escupe el escupidor: lo primero que tiene delante en su carril,
+ * a `range` casillas o menos de su centro. Null si no hay nada a su alcance o aun no pisa el cesped.
+ */
+function spitColumn(lane: ReadonlyArray<Sown | null>, enemy: Enemy, range: number): number | null {
+  if (!onLawn(enemy)) return null;
+  for (let col = lane.length - 1; col >= 0; col--) {
+    const gap = enemy.x - (col + 0.5);
+    if (!lane[col] || gap < 0) continue;
+    return gap <= range ? col : null;
+  }
+  return null;
+}
+
+/** Columna de lo primero sembrado cuyo centro alcanza un escupitajo al ir de `from` a `to` (hacia la izquierda). */
+function firstSownInPath(lane: ReadonlyArray<Sown | null>, from: number, to: number): number | null {
+  for (let col = lane.length - 1; col >= 0; col--) {
+    const center = col + 0.5;
+    if (lane[col] && center <= from && center >= to) return col;
+  }
+  return null;
 }
 
 /** Columna de lo sembrado (planta o mina) que el enemigo en `x` tiene justo delante, a su alcance; null si no toca nada. */

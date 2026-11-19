@@ -9,6 +9,8 @@ interface CardProps {
   selected: boolean;
   /** Precio de infundir la planta a la que apunta la carta (D-04), o null. */
   preview?: CardPreview | null;
+  /** Si el elemento ya se puede infundir en esta ronda (T-007): el fuego se siembra solo una ronda antes. */
+  canInfuse?: boolean;
 }
 
 const toPagePoint = (event: PointerEvent): PagePoint => ({ pageX: event.pageX, pageY: event.pageY });
@@ -19,7 +21,7 @@ const toPagePoint = (event: PointerEvent): PagePoint => ({ pageX: event.pageX, p
  * Una carta de elemento sobre una disparadora de N canones muestra lo que costaria infundirla ("x3 = 225"),
  * en rojo si no alcanza (D-04).
  */
-export function Card({ card, label, balance, selected, preview = null }: CardProps) {
+export function Card({ card, label, balance, selected, preview = null, canInfuse = false }: CardProps) {
   const cost = cardCost(card);
   const disabled = balance === null || !canAfford(balance, cost);
   const multiplied = preview !== null && preview.multiplier > 1;
@@ -60,7 +62,7 @@ export function Card({ card, label, balance, selected, preview = null }: CardPro
       className={`card card-${card}`}
       aria-pressed={selected}
       aria-disabled={disabled}
-      title={disabled ? 'Saldo insuficiente' : CARD_TITLES[card]}
+      title={disabled ? 'Saldo insuficiente' : cardTitle(card, canInfuse)}
       onPointerDown={onPointerDown}
     >
       <CardIcon card={card} />
@@ -73,11 +75,18 @@ export function Card({ card, label, balance, selected, preview = null }: CardPro
   );
 }
 
-const CARD_TITLES: Record<CardId, string> = {
-  shooter: 'Sembrar disparadora',
-  fire: 'Fuego: en una casilla vacía, mina; sobre una disparadora, la infunde (un fuego por cañón)',
-  ice: 'Hielo: en una casilla vacía, mina que frena; sobre una disparadora, la infunde (un hielo por cañón)',
-};
+/** Lo que hace la carta. Antes de poder infundir (T-007), el elemento solo se siembra como mina. */
+function cardTitle(card: CardId, canInfuse: boolean): string {
+  if (card === 'shooter') return 'Sembrar disparadora';
+  if (card === 'fire') {
+    return canInfuse
+      ? 'Fuego: en una casilla vacía, mina; sobre una disparadora, la infunde (un fuego por cañón)'
+      : 'Fuego: en una casilla vacía, mina que explota';
+  }
+  return canInfuse
+    ? 'Hielo: en una casilla vacía, mina que frena; sobre una disparadora, la infunde (un hielo por cañón)'
+    : 'Hielo: en una casilla vacía, mina que frena';
+}
 
 /** Dibujo de la carta, en CSS: la disparadora, o una llama o un copo sobre un montoncito de tierra. */
 function CardIcon({ card }: { card: CardId }) {

@@ -23,6 +23,7 @@ import {
   type Plant,
 } from './match';
 import { createShooter, infusionCost, plantMaxHp, type Shooter } from './plants';
+import { ROUND_COUNT } from './rounds';
 
 const cost = COSTS.shooter;
 const plantShooter = (state: MatchState, cell: Cell) => playCard(state, 'shooter', cell);
@@ -104,6 +105,12 @@ describe('ganar moneda', () => {
 
 const shooter = (over: Partial<Shooter> = {}): Shooter => ({ ...createShooter(), ...over });
 
+/**
+ * Partida en la ultima ronda, con todo desbloqueado (T-007): fusionar, infundir y subir de nivel se prueban aqui
+ * sin depender de la ronda. Lo que bloquea cada ronda se prueba en `rounds.test.ts`.
+ */
+const unlocked = (balance?: number) => createMatch(balance, ROUND_COUNT - 1);
+
 /** Pone plantas en el tablero sin cobrar. */
 function withPlants(state: MatchState, ...entries: Array<[Cell, Partial<Plant> & { shooter?: Shooter }]>): MatchState {
   const plants = state.plants.map((lane) => [...lane]);
@@ -120,7 +127,7 @@ describe('fusionar', () => {
   const c = { lane: 0, col: 0 };
 
   it('la planta arrastrada deja su casilla y el destino suma sus canones, sin cobrar', () => {
-    const before = withPlants(createMatch(), [a, {}], [b, {}]);
+    const before = withPlants(unlocked(), [a, {}], [b, {}]);
     const after = fusePlants(before, a, b);
     expect(plantAt(after, a)).toBeNull();
     expect(plantAt(after, b)?.shooter).toEqual({ element: null, cannons: 2, level: 1 });
@@ -128,7 +135,7 @@ describe('fusionar', () => {
   });
 
   it('no modifica el estado anterior', () => {
-    const before = withPlants(createMatch(), [a, {}], [b, {}]);
+    const before = withPlants(unlocked(), [a, {}], [b, {}]);
     fusePlants(before, a, b);
     expect(plantAt(before, a)?.shooter.cannons).toBe(1);
     expect(plantAt(before, b)?.shooter.cannons).toBe(1);
@@ -136,26 +143,26 @@ describe('fusionar', () => {
 
   it('reproduce la tabla de la task', () => {
     // Normal, 1 canon, nivel 3 + normal, 1 canon, nivel 3 = normal, 2 canones, nivel 3.
-    const same = withPlants(createMatch(), [a, { shooter: shooter({ level: 3 }) }], [b, { shooter: shooter({ level: 3 }) }]);
+    const same = withPlants(unlocked(), [a, { shooter: shooter({ level: 3 }) }], [b, { shooter: shooter({ level: 3 }) }]);
     expect(plantAt(fusePlants(same, a, b), b)?.shooter).toEqual({ element: null, cannons: 2, level: 3 });
 
     // Normal, 1 canon, nivel 9 sobre normal, 2 canones, nivel 7 = normal, 3 canones, nivel 7.
-    const levels = withPlants(createMatch(), [a, { shooter: shooter({ level: 9 }) }], [b, { shooter: shooter({ cannons: 2, level: 7 }) }]);
+    const levels = withPlants(unlocked(), [a, { shooter: shooter({ level: 9 }) }], [b, { shooter: shooter({ cannons: 2, level: 7 }) }]);
     expect(plantAt(fusePlants(levels, a, b), b)?.shooter).toEqual({ element: null, cannons: 3, level: 7 });
 
     // Fuego, 1 canon sobre normal, 1 canon: no permitido.
-    const fire = withPlants(createMatch(), [a, { shooter: shooter({ element: 'fire' }) }], [b, {}]);
+    const fire = withPlants(unlocked(), [a, { shooter: shooter({ element: 'fire' }) }], [b, {}]);
     expect(fusionBlocker(fire, a, b)).toBe('variant');
     expect(() => fusePlants(fire, a, b)).toThrow();
 
     // Normal, 2 canones sobre normal, 2 canones: no permitido (serian 4).
-    const four = withPlants(createMatch(), [a, { shooter: shooter({ cannons: 2 }) }], [b, { shooter: shooter({ cannons: 2 }) }]);
+    const four = withPlants(unlocked(), [a, { shooter: shooter({ cannons: 2 }) }], [b, { shooter: shooter({ cannons: 2 }) }]);
     expect(fusionBlocker(four, a, b)).toBe('max-cannons');
     expect(() => fusePlants(four, a, b)).toThrow();
   });
 
   it('tres disparadoras sembradas acaban en una de 3 canones', () => {
-    let match = createMatch(cost * 3);
+    let match = unlocked(cost * 3);
     for (const cell of [a, b, c]) match = plantShooter(match, cell);
     match = fusePlants(match, a, b);
     expect(fusionBlocker(match, b, c)).toBeNull();
@@ -165,10 +172,10 @@ describe('fusionar', () => {
   });
 
   it('suma la vida actual de las dos (D-02)', () => {
-    const damaged = withPlants(createMatch(), [a, { hp: SHOOTER.hp - 150 }], [b, { hp: SHOOTER.hp - 50 }]);
+    const damaged = withPlants(unlocked(), [a, { hp: SHOOTER.hp - 150 }], [b, { hp: SHOOTER.hp - 50 }]);
     const result = plantAt(fusePlants(damaged, a, b), b);
     expect(result?.hp).toBe(2 * SHOOTER.hp - 200);
-    const full = withPlants(createMatch(), [a, {}], [b, { shooter: shooter({ cannons: 2 }), hp: 2 * SHOOTER.hp }]);
+    const full = withPlants(unlocked(), [a, {}], [b, { shooter: shooter({ cannons: 2 }), hp: 2 * SHOOTER.hp }]);
     expect(plantAt(fusePlants(full, a, b), b)?.hp).toBe(plantMaxHp(shooter({ cannons: 3 })));
   });
 
@@ -179,7 +186,7 @@ describe('fusionar', () => {
   });
 
   it('no fusiona con una casilla vacia, consigo misma ni fuera del tablero', () => {
-    const match = withPlants(createMatch(), [a, {}]);
+    const match = withPlants(unlocked(), [a, {}]);
     expect(fusionBlocker(match, a, b)).toBe('no-plant');
     expect(fusionBlocker(match, b, a)).toBe('no-plant');
     expect(fusionBlocker(match, a, a)).toBe('same-cell');
@@ -189,7 +196,7 @@ describe('fusionar', () => {
 
   it('lista los destinos validos de una planta', () => {
     const match = withPlants(
-      createMatch(),
+      unlocked(),
       [a, {}],
       [b, {}],
       [c, { shooter: shooter({ cannons: 2 }) }],
@@ -209,7 +216,7 @@ describe('fuego (T-004)', () => {
   const plantCell = { lane: 1, col: 5 };
 
   it('sobre una casilla vacia siembra una mina y cobra el fuego', () => {
-    const before = createMatch();
+    const before = unlocked();
     expect(cardPlay(before, 'fire', empty)).toEqual({ action: 'sow', cost: fire, multiplier: 1, blocker: null });
     const after = playCard(before, 'fire', empty);
     expect(mineAt(after, empty)).toEqual({ kind: 'mine', element: 'fire', hp: MINE.hp, fuseMs: null });
@@ -218,21 +225,21 @@ describe('fuego (T-004)', () => {
   });
 
   it('una mina ocupa su casilla: no se siembra ni se infunde encima', () => {
-    const mined = playCard(createMatch(), 'fire', empty);
+    const mined = playCard(unlocked(), 'fire', empty);
     expect(cardPlay(mined, 'fire', empty).blocker).toBe('occupied');
     expect(cardPlay(mined, 'shooter', empty).blocker).toBe('occupied');
     expect(() => playCard(mined, 'shooter', empty)).toThrow();
   });
 
   it('una mina no se arrastra ni sirve de destino para fusionar', () => {
-    const match = withPlants(playCard(createMatch(), 'fire', empty), [plantCell, {}]);
+    const match = withPlants(playCard(unlocked(), 'fire', empty), [plantCell, {}]);
     expect(fusionBlocker(match, empty, plantCell)).toBe('no-plant');
     expect(fusionBlocker(match, plantCell, empty)).toBe('no-plant');
     expect(fusionTargets(match, plantCell)).toEqual([]);
   });
 
   it('sobre una disparadora sin elemento la infunde, sin tocar su vida, recarga ni nivel', () => {
-    const before = withPlants(createMatch(), [plantCell, { shooter: shooter({ level: 4 }), hp: 120, reloadMs: 300 }]);
+    const before = withPlants(unlocked(), [plantCell, { shooter: shooter({ level: 4 }), hp: 120, reloadMs: 300 }]);
     expect(cardPlay(before, 'fire', plantCell)).toEqual({ action: 'infuse', cost: fire, multiplier: 1, blocker: null });
     const after = playCard(before, 'fire', plantCell);
     expect(plantAt(after, plantCell)).toEqual({
@@ -246,7 +253,7 @@ describe('fuego (T-004)', () => {
 
   it('el costo de infundir sale de infusionCost: un fuego por canon (D-04)', () => {
     for (const cannons of [1, 2, 3] as const) {
-      const match = withPlants(createMatch(1000), [plantCell, { shooter: shooter({ cannons }) }]);
+      const match = withPlants(unlocked(1000), [plantCell, { shooter: shooter({ cannons }) }]);
       const play = cardPlay(match, 'fire', plantCell);
       expect(play.cost).toBe(infusionCost(shooter({ cannons }), 'fire'));
       expect(play.multiplier).toBe(cannons);
@@ -255,22 +262,22 @@ describe('fuego (T-004)', () => {
   });
 
   it('si no alcanza la moneda no deja infundir, pero dice cuanto costaria', () => {
-    const match = withPlants(createMatch(fire * 3 - 1), [plantCell, { shooter: shooter({ cannons: 3 }) }]);
+    const match = withPlants(unlocked(fire * 3 - 1), [plantCell, { shooter: shooter({ cannons: 3 }) }]);
     expect(cardPlay(match, 'fire', plantCell)).toEqual({ action: 'infuse', cost: fire * 3, multiplier: 3, blocker: 'insufficient-funds' });
     expect(() => playCard(match, 'fire', plantCell)).toThrow();
   });
 
   it('la disparadora no se siembra encima de otra planta', () => {
-    const match = withPlants(createMatch(), [plantCell, {}]);
+    const match = withPlants(unlocked(), [plantCell, {}]);
     expect(cardPlay(match, 'shooter', plantCell)).toMatchObject({ action: 'sow', blocker: 'occupied' });
   });
 
   it('fuera del tablero no hace nada', () => {
-    expect(cardPlay(createMatch(), 'fire', { lane: -1, col: 0 }).blocker).toBe('off-board');
+    expect(cardPlay(unlocked(), 'fire', { lane: -1, col: 0 }).blocker).toBe('off-board');
   });
 
   it('vida maxima de lo sembrado: la mina tiene la suya', () => {
-    const match = withPlants(playCard(createMatch(), 'fire', empty), [plantCell, { shooter: shooter({ cannons: 2 }) }]);
+    const match = withPlants(playCard(unlocked(), 'fire', empty), [plantCell, { shooter: shooter({ cannons: 2 }) }]);
     expect(sownMaxHp(sownAt(match, empty)!)).toBe(MINE.hp);
     expect(sownMaxHp(sownAt(match, plantCell)!)).toBe(2 * SHOOTER.hp);
     expect(createMine('fire').hp).toBe(MINE.hp);
@@ -283,7 +290,7 @@ describe('fuego (T-004)', () => {
     const three = { lane: 4, col: 8 };
     const fiery = { lane: 3, col: 3 };
     const board = withPlants(
-      createMatch(start),
+      unlocked(start),
       [one, {}],
       [three, { shooter: shooter({ cannons: 3 }) }],
       [fiery, { shooter: shooter({ element: 'fire' }) }],
@@ -317,7 +324,7 @@ describe('hielo (T-005)', () => {
   const plantCell = { lane: 1, col: 5 };
 
   it('sobre una casilla vacia siembra una mina de hielo y cobra el hielo', () => {
-    const before = createMatch();
+    const before = unlocked();
     expect(cardPlay(before, 'ice', empty)).toEqual({ action: 'sow', cost: ice, multiplier: 1, blocker: null });
     const after = playCard(before, 'ice', empty);
     expect(mineAt(after, empty)).toEqual({ kind: 'mine', element: 'ice', hp: MINE.hp, fuseMs: null });
@@ -326,7 +333,7 @@ describe('hielo (T-005)', () => {
 
   it('sobre una disparadora sin elemento la infunde: un hielo por canon', () => {
     for (const cannons of [1, 2, 3] as const) {
-      const match = withPlants(createMatch(1000), [plantCell, { shooter: shooter({ cannons, level: 2 }) }]);
+      const match = withPlants(unlocked(1000), [plantCell, { shooter: shooter({ cannons, level: 2 }) }]);
       expect(cardPlay(match, 'ice', plantCell)).toEqual({ action: 'infuse', cost: ice * cannons, multiplier: cannons, blocker: null });
       const after = playCard(match, 'ice', plantCell);
       expect(plantAt(after, plantCell)?.shooter).toEqual({ element: 'ice', cannons, level: 2 });
@@ -337,7 +344,7 @@ describe('hielo (T-005)', () => {
   it('no se infunde hielo en una disparadora de fuego ni fuego en una de hielo', () => {
     const fiery = { lane: 0, col: 0 };
     const icy = { lane: 4, col: 8 };
-    const board = withPlants(createMatch(1000), [fiery, { shooter: shooter({ element: 'fire' }) }], [icy, { shooter: shooter({ element: 'ice' }) }]);
+    const board = withPlants(unlocked(1000), [fiery, { shooter: shooter({ element: 'fire' }) }], [icy, { shooter: shooter({ element: 'ice' }) }]);
     expect(cardPlay(board, 'ice', fiery).blocker).toBe('has-element');
     expect(cardPlay(board, 'fire', icy).blocker).toBe('has-element');
     expect(cardPlay(board, 'ice', icy).blocker).toBe('has-element');
@@ -349,16 +356,16 @@ describe('hielo (T-005)', () => {
     const a = { lane: 0, col: 0 };
     const b = { lane: 0, col: 1 };
     const icy = (over: Partial<Shooter> = {}) => ({ shooter: shooter({ element: 'ice', ...over }) });
-    const pair = withPlants(createMatch(), [a, icy()], [b, icy({ cannons: 2 })]);
+    const pair = withPlants(unlocked(), [a, icy()], [b, icy({ cannons: 2 })]);
     expect(plantAt(fusePlants(pair, a, b), b)?.shooter).toEqual({ element: 'ice', cannons: 3, level: 1 });
-    expect(fusionBlocker(withPlants(createMatch(), [a, icy()], [b, { shooter: shooter({ element: 'fire' }) }]), a, b)).toBe('variant');
-    expect(fusionBlocker(withPlants(createMatch(), [a, icy()], [b, {}]), a, b)).toBe('variant');
+    expect(fusionBlocker(withPlants(unlocked(), [a, icy()], [b, { shooter: shooter({ element: 'fire' }) }]), a, b)).toBe('variant');
+    expect(fusionBlocker(withPlants(unlocked(), [a, icy()], [b, {}]), a, b)).toBe('variant');
   });
 
   it('reproduce la tabla de la task', () => {
     // Hielo sobre disparadora de fuego: no permitido, saldo sin cambios.
     const fiery = { lane: 3, col: 3 };
-    const board = withPlants(createMatch(500), [fiery, { shooter: shooter({ element: 'fire' }) }]);
+    const board = withPlants(unlocked(500), [fiery, { shooter: shooter({ element: 'fire' }) }]);
     expect(cardPlay(board, 'ice', fiery).blocker).toBe('has-element');
     expect(board.balance).toBe(500);
   });
@@ -368,24 +375,24 @@ describe('subir de nivel', () => {
   const at = { lane: 2, col: 3 };
 
   it('ofrece el nivel de la planta y lo que cuesta el siguiente', () => {
-    const match = withPlants(createMatch(1000), [at, { shooter: shooter({ level: 3 }) }]);
+    const match = withPlants(unlocked(1000), [at, { shooter: shooter({ level: 3 }) }]);
     expect(levelUpOffer(match, at)).toEqual({ level: 3, cost: LEVELING.baseCost + 2 * LEVELING.costStep, multiplier: 1, blocker: null });
   });
 
   it('una fusionada paga un nivel por canon', () => {
-    const match = withPlants(createMatch(1000), [at, { shooter: shooter({ cannons: 3 }) }]);
+    const match = withPlants(unlocked(1000), [at, { shooter: shooter({ cannons: 3 }) }]);
     expect(levelUpOffer(match, at)).toMatchObject({ cost: 3 * LEVELING.baseCost, multiplier: 3, blocker: null });
   });
 
   it('sin disparadora en la casilla no hay nada que subir', () => {
-    expect(levelUpOffer(createMatch(), at)).toBeNull();
-    expect(levelUpOffer(playCard(createMatch(), 'fire', at), at)).toBeNull();
-    expect(levelUpOffer(createMatch(), { lane: -1, col: 0 })).toBeNull();
-    expect(() => levelUpPlant(createMatch(), at)).toThrow();
+    expect(levelUpOffer(unlocked(), at)).toBeNull();
+    expect(levelUpOffer(playCard(unlocked(), 'fire', at), at)).toBeNull();
+    expect(levelUpOffer(unlocked(), { lane: -1, col: 0 })).toBeNull();
+    expect(() => levelUpPlant(unlocked(), at)).toThrow();
   });
 
   it('cobra el costo y sube un nivel, sin tocar la vida ni la recarga', () => {
-    const before = withPlants(createMatch(500), [at, { shooter: shooter({ element: 'fire', cannons: 2, level: 2 }), hp: 410, reloadMs: 300 }]);
+    const before = withPlants(unlocked(500), [at, { shooter: shooter({ element: 'fire', cannons: 2, level: 2 }), hp: 410, reloadMs: 300 }]);
     const after = levelUpPlant(before, at);
     expect(after.balance).toBe(500 - 2 * (LEVELING.baseCost + LEVELING.costStep));
     expect(plantAt(after, at)).toEqual({
@@ -397,29 +404,29 @@ describe('subir de nivel', () => {
   });
 
   it('no modifica el estado anterior', () => {
-    const before = withPlants(createMatch(500), [at, {}]);
+    const before = withPlants(unlocked(500), [at, {}]);
     levelUpPlant(before, at);
     expect(before.balance).toBe(500);
     expect(plantAt(before, at)?.shooter.level).toBe(1);
   });
 
   it('con el saldo justo se puede; con uno menos, no', () => {
-    const exact = withPlants(createMatch(LEVELING.baseCost), [at, {}]);
+    const exact = withPlants(unlocked(LEVELING.baseCost), [at, {}]);
     expect(levelUpOffer(exact, at)?.blocker).toBeNull();
     expect(levelUpPlant(exact, at).balance).toBe(0);
-    const short = withPlants(createMatch(LEVELING.baseCost - 1), [at, {}]);
+    const short = withPlants(unlocked(LEVELING.baseCost - 1), [at, {}]);
     expect(levelUpOffer(short, at)?.blocker).toBe('insufficient-funds');
     expect(() => levelUpPlant(short, at)).toThrow();
   });
 
   it('en el nivel maximo aparece como maximo y no se puede subir', () => {
-    const top = withPlants(createMatch(100_000), [at, { shooter: shooter({ level: LIMITS.maxLevel }) }]);
+    const top = withPlants(unlocked(100_000), [at, { shooter: shooter({ level: LIMITS.maxLevel }) }]);
     expect(levelUpOffer(top, at)).toEqual({ level: LIMITS.maxLevel, cost: null, multiplier: 1, blocker: 'max-level' });
     expect(() => levelUpPlant(top, at)).toThrow();
   });
 
   it('subiendo de uno en uno llega al 20 y no pasa', () => {
-    let state = withPlants(createMatch(100_000), [at, {}]);
+    let state = withPlants(unlocked(100_000), [at, {}]);
     while (levelUpOffer(state, at)?.blocker === null) state = levelUpPlant(state, at);
     expect(plantAt(state, at)?.shooter.level).toBe(LIMITS.maxLevel);
     // 75 + 100 + ... + 525: 19 niveles.
@@ -428,13 +435,13 @@ describe('subir de nivel', () => {
 
   it('reproduce la tabla de la task', () => {
     // Nivel 1, subir: nivel 2 y saldo reducido.
-    const one = levelUpPlant(withPlants(createMatch(250), [at, {}]), at);
+    const one = levelUpPlant(withPlants(unlocked(250), [at, {}]), at);
     expect(plantAt(one, at)?.shooter.level).toBe(2);
     expect(one.balance).toBe(250 - LEVELING.baseCost);
     // Nivel 20, subir: no disponible, "Maximo".
-    expect(levelUpOffer(withPlants(createMatch(250), [at, { shooter: shooter({ level: 20 }) }]), at)?.blocker).toBe('max-level');
+    expect(levelUpOffer(withPlants(unlocked(250), [at, { shooter: shooter({ level: 20 }) }]), at)?.blocker).toBe('max-level');
     // Nivel 3 con saldo insuficiente: no disponible, saldo sin cambios.
-    const poor = withPlants(createMatch(50), [at, { shooter: shooter({ level: 3 }) }]);
+    const poor = withPlants(unlocked(50), [at, { shooter: shooter({ level: 3 }) }]);
     expect(levelUpOffer(poor, at)?.blocker).toBe('insufficient-funds');
     expect(poor.balance).toBe(50);
   });

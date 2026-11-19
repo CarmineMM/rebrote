@@ -15,13 +15,18 @@ body {
 .game-canvas { position: absolute; inset: 0; contain: size; touch-action: none; }
 .game-host { width: 100%; height: 100%; }
 
+/* Bandeja a la izquierda, ronda en el centro (T-007) y vidas, saldo y pausa a la derecha. */
 .hud {
   position: absolute; top: 0; left: 0; right: 0; z-index: 2;
-  display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;
+  display: grid; grid-template-columns: 1fr auto 1fr; grid-template-areas: 'tray round right';
+  align-items: start; column-gap: 12px; row-gap: 8px;
   padding: max(12px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) 0 max(16px, env(safe-area-inset-left));
   pointer-events: none;
 }
 .hud > * { pointer-events: auto; }
+.seed-tray { grid-area: tray; justify-self: start; }
+.round-info { grid-area: round; }
+.hud-right { grid-area: right; justify-self: end; }
 .hud-right { display: flex; align-items: center; gap: 10px; animation: drop-in 0.5s 0.1s cubic-bezier(0.2, 1.4, 0.4, 1) both; }
 @keyframes drop-in { from { opacity: 0; transform: translateY(-24px); } to { opacity: 1; transform: none; } }
 
@@ -119,6 +124,10 @@ body {
   animation: card-float 1.4s ease-in-out infinite;
 }
 .card[aria-disabled='true'] { opacity: 0.45; filter: grayscale(1); cursor: not-allowed; transform: none; animation: none; }
+/* Carta recien desbloqueada (T-007): entra en la bandeja con un salto y brilla un momento. */
+.card-slot { display: flex; border-radius: 12px; animation: card-arrive 0.6s cubic-bezier(0.2, 1.5, 0.4, 1) both, card-glow 1.1s 0.6s ease-in-out 3; }
+@keyframes card-arrive { from { opacity: 0; transform: translateY(-22px) scale(0.4) rotate(-10deg); } to { opacity: 1; transform: none; } }
+@keyframes card-glow { 0%, 100% { box-shadow: 0 0 0 0 rgba(255, 224, 102, 0); } 50% { box-shadow: 0 0 0 4px rgba(255, 224, 102, 0.55), 0 0 22px rgba(255, 224, 102, 0.6); } }
 @keyframes card-float { 0%, 100% { transform: translateY(-3px); } 50% { transform: translateY(-7px); } }
 
 .card-icon { grid-row: span 2; position: relative; width: 40px; height: 36px; }
@@ -181,6 +190,66 @@ body {
 .card-icon-flake > span::after { transform: rotate(-60deg); }
 @keyframes flake-spin { to { transform: rotate(360deg); } }
 @keyframes flake-twinkle { from { opacity: 0.85; } to { opacity: 1; } }
+
+/* ---------- Ronda (T-007): "Ronda N de 7", cuenta atras de la preparacion y aviso del concepto nuevo ---------- */
+.round-info { position: relative; display: grid; justify-items: center; gap: 6px; animation: drop-in 0.5s 0.05s cubic-bezier(0.2, 1.4, 0.4, 1) both; }
+.round-badge {
+  display: flex; align-items: center; gap: 10px; padding: 6px 14px; border-radius: 999px;
+  background: rgba(22, 40, 22, 0.78); border: 2px solid rgba(159, 216, 138, 0.45); box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+  font-weight: 900; color: #e9ffd6; text-shadow: 0 2px 0 #17301a; white-space: nowrap;
+}
+.round-title { font-size: 1.05rem; }
+.round-number { display: inline-block; font-size: 1.3rem; color: #ffe066; animation: cost-pop 0.45s cubic-bezier(0.2, 1.6, 0.4, 1); }
+/* Una semillita por ronda: verdes las superadas, dorada y latiendo la actual. */
+.round-progress { display: flex; gap: 4px; }
+.round-seed { width: 10px; height: 12px; border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%; background: #34452f; border: 1.5px solid #1b2a18; }
+.round-seed.is-done { background: radial-gradient(circle at 35% 30%, #d0f59a, #80d153 55%, #4aa236); border-color: #2a6b22; }
+.round-seed.is-current { background: radial-gradient(circle at 35% 30%, #fff6c0, #ffd23f 55%, #d1920f); border-color: #6b4505; animation: seed-pulse 1.2s ease-in-out infinite; }
+@keyframes seed-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.3); box-shadow: 0 0 8px rgba(255, 224, 102, 0.8); } }
+
+.round-prep {
+  display: flex; align-items: center; gap: 8px; padding: 4px 4px 4px 12px; border-radius: 999px;
+  background: rgba(22, 40, 22, 0.78); border: 2px solid rgba(255, 224, 102, 0.35); box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+  animation: pop-in 0.3s cubic-bezier(0.2, 1.3, 0.4, 1) both;
+}
+.round-countdown { font-size: 0.95rem; font-weight: 800; color: #cfe8c2; white-space: nowrap; }
+/* La clave cambia cada segundo: el numero salta; en los ultimos tres, en rojo. */
+.round-seconds { display: inline-block; min-width: 1.4ch; text-align: center; font-size: 1.1rem; color: #ffe066; font-variant-numeric: tabular-nums; animation: cost-pop 0.35s cubic-bezier(0.2, 1.6, 0.4, 1); }
+.round-countdown.is-soon .round-seconds { color: #ff8fa3; }
+.round-go {
+  padding: 6px 14px; border-radius: 999px; border: 2px solid #b07a0e;
+  background: linear-gradient(180deg, #ffe48a, #f2b632); color: #4a3000; box-shadow: 0 3px 0 #8a5d08;
+  font: inherit; font-size: 0.95rem; font-weight: 900; white-space: nowrap; cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.12s ease;
+}
+.round-go:hover { transform: translateY(-1px); filter: brightness(1.06); }
+.round-go:active { transform: translateY(2px); box-shadow: 0 1px 0 #8a5d08; }
+.round-go:focus-visible { outline: 3px solid #ffe066; outline-offset: 2px; }
+
+/* Aviso de una linea: cuelga bajo la ronda sin empujar el HUD, asi no tapa la bandeja. Entra, se queda y se va;
+   con el juego en pausa se queda quieto. */
+.round-notice {
+  position: absolute; top: calc(100% + 10px); left: 50%; z-index: 1; transform: translateX(-50%);
+  width: max-content; max-width: min(560px, calc(100vw - 32px)); margin: 0;
+  display: flex; align-items: center; gap: 10px; padding: 10px 18px; border-radius: 16px;
+  border: 2px solid rgba(255, 224, 102, 0.6); background: linear-gradient(180deg, rgba(46, 82, 51, 0.95), rgba(27, 48, 32, 0.95));
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
+  font-size: 1.05rem; font-weight: 800; color: #f1f7ea; text-wrap: balance; pointer-events: none;
+  animation: notice-life 7s ease both;
+}
+.app.is-paused .round-notice, .app.is-paused .round-notice-spark { animation-play-state: paused; }
+@keyframes notice-life {
+  0% { opacity: 0; transform: translate(-50%, -12px) scale(0.85); }
+  5% { opacity: 1; transform: translate(-50%, 0) scale(1.04); }
+  8%, 90% { opacity: 1; transform: translate(-50%, 0) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -8px) scale(0.96); }
+}
+.round-notice-spark {
+  flex: none; width: 18px; height: 18px; background: #ffe066;
+  clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%);
+  animation: spark-spin 2.4s linear infinite;
+}
+@keyframes spark-spin { to { transform: rotate(360deg); } }
 
 /* ---------- Carga ---------- */
 .loading {
@@ -322,6 +391,29 @@ body {
 @keyframes heart-sway { 0%, 100% { transform: rotate(-4deg); } 50% { transform: rotate(4deg); } }
 .defeat-text { margin: -8px 0 20px; text-align: center; font-size: 1.1rem; font-weight: 700; color: #ffdfe4; }
 
+/* Victoria provisional (T-007): velo dorado, una copa con un brote que salta y destellos. */
+.pause-overlay.is-victory { background: rgba(44, 36, 6, 0.38); }
+.victory-art { position: relative; display: grid; place-items: center; height: 84px; margin-bottom: 4px; }
+.trophy {
+  width: 80px; height: 80px; overflow: visible; filter: drop-shadow(0 4px 0 rgba(0, 0, 0, 0.25));
+  animation: trophy-jump 0.7s 0.15s cubic-bezier(0.2, 1.6, 0.4, 1) both, heart-sway 2.8s 1s ease-in-out infinite;
+}
+.trophy-cup { fill: url(#trophy-gold); stroke: #6b4505; stroke-width: 2; stroke-linejoin: round; }
+.trophy-handle { fill: none; stroke: #b07a0e; stroke-width: 4.5; stroke-linecap: round; }
+.trophy-sprout { fill: #80d153; stroke: #2a6b22; stroke-width: 1.6; stroke-linejoin: round; stroke-linecap: round; }
+.trophy-shine { fill: rgba(255, 255, 255, 0.6); }
+@keyframes trophy-jump { from { opacity: 0; transform: translateY(24px) scale(0.3); } to { opacity: 1; transform: none; } }
+.victory-star {
+  position: absolute; width: 16px; height: 16px; background: #ffe066;
+  clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%);
+  animation: star-twinkle 1.4s ease-in-out infinite;
+}
+.victory-star.is-a { left: calc(50% - 66px); top: 10px; }
+.victory-star.is-b { left: calc(50% + 48px); top: 0; width: 12px; height: 12px; animation-delay: 0.45s; }
+.victory-star.is-c { left: calc(50% + 40px); top: 58px; width: 10px; height: 10px; animation-delay: 0.9s; }
+@keyframes star-twinkle { 0%, 100% { opacity: 0.45; transform: scale(0.6); } 50% { opacity: 1; transform: scale(1.2) rotate(45deg); } }
+.victory-text { margin: -8px 0 20px; text-align: center; font-size: 1.1rem; font-weight: 700; color: #fff6c0; }
+
 .settings-header { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
 .settings-section { margin-top: 14px; }
 .settings-section h3 { margin: 0 0 8px; font-size: 0.75rem; letter-spacing: 0.12em; text-transform: uppercase; color: #9fd88a; }
@@ -356,6 +448,12 @@ body {
 .switch-text { display: grid; gap: 2px; }
 .switch-text small { opacity: 0.7; }
 
+/* Sin sitio en una fila para bandeja, ronda y marcadores: la ronda baja a una segunda fila, en linea. */
+@media (max-width: 1250px) {
+  .hud { grid-template-columns: auto 1fr auto; grid-template-areas: 'tray . right' 'round round round'; }
+  .round-info { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 8px; }
+}
+
 /* HUD compacto: con tres cartas (T-005), en un movil en horizontal no cabian bandeja, vidas, saldo y pausa. */
 @media (max-width: 860px) {
   .card-label { display: none; }
@@ -368,11 +466,16 @@ body {
   .hud-lives { padding: 6px 8px; }
   .heart { width: 20px; height: 20px; }
   .round-button { width: 42px; height: 42px; }
+  .round-badge { padding: 4px 12px; gap: 8px; }
+  .round-title { font-size: 0.95rem; }
+  .round-number { font-size: 1.1rem; }
+  .round-notice { font-size: 0.95rem; padding: 8px 14px; }
 }
 @media (max-width: 600px) {
   /* zoom y no transform: la carta elegida anima el transform del icono. */
   .card-icon { zoom: 0.8; }
   .hud-balance-value { min-width: 0; }
+  .round-progress { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {

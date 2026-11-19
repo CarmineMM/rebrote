@@ -10,7 +10,7 @@ Una task por archivo. El tamaño es orientativo.
 | T-004 | [Elementos] Fuego: mina e infusión | Completada (19 nov 2026) | M | T-002 | Ninguna (D-04 cerrada) |
 | T-005 | [Elementos] Hielo: mina e infusión | Completada (19 nov 2026) | S | T-004 | Ninguna (D-06 cerrada) |
 | T-006 | [Plantas] Fusionar por arrastre | Completada (19 nov 2026) | M | T-002 | Ninguna (D-02 cerrada) |
-| T-007 | [Rondas] Las 7 rondas del mundo 1 | Pendiente | L | T-003 a T-006 | Ninguna |
+| T-007 | [Rondas] Las 7 rondas del mundo 1 | Completada (19 nov 2026) | L | T-003 a T-006 | Ninguna |
 | T-008 | [Jefe] Creeper | Pendiente | M | T-007 | Diseño del jefe |
 
 ## Estados

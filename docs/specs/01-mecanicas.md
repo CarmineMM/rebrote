@@ -37,6 +37,25 @@ El elemento solo siempre tiene un efecto mayor que su versión infundida, a camb
 - El gusano avanza a velocidad constante. Al tocar una planta se para y la muerde a intervalos hasta destruirla; luego sigue.
 - Cada enemigo que cruza el borde izquierdo resta una vida y desaparece. Sin vidas se pierde la partida (D-07 sigue abierta: de momento hay 3 vidas, como PROVISIONAL en `LIVES` de `balance.ts`).
 
+### Rondas (T-007)
+- El mundo 1 tiene 7 rondas con guion: cada una dice qué enemigos salen, cuándo y por qué carril. El guion está en `ROUNDS` de `balance.ts` (resumen en `02-mundo-1-gusanos.md`).
+- **Preparación:** cada ronda, también la 1, empieza con una cuenta atrás de 20 s en la que se puede sembrar, infundir, fusionar y subir de nivel. El goteo sigue. El botón "¡Que vengan!" la adelanta.
+- **Ataque:** los enemigos salen a su hora por el agujero de su carril. La ronda termina cuando no quedan enemigos por salir ni vivos; empieza entonces la preparación de la siguiente.
+- Plantas, saldo y vidas se conservan de una ronda a la siguiente.
+- **Un concepto por ronda:** lo nuevo se desbloquea al empezar la preparación de su ronda, con un aviso de una línea, y sigue desbloqueado después. Ronda 1: disparadora. 2: subir de nivel. 3: fuego solo (mina). 4: infundir fuego. 5: hielo, solo e infundido. 6: fusionar. 7: nada nuevo.
+- Lo bloqueado no se ve ni responde: la carta no está en la bandeja, la planta no abre su panel o no se arrastra. Una carta de fuego en la ronda 3 sobre una disparadora avisa de en qué ronda se podrá infundir.
+- Tras la ronda 7 la partida está ganada (pantalla de victoria provisional hasta el jefe, T-008). Perder en cualquier ronda obliga a empezar desde la 1.
+
+### Enemigos (T-007)
+- **Gusano acorazado (desde la ronda 4):** muerde como el gusano, con cuatro veces su vida y más lento.
+- **Gusano escupidor (desde la ronda 6):**
+  - Se para a 2,6 casillas de lo primero sembrado que tiene delante en su carril (planta o mina) y le escupe cada cierto tiempo. Nunca se para antes de pisar el césped, así que las plantas siempre le pueden dar.
+  - El escupitajo vuela por el carril y quita vida a lo primero sembrado que encuentra. Si su objetivo ya no está, sigue hasta lo siguiente o sale del tablero.
+  - Se para fuera del radio de detección de una mina, así que la puede reventar sin que llegue a armarse. Una mina destruida así no explota.
+  - Al destruir su objetivo vuelve a avanzar hasta tener otro a tiro.
+  - Ralentizado, escupe más despacio en la misma proporción en que avanza más despacio.
+- Los valores están como PROVISIONAL en `ENEMIES` de `balance.ts`.
+
 ### Infundir
 - Solo sobre una disparadora ya sembrada y sin elemento.
 - Una planta tiene como máximo un elemento. No hay fuego y hielo a la vez.
@@ -109,4 +128,6 @@ Subir de nivel (T-003): el costo, la subida y lo que suma cada nivel están en `
 
 Saldo, siembra, infusión y ocupación de casillas están en `src/game/core/match.ts`: qué pasa al soltar una carta en una casilla lo dice `cardPlay` y lo aplica `playCard`. Una casilla puede tener una disparadora o una mina (`Sown`); la recompensa por enemigo y la moneda soltada, en `src/game/core/economy.ts`. Los valores están en `ECONOMY` de `balance.ts`.
 
-El combate (disparo, balas, mordisco, minas, quemadura, ralentización, vidas y derrota) está en `src/game/core/combat.ts`, y el generador de gusanos de prueba hasta T-007, en `src/game/core/spawner.ts`. Los valores están en `LIVES`, `SHOOTER`, `ENEMIES`, `MINE`, `FIRE`, `ICE` y `TEST_SPAWNER` de `balance.ts`. Cómo funciona la simulación: ADR-0008.
+El combate (disparo, balas, mordisco, escupitajos, minas, quemadura, ralentización, vidas y derrota) está en `src/game/core/combat.ts`. Los valores están en `LIVES`, `SHOOTER`, `ENEMIES`, `MINE`, `FIRE` e `ICE` de `balance.ts`. Cómo funciona la simulación: ADR-0008.
+
+Las rondas (T-007), en `src/game/core/rounds.ts`: preparación y ataque (`stepRound`, `startAttack`), fin de ronda y victoria, y qué desbloquea cada una (`unlockedAt`, `isUnlocked`, `availableCards`). `cardPlay`, `fusionBlocker` y `levelUpOffer` responden `locked` a lo que aún no toca. El guion y la preparación están en `ROUNDS` y `ROUND_PREP` de `balance.ts`.

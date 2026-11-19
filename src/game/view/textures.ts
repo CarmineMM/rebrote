@@ -68,6 +68,16 @@ export const TEX = {
   wormHeadBite: 'unit-worm-head-bite',
   wormHeadHurt: 'unit-worm-head-hurt',
   wormSegment: 'unit-worm-segment',
+  /** Escupidor (T-007): cabeza tranquila, cargando el escupitajo (mofletes hinchados) y dolorida, y su anillo. */
+  spitterHead: 'unit-spitter-head',
+  spitterHeadCharge: 'unit-spitter-head-charge',
+  spitterHeadHurt: 'unit-spitter-head-hurt',
+  spitterSegment: 'unit-spitter-segment',
+  /** Acorazado (T-007): casco que va sobre la cabeza del gusano y placa que va sobre cada anillo. */
+  armorHelmet: 'unit-armor-helmet',
+  armorPlate: 'unit-armor-plate',
+  /** Escupitajo del escupidor (T-007). */
+  spit: 'unit-spit',
 } as const;
 
 // La forma de la disparadora (pies, canones, puntos del tallo y cabeza) vive en shooterShape.ts, sin Phaser.
@@ -117,6 +127,8 @@ export const WORM_SIZE = {
 } as const;
 /** Bala de la disparadora: una semilla con estela. `cx` es el centro de la semilla (la estela queda detras). */
 export const SEED_SIZE = { width: 48, height: 28, cx: 32 } as const;
+/** Escupitajo (T-007): una gota de moco verde que vuela a la izquierda. `cx` es el centro de la gota (la estela va detras). */
+export const SPIT_SIZE = { width: 46, height: 30, cx: 15 } as const;
 /**
  * Copa del arbol: donde engancha con el tronco, dentro de su textura y en pantalla. La textura deja margen
  * y se alarga hacia la izquierda para que en pantallas anchas no se vea cortada.
@@ -212,10 +224,18 @@ export function registerTextures(scene: Phaser.Scene, scale = 1): void {
   paint(TEX.seed, SEED_SIZE.width, SEED_SIZE.height, paintSeed);
   paint(TEX.fireSeed, SEED_SIZE.width, SEED_SIZE.height, paintFireSeed);
   paint(TEX.iceSeed, SEED_SIZE.width, SEED_SIZE.height, paintIceSeed);
-  paint(TEX.wormHead, WORM_SIZE.head.width, WORM_SIZE.head.height, (ctx) => paintWormHead(ctx, 'idle'));
-  paint(TEX.wormHeadBite, WORM_SIZE.head.width, WORM_SIZE.head.height, (ctx) => paintWormHead(ctx, 'bite'));
-  paint(TEX.wormHeadHurt, WORM_SIZE.head.width, WORM_SIZE.head.height, (ctx) => paintWormHead(ctx, 'hurt'));
-  paint(TEX.wormSegment, WORM_SIZE.segment.size, WORM_SIZE.segment.size, paintWormSegment);
+  const { head, segment } = WORM_SIZE;
+  paint(TEX.wormHead, head.width, head.height, (ctx) => paintWormHead(ctx, 'idle', WORM_PALETTES.worm));
+  paint(TEX.wormHeadBite, head.width, head.height, (ctx) => paintWormHead(ctx, 'bite', WORM_PALETTES.worm));
+  paint(TEX.wormHeadHurt, head.width, head.height, (ctx) => paintWormHead(ctx, 'hurt', WORM_PALETTES.worm));
+  paint(TEX.wormSegment, segment.size, segment.size, (ctx, w) => paintWormSegment(ctx, w, WORM_PALETTES.worm));
+  paint(TEX.spitterHead, head.width, head.height, (ctx) => paintWormHead(ctx, 'idle', WORM_PALETTES.spitter));
+  paint(TEX.spitterHeadCharge, head.width, head.height, (ctx) => paintWormHead(ctx, 'bite', WORM_PALETTES.spitter));
+  paint(TEX.spitterHeadHurt, head.width, head.height, (ctx) => paintWormHead(ctx, 'hurt', WORM_PALETTES.spitter));
+  paint(TEX.spitterSegment, segment.size, segment.size, (ctx, w) => paintWormSegment(ctx, w, WORM_PALETTES.spitter));
+  paint(TEX.armorHelmet, head.width, head.height, paintArmorHelmet);
+  paint(TEX.armorPlate, segment.size, segment.size, paintArmorPlate);
+  paint(TEX.spit, SPIT_SIZE.width, SPIT_SIZE.height, paintSpit);
 }
 
 // ---------------------------------------------------------------------------
@@ -2013,22 +2033,59 @@ function paintFrost(ctx: Ctx, w: number): void {
   star4(ctx, cx + 7, foot - 25, 4.5, '#ffffff');
 }
 
-const WORM_OUTLINE = '#4a2a7a';
+/**
+ * Colores de cada gusano. El escupidor (T-007) es rosa chicle con la boca fruncida, para leerse de un vistazo
+ * frente al morado del gusano; los dos llevan las luces verde neon de la corrupcion.
+ */
+interface WormPalette {
+  outline: string;
+  /** Degradado de la cabeza y de los anillos: luz, medio y sombra. */
+  head: readonly [string, string, string];
+  segment: readonly [string, string, string];
+  /** Banda de luz de los anillos y pecas de pixel de la nuca. */
+  led: string;
+  cheek: string;
+  /** Boca de piñon, lista para escupir (escupidor). */
+  pucker: boolean;
+}
+
+const WORM_PALETTES = {
+  worm: {
+    outline: '#4a2a7a',
+    head: ['#ead6ff', '#b48cff', '#7a4cc8'],
+    segment: ['#dcc2ff', '#a77cf2', '#6c40b8'],
+    led: 'rgba(57, 255, 136, 0.9)',
+    cheek: 'rgba(255, 120, 170, 0.55)',
+    pucker: false,
+  },
+  spitter: {
+    outline: '#7a1d4c',
+    head: ['#ffe6f3', '#ff8cc6', '#d8458f'],
+    segment: ['#ffdcee', '#ff80be', '#c43c83'],
+    led: 'rgba(57, 255, 136, 0.95)',
+    cheek: 'rgba(255, 70, 110, 0.5)',
+    pucker: true,
+  },
+} as const satisfies Record<string, WormPalette>;
+
+/** Verde moco del escupitajo (T-007), con contorno oscuro para leerse sobre el cesped. */
+const GOO = { light: '#f0fff6', mid: '#6dffad', dark: '#1cc066', outline: '#0e6a3a' } as const;
 
 /**
- * Cabeza del gusano, mirando a la izquierda (por donde avanza). Morado con pecas de pixel verde neon
- * y una antena de cable con bombilla: un virus, pero simpatico.
- * - idle: sonrisa con un dientecito.
- * - bite: boca abierta y cejas decididas (va a morder).
+ * Cabeza del gusano, mirando a la izquierda (por donde avanza), con una antena de cable y bombilla y pecas de pixel
+ * verde neon: un virus, pero simpatico. El color sale de la paleta.
+ * - idle: sonrisa con un dientecito (el escupidor: boca de piñon con una gotita de moco).
+ * - bite: boca abierta y cejas decididas, va a morder (el escupidor: mofletes hinchados, va a escupir).
  * - hurt: ojos apretados (>_<) y boca de "ay".
  */
-function paintWormHead(ctx: Ctx, mood: 'idle' | 'bite' | 'hurt'): void {
+function paintWormHead(ctx: Ctx, mood: 'idle' | 'bite' | 'hurt', palette: WormPalette): void {
   const { cx, cy, r } = WORM_SIZE.head;
+  const outline = palette.outline;
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
 
   // Antena: un cable que sale de la coronilla con una bombilla encendida.
-  ctx.strokeStyle = WORM_OUTLINE;
+  ctx.strokeStyle = outline;
   ctx.lineWidth = 3;
   ctx.beginPath();
   ctx.moveTo(cx + 10, cy - r + 5);
@@ -2043,18 +2100,18 @@ function paintWormHead(ctx: Ctx, mood: 'idle' | 'bite' | 'hurt'): void {
 
   // Cabeza
   const head = ctx.createRadialGradient(cx - 12, cy - 14, 4, cx, cy, r);
-  head.addColorStop(0, '#ead6ff');
-  head.addColorStop(0.45, '#b48cff');
-  head.addColorStop(1, '#7a4cc8');
+  head.addColorStop(0, palette.head[0]);
+  head.addColorStop(0.45, palette.head[1]);
+  head.addColorStop(1, palette.head[2]);
   circle(ctx, cx, cy, r, head);
-  ctx.strokeStyle = WORM_OUTLINE;
+  ctx.strokeStyle = outline;
   ctx.lineWidth = 3.5;
   ctx.beginPath();
   ctx.arc(cx, cy, r, 0, Math.PI * 2);
   ctx.stroke();
 
   // Pecas de pixel en la nuca
-  ctx.fillStyle = 'rgba(57, 255, 136, 0.9)';
+  ctx.fillStyle = palette.led;
   for (const [dx, dy, s] of [
     [16, 0, 5],
     [23, 7, 4],
@@ -2083,7 +2140,7 @@ function paintWormHead(ctx: Ctx, mood: 'idle' | 'bite' | 'hurt'): void {
   } else {
     for (const eye of eyes) {
       ellipse(ctx, eye.x, eye.y, eye.rx, eye.ry, '#ffffff');
-      ctx.strokeStyle = WORM_OUTLINE;
+      ctx.strokeStyle = outline;
       ctx.lineWidth = 2;
       ctx.beginPath();
       ctx.ellipse(eye.x, eye.y, eye.rx, eye.ry, 0, 0, Math.PI * 2);
@@ -2094,7 +2151,7 @@ function paintWormHead(ctx: Ctx, mood: 'idle' | 'bite' | 'hurt'): void {
       circle(ctx, px - 2, py - 3, eye.pupil * 0.4, '#ffffff');
     }
     if (mood === 'bite') {
-      ctx.strokeStyle = WORM_OUTLINE;
+      ctx.strokeStyle = outline;
       ctx.lineWidth = 3;
       for (const eye of eyes) {
         ctx.beginPath();
@@ -2105,13 +2162,22 @@ function paintWormHead(ctx: Ctx, mood: 'idle' | 'bite' | 'hurt'): void {
     }
   }
 
-  // Mejilla
-  ellipse(ctx, cx - 24, cy + 11, 6.5, 4, 'rgba(255, 120, 170, 0.55)');
-
-  // Boca
   const mx = cx - 17;
   const my = cy + 16;
-  ctx.strokeStyle = WORM_OUTLINE;
+  if (palette.pucker) {
+    paintPuckerMouth(ctx, mood, mx, my, palette);
+  } else {
+    ellipse(ctx, cx - 24, cy + 11, 6.5, 4, palette.cheek);
+    paintBiteMouth(ctx, mood, mx, my, outline);
+  }
+
+  // Reflejo
+  ellipse(ctx, cx - 12, cy - 22, 10, 5.5, 'rgba(255, 255, 255, 0.45)', -0.5);
+}
+
+/** Boca del gusano que muerde: sonrisa con un dientecito, abierta con dientes, o de "ay". */
+function paintBiteMouth(ctx: Ctx, mood: 'idle' | 'bite' | 'hurt', mx: number, my: number, outline: string): void {
+  ctx.strokeStyle = outline;
   ctx.lineWidth = 2.5;
   if (mood === 'bite') {
     ellipse(ctx, mx - 2, my + 1, 11, 10, '#3a1640');
@@ -2141,19 +2207,83 @@ function paintWormHead(ctx: Ctx, mood: 'idle' | 'bite' | 'hurt'): void {
     ctx.fillRect(mx - 2, my + 4.5, 4.5, 4);
     ctx.strokeRect(mx - 2, my + 4.5, 4.5, 4);
   }
-
-  // Reflejo
-  ellipse(ctx, cx - 12, cy - 22, 10, 5.5, 'rgba(255, 255, 255, 0.45)', -0.5);
 }
 
-/** Anillo del cuerpo del gusano: morado con una banda de luz verde neon, como un LED. */
-function paintWormSegment(ctx: Ctx, w: number): void {
+/**
+ * Boca del escupidor (T-007): labios en piñon con una gotita de moco colgando. Cargando, los mofletes se hinchan
+ * como globos y los labios se aprietan; dolorido, la boca se abre de "ay".
+ */
+function paintPuckerMouth(ctx: Ctx, mood: 'idle' | 'bite' | 'hurt', mx: number, my: number, palette: WormPalette): void {
+  const outline = palette.outline;
+  const lips = (x: number, y: number, rx: number, ry: number) => {
+    ellipse(ctx, x, y, rx, ry, '#ff5c9a');
+    ctx.strokeStyle = outline;
+    ctx.lineWidth = 2.2;
+    ctx.beginPath();
+    ctx.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2);
+    ctx.stroke();
+    ellipse(ctx, x - rx * 0.35, y - ry * 0.45, rx * 0.35, ry * 0.22, 'rgba(255, 255, 255, 0.6)');
+  };
+  if (mood === 'hurt') {
+    ellipse(ctx, mx - 6, my + 9, 5, 3, palette.cheek);
+    ellipse(ctx, mx - 1, my + 1, 5.5, 6.5, '#3a1640');
+    ctx.strokeStyle = outline;
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.ellipse(mx - 1, my + 1, 5.5, 6.5, 0, 0, Math.PI * 2);
+    ctx.stroke();
+    return;
+  }
+  if (mood === 'bite') {
+    // Mofletes hinchados: dos globos que asoman a los lados de la boca.
+    for (const [x, y, rx, ry] of [
+      [mx - 9, my - 1, 11, 10],
+      [mx + 9, my + 1, 10, 9],
+    ] as const) {
+      const g = ctx.createRadialGradient(x - 3, y - 4, 1, x, y, rx);
+      g.addColorStop(0, '#fff0f7');
+      g.addColorStop(0.6, palette.head[1]);
+      g.addColorStop(1, palette.head[2]);
+      ellipse(ctx, x, y, rx, ry, g);
+      ctx.strokeStyle = outline;
+      ctx.lineWidth = 2.2;
+      ctx.beginPath();
+      ctx.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2);
+      ctx.stroke();
+      ellipse(ctx, x, y + 2, rx * 0.55, ry * 0.4, palette.cheek);
+    }
+    lips(mx - 4, my + 3, 5, 4);
+    circle(ctx, mx - 4, my + 3, 1.6, '#3a1640');
+    return;
+  }
+  ellipse(ctx, mx - 8, my - 4, 6.5, 4, palette.cheek);
+  lips(mx - 3, my + 1, 6.5, 5.5);
+  circle(ctx, mx - 3, my + 1, 2.4, '#3a1640');
+  // Gotita de moco que cuelga del labio.
+  const drop = ctx.createRadialGradient(mx - 5, my + 9, 0.5, mx - 4, my + 10, 4);
+  drop.addColorStop(0, GOO.light);
+  drop.addColorStop(0.5, GOO.mid);
+  drop.addColorStop(1, GOO.dark);
+  ctx.fillStyle = drop;
+  ctx.beginPath();
+  ctx.moveTo(mx - 5.5, my + 5);
+  ctx.quadraticCurveTo(mx - 8, my + 10, mx - 4, my + 12.5);
+  ctx.quadraticCurveTo(mx - 0.5, my + 10, mx - 2.5, my + 5);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = GOO.outline;
+  ctx.lineWidth = 1.2;
+  ctx.stroke();
+}
+
+/** Anillo del cuerpo del gusano: color de su paleta con una banda de luz verde neon, como un LED. */
+function paintWormSegment(ctx: Ctx, w: number, palette: WormPalette): void {
   const c = w / 2;
   const { r } = WORM_SIZE.segment;
   const g = ctx.createRadialGradient(c - 9, c - 10, 3, c, c, r);
-  g.addColorStop(0, '#dcc2ff');
-  g.addColorStop(0.5, '#a77cf2');
-  g.addColorStop(1, '#6c40b8');
+  g.addColorStop(0, palette.segment[0]);
+  g.addColorStop(0.5, palette.segment[1]);
+  g.addColorStop(1, palette.segment[2]);
   circle(ctx, c, c, r, g);
 
   // La banda se ve en el lado derecho: el anillo de delante tapa el izquierdo.
@@ -2161,17 +2291,158 @@ function paintWormSegment(ctx: Ctx, w: number): void {
   ctx.beginPath();
   ctx.arc(c, c, r, 0, Math.PI * 2);
   ctx.clip();
-  ctx.strokeStyle = 'rgba(57, 255, 136, 0.9)';
+  ctx.strokeStyle = palette.led;
   ctx.lineWidth = 5;
   ctx.beginPath();
   ctx.ellipse(c + 9, c, 7, r + 2, 0, 0, Math.PI * 2);
   ctx.stroke();
   ctx.restore();
 
-  ctx.strokeStyle = WORM_OUTLINE;
+  ctx.strokeStyle = palette.outline;
   ctx.lineWidth = 3;
   ctx.beginPath();
   ctx.arc(c, c, r, 0, Math.PI * 2);
   ctx.stroke();
   ellipse(ctx, c - 9, c - 12, 8, 5, 'rgba(255, 255, 255, 0.4)', -0.5);
+}
+
+/** Acero de la armadura del acorazado (T-007): azul acero claro con contorno oscuro y remaches. */
+const STEEL = { light: '#f5f9fd', mid: '#b4c5d6', dark: '#6d8399', outline: '#2f4155', rivet: '#e8f0f8' } as const;
+
+function rivet(ctx: Ctx, x: number, y: number, r: number): void {
+  circle(ctx, x, y, r, STEEL.rivet);
+  ctx.strokeStyle = STEEL.outline;
+  ctx.lineWidth = 1.4;
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, Math.PI * 2);
+  ctx.stroke();
+  circle(ctx, x - r * 0.3, y - r * 0.3, r * 0.35, '#ffffff');
+}
+
+/**
+ * Casco del acorazado (T-007): una cupula de acero con cresta y remaches, del mismo tamano que la cabeza del gusano
+ * para ir encima de ella. El ala queda sobre los ojos, que asoman por debajo; la antena sale por un aro de la cupula.
+ */
+function paintArmorHelmet(ctx: Ctx): void {
+  const { cx, cy, r } = WORM_SIZE.head;
+  const domeX = cx + 2;
+  const domeY = cy - 17;
+  const rx = r + 6;
+  const ry = 27;
+  ctx.lineJoin = 'round';
+
+  const dome = ctx.createRadialGradient(domeX - 14, domeY - 18, 3, domeX, domeY, rx);
+  dome.addColorStop(0, STEEL.light);
+  dome.addColorStop(0.5, STEEL.mid);
+  dome.addColorStop(1, STEEL.dark);
+  ctx.beginPath();
+  ctx.ellipse(domeX, domeY, rx, ry, 0, Math.PI, Math.PI * 2);
+  ctx.closePath();
+  ctx.fillStyle = dome;
+  ctx.fill();
+  ctx.strokeStyle = STEEL.outline;
+  ctx.lineWidth = 3.2;
+  ctx.stroke();
+
+  // Cresta de delante a atras.
+  ctx.strokeStyle = STEEL.outline;
+  ctx.lineWidth = 7;
+  ctx.beginPath();
+  ctx.ellipse(domeX, domeY, rx * 0.55, ry + 2, 0, Math.PI * 1.08, Math.PI * 1.92);
+  ctx.stroke();
+  ctx.strokeStyle = STEEL.mid;
+  ctx.lineWidth = 3.5;
+  ctx.stroke();
+
+  // Aro por el que sale la antena del gusano.
+  ctx.strokeStyle = STEEL.outline;
+  ctx.lineWidth = 2;
+  ellipse(ctx, cx + 15, cy - r - 8, 5, 3, STEEL.dark, 0.3);
+  ctx.beginPath();
+  ctx.ellipse(cx + 15, cy - r - 8, 5, 3, 0.3, 0, Math.PI * 2);
+  ctx.stroke();
+
+  // Ala sobre los ojos.
+  const brim = ctx.createLinearGradient(0, domeY - 3, 0, domeY + 6);
+  brim.addColorStop(0, STEEL.light);
+  brim.addColorStop(1, STEEL.dark);
+  ctx.fillStyle = brim;
+  ctx.beginPath();
+  ctx.roundRect(cx - r - 9, domeY - 3, 2 * r + 15, 9, 4.5);
+  ctx.fill();
+  ctx.strokeStyle = STEEL.outline;
+  ctx.lineWidth = 2.6;
+  ctx.stroke();
+  for (const x of [cx - r - 2, cx - 6, cx + r - 2]) rivet(ctx, x, domeY + 1.5, 2.4);
+  rivet(ctx, domeX - 18, domeY - 14, 2.6);
+  rivet(ctx, domeX + 16, domeY - 15, 2.6);
+
+  // Reflejo
+  ellipse(ctx, domeX - 15, domeY - 15, 9, 4.5, 'rgba(255, 255, 255, 0.7)', -0.45);
+}
+
+/**
+ * Placa de un anillo del acorazado (T-007): una concha de acero sobre la parte de arriba del anillo, del mismo tamano
+ * que su textura. Las placas se solapan de la cola a la cabeza, como las de un pangolin.
+ */
+function paintArmorPlate(ctx: Ctx, w: number): void {
+  const c = w / 2;
+  const r = WORM_SIZE.segment.r + 3;
+  const bottom = c + 3;
+  const g = ctx.createRadialGradient(c - 8, c - 14, 2, c, c - 4, r);
+  g.addColorStop(0, STEEL.light);
+  g.addColorStop(0.55, STEEL.mid);
+  g.addColorStop(1, STEEL.dark);
+  ctx.beginPath();
+  ctx.arc(c, c, r, Math.PI + 0.12, -0.12);
+  ctx.quadraticCurveTo(c, bottom + 6, c - r * Math.cos(0.12), c - r * Math.sin(0.12));
+  ctx.closePath();
+  ctx.fillStyle = g;
+  ctx.fill();
+  ctx.strokeStyle = STEEL.outline;
+  ctx.lineWidth = 2.8;
+  ctx.lineJoin = 'round';
+  ctx.stroke();
+  // Junta central y remache.
+  ctx.strokeStyle = 'rgba(47, 65, 85, 0.55)';
+  ctx.lineWidth = 1.6;
+  ctx.beginPath();
+  ctx.arc(c, c + 2, r * 0.62, Math.PI + 0.35, -0.35);
+  ctx.stroke();
+  rivet(ctx, c + 7, c - 14, 2.6);
+  ellipse(ctx, c - 8, c - 14, 7, 3.5, 'rgba(255, 255, 255, 0.65)', -0.45);
+}
+
+/** Escupitajo (T-007): gota de moco verde neon con contorno oscuro y una estela de gotitas detras (a la derecha). */
+function paintSpit(ctx: Ctx, _w: number, h: number): void {
+  const cy = h / 2;
+  const cx = SPIT_SIZE.cx;
+  const drops: Array<[number, number, number]> = [
+    [cx + 23, cy - 3, 2.6],
+    [cx + 16, cy + 3, 3.6],
+    [cx + 10, cy - 1, 5.2],
+  ];
+  for (const [x, y, r] of drops) {
+    circle(ctx, x, y, r + 1.2, GOO.outline);
+    circle(ctx, x, y, r, GOO.mid);
+  }
+  const g = ctx.createRadialGradient(cx - 3, cy - 4, 1, cx, cy, 11);
+  g.addColorStop(0, GOO.light);
+  g.addColorStop(0.45, GOO.mid);
+  g.addColorStop(1, GOO.dark);
+  ctx.beginPath();
+  ctx.moveTo(cx - 11, cy);
+  ctx.bezierCurveTo(cx - 11, cy - 9, cx + 4, cy - 11, cx + 11, cy - 4);
+  ctx.quadraticCurveTo(cx + 13, cy, cx + 11, cy + 4);
+  ctx.bezierCurveTo(cx + 4, cy + 11, cx - 11, cy + 9, cx - 11, cy);
+  ctx.closePath();
+  ctx.fillStyle = g;
+  ctx.fill();
+  ctx.strokeStyle = GOO.outline;
+  ctx.lineWidth = 2.2;
+  ctx.stroke();
+  ellipse(ctx, cx - 4, cy - 4, 4, 2.4, 'rgba(255, 255, 255, 0.85)', -0.4);
+  // Un pixel de la corrupcion dentro de la gota.
+  ctx.fillStyle = 'rgba(180, 140, 255, 0.9)';
+  ctx.fillRect(cx + 2, cy + 1, 3.5, 3.5);
 }

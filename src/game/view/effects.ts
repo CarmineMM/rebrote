@@ -47,6 +47,8 @@ export class Effects {
   private readonly shardBurst: Phaser.GameObjects.Particles.ParticleEmitter;
   private readonly mistBurst: Phaser.GameObjects.Particles.ParticleEmitter;
   private readonly flakeDrift: Phaser.GameObjects.Particles.ParticleEmitter;
+  private readonly gooBurst: Phaser.GameObjects.Particles.ParticleEmitter;
+  private readonly scrapBurst: Phaser.GameObjects.Particles.ParticleEmitter;
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -217,6 +219,35 @@ export class Effects {
       },
       DEPTH.foreground - 1,
     );
+    // Escupidor (T-007): gotas de moco verde que salpican al escupir y al dar. Mezcla normal y un verde con algo
+    // de oscuro: sobre el cesped, lo aditivo se quedaria blanco.
+    this.gooBurst = burst(
+      TEX.dot,
+      {
+        speed: { min: 50, max: 180 },
+        angle: { min: -170, max: -10 },
+        gravityY: 480,
+        lifespan: { min: 300, max: 560 },
+        scale: { start: 0.7 * artInv(), end: 0.15 * artInv() },
+        tint: [0x39ff88, 0x1fc76a, 0x9dffc8, 0x0f8a46],
+      },
+      DEPTH.foreground - 1,
+    );
+    // Acorazado (T-007): esquirlas de acero y chispitas cuando una semilla le da en la armadura o pierde una placa.
+    this.scrapBurst = burst(
+      TEX.pixel,
+      {
+        speed: { min: 60, max: 210 },
+        angle: { min: -165, max: -15 },
+        gravityY: 620,
+        rotate: { min: 0, max: 180 },
+        lifespan: { min: 280, max: 520 },
+        scale: { start: 1.1 * artInv(), end: 0.25 * artInv() },
+        alpha: { start: 1, end: 0 },
+        tint: [0xf5f9fd, 0xb4c5d6, 0x6d8399, 0xffe680],
+      },
+      DEPTH.foreground - 1,
+    );
   }
 
   /** Particulas de respuesta a una accion: menos en Bajo, pero nunca ninguna (son parte del gesto). */
@@ -285,6 +316,16 @@ export class Effects {
    */
   ember(x: number, y: number): void {
     this.emberBurst.explode(1, x, y);
+  }
+
+  /** Salpicadura de moco verde: el escupidor escupe o su escupitajo da a una planta (T-007). */
+  goo(x: number, y: number, base: number): void {
+    this.gooBurst.explode(this.count(base), x, y);
+  }
+
+  /** Esquirlas de acero: una semilla rebota en la armadura del acorazado o se le cae una placa (T-007). */
+  scrap(x: number, y: number, base: number): void {
+    this.scrapBurst.explode(this.count(base), x, y);
   }
 
   /** Espera entre particulas ambientales: `base` en Alto, mas larga en Bajo (ADR-0006). */

@@ -1,9 +1,12 @@
 import { useEffect, useId, useRef } from 'react';
 import { LIVES } from '../game/config/balance';
+import type { RoundInfo } from '../game/EventBus';
 import { HEART_PATH } from './Lives';
 import { NO_AUTO_FULLSCREEN } from './useFullscreen';
 
 interface DefeatScreenProps {
+  /** Ronda en la que se perdio (T-007), para saber hasta donde se llego. */
+  round: RoundInfo | null;
   onRestart: () => void;
 }
 
@@ -12,9 +15,9 @@ const CRACK = 'L10.6 7 L13.2 11 L10.8 15 L12 24';
 
 /**
  * Pantalla de derrota (ADR-0007): una superposicion como el menu de pausa, con el juego detenido detras.
- * "Jugar otra vez" empieza una partida nueva, no continua la anterior.
+ * "Jugar otra vez" empieza una partida nueva desde la ronda 1, no continua la anterior.
  */
-export function DefeatScreen({ onRestart }: DefeatScreenProps) {
+export function DefeatScreen({ round, onRestart }: DefeatScreenProps) {
   const titleId = useId();
   const button = useRef<HTMLButtonElement>(null);
   const lives: number = LIVES.start;
@@ -49,7 +52,9 @@ export function DefeatScreen({ onRestart }: DefeatScreenProps) {
         <h2 id={titleId} className="pause-title">
           ¡Se colaron!
         </h2>
-        <p className="defeat-text">{crossed} el jardín.</p>
+        <p className="defeat-text">
+          {crossed} el jardín{round ? ` en la ronda ${round.number} de ${round.total}` : ''}.
+        </p>
         <div className="pause-actions">
           <button ref={button} type="button" className="btn btn-primary" onClick={onRestart}>
             <span aria-hidden="true">↻</span> Jugar otra vez

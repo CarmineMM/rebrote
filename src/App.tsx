@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { CardId } from './game/core/match';
-import { EventBus, GameEvents, type CardPreview, type PlantPanel } from './game/EventBus';
+import { EventBus, GameEvents, type CardPreview, type PlantPanel, type RoundInfo } from './game/EventBus';
 import { Balance } from './ui/Balance';
 import { Card } from './ui/Card';
 import { DefeatScreen } from './ui/DefeatScreen';
@@ -8,12 +8,22 @@ import { GameCanvas } from './ui/GameCanvas';
 import { LevelPanel } from './ui/LevelPanel';
 import { Lives } from './ui/Lives';
 import { PauseMenu } from './ui/PauseMenu';
+import { RoundHud } from './ui/RoundHud';
 import { NO_AUTO_FULLSCREEN, useFullscreen } from './ui/useFullscreen';
 import { useSettings } from './ui/useSettings';
+import { VictoryScreen } from './ui/VictoryScreen';
+
+/** Cartas de la bandeja, en orden. Solo se ven las que la ronda ya desbloqueo (T-007). */
+const CARDS: ReadonlyArray<{ id: CardId; label: string }> = [
+  { id: 'shooter', label: 'Disparadora' },
+  { id: 'fire', label: 'Fuego' },
+  { id: 'ice', label: 'Hielo' },
+];
 
 /**
- * Pantalla completa con el HUD flotando encima del juego, menu de pausa con los ajustes (ADR-0007)
- * y pantalla de derrota. Con la partida perdida no se abre el menu de pausa: solo se puede jugar otra vez.
+ * Pantalla completa con el HUD flotando encima del juego, menu de pausa con los ajustes (ADR-0007), ronda en curso
+ * (T-007) y pantallas de derrota y de victoria. Con la partida acabada no se abre el menu de pausa: solo se puede
+ * jugar otra vez.
  */
 export function App() {
   const [ready, setReady] = useState(false);
@@ -22,14 +32,18 @@ export function App() {
   const [selected, setSelected] = useState<CardId | null>(null);
   const [preview, setPreview] = useState<CardPreview | null>(null);
   const [plantPanel, setPlantPanel] = useState<PlantPanel | null>(null);
+  const [round, setRound] = useState<RoundInfo | null>(null);
   const hudRef = useRef<HTMLElement>(null);
   const [paused, setPaused] = useState(false);
   const [lost, setLost] = useState(false);
-  const lostRef = useRef(lost);
-  lostRef.current = lost;
+  const [won, setWon] = useState(false);
+  /** Partida acabada (perdida o ganada): solo queda jugar otra vez. */
+  const over = lost || won;
+  const overRef = useRef(over);
+  overRef.current = over;
   const { settings, update, level, autoLevel, fps } = useSettings();
   const pause = useCallback(() => {
-    if (!lostRef.current) setPaused(true);
+    if (!overRef.current) setPaused(true);
   }, []);
   const fullscreen = useFullscreen(settings.fullscreen, pause);
 
@@ -39,6 +53,10 @@ export function App() {
       setLost(true);
       setPaused(false);
     };
+    const onWon = () => {
+      setWon(true);
+      setPaused(false);
+    };
     EventBus.on(GameEvents.sceneReady, onReady);
     EventBus.on(GameEvents.balanceChanged, setBalance);
     EventBus.on(GameEvents.livesChanged, setLives);
@@ -46,6 +64,8 @@ export function App() {
     EventBus.on(GameEvents.cardPreview, setPreview);
     EventBus.on(GameEvents.plantPanel, setPlantPanel);
     EventBus.on(GameEvents.matchLost, onLost);
+    EventBus.on(GameEvents.matchWon, onWon);
+    EventBus.on(GameEvents.roundChanged, setRound);
     // Si la escena arranco antes que el HUD, que reenvie el estado.
     EventBus.emit(GameEvents.stateRequested);
     return () => {
@@ -56,6 +76,8 @@ export function App() {
       EventBus.off(GameEvents.cardPreview, setPreview);
       EventBus.off(GameEvents.plantPanel, setPlantPanel);
       EventBus.off(GameEvents.matchLost, onLost);
+      EventBus.off(GameEvents.matchWon, onWon);
+      EventBus.off(GameEvents.roundChanged, setRound);
     };
   }, []);
 
@@ -71,6 +93,7 @@ export function App() {
   /** Partida nueva desde cero (sin continuar la anterior). */
   const restart = useCallback(() => {
     setLost(false);
+    setWon(false);
     setPaused(false);
     EventBus.emit(GameEvents.restartRequested);
     if (settings.fullscreen) fullscreen.enter();
@@ -78,8 +101,8 @@ export function App() {
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      // En la derrota solo cuenta el boton de jugar otra vez (Enter o espacio, que ya tiene el foco).
-      if (event.repeat || lost) return;
+      // Con la partida acabada solo cuenta el boton de jugar otra vez (Enter o espacio, que ya tiene el foco).
+      if (event.repeat || over) return;
       if (event.key === 'Escape') {
         if (fullscreen.exitedJustNow()) return;
         if (paused) resume();
@@ -93,7 +116,7 @@ export function App() {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [paused, selected, plantPanel, lost, resume, fullscreen]);
+  }, [paused, selected, plantPanel, over, resume, fullscreen]);
 
   // Si el jugador cambia de pestana o minimiza, al volver encuentra el juego en pausa.
   useEffect(() => {
@@ -105,27 +128,27 @@ export function App() {
   }, [pause]);
 
   return (
-    <main className="app">
+    // Con la pausa se congelan tambien las animaciones CSS que cuentan tiempo (el aviso de la ronda).
+    <main className={`app${paused ? ' is-paused' : ''}`}>
       <GameCanvas quality={level} paused={paused} />
 
-      <header ref={hudRef} className="hud" aria-hidden={paused || lost}>
+      <header ref={hudRef} className="hud" aria-hidden={paused || over}>
         <div className="seed-tray" aria-label="Cartas">
-          <Card card="shooter" label="Disparadora" balance={balance} selected={selected === 'shooter'} />
-          <Card
-            card="fire"
-            label="Fuego"
-            balance={balance}
-            selected={selected === 'fire'}
-            preview={preview?.card === 'fire' ? preview : null}
-          />
-          <Card
-            card="ice"
-            label="Hielo"
-            balance={balance}
-            selected={selected === 'ice'}
-            preview={preview?.card === 'ice' ? preview : null}
-          />
+          {CARDS.filter(({ id }) => (round?.cards ?? ['shooter']).includes(id)).map(({ id, label }) => (
+            // Cada carta nueva entra en la bandeja con un salto al desbloquearse.
+            <span key={id} className="card-slot">
+              <Card
+                card={id}
+                label={label}
+                balance={balance}
+                selected={selected === id}
+                preview={id !== 'shooter' && preview?.card === id ? preview : null}
+                canInfuse={id !== 'shooter' && (round?.infusable.includes(id) ?? false)}
+              />
+            </span>
+          ))}
         </div>
+        {round && <RoundHud round={round} />}
         <div className="hud-right">
           <Lives lives={lives} />
           <Balance balance={balance} />
@@ -142,7 +165,7 @@ export function App() {
         </div>
       </header>
 
-      {plantPanel && !paused && !lost && <LevelPanel key={plantPanel.id} panel={plantPanel} avoid={hudRef} />}
+      {plantPanel && !paused && !over && <LevelPanel key={plantPanel.id} panel={plantPanel} avoid={hudRef} />}
 
       {settings.showFps && fps !== null && <div className="fps">{fps} FPS</div>}
 
@@ -153,9 +176,11 @@ export function App() {
         </div>
       )}
 
-      {lost && <DefeatScreen onRestart={restart} />}
+      {lost && <DefeatScreen round={round} onRestart={restart} />}
 
-      {paused && !lost && (
+      {won && !lost && <VictoryScreen rounds={round?.total ?? 0} onRestart={restart} />}
+
+      {paused && !over && (
         <PauseMenu
           settings={settings}
           autoLevel={autoLevel}

@@ -26,8 +26,21 @@ import {
   type Plant,
 } from '../core/match';
 import { plantMaxHp } from '../core/plants';
-import { stepSpawner } from '../core/spawner';
-import { EventBus, GameEvents, type CardPreview, type PagePoint, type PlantPanel } from '../EventBus';
+import {
+  ROUND_COUNT,
+  availableCards,
+  createRound,
+  infusableElements,
+  infuseFeature,
+  isUnlocked,
+  isWon,
+  roundScript,
+  startAttack,
+  stepRound,
+  unlockRound,
+  type RoundEvent,
+} from '../core/rounds';
+import { EventBus, GameEvents, type CardPreview, type PagePoint, type PlantPanel, type RoundInfo } from '../EventBus';
 import { createAmbience, type Ambience } from '../view/ambience';
 import { BoardLabel, drawArea, drawCell, type LabelLine } from '../view/boardMarks';
 import { BulletView } from '../view/bulletView';
@@ -38,6 +51,7 @@ import { medalTier, showsMedal } from '../view/levelMedal';
 import { MineView, mineAreaColor, mineScale } from '../view/mineView';
 import { PlantView, plantPlacement } from '../view/plantView';
 import { QUALITY_PROFILES, type QualityLevel, type QualityProfile } from '../view/quality';
+import { SpitView } from '../view/spitView';
 import { MINE_SIZE, SHOOTER_SIZE, TEX, registerTextures, shooterTexture, mineTexture } from '../view/textures';
 import { WormView } from '../view/wormView';
 
@@ -66,6 +80,18 @@ const LOOK = {
   /** Donde se apoya el panel de nivel: sobre la cabeza y bajo los pies de la planta, en anchos de casilla. */
   panelAbove: 1.08,
   panelBelow: 0.14,
+  /** Empieza el ataque de una ronda (T-007): aviso junto a los agujeros, en los colores de la corrupcion. */
+  attackText: { color: '#b8ffd4', stroke: '#2b2034', fontSize: 44 },
+  /** Ronda superada (T-007): texto en el centro del cesped. */
+  clearedText: { color: '#fff6c0', stroke: '#24561c', fontSize: 48 },
+  /** Partida ganada (T-007): tiempo de celebracion antes de que React muestre la victoria. */
+  victoryDelayMs: 1600,
+} as const;
+
+/** Atajos de desarrollo para probar las rondas. */
+const DEBUG = {
+  /** Lo que da la tecla M. */
+  coins: 500,
 } as const;
 
 /** Prueba de rendimiento en desarrollo (tecla H): el presupuesto de T-002, 20 plantas y 60 enemigos. */
@@ -138,6 +164,7 @@ export class BoardScene extends Phaser.Scene {
   private wormViews = new Map<number, WormView>();
   private bulletViews = new Map<number, BulletView>();
   private mineViews = new Map<string, MineView>();
+  private spitViews = new Map<number, SpitView>();
   /** Rotulo sobre la disparadora a la que apunta una carta de elemento: lo que costaria infundirla o por que no se puede. */
   private cardLabel!: BoardLabel;
   /** Ultimo precio de infusion enviado al HUD, para avisar solo cuando cambia. */
@@ -153,6 +180,10 @@ export class BoardScene extends Phaser.Scene {
   private cursor = 'default';
   /** Sin vidas: el combate se detiene y React muestra la derrota. */
   private defeated = false;
+  /** Superada la ultima ronda (T-007): el combate se detiene y React muestra la victoria. */
+  private won = false;
+  /** Ultima ronda enviada al HUD, para avisar solo cuando cambia. */
+  private roundKey = '';
   /** Medicion de fps en tiempo real (el reloj del juego se frena cuando va lento, no sirve para esto). */
   private fpsWindowStart = 0;
   private fpsFrames = 0;
@@ -177,6 +208,8 @@ export class BoardScene extends Phaser.Scene {
     this.selected = null;
     this.hoverCell = null;
     this.defeated = false;
+    this.won = false;
+    this.roundKey = '';
     this.press = null;
     this.drag = null;
     this.picked = null;
@@ -187,6 +220,7 @@ export class BoardScene extends Phaser.Scene {
     this.wormViews = new Map();
     this.bulletViews = new Map();
     this.mineViews = new Map();
+    this.spitViews = new Map();
     this.previewKey = '';
 
     registerTextures(this, this.quality.renderScale);
@@ -218,8 +252,9 @@ export class BoardScene extends Phaser.Scene {
 
     EventBus.emit(GameEvents.sceneReady, this.scene.key);
     this.emitState();
-    // Una partida perdida que se recrea (por ejemplo, al cambiar la calidad) sigue perdida.
+    // Una partida perdida (o ganada) que se recrea (por ejemplo, al cambiar la calidad) sigue igual.
     if (isDefeated(this.match)) this.enterDefeat(0);
+    else if (isWon(this.match)) this.enterVictory(0);
   }
 
   /**
@@ -267,7 +302,7 @@ export class BoardScene extends Phaser.Scene {
   update(_time: number, delta: number): void {
     this.ambience.update(delta);
     this.drag?.view.update(delta);
-    if (!this.defeated) this.advance(delta);
+    if (!this.defeated && !this.won) this.advance(delta);
     // El panel sigue a la planta aunque cambie la ventana (pantalla completa, giro del movil...).
     if (this.picked) this.emitPlantPanel();
     this.sampleFps();
@@ -324,6 +359,7 @@ export class BoardScene extends Phaser.Scene {
     );
     this.match.enemies.forEach((enemy) => this.addWormView(enemy, false));
     this.match.bullets.forEach((bullet) => this.bulletViews.set(bullet.id, new BulletView(this, this.fx, bullet, false)));
+    this.match.spits.forEach((spit) => this.spitViews.set(spit.id, new SpitView(this, this.fx, spit, false)));
   }
 
   private createCursorFeedback(): void {
@@ -353,13 +389,16 @@ export class BoardScene extends Phaser.Scene {
       if (press && pointer.id === press.pointerId) {
         if (!pointer.isDown) {
           this.press = null;
-        } else if (Phaser.Math.Distance.Between(press.x, press.y, pointer.worldX, pointer.worldY) >= DRAG_LOOK.startDistance) {
+        } else if (
+          this.canDragPlants() &&
+          Phaser.Math.Distance.Between(press.x, press.y, pointer.worldX, pointer.worldY) >= DRAG_LOOK.startDistance
+        ) {
           this.startDrag(pointer);
           return;
         }
       }
       this.hover(this.cardCellAt(pointer.worldX, pointer.worldY));
-      this.setCursor(this.canDragPlants() && this.plantCellAtScreen(pointer.worldX, pointer.worldY) ? 'grab' : 'default');
+      this.setCursor(this.plantCursor(pointer.worldX, pointer.worldY));
     });
     this.input.on(Phaser.Input.Events.GAME_OUT, () => {
       if (!this.drag) this.hover(null);
@@ -377,8 +416,9 @@ export class BoardScene extends Phaser.Scene {
         // Un clic sobre una moneda la recoge; no debe sembrar en la casilla de debajo.
         if (over.length > 0 || this.drag) return;
         // Sin carta elegida, pulsar una planta la prepara para arrastrarla (T-006) o, si se suelta sin moverla,
-        // para seleccionarla (T-003).
-        const plantCell = this.canDragPlants() ? this.plantCellAtScreen(pointer.worldX, pointer.worldY) : null;
+        // para seleccionarla (T-003). Cada gesto, solo si su ronda ya lo desbloqueo (T-007).
+        const plantCell =
+          this.canDragPlants() || this.canPickPlants() ? this.plantCellAtScreen(pointer.worldX, pointer.worldY) : null;
         if (plantCell) {
           this.press = { cell: plantCell, pointerId: pointer.id, x: pointer.worldX, y: pointer.worldY };
           return;
@@ -395,7 +435,7 @@ export class BoardScene extends Phaser.Scene {
       if (press?.pointerId === pointer.id) {
         this.press = null;
         // Pulsar y soltar una planta sin arrastrarla la selecciona (otra vez, la deselecciona).
-        if (inside && this.canDragPlants() && plantAt(this.match, press.cell)) {
+        if (inside && this.canPickPlants() && plantAt(this.match, press.cell)) {
           this.pickPlant(sameCell(this.picked, press.cell) ? null : press.cell);
         }
       }
@@ -408,10 +448,11 @@ export class BoardScene extends Phaser.Scene {
   }
 
   private bindHud(): void {
-    // En pausa o con la partida perdida la escena no atiende ordenes del HUD (los menus las tapan, pero por si acaso).
-    const running = () => this.sys.isActive() && !this.defeated;
+    // En pausa o con la partida acabada la escena no atiende ordenes del HUD (los menus las tapan, pero por si acaso).
+    const running = () => this.sys.isActive() && !this.defeated && !this.won;
     const onPicked = (card: CardId) => {
-      if (!running()) return;
+      // Una carta bloqueada no se ve en la bandeja (T-007), pero por si acaso.
+      if (!running() || !availableCards(this.match).includes(card)) return;
       this.cancelDrag();
       this.select(card);
     };
@@ -420,6 +461,11 @@ export class BoardScene extends Phaser.Scene {
       this.pickPlant(null);
     };
     const onLevelUp = () => running() && this.tryLevelUp();
+    const onAttack = () => {
+      if (!running()) return;
+      this.match = startAttack(this.match);
+      this.emitRound();
+    };
     const onDragged = (point: PagePoint) => running() && this.hover(this.cardCellAtPage(point));
     const onDropped = (point: PagePoint) => {
       if (!running()) return;
@@ -435,6 +481,7 @@ export class BoardScene extends Phaser.Scene {
     EventBus.on(GameEvents.cardPicked, onPicked);
     EventBus.on(GameEvents.selectionCancelled, onCancelled);
     EventBus.on(GameEvents.levelUpRequested, onLevelUp);
+    EventBus.on(GameEvents.attackRequested, onAttack);
     EventBus.on(GameEvents.cardDragged, onDragged);
     EventBus.on(GameEvents.cardDropped, onDropped);
     EventBus.on(GameEvents.stateRequested, onStateRequested);
@@ -445,6 +492,7 @@ export class BoardScene extends Phaser.Scene {
       EventBus.off(GameEvents.cardPicked, onPicked);
       EventBus.off(GameEvents.selectionCancelled, onCancelled);
       EventBus.off(GameEvents.levelUpRequested, onLevelUp);
+      EventBus.off(GameEvents.attackRequested, onAttack);
       EventBus.off(GameEvents.cardDragged, onDragged);
       EventBus.off(GameEvents.cardDropped, onDropped);
       EventBus.off(GameEvents.stateRequested, onStateRequested);
@@ -459,11 +507,23 @@ export class BoardScene extends Phaser.Scene {
   private bindDebugKeys(): void {
     // H: prueba de rendimiento de T-002 (medir con "Mostrar FPS" en Ajustes).
     this.input.keyboard?.on('keydown-H', () => this.stressTest());
+    // N: salta a la preparacion de la ronda siguiente; M: da moneda (T-007, para probar las rondas).
+    this.input.keyboard?.on('keydown-N', () => this.skipRound());
+    this.input.keyboard?.on('keydown-M', () => !this.defeated && !this.won && this.credit(DEBUG.coins));
+  }
+
+  /** Pasa a la preparacion de la ronda siguiente sin esperar; los enemigos que hubiera siguen ahi. */
+  private skipRound(): void {
+    const next = this.match.round.index + 1;
+    if (this.defeated || this.won || next >= ROUND_COUNT) return;
+    this.match = { ...this.match, round: createRound(next) };
+    this.emitRound();
+    this.refreshHighlight();
   }
 
   /** Siembra gratis las 4 primeras columnas (20 plantas) y suelta 60 gusanos con mucha vida. */
   private stressTest(): void {
-    if (this.defeated) return;
+    if (this.defeated || this.won) return;
     // Siembra en casillas que un arrastre a medias daria por vacias.
     this.cancelDrag();
     for (let lane = 0; lane < BOARD.lanes; lane++) {
@@ -486,11 +546,15 @@ export class BoardScene extends Phaser.Scene {
   // -------------------------------------------------------------------------
   // Combate
 
-  /** Avanza la partida: salen gusanos, se mueve el combate, se animan los eventos y se recolocan las vistas. */
+  /**
+   * Avanza la partida: la ronda cuenta su preparacion y saca sus enemigos (T-007), se mueve el combate, se animan
+   * los eventos y se recolocan las vistas.
+   */
   private advance(delta: number): void {
-    const spawn = stepSpawner(this.match, delta, SCENERY.holeX);
-    this.match = spawn.state;
-    spawn.spawned.forEach((enemy) => this.addWormView(enemy, true));
+    const round = stepRound(this.match, delta, SCENERY.holeX);
+    this.match = round.state;
+    round.spawned.forEach((enemy) => this.addWormView(enemy, true));
+    round.events.forEach((event) => this.showRoundEvent(event));
 
     const livesBefore = this.match.lives;
     const { state, events } = stepCombat(this.match, delta);
@@ -499,12 +563,57 @@ export class BoardScene extends Phaser.Scene {
 
     for (const enemy of this.match.enemies) this.wormViews.get(enemy.id)?.sync(enemy);
     for (const bullet of this.match.bullets) this.bulletViews.get(bullet.id)?.sync(bullet);
+    for (const spit of this.match.spits) this.spitViews.get(spit.id)?.sync(spit);
     this.mineViews.forEach((view, key) => {
       const mine = mineAt(this.match, keyCell(key));
       if (mine) view.sync(mine);
     });
     if (this.match.lives !== livesBefore) this.emitLives();
+    this.emitRound();
     if (isDefeated(this.match)) this.enterDefeat(LOOK.defeatDelayMs);
+  }
+
+  /** Lo que pasa con las rondas (T-007). El aviso del concepto nuevo y la cuenta atras los pinta React. */
+  private showRoundEvent(event: RoundEvent): void {
+    switch (event.type) {
+      case 'attackStarted':
+        this.announceAttack();
+        break;
+      case 'roundCleared':
+        if (event.index + 1 < ROUND_COUNT) this.celebrate(`¡Ronda ${event.index + 1} superada!`);
+        break;
+      case 'roundStarted':
+        // Lo recien desbloqueado puede cambiar lo que pasa al soltar la carta elegida (infundir).
+        this.refreshHighlight();
+        break;
+      case 'won':
+        this.enterVictory(LOOK.victoryDelayMs);
+        break;
+    }
+  }
+
+  /** Empieza el ataque: los agujeros brillan y salta "¡Ahí vienen!" junto a ellos. */
+  private announceAttack(): void {
+    for (let lane = 0; lane < BOARD.lanes; lane++) {
+      const hole = perspective.toScreen({ x: SCENERY.holeX, y: lane + 0.6 });
+      const width = perspective.cellWidthAt({ x: SCENERY.holeX, y: lane + 0.6 });
+      this.fx.glow(hole.x, hole.y, width * 1.2, 0x39ff88, DEPTH.highlight + 1, 520);
+      this.fx.bits(hole.x, hole.y - width * 0.1, 4);
+    }
+    const at = perspective.toScreen({ x: BOARD.columns - 1.6, y: BOARD.lanes / 2 });
+    this.fx.floatText('¡Ahí vienen!', at.x, at.y, LOOK.attackText);
+  }
+
+  /** Ronda superada: las plantas dan un saltito una tras otra, con destellos, y sale el texto en el centro. */
+  private celebrate(text: string): void {
+    this.plantViews.forEach((view, key) => {
+      const { col } = keyCell(key);
+      // Si muere antes de su turno, ya no salta.
+      this.time.delayedCall(col * 70, () => this.plantViews.get(key) === view && view.beckon());
+    });
+    const center = perspective.toScreen({ x: BOARD.columns / 2, y: BOARD.lanes / 2 });
+    this.fx.floatText(text, center.x, center.y, LOOK.clearedText);
+    this.fx.sparkles(center.x, center.y, 18);
   }
 
   /** La regla ya esta aplicada en el estado; aqui solo se anima. */
@@ -525,13 +634,23 @@ export class BoardScene extends Phaser.Scene {
         this.bulletViews.get(event.bulletId)?.vanish();
         this.bulletViews.delete(event.bulletId);
         break;
-      case 'bite': {
+      case 'bite':
         this.wormViews.get(event.enemyId)?.chomp();
-        const sown = sownAt(this.match, event.cell);
-        this.plantViews.get(cellKey(event.cell))?.bitten(sown ? sown.hp / sownMaxHp(sown) : 0);
-        this.mineViews.get(cellKey(event.cell))?.bitten();
+        this.sownHurt(event.cell);
         break;
-      }
+      case 'spat':
+        this.wormViews.get(event.enemyId)?.spat();
+        this.spitViews.set(event.spit.id, new SpitView(this, this.fx, event.spit, true));
+        break;
+      case 'spitHit':
+        this.spitViews.get(event.spitId)?.impact();
+        this.spitViews.delete(event.spitId);
+        this.sownHurt(event.cell);
+        break;
+      case 'spitGone':
+        this.spitViews.get(event.spitId)?.vanish();
+        this.spitViews.delete(event.spitId);
+        break;
       case 'plantDestroyed': {
         const key = cellKey(event.cell);
         // Una disparadora o una mina (que asi no explota).
@@ -577,6 +696,13 @@ export class BoardScene extends Phaser.Scene {
     }
   }
 
+  /** Una planta o una mina pierde vida (mordisco o escupitajo): se encoge y destella; la planta amarillea. */
+  private sownHurt(cell: Cell): void {
+    const sown = sownAt(this.match, cell);
+    this.plantViews.get(cellKey(cell))?.bitten(sown ? sown.hp / sownMaxHp(sown) : 0);
+    this.mineViews.get(cellKey(cell))?.bitten();
+  }
+
   private addWormView(enemy: Enemy, emerge: boolean): void {
     this.wormViews.set(enemy.id, new WormView(this, this.fx, enemy, emerge));
   }
@@ -610,10 +736,45 @@ export class BoardScene extends Phaser.Scene {
     this.select(null);
     this.pickPlant(null);
     this.passiveIncome?.remove();
-    this.bulletViews.forEach((bullet) => bullet.vanish());
-    this.bulletViews.clear();
+    this.clearProjectiles();
     this.wormViews.forEach((worm) => worm.cheer());
     this.time.delayedCall(delayMs, () => EventBus.emit(GameEvents.matchLost));
+  }
+
+  /**
+   * Superada la ultima ronda (T-007): el combate y el goteo se detienen, las plantas celebran en oleada con hojas y
+   * destellos por el cesped, y al cabo de `delayMs` React muestra la victoria (provisional hasta el jefe, T-008).
+   */
+  private enterVictory(delayMs: number): void {
+    if (this.won) return;
+    this.won = true;
+    this.cancelDrag();
+    this.press = null;
+    this.setCursor('default');
+    this.select(null);
+    this.pickPlant(null);
+    this.passiveIncome?.remove();
+    this.clearProjectiles();
+    this.emitRound();
+    if (delayMs > 0) {
+      this.celebrate('¡Jardín a salvo!');
+      for (let i = 0; i < 6; i++) {
+        this.time.delayedCall(180 + i * 190, () => {
+          const at = perspective.toScreen({ x: Phaser.Math.FloatBetween(1, BOARD.columns - 1), y: Phaser.Math.FloatBetween(0.5, BOARD.lanes - 0.5) });
+          this.fx.sparkles(at.x, at.y, 10);
+          this.fx.leaves(at.x, at.y, 6);
+        });
+      }
+    }
+    this.time.delayedCall(delayMs, () => EventBus.emit(GameEvents.matchWon));
+  }
+
+  /** Balas y escupitajos en vuelo se apagan (la partida acabo y ya no se mueven). */
+  private clearProjectiles(): void {
+    this.bulletViews.forEach((bullet) => bullet.vanish());
+    this.bulletViews.clear();
+    this.spitViews.forEach((spit) => spit.vanish());
+    this.spitViews.clear();
   }
 
   // -------------------------------------------------------------------------
@@ -700,20 +861,23 @@ export class BoardScene extends Phaser.Scene {
       return;
     }
     const price = play.multiplier > 1 ? `×${play.multiplier} = ${play.cost}` : `${play.cost}`;
+    const unlocksAt = element ? unlockRound(infuseFeature(element)) : null;
     const lines: LabelLine[] =
-      play.blocker === 'has-element'
-        ? [{ text: `Ya tiene ${plant.shooter.element === 'fire' ? 'fuego' : 'hielo'}`, tone: 'blocked' }]
-        : play.blocker === 'insufficient-funds'
-          ? [
-              { text: `Infundir: ${price}`, tone: 'blocked' },
-              { text: 'No alcanza la moneda', tone: 'blocked' },
-            ]
-          : [{ text: `Infundir: ${price}`, tone: 'ok' }];
+      play.blocker === 'locked'
+        ? [{ text: unlocksAt === null ? 'No se puede infundir' : `Infundir: desde la ronda ${unlocksAt + 1}`, tone: 'blocked' }]
+        : play.blocker === 'has-element'
+          ? [{ text: `Ya tiene ${plant.shooter.element === 'fire' ? 'fuego' : 'hielo'}`, tone: 'blocked' }]
+          : play.blocker === 'insufficient-funds'
+            ? [
+                { text: `Infundir: ${price}`, tone: 'blocked' },
+                { text: 'No alcanza la moneda', tone: 'blocked' },
+              ]
+            : [{ text: `Infundir: ${price}`, tone: 'ok' }];
     const foot = view.foot();
     const { cellWidth } = plantPlacement(cell);
     this.cardLabel.show(`${cellKey(cell)}:${lines.map((l) => l.text).join('|')}`, lines, foot.x, foot.y - cellWidth * 1.12, cellWidth);
     this.emitPreview(
-      play.blocker === 'has-element'
+      play.blocker === 'has-element' || play.blocker === 'locked'
         ? null
         : { card, multiplier: play.multiplier, cost: play.cost, affordable: play.blocker !== 'insufficient-funds' },
     );
@@ -742,7 +906,7 @@ export class BoardScene extends Phaser.Scene {
   /** Juega la carta elegida en la casilla si se puede (sembrar o infundir), cobra y suelta la carta. */
   private tryPlay(cell: Cell | null): void {
     const card = this.selected;
-    if (this.defeated || !card || !cell) return;
+    if (this.defeated || this.won || !card || !cell) return;
     const { action, blocker } = cardPlay(this.match, card, cell);
     if (blocker) return;
     this.match = playCard(this.match, card, cell);
@@ -763,9 +927,27 @@ export class BoardScene extends Phaser.Scene {
   // Fusionar por arrastre (T-006). Las reglas son de core (fusionBlocker, fusionTargets, fusePlants);
   // aqui se lleva el puntero y se anima.
 
-  /** Se arrastran plantas sin carta elegida y con la partida en juego. */
+  /** Las plantas se tocan (para arrastrarlas o seleccionarlas) sin carta elegida y con la partida en juego. */
+  private canTouchPlants(): boolean {
+    return !this.selected && !this.defeated && !this.won && this.sys.isActive();
+  }
+
+  /** Arrastrar para fusionar, desde la ronda que lo desbloquea (T-007). */
   private canDragPlants(): boolean {
-    return !this.selected && !this.defeated && this.sys.isActive();
+    return this.canTouchPlants() && isUnlocked(this.match, 'fuse');
+  }
+
+  /** Seleccionar para subir de nivel, desde la ronda que lo desbloquea (T-007). */
+  private canPickPlants(): boolean {
+    return this.canTouchPlants() && isUnlocked(this.match, 'levelUp');
+  }
+
+  /** Cursor sobre una planta: mano para arrastrarla, o dedo si solo se puede seleccionar. */
+  private plantCursor(x: number, y: number): string {
+    const canDrag = this.canDragPlants();
+    if (!canDrag && !this.canPickPlants()) return 'default';
+    if (!this.plantCellAtScreen(x, y)) return 'default';
+    return canDrag ? 'grab' : 'pointer';
   }
 
   /**
@@ -967,7 +1149,7 @@ export class BoardScene extends Phaser.Scene {
   /** Sube un nivel la planta seleccionada si se puede: cobra en el acto y la planta lo celebra. */
   private tryLevelUp(): void {
     const cell = this.picked;
-    if (this.defeated || !cell) return;
+    if (this.defeated || this.won || !cell) return;
     const offer = levelUpOffer(this.match, cell);
     if (!offer || offer.blocker) return;
     this.match = levelUpPlant(this.match, cell);
@@ -1160,9 +1342,29 @@ export class BoardScene extends Phaser.Scene {
     EventBus.emit(GameEvents.livesChanged, this.match.lives);
   }
 
+  /** Avisa al HUD de la ronda en curso (T-007), solo si cambia: en la preparacion, la cuenta atras cambia cada segundo. */
+  private emitRound(): void {
+    const { round } = this.match;
+    const info: RoundInfo = {
+      number: round.index + 1,
+      total: ROUND_COUNT,
+      phase: round.phase,
+      prepSeconds: round.phase === 'prep' ? Math.ceil(round.prepMs / 1000) : null,
+      cards: availableCards(this.match),
+      infusable: infusableElements(this.match),
+      notice: roundScript(round.index).notice,
+    };
+    const key = JSON.stringify(info);
+    if (key === this.roundKey) return;
+    this.roundKey = key;
+    EventBus.emit(GameEvents.roundChanged, info);
+  }
+
   private emitState(): void {
     this.emitBalance();
     this.emitLives();
+    this.roundKey = '';
+    this.emitRound();
     EventBus.emit(GameEvents.selectionChanged, this.selected);
     // El precio de infusion que tuviera el HUD era de la escena anterior (por ejemplo, al cambiar la calidad).
     this.previewKey = '';

@@ -1,3 +1,5 @@
+import type { RoundScript } from '../core/rounds';
+
 /**
  * Todos los numeros de balance viven aqui. Nada de numeros magicos en escenas.
  * Los valores marcados como PROVISIONAL estan pendientes de probar jugando.
@@ -50,12 +52,16 @@ export const SHOOTER = {
   bulletSpeed: 6,
 } as const;
 
-/** Enemigos. Posiciones y velocidades en casillas (ADR-0005): la logica no sabe de pixeles. */
+/**
+ * Enemigos. Posiciones y velocidades en casillas (ADR-0005): la logica no sabe de pixeles.
+ * `attack` dice como ataca: `bite` muerde lo que toca; `spit` se para a distancia y escupe (T-007).
+ */
 export const ENEMIES = {
   worm: {
     hp: 100, // PROVISIONAL
     /** Casillas por segundo. PROVISIONAL. */
     speed: 0.25,
+    attack: 'bite',
     biteDamage: 50, // PROVISIONAL
     biteIntervalMs: 1000, // PROVISIONAL
     /** Lo que tarda el primer mordisco desde que toca la planta. PROVISIONAL. */
@@ -65,19 +71,183 @@ export const ENEMIES = {
     /** Del centro del gusano a su hocico: ahi le dan las balas. */
     halfLength: 0.4,
   },
+  /** Gusano acorazado (T-007, desde la ronda 4): muerde como el gusano, con mucha mas vida y mas lento. */
+  armored: {
+    /** Cuatro veces la del gusano. PROVISIONAL. */
+    hp: 400,
+    /** Casillas por segundo. PROVISIONAL. */
+    speed: 0.16,
+    attack: 'bite',
+    biteDamage: 50, // PROVISIONAL
+    biteIntervalMs: 1000, // PROVISIONAL
+    firstBiteMs: 450,
+    reach: 0.6,
+    halfLength: 0.42,
+  },
+  /**
+   * Gusano escupidor (T-007, desde la ronda 6): se para a `range` casillas de lo primero sembrado en su carril
+   * (planta o mina) y le escupe. Nunca se para antes de pisar el cesped, para que las plantas puedan darle.
+   */
+  spitter: {
+    hp: 140, // PROVISIONAL
+    /** Casillas por segundo. PROVISIONAL. */
+    speed: 0.28,
+    attack: 'spit',
+    /**
+     * Distancia de centro a centro a la que se para. Mayor que `MINE.detectRadius`: asi puede reventar una mina
+     * sin que llegue a armarse. PROVISIONAL.
+     */
+    range: 2.6,
+    spitDamage: 25, // PROVISIONAL
+    spitIntervalMs: 1800, // PROVISIONAL
+    /** Lo que tarda el primer escupitajo desde que se para. PROVISIONAL. */
+    firstSpitMs: 900,
+    /** Velocidad del escupitajo, en casillas por segundo. PROVISIONAL. */
+    spitSpeed: 4,
+    halfLength: 0.4,
+  },
 } as const;
 
 /**
- * Generador de enemigos para probar el combate hasta que existan las rondas (T-007):
- * un gusano por un carril al azar, cada vez un poco mas seguido, hasta un minimo. PROVISIONAL.
+ * Preparacion antes de cada ronda (T-007), tambien antes de la 1: se puede sembrar, infundir, fusionar y subir
+ * de nivel, y el goteo sigue. El jugador puede adelantar el ataque con un boton. PROVISIONAL.
  */
-export const TEST_SPAWNER = {
-  firstDelayMs: 12_000,
-  startIntervalMs: 10_000,
-  /** Cuanto se acorta el intervalo con cada gusano que sale. */
-  intervalStepMs: 350,
-  minIntervalMs: 3_000,
+export const ROUND_PREP = {
+  durationMs: 20_000,
 } as const;
+
+/**
+ * Las rondas del mundo 1 (T-007), en orden. Cada una desbloquea lo suyo al empezar su preparacion (`unlocks`),
+ * avisa con una linea (`notice`) y saca sus grupos de enemigos: cada grupo, un enemigo por carril de `lanes`
+ * a la vez, `atMs` milisegundos despues de que empiece el ataque (en orden). La ronda acaba cuando no quedan
+ * enemigos por salir ni vivos. Los carriles van de 0 (el del fondo) a 4 (el de delante). PROVISIONAL: se ajusta
+ * jugando; las 7 deberian durar entre 10 y 15 minutos.
+ */
+export const ROUNDS: readonly RoundScript[] = [
+  {
+    unlocks: ['shooter'],
+    notice: 'Siembra disparadoras: cada una defiende su carril',
+    groups: [
+      { atMs: 3_000, kind: 'worm', lanes: [2] },
+      { atMs: 15_000, kind: 'worm', lanes: [1] },
+      { atMs: 24_000, kind: 'worm', lanes: [3] },
+      { atMs: 32_000, kind: 'worm', lanes: [2] },
+      { atMs: 39_000, kind: 'worm', lanes: [0] },
+      { atMs: 45_000, kind: 'worm', lanes: [4] },
+      { atMs: 52_000, kind: 'worm', lanes: [1, 3] },
+      { atMs: 60_000, kind: 'worm', lanes: [0, 4] },
+    ],
+  },
+  {
+    unlocks: ['levelUp'],
+    notice: 'Nuevo: subir de nivel. Toca una disparadora y mejórala',
+    groups: [
+      { atMs: 3_000, kind: 'worm', lanes: [2] },
+      { atMs: 8_000, kind: 'worm', lanes: [2] },
+      { atMs: 16_000, kind: 'worm', lanes: [0, 4] },
+      { atMs: 24_000, kind: 'worm', lanes: [1] },
+      { atMs: 27_000, kind: 'worm', lanes: [1] },
+      { atMs: 34_000, kind: 'worm', lanes: [3] },
+      { atMs: 37_000, kind: 'worm', lanes: [3] },
+      { atMs: 45_000, kind: 'worm', lanes: [0, 2, 4] },
+      { atMs: 55_000, kind: 'worm', lanes: [1, 3] },
+      { atMs: 60_000, kind: 'worm', lanes: [2] },
+      { atMs: 64_000, kind: 'worm', lanes: [2] },
+    ],
+  },
+  {
+    unlocks: ['fireMine'],
+    notice: 'Nuevo: fuego. Siémbralo solo y explota',
+    groups: [
+      { atMs: 3_000, kind: 'worm', lanes: [2] },
+      { atMs: 10_000, kind: 'worm', lanes: [1, 2, 3] },
+      { atMs: 22_000, kind: 'worm', lanes: [0] },
+      { atMs: 23_500, kind: 'worm', lanes: [0] },
+      { atMs: 25_000, kind: 'worm', lanes: [0] },
+      { atMs: 36_000, kind: 'worm', lanes: [4] },
+      { atMs: 37_500, kind: 'worm', lanes: [4] },
+      { atMs: 39_000, kind: 'worm', lanes: [3, 4] },
+      { atMs: 52_000, kind: 'worm', lanes: [1, 2, 3] },
+      { atMs: 54_000, kind: 'worm', lanes: [2] },
+      { atMs: 64_000, kind: 'worm', lanes: [0, 1] },
+      { atMs: 66_000, kind: 'worm', lanes: [3, 4] },
+    ],
+  },
+  {
+    unlocks: ['fireInfuse'],
+    notice: 'Nuevo: suelta el fuego sobre una disparadora para infundirla. ¡Llega el acorazado!',
+    groups: [
+      { atMs: 3_000, kind: 'armored', lanes: [2] },
+      { atMs: 12_000, kind: 'worm', lanes: [1, 3] },
+      { atMs: 22_000, kind: 'worm', lanes: [0, 4] },
+      { atMs: 30_000, kind: 'armored', lanes: [1] },
+      { atMs: 36_000, kind: 'worm', lanes: [2, 3] },
+      { atMs: 44_000, kind: 'armored', lanes: [4] },
+      { atMs: 50_000, kind: 'worm', lanes: [0, 1] },
+      { atMs: 58_000, kind: 'worm', lanes: [2] },
+      { atMs: 60_000, kind: 'worm', lanes: [2] },
+      { atMs: 66_000, kind: 'armored', lanes: [0, 3] },
+      { atMs: 72_000, kind: 'worm', lanes: [1, 4] },
+    ],
+  },
+  {
+    unlocks: ['iceMine', 'iceInfuse'],
+    notice: 'Nuevo: hielo. Solo, frena en área; infundido, sus semillas frenan',
+    groups: [
+      { atMs: 3_000, kind: 'worm', lanes: [1, 3] },
+      { atMs: 10_000, kind: 'armored', lanes: [2] },
+      { atMs: 18_000, kind: 'worm', lanes: [0, 1, 2, 3, 4] },
+      { atMs: 30_000, kind: 'armored', lanes: [0] },
+      { atMs: 32_000, kind: 'worm', lanes: [0] },
+      { atMs: 34_000, kind: 'worm', lanes: [0] },
+      { atMs: 44_000, kind: 'armored', lanes: [4] },
+      { atMs: 46_000, kind: 'worm', lanes: [3, 4] },
+      { atMs: 58_000, kind: 'worm', lanes: [0, 1, 2, 3, 4] },
+      { atMs: 61_000, kind: 'worm', lanes: [1, 2, 3] },
+      { atMs: 72_000, kind: 'armored', lanes: [1, 3] },
+      { atMs: 78_000, kind: 'worm', lanes: [0, 2, 4] },
+    ],
+  },
+  {
+    unlocks: ['fuse'],
+    notice: 'Nuevo: arrastra una disparadora sobre otra igual para fusionarlas. ¡Llega el escupidor!',
+    groups: [
+      { atMs: 3_000, kind: 'spitter', lanes: [2] },
+      { atMs: 10_000, kind: 'worm', lanes: [1, 3] },
+      { atMs: 18_000, kind: 'armored', lanes: [0] },
+      { atMs: 24_000, kind: 'spitter', lanes: [4] },
+      { atMs: 30_000, kind: 'worm', lanes: [0, 2, 4] },
+      { atMs: 40_000, kind: 'armored', lanes: [2] },
+      { atMs: 42_000, kind: 'spitter', lanes: [1] },
+      { atMs: 50_000, kind: 'worm', lanes: [1, 2, 3] },
+      { atMs: 60_000, kind: 'armored', lanes: [3, 4] },
+      { atMs: 66_000, kind: 'spitter', lanes: [0, 3] },
+      { atMs: 74_000, kind: 'worm', lanes: [0, 1, 2, 3, 4] },
+      { atMs: 82_000, kind: 'armored', lanes: [1] },
+    ],
+  },
+  {
+    unlocks: [],
+    notice: 'Última ronda: todo junto. ¡Aguanta!',
+    groups: [
+      { atMs: 3_000, kind: 'worm', lanes: [0, 2, 4] },
+      { atMs: 10_000, kind: 'armored', lanes: [1, 3] },
+      { atMs: 18_000, kind: 'spitter', lanes: [2] },
+      { atMs: 22_000, kind: 'worm', lanes: [0, 1, 3, 4] },
+      { atMs: 32_000, kind: 'spitter', lanes: [0, 4] },
+      { atMs: 36_000, kind: 'armored', lanes: [2] },
+      { atMs: 42_000, kind: 'worm', lanes: [1, 2, 3] },
+      { atMs: 44_000, kind: 'worm', lanes: [1, 2, 3] },
+      { atMs: 54_000, kind: 'armored', lanes: [0, 4] },
+      { atMs: 58_000, kind: 'spitter', lanes: [1, 3] },
+      { atMs: 66_000, kind: 'worm', lanes: [0, 1, 2, 3, 4] },
+      { atMs: 76_000, kind: 'armored', lanes: [1, 2, 3] },
+      { atMs: 80_000, kind: 'spitter', lanes: [0, 4] },
+      { atMs: 84_000, kind: 'worm', lanes: [0, 1, 2, 3, 4] },
+      { atMs: 87_000, kind: 'worm', lanes: [0, 1, 2, 3, 4] },
+    ],
+  },
+];
 
 /**
  * Planta fusionada (D-02, cerrada el 19 nov 2026; se ajusta jugando). Ver docs/specs/01-mecanicas.md.
@@ -114,7 +284,7 @@ export const LEVELING = {
  * al explotar va en cada elemento. Distancias en casillas, medidas entre el centro de la mina y el del enemigo.
  */
 export const MINE = {
-  /** Vida propia: los gusanos la muerden (y el escupidor de T-007 le dispara). PROVISIONAL. */
+  /** Vida propia: los gusanos la muerden y el escupidor (T-007) le escupe. PROVISIONAL. */
   hp: 100,
   /** Desde que detecta a un enemigo hasta que explota. */
   countdownMs: 2000,
@@ -159,11 +329,11 @@ export const ICE = {
   bulletSlowByCannons: { 1: 0.3, 2: 0.4, 3: 0.5 },
   /** Lo que dura la ralentizacion de una semilla desde el impacto: mas que la recarga de la planta. PROVISIONAL. */
   bulletSlowMs: 2500,
-  /** Si el enemigo ralentizado tambien muerde mas despacio (en la misma proporcion que avanza). */
-  slowsBites: true,
+  /** Si el enemigo ralentizado tambien muerde y escupe mas despacio (en la misma proporcion que avanza). */
+  slowsAttacks: true,
 } as const;
 
+/** Jefe del mundo 1 (T-008), al acabar sus rondas (`ROUNDS`). */
 export const WORLD_1 = {
-  rounds: 7,
   boss: 'creeper',
 } as const;

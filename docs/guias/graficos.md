@@ -19,17 +19,18 @@ Cómo se pinta y se anima Rebrote, para que todo lo nuevo (enemigos, mundos, efe
 | `src/game/view/textures.ts` | Todo el arte pintado con Canvas 2D, una vez al arrancar (`TEX`, `registerTextures`, `artInv`) |
 | `src/game/view/ambience.ts` | Lo que se mueve en el escenario: sol, nubes, pájaros, viento, partículas, flores |
 | `src/game/view/quality.ts` | Niveles gráficos y modo automático |
-| `src/game/view/effects.ts` | Efectos de respuesta compartidos: ráfagas de partículas (tierra, chispas, hojas, píxeles, jugo, llamas, brasas, humo, copos, esquirlas de hielo, vaho), anillos (también tumbados en el suelo), destellos y textos flotantes |
+| `src/game/view/effects.ts` | Efectos de respuesta compartidos: ráfagas de partículas (tierra, chispas, hojas, píxeles, jugo, llamas, brasas, humo, copos, esquirlas de hielo, vaho, moco, esquirlas de acero), anillos (también tumbados en el suelo), destellos y textos flotantes |
 | `src/game/view/boardMarks.ts` | Marcas sobre el tablero que comparten cartas y arrastre: casilla (`drawCell`), área circular en perspectiva (`drawArea`, `areaSize`) y rótulo de lo que pasará al soltar (`BoardLabel`, `LABEL_TONES`) |
 | `src/game/view/plantView.ts` | Disparadora: brota, respira, retrocede al disparar, se encoge al recibir un mordisco, se marchita y muere (`PLANT_LOOK`). Al arrastrar otra: se atenúa, se levanta o da un saltito. Al fusionarse o infundirse: cambia de textura con un rebote. Al subir de nivel: estirón y medallita nueva (`levelUp`). La de fuego suelta brasas y la de hielo, copos. Boca de cada cañón (`barrelMuzzle`) |
 | `src/game/view/shooterShape.ts` | Forma de la disparadora, sin Phaser: pies (`SHOOTER_SIZE`), cañones (`SHOOTER_BARRELS`), puntos del tallo (`SHOOTER_DOTS`), cabeza (`shooterHead`) y ojo. `textures.ts` la reexporta |
 | `src/game/view/levelMedal.ts` | Medallita de nivel (T-003), sin Phaser y con test: dónde va (`MEDAL`, `medalCenter`), color de cada tramo (`MEDAL_TIERS`, `medalTier`) y cuáles la llevan (`showsMedal`) |
 | `src/game/view/mineView.ts` | Mina de fuego (T-004) y de hielo (T-005): se entierra, duerme, se arma con cuenta atrás visible, la muerden, explota (o estalla en escarcha) o se apaga si la destruyen |
 | `src/game/view/fusionDragView.ts` | Arrastre para fusionar (T-006): planta en la mano con su sombra, casillas de destino y rótulo (`DRAG_LOOK`, `dragGround`) |
-| `src/game/view/wormView.ts` | Gusano: sale del agujero, ondula, muerde, recibe golpes y explosiones, arde, tirita frenado, muere, se cuela y celebra |
+| `src/game/view/wormView.ts` | Gusano, acorazado y escupidor (`KIND_LOOK`): sale del agujero, ondula, muerde o escupe, recibe golpes y explosiones, arde, tirita frenado, muere, se cuela y celebra. Al acorazado se le caen las placas con la vida |
 | `src/game/view/bulletView.ts` | Semilla en vuelo (normal, de fuego o de hielo), impacto y salida del tablero |
-| `src/game/scenes/BoardScene.ts` | Cartas (sembrar e infundir), monedas, combate (avanza la partida y anima sus eventos), fusionar por arrastre, seleccionar y subir de nivel, resaltado, filtros de Ultra, ajuste de la vista, pausa y derrota |
-| `src/ui/` | HUD flotante (cartas con su precio, vidas, saldo), panel de nivel de la planta seleccionada (`LevelPanel`), menú de pausa, ajustes y pantalla de derrota (React) |
+| `src/game/view/spitView.ts` | Escupitajo del escupidor en vuelo (T-007), impacto y salida del tablero |
+| `src/game/scenes/BoardScene.ts` | Cartas (sembrar e infundir), monedas, rondas y combate (avanza la partida y anima sus eventos), fusionar por arrastre, seleccionar y subir de nivel, resaltado, filtros de Ultra, ajuste de la vista, pausa, derrota y victoria |
+| `src/ui/` | HUD flotante (cartas con su precio, ronda con su cuenta atrás y su aviso en `RoundHud`, vidas, saldo), panel de nivel de la planta seleccionada (`LevelPanel`), menú de pausa, ajustes y pantallas de derrota y de victoria (React) |
 
 ## 3. Coordenadas y perspectiva
 
@@ -55,14 +56,14 @@ Cómo se pinta y se anima Rebrote, para que todo lo nuevo (enemigos, mundos, efe
   - En pantallas anchas se ve más jardín a la izquierda y más suelo corrupto a la derecha.
   - En pantallas altas se ve más cielo y un corte de tierra más hondo.
 - **Todo decorado nuevo** (texturas fijas, partículas ambientales, nubes, bichos) cubre `WORLD`, no solo el diseño. Hay que comprobar que no se ve ningún borde recto ni ninguna zona vacía.
-- **Lo que tapa el HUD:** la franja de arriba de la pantalla (bandeja de cartas a la izquierda, saldo y pausa a la derecha). Ahí solo va decorado.
+- **Lo que tapa el HUD:** la franja de arriba de la pantalla (bandeja de cartas a la izquierda, ronda en el centro, saldo y pausa a la derecha). Ahí solo va decorado. Por debajo de 1250 px de ancho la ronda baja a una segunda fila, y su aviso cuelga debajo unos segundos.
 - **Lo que depende de la pantalla** se calcula con la cámara (`cameras.main.worldView`), nunca con 1600 × 900. Por ejemplo, las monedas vuelan a la esquina donde está el saldo.
 - **Pausa:** congela la escena entera. Todo lo que pasa con el tiempo usa `this.time`, tweens y partículas de la escena; así la pausa lo congela sin código extra.
 
 ## 5. Combate en pantalla (ADR-0008)
 
-- **La escena no decide nada.** En cada `update` avanza la partida con `stepSpawner` y `stepCombat` (`src/game/core/`), anima los eventos que devuelven y recoloca las vistas. Ninguna vista mueve una entidad por su cuenta.
-- **Cada entidad del estado tiene su vista:** los enemigos y las balas se buscan por id; las plantas, por casilla. `sync(...)` recoloca la vista en cada fotograma.
+- **La escena no decide nada.** En cada `update` avanza la partida con `stepRound` y `stepCombat` (`src/game/core/`), anima los eventos que devuelven y recoloca las vistas. Ninguna vista mueve una entidad por su cuenta.
+- **Cada entidad del estado tiene su vista:** los enemigos, las balas y los escupitajos se buscan por id; las plantas, por casilla. `sync(...)` recoloca la vista en cada fotograma.
 - **Reacciones con valores sueltos.** Las reacciones de un gusano (salir, morder, golpe, retroceso) son valores `{ v: 0 }` que se animan con tweens y que `sync` aplica. Así una reacción nueva corta la anterior sin romper las demás.
 - **Las que se van, se van solas.** Una vista que muere, se cuela o sale del tablero se quita del mapa en el acto y termina su animación sola.
 - **Destello blanco:** `setTint(0xffffff).setTintMode(Phaser.TintModes.FILL)` y, para volver, `clearTint()` (o el tinte que tuviera). En Phaser 4 el color y el modo del tinte van por separado.
@@ -78,7 +79,13 @@ Cómo se pinta y se anima Rebrote, para que todo lo nuevo (enemigos, mundos, efe
 | `mineExploded` | Fuego: bola de fuego, llamas, brasas, humo, onda en el suelo del tamaño del alcance y chamuscado que se apaga. Los gusanos alcanzados saltan (`blasted`) y la cámara tiembla un poco. Hielo (T-005): destello helado, copos, esquirlas, vaho, onda azul, cristales que brotan del suelo y escarcha que se derrite. Los gusanos alcanzados se quedan tiesos con un destello azul y tiritan (`frosted`), y la cámara tiembla menos |
 | `enemyKilled` | El gusano se infla, se encoge y se deshace en píxeles verdes y morados. Sale su moneda (`rewardKill`) |
 | `enemyEscaped` | El gusano se mete bajo tierra en el camino. "−1 ♥", un temblor corto y React rompe un corazón |
-| Derrota | Las balas se apagan y los gusanos saltan de contentos. A los 1,1 s React muestra la pantalla de derrota |
+| `spat` (T-007) | El escupidor se lanza hacia delante con un chorrito de moco en la boca y el escupitajo nace ahí, pequeño, y crece con un rebote |
+| `spitHit` (T-007) | El escupitajo revienta en moco verde con un anillo. La planta o la mina reaccionan como a un mordisco |
+| `spitGone` (T-007) | El escupitajo cae al camino y se desvanece |
+| `attackStarted` (T-007) | Los agujeros brillan y sueltan píxeles, y salta "¡Ahí vienen!" junto a ellos, en los colores de la corrupción |
+| `roundCleared` (T-007) | Las plantas dan un saltito en oleada, de izquierda a derecha, con destellos y "¡Ronda N superada!" en el centro del césped. Tras la última no sale: le sigue la victoria |
+| Derrota | Las balas y los escupitajos se apagan y los gusanos saltan de contentos. A los 1,1 s React muestra la pantalla de derrota |
+| Victoria (`won`, T-007) | Las balas y los escupitajos se apagan, las plantas saltan en oleada con "¡Jardín a salvo!", y caen hojas y destellos por el césped. A los 1,6 s React muestra la pantalla de victoria |
 
 - **Lo que dura, sale del estado, no de un evento.** La quemadura (`enemy.burn`), la ralentización (`enemy.slow`) y la cuenta atrás de la mina (`mine.fuseMs`) se leen en `sync`. Así una partida que se continúa (cambio de calidad) se pinta igual sin repetir eventos.
 
@@ -119,6 +126,13 @@ Cómo se pinta y se anima Rebrote, para que todo lo nuevo (enemigos, mundos, efe
   - Lo que cambia con el elemento (alcance, brillo, cuenta atrás, partículas de la punta) está en `ELEMENT_LOOK` de `mineView.ts`.
   - Explota o se apaga según el evento (sección 5). Destruida antes de tiempo, la de fuego se apaga con humo y la de hielo se deshace en vaho.
 - **Gusano quemado.** Mientras `enemy.burn` existe: dos llamas titilan sobre la cabeza y el lomo, el cuerpo tira a rojo (tinte aditivo `WORM_LOOK.burnTint`) y cada 0,7 s pone cara de "ay" y suelta brasas, para que se vea que sigue perdiendo vida. Si muere quemado, queda tostado y humea.
+- **Acorazado (T-007).** Es el gusano, un 12 % más grande, con casco de acero (`TEX.armorHelmet`, del tamaño de la cabeza para ir encima) y una placa por anillo (`TEX.armorPlate`), solapadas de la cola a la cabeza.
+  - Las placas que lleva salen de su vida en `sync`: con el 75 % se le cae la primera, y así hasta la cuarta. Cada una sale despedida girando como una copia suelta, con esquirlas de acero (`fx.scrap`). En una partida continuada se quitan sin animar.
+  - Mientras le quedan placas, cada semilla que le da saca un par de esquirlas. Al morir le sale volando el casco.
+  - El destello, el quemado y el frío tiñen también la armadura.
+- **Escupidor (T-007).** El mismo cuerpo en rosa chicle (`WORM_PALETTES.spitter`), con la boca de piñón y una gotita de moco colgando.
+  - Mientras carga (los últimos 650 ms antes de escupir, `WORM_LOOK.spitChargeMs`) se yergue más que al morder e hincha los mofletes como globos (`TEX.spitterHeadCharge`).
+  - El escupitajo (`SpitView`) sale de la boca aunque la lógica lo saque del centro, vuela bombeado a lo largo de su alcance y gira un poco. Moco con mezcla normal y contorno oscuro: sobre el césped, lo aditivo se quedaría blanco.
 - **Gusano frenado (T-005).** Mientras `enemy.slow` existe: cristales de escarcha en la nuca y la cola, el cuerpo tira a azul frío (tinte multiplicado `WORM_LOOK.chillTint`) y cada 0,9 s tirita y suelta un copo. Ondula más despacio sin código extra, porque ondula según lo que avanza. Si muere frenado (y no ardía), queda congelado y se rompe en esquirlas.
   - Quemado y frenado a la vez: se ven las llamas y la escarcha (no se tapan: llamas en la coronilla y el lomo, escarcha en la nuca y la cola), con el cuerpo azul.
 - **Colores de efecto por variante.** El fogonazo del cañón y los destellos de fusionar o infundir salen de `VARIANT_FX` (`plantView.ts`): lima la normal, naranja la de fuego, azul claro la de hielo.
@@ -179,6 +193,9 @@ Orden de dibujo, de atrás hacia delante (`DEPTH` en `layout.ts`):
   | Corrupción | verde neón `#39ff88`, morado `#b48cff` sobre `#2b2034` |
   | Fuego (T-004) | cabeza `#fff0b0` a `#ff8f3a` a `#e0401c`, contorno `#8a2410`, cañones `#ffd27a` a `#e2581f` con una brasa `#ffcf4a` dentro, brote `#ffb22e` |
   | Hielo (T-005) | cabeza `#f4fcff` a `#9fdcff` a `#4a9fd8`, contorno `#1f5a8a`, cañones `#e4f7ff` a `#6cbce8` con escarcha `#c8f4ff` dentro, brote `#d4f2ff`. Copos blancos con borde `#3f8fc8` |
+  | Gusano | cabeza `#ead6ff` a `#b48cff` a `#7a4cc8`, contorno `#4a2a7a`, luces verde neón `#39ff88` |
+  | Escupidor (T-007) | cabeza `#ffe6f3` a `#ff8cc6` a `#d8458f`, contorno `#7a1d4c`, labios `#ff5c9a`, luces verde neón. Moco `#f0fff6` a `#6dffad` a `#1cc066`, contorno `#0e6a3a` |
+  | Armadura (T-007) | acero `#f5f9fd` a `#b4c5d6` a `#6d8399`, contorno `#2f4155`, remaches `#e8f0f8` |
 
 - Se ve un cañón por cada cañón de la planta, y el nivel se muestra con una medallita con número.
   - **Cañones:** la disparadora tiene una textura por número de cañones (`shooterTexture(1 | 2 | 3)`). Los tubos van apilados y sus medidas están en `SHOOTER_BARRELS`, de donde sale también la boca de cada uno. Al fusionarse crece un poco: cabeza algo mayor y una hoja más en la base y en el brote. La de 3 cañones lleva además una flor en la coronilla.
@@ -216,6 +233,10 @@ Orden de dibujo, de atrás hacia delante (`DEPTH` en `layout.ts`):
   - Los corazones de las vidas laten por turnos. El que se pierde se rompe y se apaga.
   - La pantalla de derrota entra como el menú de pausa, con un corazón que se parte en dos.
   - El panel de nivel (T-003) entra con un salto desde la planta. Al subir saltan la medallita y el nivel. Sin saldo, el precio tiembla al pulsar.
+  - La ronda (T-007) cae con el resto del HUD. Su número salta al cambiar y la semillita de la ronda actual late. La cuenta atrás salta cada segundo y se pone roja en los tres últimos.
+  - El aviso de la ronda entra con un salto, se queda 7 s y se va. Lo lleva una animación CSS que se congela con la pausa (`.app.is-paused`). Con `prefers-reduced-motion` lo quita un temporizador.
+  - Una carta recién desbloqueada entra en la bandeja con un salto y brilla tres veces. La animación va en un envoltorio (`.card-slot`) y no en la carta, que ya anima su `transform` al estar elegida.
+  - La pantalla de victoria entra como la de derrota, con una copa con un brote que salta y destellos que titilan.
   - El menú de pausa entra con un pequeño rebote.
   - La pantalla de carga muestra un brote que crece.
   - Con `prefers-reduced-motion` las animaciones CSS se apagan.
@@ -251,6 +272,7 @@ Todo efecto nuevo se engancha a un ajuste del perfil (`QualityProfile`):
 ## 14. Listas de comprobación
 
 ### Enemigo nuevo
+Ejemplos: el acorazado y el escupidor de T-007, en `wormView.ts` (`KIND_LOOK`).
 - [ ] Forma y color propios que se lean de un vistazo, con cara simpática aunque sea un virus.
 - [ ] Textura en `textures.ts`, con origen en los pies y sombra.
 - [ ] Animaciones de entrada (sale del agujero de su carril, `SCENERY.holeX`), avance, mordisco, golpe recibido (destello o retroceso) y muerte (encoge y suelta partículas).

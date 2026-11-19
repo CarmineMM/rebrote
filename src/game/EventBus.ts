@@ -1,5 +1,7 @@
 import * as Phaser from 'phaser';
 import type { CardId } from './core/match';
+import type { ElementType } from './core/plants';
+import type { RoundPhase } from './core/rounds';
 
 /** Canal unico entre React (interfaz) y Phaser (juego). */
 export const EventBus = new Phaser.Events.EventEmitter();
@@ -23,6 +25,16 @@ export const GameEvents = {
   /** Phaser -> React. Sin payload: la partida se perdio; React muestra la pantalla de derrota. */
   matchLost: 'match-lost',
   /**
+   * Phaser -> React. Sin payload: superada la ultima ronda (T-007); React muestra la victoria, provisional hasta que
+   * exista el jefe (T-008).
+   */
+  matchWon: 'match-won',
+  /**
+   * Phaser -> React. Payload: RoundInfo. Ronda en curso (T-007): numero, fase, cuenta atras de la preparacion, cartas
+   * de la bandeja y aviso. Solo se manda si algo cambia (en la preparacion, cada segundo).
+   */
+  roundChanged: 'round-changed',
+  /**
    * Phaser -> React. Payload: PlantPanel | null. Disparadora seleccionada con un clic (T-003): su nivel, lo que cuesta
    * el siguiente y donde esta en la pagina, para pintar el panel de subir de nivel junto a ella. Null al cerrarlo.
    */
@@ -37,6 +49,8 @@ export const GameEvents = {
   selectionCancelled: 'selection-cancelled',
   /** React -> Phaser. Sin payload: subir un nivel la disparadora seleccionada (boton del panel). */
   levelUpRequested: 'level-up-requested',
+  /** React -> Phaser. Sin payload: adelantar el ataque de la ronda en preparacion (boton "¡Que vengan!"). */
+  attackRequested: 'attack-requested',
   /** React -> Phaser. Payload: si el juego queda en pausa (boolean). El menu de pausa lo controla. */
   pauseChanged: 'pause-changed',
   /** React -> Phaser. Sin payload: el HUD se monto y pide el estado actual. */
@@ -73,6 +87,22 @@ export interface PlantPanel {
   /** Donde se apoya el panel: sobre la cabeza de la planta, o bajo sus pies si arriba no cabe. */
   above: PagePoint;
   below: PagePoint;
+}
+
+/** Ronda en curso (T-007). Sale de `round` en el estado y de `rounds.ts` en core. */
+export interface RoundInfo {
+  /** Ronda en curso, desde 1 ("Ronda 3 de 7"). */
+  number: number;
+  total: number;
+  phase: RoundPhase;
+  /** En la preparacion, segundos que faltan para el ataque (redondeados hacia arriba); null en otra fase. */
+  prepSeconds: number | null;
+  /** Cartas de la bandeja: las desbloqueadas. Las bloqueadas no se ven. */
+  cards: CardId[];
+  /** Elementos que ya se pueden infundir (el fuego se siembra solo una ronda antes de poder infundirlo). */
+  infusable: ElementType[];
+  /** Aviso de una linea con el concepto nuevo de la ronda. */
+  notice: string;
 }
 
 /** Coordenadas DOM de pagina; la escena las traduce a coordenadas del juego. */
