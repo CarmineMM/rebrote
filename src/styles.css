@@ -138,7 +138,29 @@ body {
 .card[aria-pressed='true'] .card-icon { animation: icon-wiggle 0.9s ease-in-out infinite; }
 @keyframes icon-wiggle { 0%, 100% { transform: rotate(-4deg); } 50% { transform: rotate(4deg); } }
 .card-label { font-size: 0.85rem; font-weight: 700; }
-.card-cost { font-weight: 900; color: #ffe066; font-variant-numeric: tabular-nums; text-shadow: 0 1px 0 #5a3d00; }
+.card-cost { font-weight: 900; color: #ffe066; font-variant-numeric: tabular-nums; text-shadow: 0 1px 0 #5a3d00; white-space: nowrap; }
+/* Infundir una planta de N canones (D-04): el precio salta a "x3 = 225"; en rojo si no alcanza. */
+.card-cost.is-multiplied { animation: cost-pop 0.3s cubic-bezier(0.2, 1.6, 0.4, 1); }
+.card-cost.is-short { color: #ff8a8a; text-shadow: 0 1px 0 #5a0d1a; }
+.card-cost.is-short.is-multiplied { animation: cost-pop 0.3s cubic-bezier(0.2, 1.6, 0.4, 1), cost-shake 0.35s 0.3s ease-out; }
+@keyframes cost-pop { from { transform: scale(1.5); } to { transform: none; } }
+@keyframes cost-shake { 25% { transform: translateX(-3px); } 60% { transform: translateX(3px); } }
+
+/* Carta de fuego (T-004): borde y fondo de brasa, y una llama que titila sobre un montoncito de tierra. */
+.card-fire { border-color: #ff9a4a; background: linear-gradient(180deg, #7a3a22 0%, #4f2216 100%); box-shadow: 0 4px 0 #2e130b, 0 6px 12px rgba(0, 0, 0, 0.3); }
+.card-fire[aria-pressed='true'] { box-shadow: 0 4px 0 #2e130b, 0 0 0 3px rgba(255, 160, 77, 0.4), 0 0 18px rgba(255, 140, 60, 0.55); }
+.card-icon-mound {
+  position: absolute; left: 6px; bottom: 0; width: 30px; height: 10px; border-radius: 50% 50% 40% 40%;
+  background: linear-gradient(180deg, #9a6a42, #6e4628);
+}
+.card-icon-flame {
+  position: absolute; left: 11px; top: 3px; width: 20px; height: 20px;
+  border-radius: 50% 0 50% 50%; transform: rotate(-45deg); transform-origin: 50% 50%;
+  background: radial-gradient(circle at 60% 40%, #fffbe0 0 18%, #ffd04a 40%, #ff7a2a 75%, #e0401c 100%);
+  border: 2px solid #8a2410; box-shadow: 0 0 10px rgba(255, 140, 60, 0.6);
+  animation: flame-flicker 0.9s ease-in-out infinite alternate;
+}
+@keyframes flame-flicker { from { transform: rotate(-45deg) scale(1); } to { transform: rotate(-40deg) scale(1.08, 0.94); } }
 
 /* ---------- Carga ---------- */
 .loading {

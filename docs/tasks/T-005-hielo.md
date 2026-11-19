@@ -7,6 +7,13 @@ El hielo reutiliza todo lo construido en T-004 (carta, mina, infusión). Cambia 
 
 Desde T-006, la disparadora de hielo necesita sus texturas de 1, 2 y 3 cañones (lista "Variante de planta nueva" en `docs/guias/graficos.md`).
 
+Desde T-004 (lista "Elemento nuevo" en `docs/guias/graficos.md`):
+- **Carta e infusión:** `cardPlay` y `playCard` (`match.ts`) ya valen para cualquier elemento. Basta con añadir `'ice'` a `CardId` y su carta en `App.tsx`. El precio "×N" del HUD (`cardPreview`) y "Ya tiene fuego" o "Ya tiene hielo" salen solos.
+- **Mina:** `Mine` y su conteo, detección y explosión ya son comunes (`MINE` en `balance.ts`). En `explode` (`combat.ts`), el hielo hace 0 de daño: falta su ralentización. Faltan también sus texturas, porque `mineTexture` lo pinta como la de fuego.
+- **Balas:** `BulletEffect` es una unión. Se añade `{ element: 'ice', ... }` y su caso en `bulletEffect`, que hoy devuelve null para el hielo. La quemadura (`Burn`, `refreshBurn`) sirve de modelo: el estado en el enemigo, se queda el más fuerte y se reinicia la duración.
+- **Aspecto:** `SHOOTER_PALETTES` y `VARIANT_FX` no tienen hielo. `shooterVariant` pinta el hielo como la normal hasta entonces. `INFUSED_TEXT` ya tiene "¡Hielo!". En `PlantView.infuse`, el hielo solo saca chispas: falta su escarcha.
+- **Casos límite:** "Enemigo quemado y ralentizado a la vez": `Enemy.burn` ya existe y el efecto de hielo irá en un campo propio.
+
 ## Objetivos
 1. **Hielo solo.** Mina que al explotar ralentiza con fuerza en área.
 2. **Hielo infundido.** Las balas ralentizan al enemigo impactado.

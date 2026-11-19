@@ -1,6 +1,7 @@
 import * as Phaser from 'phaser';
 import { BOARD } from '../config/balance';
 import type { BoardPoint } from '../core/board';
+import type { ElementType } from '../core/plants';
 import type { ScreenPoint } from './perspective';
 import { SCENERY, VIEW, WORLD, perspective } from './layout';
 
@@ -29,10 +30,19 @@ export const TEX = {
   sparkle: 'fx-sparkle',
   beam: 'fx-beam',
   ring: 'fx-ring',
-  /** Disparadora con 1, 2 y 3 canones (usar `shooterTexture`). */
-  shooter: ['unit-shooter-1', 'unit-shooter-2', 'unit-shooter-3'],
+  /** Llama suelta: arde sobre un enemigo quemado y sale en las explosiones (T-004). */
+  flame: 'fx-flame',
+  /** Disparadora con 1, 2 y 3 canones, normal y de fuego (usar `shooterTexture`). */
+  shooter: {
+    normal: ['unit-shooter-1', 'unit-shooter-2', 'unit-shooter-3'],
+    fire: ['unit-shooter-fire-1', 'unit-shooter-fire-2', 'unit-shooter-fire-3'],
+  },
+  /** Mina de fuego dormida y en cuenta atras (usar `mineTexture`). */
+  mine: { fire: { idle: 'unit-mine-fire', armed: 'unit-mine-fire-armed' } },
   coin: 'unit-coin',
+  /** Semilla normal y de fuego (usar `seedTexture`). */
   seed: 'unit-seed',
+  fireSeed: 'unit-seed-fire',
   wormHead: 'unit-worm-head',
   wormHeadBite: 'unit-worm-head-bite',
   wormHeadHurt: 'unit-worm-head-hurt',
@@ -72,8 +82,35 @@ export const SHOOTER_DOTS = [
 
 export type ShooterCannons = keyof typeof SHOOTER_BARRELS;
 
-/** Textura de la disparadora con `cannons` canones. */
-export const shooterTexture = (cannons: ShooterCannons): string => TEX.shooter[cannons - 1];
+/** Variantes que tienen arte propio. Se distinguen por el color, no por la forma (guia de graficos, seccion 9). */
+export type ShooterVariant = keyof typeof TEX.shooter;
+
+/**
+ * Variante de textura de una planta segun su elemento. El hielo (T-005) aun no tiene arte: hasta entonces se pinta
+ * como la normal. No hay carta de hielo, asi que en partida no hay plantas ni minas de hielo.
+ */
+export function shooterVariant(element: ElementType | null): ShooterVariant {
+  return element === 'fire' ? 'fire' : 'normal';
+}
+
+/** Textura de la disparadora con `cannons` canones y el elemento `element`. */
+export const shooterTexture = (cannons: ShooterCannons, element: ElementType | null = null): string =>
+  TEX.shooter[shooterVariant(element)][cannons - 1];
+
+/** Textura de la semilla que dispara una planta con `element`. */
+export const seedTexture = (element: ElementType | null): string => (element === 'fire' ? TEX.fireSeed : TEX.seed);
+
+/**
+ * Mina (T-004), en pixeles de su textura (diseno, 160 px por casilla): pies, centro del bulbo y punta de la mecha,
+ * de donde salen las chispas.
+ */
+export const MINE_SIZE = { width: 112, height: 124, footX: 56, footY: 112, bulbY: 78, tipX: 72, tipY: 16 } as const;
+
+/** Textura de la mina: dormida o en cuenta atras. Como las plantas, el hielo (T-005) aun no tiene la suya. */
+export const mineTexture = (_element: ElementType, armed: boolean): string => (armed ? TEX.mine.fire.armed : TEX.mine.fire.idle);
+
+/** Llama suelta: los pies van abajo, en el centro. */
+export const FLAME_SIZE = { width: 32, height: 48, footY: 46 } as const;
 
 /**
  * Gusano (T-002): la cabeza y los anillos van en texturas separadas para que el cuerpo ondule.
@@ -161,9 +198,17 @@ export function registerTextures(scene: Phaser.Scene, scale = 1): void {
   paint(TEX.sparkle, 32, 32, paintSparkle);
   paint(TEX.beam, 200, 900, paintBeam);
   paint(TEX.ring, 64, 64, paintRing);
-  TEX.shooter.forEach((key, i) => paint(key, SHOOTER_SIZE.width, SHOOTER_SIZE.height, (ctx) => paintShooter(ctx, (i + 1) as ShooterCannons)));
+  paint(TEX.flame, FLAME_SIZE.width, FLAME_SIZE.height, paintFlame);
+  for (const variant of Object.keys(TEX.shooter) as ShooterVariant[]) {
+    TEX.shooter[variant].forEach((key, i) =>
+      paint(key, SHOOTER_SIZE.width, SHOOTER_SIZE.height, (ctx) => paintShooter(ctx, (i + 1) as ShooterCannons, SHOOTER_PALETTES[variant])),
+    );
+  }
+  paint(TEX.mine.fire.idle, MINE_SIZE.width, MINE_SIZE.height, (ctx) => paintFireMine(ctx, false));
+  paint(TEX.mine.fire.armed, MINE_SIZE.width, MINE_SIZE.height, (ctx) => paintFireMine(ctx, true));
   paint(TEX.coin, 72, 72, paintCoin);
   paint(TEX.seed, SEED_SIZE.width, SEED_SIZE.height, paintSeed);
+  paint(TEX.fireSeed, SEED_SIZE.width, SEED_SIZE.height, paintFireSeed);
   paint(TEX.wormHead, WORM_SIZE.head.width, WORM_SIZE.head.height, (ctx) => paintWormHead(ctx, 'idle'));
   paint(TEX.wormHeadBite, WORM_SIZE.head.width, WORM_SIZE.head.height, (ctx) => paintWormHead(ctx, 'bite'));
   paint(TEX.wormHeadHurt, WORM_SIZE.head.width, WORM_SIZE.head.height, (ctx) => paintWormHead(ctx, 'hurt'));
@@ -1160,14 +1205,67 @@ function paintFlower(ctx: Ctx, w: number, h: number, variant: number): void {
 // ---------------------------------------------------------------------------
 // Unidades
 
+/** Colores de cada variante de la disparadora. Tallo y hojas de la base son siempre verdes: sigue siendo una planta. */
+interface ShooterPalette {
+  /** Contorno de cabeza, canones y ojo. */
+  outline: string;
+  /** Cabeza: luz, tono y sombra. */
+  head: readonly [string, string, string];
+  /** Canon: arriba y abajo. */
+  tube: readonly [string, string];
+  /** Borde de la boca del canon y su fondo. */
+  mouth: string;
+  bore: string;
+  /** Brasa que brilla en el fondo de cada canon, si tiene. */
+  ember: string | null;
+  /** Hojas del brote de la coronilla. */
+  sprout: string;
+  sproutOutline: string;
+  /** Flor de la de 3 canones: petalos y centro. */
+  flower: readonly [string, string];
+  cheek: string;
+}
+
+const SHOOTER_PALETTES: Record<ShooterVariant, ShooterPalette> = {
+  normal: {
+    outline: '#2a6b22',
+    head: ['#d0f59a', '#80d153', '#4aa236'],
+    tube: ['#9be36c', '#3f9a35'],
+    mouth: '#6cc24a',
+    bore: '#1c3d15',
+    ember: null,
+    sprout: '#62c046',
+    sproutOutline: '#2a6b22',
+    flower: ['#ffb3d1', '#ffd23f'],
+    cheek: 'rgba(255, 130, 130, 0.38)',
+  },
+  // Fuego (T-004): cabeza de guindilla madura, canones de brasa y un brote como una llamita.
+  fire: {
+    outline: '#8a2410',
+    head: ['#fff0b0', '#ff8f3a', '#e0401c'],
+    tube: ['#ffd27a', '#e2581f'],
+    mouth: '#ffa04d',
+    bore: '#4a1208',
+    ember: '#ffcf4a',
+    sprout: '#ffb22e',
+    sproutOutline: '#b5450f',
+    flower: ['#fff3a0', '#ff6a2a'],
+    cheek: 'rgba(255, 70, 50, 0.42)',
+  },
+};
+
+/** Contorno de lo verde de la planta (hojas de la base y puntos del tallo). */
+const LEAF_OUTLINE = '#2a6b22';
+
 /**
- * Disparadora: cabeza verde redonda, canones y hojas a los pies. Mira hacia la derecha, por donde llegan los gusanos.
+ * Disparadora: cabeza redonda, canones y hojas a los pies. Mira hacia la derecha, por donde llegan los gusanos.
  * Al fusionarse (T-006) crece un poco: mas canones, cabeza algo mayor, una hoja mas en la base y en el brote,
  * y la de 3 canones luce una flor en la coronilla. Un punto en el tallo por canon.
+ * Las variantes (fuego, T-004) cambian solo los colores de `palette`: la forma es la misma.
  */
-function paintShooter(ctx: Ctx, cannons: ShooterCannons): void {
+function paintShooter(ctx: Ctx, cannons: ShooterCannons, palette: ShooterPalette): void {
   const { footX, footY } = SHOOTER_SIZE;
-  const outline = '#2a6b22';
+  const { outline } = palette;
   const headX = 76;
   const headY = 80;
   const headR = 44 + cannons * 2;
@@ -1186,7 +1284,7 @@ function paintShooter(ctx: Ctx, cannons: ShooterCannons): void {
     g.addColorStop(1, '#2f7a26');
     ctx.fillStyle = g;
     ctx.fill();
-    ctx.strokeStyle = outline;
+    ctx.strokeStyle = LEAF_OUTLINE;
     ctx.lineWidth = 2;
     ctx.stroke();
   }
@@ -1213,7 +1311,7 @@ function paintShooter(ctx: Ctx, cannons: ShooterCannons): void {
     g.addColorStop(0.6, '#ffe36b');
     g.addColorStop(1, '#e0a92a');
     circle(ctx, dot.x, dot.y, 5, g);
-    ctx.strokeStyle = outline;
+    ctx.strokeStyle = LEAF_OUTLINE;
     ctx.lineWidth = 1.6;
     ctx.beginPath();
     ctx.arc(dot.x, dot.y, 5, 0, Math.PI * 2);
@@ -1224,8 +1322,8 @@ function paintShooter(ctx: Ctx, cannons: ShooterCannons): void {
   for (const barrel of SHOOTER_BARRELS[cannons]) {
     const { y, fromX, mouthX, h } = barrel;
     const tube = ctx.createLinearGradient(0, y - h / 2, 0, y + h / 2);
-    tube.addColorStop(0, '#9be36c');
-    tube.addColorStop(1, '#3f9a35');
+    tube.addColorStop(0, palette.tube[0]);
+    tube.addColorStop(1, palette.tube[1]);
     ctx.fillStyle = tube;
     ctx.strokeStyle = outline;
     ctx.lineWidth = 3;
@@ -1233,18 +1331,21 @@ function paintShooter(ctx: Ctx, cannons: ShooterCannons): void {
     ctx.roundRect(fromX, y - h / 2, mouthX - fromX, h, h * 0.31);
     ctx.fill();
     ctx.stroke();
-    ellipse(ctx, mouthX, y, h * 0.28, h * 0.6, '#6cc24a');
+    ellipse(ctx, mouthX, y, h * 0.28, h * 0.6, palette.mouth);
     ctx.beginPath();
     ctx.ellipse(mouthX, y, h * 0.28, h * 0.6, 0, 0, Math.PI * 2);
     ctx.stroke();
-    ellipse(ctx, mouthX + 2, y, h * 0.16, h * 0.375, '#1c3d15');
+    ellipse(ctx, mouthX + 2, y, h * 0.16, h * 0.375, palette.bore);
+    if (palette.ember) {
+      ellipse(ctx, mouthX + 2.5, y + h * 0.06, h * 0.08, h * 0.2, palette.ember);
+    }
   }
 
   // Cabeza
   const head = ctx.createRadialGradient(headX - 16, headY - 20, 6, headX, headY, headR + 4);
-  head.addColorStop(0, '#d0f59a');
-  head.addColorStop(0.45, '#80d153');
-  head.addColorStop(1, '#4aa236');
+  head.addColorStop(0, palette.head[0]);
+  head.addColorStop(0.45, palette.head[1]);
+  head.addColorStop(1, palette.head[2]);
   circle(ctx, headX, headY, headR, head);
   ctx.strokeStyle = outline;
   ctx.lineWidth = 3.5;
@@ -1257,16 +1358,16 @@ function paintShooter(ctx: Ctx, cannons: ShooterCannons): void {
   const sprout = cannons >= 2 ? [-2.15, -1.6, -1.0] : [-2.0, -1.15];
   for (const angle of sprout) {
     leafShape(ctx, 74, sproutY, 26, 8, angle);
-    ctx.fillStyle = '#62c046';
+    ctx.fillStyle = palette.sprout;
     ctx.fill();
-    ctx.strokeStyle = outline;
+    ctx.strokeStyle = palette.sproutOutline;
     ctx.lineWidth = 2;
     ctx.stroke();
   }
   if (cannons === 3) {
     const fx = 74 + Math.cos(-1.6) * 26;
     const fy = sproutY + Math.sin(-1.6) * 26;
-    smallFlower(ctx, fx, fy, 6, '#ffb3d1', '#ffd23f');
+    smallFlower(ctx, fx, fy, 6, palette.flower[0], palette.flower[1]);
     ctx.strokeStyle = 'rgba(176, 60, 110, 0.55)';
     ctx.lineWidth = 1.2;
     ctx.beginPath();
@@ -1291,9 +1392,192 @@ function paintShooter(ctx: Ctx, cannons: ShooterCannons): void {
     ctx.quadraticCurveTo(72, 46, 84, 53);
     ctx.stroke();
   }
-  ellipse(ctx, 58, 96, 8, 4.5, 'rgba(255, 130, 130, 0.38)');
+  ellipse(ctx, 58, 96, 8, 4.5, palette.cheek);
   // Reflejo en la cabeza
   ellipse(ctx, headX - 22, headY - 28, 12, 7, 'rgba(255, 255, 255, 0.35)', -0.6);
+}
+
+/**
+ * Mina de fuego (T-004): un bulbo de guindilla medio enterrado en un monticulo de tierra, con un rabito
+ * que hace de mecha. Dormida, cierra los ojos y sonrie; en cuenta atras, abre mucho los ojos, la boca
+ * en "o", suda y la mecha chisporrotea.
+ */
+function paintFireMine(ctx: Ctx, armed: boolean): void {
+  const cx = MINE_SIZE.footX;
+  const cy = MINE_SIZE.bulbY;
+  const outline = '#8a2410';
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+
+  // Monticulo de atras
+  ellipse(ctx, cx, MINE_SIZE.footY - 4, 44, 12, '#5e3b20');
+
+  // Rabito con dos hojas y la mecha que sale de el
+  ctx.strokeStyle = '#3f9a35';
+  ctx.lineWidth = 7;
+  ctx.beginPath();
+  ctx.moveTo(cx - 2, cy - 24);
+  ctx.quadraticCurveTo(cx - 4, cy - 38, cx + 6, cy - 44);
+  ctx.stroke();
+  for (const [angle, length] of [
+    [Math.PI + 0.5, 20],
+    [-0.35, 18],
+  ] as const) {
+    leafShape(ctx, cx - 2, cy - 27, length, 7, angle);
+    ctx.fillStyle = '#62c046';
+    ctx.fill();
+    ctx.strokeStyle = LEAF_OUTLINE;
+    ctx.lineWidth = 1.8;
+    ctx.stroke();
+  }
+  ctx.strokeStyle = '#6b4a2a';
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  const { tipX, tipY } = MINE_SIZE;
+  ctx.moveTo(cx + 6, cy - 44);
+  ctx.bezierCurveTo(cx + 14, cy - 50, tipX - 8, tipY + 4, tipX, tipY);
+  ctx.stroke();
+  // Brasa de la mecha: chispa grande en cuenta atras.
+  const spark = ctx.createRadialGradient(tipX, tipY, 0, tipX, tipY, armed ? 13 : 7);
+  spark.addColorStop(0, 'rgba(255, 255, 230, 1)');
+  spark.addColorStop(0.35, armed ? 'rgba(255, 210, 74, 0.95)' : 'rgba(255, 170, 60, 0.9)');
+  spark.addColorStop(1, 'rgba(255, 90, 30, 0)');
+  ctx.fillStyle = spark;
+  ctx.beginPath();
+  ctx.arc(tipX, tipY, armed ? 13 : 7, 0, Math.PI * 2);
+  ctx.fill();
+  if (armed) {
+    ctx.strokeStyle = 'rgba(255, 236, 140, 0.95)';
+    ctx.lineWidth = 2;
+    for (let i = 0; i < 6; i++) {
+      const a = (i / 6) * Math.PI * 2 + 0.3;
+      ctx.beginPath();
+      ctx.moveTo(tipX + Math.cos(a) * 6, tipY + Math.sin(a) * 6);
+      ctx.lineTo(tipX + Math.cos(a) * 12, tipY + Math.sin(a) * 12);
+      ctx.stroke();
+    }
+  }
+
+  // Bulbo
+  const rx = 31;
+  const ry = 29;
+  const body = ctx.createRadialGradient(cx - 11, cy - 13, 3, cx, cy, rx + 4);
+  body.addColorStop(0, armed ? '#fff6c8' : '#ffe6a0');
+  body.addColorStop(0.45, '#ff8f3a');
+  body.addColorStop(1, '#d8361a');
+  ellipse(ctx, cx, cy, rx, ry, body);
+  // Gajos, como una calabacita
+  ctx.strokeStyle = 'rgba(160, 30, 10, 0.35)';
+  ctx.lineWidth = 2.2;
+  for (const dx of [-12, 12]) {
+    ctx.beginPath();
+    ctx.moveTo(cx + dx * 0.4, cy - ry + 3);
+    ctx.quadraticCurveTo(cx + dx * 1.35, cy, cx + dx * 0.55, cy + ry - 4);
+    ctx.stroke();
+  }
+  ctx.strokeStyle = outline;
+  ctx.lineWidth = 3.5;
+  ctx.beginPath();
+  ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+  ctx.stroke();
+
+  // Cara
+  const eyeY = cy - 2;
+  const eyes = [cx - 10, cx + 10];
+  if (armed) {
+    for (const ex of eyes) {
+      ellipse(ctx, ex, eyeY, 7.5, 9, '#ffffff');
+      ctx.strokeStyle = outline;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.ellipse(ex, eyeY, 7.5, 9, 0, 0, Math.PI * 2);
+      ctx.stroke();
+      circle(ctx, ex + 1, eyeY + 1, 3, '#1d1030');
+      circle(ctx, ex, eyeY - 1, 1.1, '#ffffff');
+      // Cejas levantadas de susto
+      ctx.lineWidth = 2.6;
+      ctx.beginPath();
+      ctx.moveTo(ex - 6, eyeY - 14 + (ex < cx ? 2 : -1));
+      ctx.quadraticCurveTo(ex, eyeY - 17, ex + 6, eyeY - 14 + (ex < cx ? -1 : 2));
+      ctx.stroke();
+    }
+    ellipse(ctx, cx, cy + 15, 5, 6, '#4a1208');
+    ctx.strokeStyle = outline;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.ellipse(cx, cy + 15, 5, 6, 0, 0, Math.PI * 2);
+    ctx.stroke();
+    // Gota de sudor
+    ctx.fillStyle = '#bfe9ff';
+    ctx.beginPath();
+    ctx.moveTo(cx + 26, cy - 20);
+    ctx.quadraticCurveTo(cx + 31, cy - 11, cx + 26, cy - 9);
+    ctx.quadraticCurveTo(cx + 21, cy - 11, cx + 26, cy - 20);
+    ctx.fill();
+  } else {
+    ctx.strokeStyle = outline;
+    ctx.lineWidth = 2.6;
+    for (const ex of eyes) {
+      ctx.beginPath();
+      ctx.arc(ex, eyeY - 3, 5.5, 0.2 * Math.PI, 0.8 * Math.PI);
+      ctx.stroke();
+    }
+    ctx.lineWidth = 2.2;
+    ctx.beginPath();
+    ctx.arc(cx, cy + 9, 5, 0.25 * Math.PI, 0.75 * Math.PI);
+    ctx.stroke();
+  }
+  ellipse(ctx, cx - 19, cy + 8, 5.5, 3.5, 'rgba(255, 70, 50, 0.5)');
+  ellipse(ctx, cx + 19, cy + 8, 5.5, 3.5, 'rgba(255, 70, 50, 0.5)');
+  // Reflejo
+  ellipse(ctx, cx - 13, cy - 17, 9, 5, 'rgba(255, 255, 255, 0.5)', -0.6);
+
+  // Labio del monticulo por delante: tapa el pie del bulbo, que queda medio enterrado.
+  const lip = ctx.createLinearGradient(0, MINE_SIZE.footY - 14, 0, MINE_SIZE.footY + 6);
+  lip.addColorStop(0, '#9a6a42');
+  lip.addColorStop(1, '#6e4628');
+  ctx.fillStyle = lip;
+  ctx.beginPath();
+  ctx.moveTo(cx - 44, MINE_SIZE.footY - 4);
+  ctx.quadraticCurveTo(cx - 30, MINE_SIZE.footY - 16, cx, MINE_SIZE.footY - 12);
+  ctx.quadraticCurveTo(cx + 30, MINE_SIZE.footY - 16, cx + 44, MINE_SIZE.footY - 4);
+  ctx.quadraticCurveTo(cx, MINE_SIZE.footY + 10, cx - 44, MINE_SIZE.footY - 4);
+  ctx.fill();
+  for (const [dx, dy, r] of [
+    [-24, -6, 2.4],
+    [-8, -3, 1.8],
+    [14, -5, 2.2],
+    [28, -4, 1.6],
+  ] as const) {
+    circle(ctx, cx + dx, MINE_SIZE.footY + dy, r, '#b88a5e');
+  }
+}
+
+/** Llama: gota de fuego hacia arriba, roja por fuera, amarilla y blanca por dentro. */
+function paintFlame(ctx: Ctx, w: number, h: number): void {
+  const cx = w / 2;
+  const base = FLAME_SIZE.footY - 12;
+  const drop = (top: number, r: number) => {
+    ctx.beginPath();
+    ctx.moveTo(cx, top);
+    ctx.bezierCurveTo(cx + r * 0.45, top + (base - top) * 0.4, cx + r, base - r * 0.6, cx + r, base);
+    ctx.arc(cx, base, r, 0, Math.PI);
+    ctx.bezierCurveTo(cx - r, base - r * 0.6, cx - r * 0.45, top + (base - top) * 0.4, cx, top);
+    ctx.closePath();
+  };
+  const outer = ctx.createRadialGradient(cx, base + 4, 1, cx, base - 6, h * 0.75);
+  outer.addColorStop(0, '#ffd04a');
+  outer.addColorStop(0.45, '#ff7a2a');
+  outer.addColorStop(1, 'rgba(220, 50, 20, 0.85)');
+  drop(2, w / 2 - 3);
+  ctx.fillStyle = outer;
+  ctx.fill();
+  const inner = ctx.createRadialGradient(cx, base + 3, 1, cx, base, 12);
+  inner.addColorStop(0, '#fffbe6');
+  inner.addColorStop(1, '#ffd04a');
+  drop(base - 20, 7);
+  ctx.fillStyle = inner;
+  ctx.fill();
 }
 
 function paintCoin(ctx: Ctx, w: number, h: number): void {
@@ -1360,6 +1644,39 @@ function paintSeed(ctx: Ctx, _w: number, h: number): void {
   ctx.beginPath();
   ctx.ellipse(cx, cy, 10, 8.5, 0, 0, Math.PI * 2);
   ctx.stroke();
+  ellipse(ctx, cx - 3, cy - 3.5, 3.5, 2.2, 'rgba(255, 255, 255, 0.85)', -0.4);
+}
+
+/** Semilla de fuego (T-004): naranja, con una brasa dentro y una estela de llamas. */
+function paintFireSeed(ctx: Ctx, _w: number, h: number): void {
+  const cy = h / 2;
+  const cx = SEED_SIZE.cx;
+  const trail = ctx.createLinearGradient(0, 0, cx - 2, 0);
+  trail.addColorStop(0, 'rgba(255, 120, 40, 0)');
+  trail.addColorStop(0.6, 'rgba(255, 140, 50, 0.6)');
+  trail.addColorStop(1, 'rgba(255, 210, 90, 0.9)');
+  ctx.fillStyle = trail;
+  ctx.beginPath();
+  ctx.moveTo(0, cy - 2);
+  ctx.quadraticCurveTo(cx - 20, cy - 12, cx - 12, cy - 6);
+  ctx.quadraticCurveTo(cx - 8, cy - 11, cx - 2, cy - 8.5);
+  ctx.lineTo(cx - 2, cy + 8.5);
+  ctx.quadraticCurveTo(cx - 9, cy + 10, cx - 13, cy + 5);
+  ctx.quadraticCurveTo(cx - 20, cy + 10, 0, cy + 2);
+  ctx.closePath();
+  ctx.fill();
+
+  const g = ctx.createRadialGradient(cx - 3, cy - 4, 1, cx, cy, 10.5);
+  g.addColorStop(0, '#fff6c8');
+  g.addColorStop(0.5, '#ffb347');
+  g.addColorStop(1, '#e2541f');
+  ellipse(ctx, cx, cy, 10, 8.5, g);
+  ctx.strokeStyle = '#8a2410';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.ellipse(cx, cy, 10, 8.5, 0, 0, Math.PI * 2);
+  ctx.stroke();
+  ellipse(ctx, cx + 2, cy + 1.5, 3.2, 2.6, 'rgba(255, 240, 160, 0.9)');
   ellipse(ctx, cx - 3, cy - 3.5, 3.5, 2.2, 'rgba(255, 255, 255, 0.85)', -0.4);
 }
 

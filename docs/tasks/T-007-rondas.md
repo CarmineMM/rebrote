@@ -35,6 +35,11 @@ Con las mecánicas listas falta la progresión. El diseño está en `docs/specs/
 - [ ] Añadir o cambiar una ronda es editar datos, sin tocar escenas.
 - [ ] `npm test` y `npm run build` pasan.
 
+## Notas de tareas anteriores
+- **T-004:**
+  - Las minas ocupan casilla en `MatchState.plants` (`Sown`) y tienen vida (`MINE.hp`). El escupidor puede atacar a lo primero que haya en su carril con `sownAt`, sea planta o mina. Si la destruye, sale `plantDestroyed` y la mina no explota.
+  - Para desbloquear "fuego solo" (ronda 3) antes que "infundir fuego" (ronda 4), `cardPlay` tendrá que saber qué acciones están desbloqueadas. Hoy la carta de fuego siembra e infunde siempre.
+
 ## Casos límite y riesgos
 - Perder en mitad de una ronda reinicia desde la ronda 1 en el prototipo.
 - Las 7 rondas completas deberían durar entre 10 y 15 minutos. Si se alargan, recortar duración por ronda antes que quitar rondas.

@@ -1,8 +1,9 @@
 import * as Phaser from 'phaser';
 import { BOARD } from '../config/balance';
 import type { BoardPoint, Cell } from '../core/board';
-import type { CannonCount } from '../core/plants';
-import type { Effects, FloatTextOptions } from './effects';
+import type { Shooter } from '../core/plants';
+import { BoardLabel, drawCell, type LabelLine } from './boardMarks';
+import type { Effects } from './effects';
 import { DEPTH, perspective } from './layout';
 import type { ScreenPoint } from './perspective';
 import { SHOOTER_SIZE, TEX, artInv, shooterTexture } from './textures';
@@ -28,9 +29,6 @@ export const DRAG_LOOK = {
   /** Casilla bajo la planta arrastrada: verde si se puede soltar ahi, roja si no. */
   hoverOkColor: 0xb8ff8c,
   hoverBlockedColor: 0xff5a5f,
-  okText: { color: '#efffdf', stroke: '#24561c' },
-  warnText: { color: '#ffd166', stroke: '#5a3d00' },
-  blockedText: { color: '#ff8fa3', stroke: '#5a0d1a' },
 } as const;
 
 /** Lo que pisaria la planta arrastrada con el puntero en `pointer` (mundo). */
@@ -58,26 +56,6 @@ export function dragGround(pointer: ScreenPoint, grab: ScreenPoint, fallbackCell
 const onLawn = (point: BoardPoint | null): boolean =>
   point !== null && point.x > -0.5 && point.x < BOARD.columns + 0.5 && point.y > -0.3 && point.y < BOARD.lanes + 0.3;
 
-/** Pinta el rombo en perspectiva de una casilla. */
-export function drawCell(graphics: Phaser.GameObjects.Graphics, cell: Cell, color: number, fillAlpha: number, lineWidth: number): void {
-  const corners = [
-    perspective.toScreen({ x: cell.col, y: cell.lane }),
-    perspective.toScreen({ x: cell.col + 1, y: cell.lane }),
-    perspective.toScreen({ x: cell.col + 1, y: cell.lane + 1 }),
-    perspective.toScreen({ x: cell.col, y: cell.lane + 1 }),
-  ];
-  graphics.fillStyle(color, fillAlpha).lineStyle(lineWidth, color, 0.95).beginPath();
-  graphics.moveTo(corners[0].x, corners[0].y);
-  for (const c of corners.slice(1)) graphics.lineTo(c.x, c.y);
-  graphics.closePath().fillPath().strokePath();
-}
-
-/** Linea del rotulo sobre la casilla de destino. */
-export interface DragLabelLine {
-  text: string;
-  tone: 'ok' | 'warn' | 'blocked';
-}
-
 /**
  * La planta que el jugador lleva en la mano, su sombra, las casillas de destino y el rotulo de lo que pasara.
  * Vive lo que dura un arrastre: la escena la crea al empezar y la suelta con `dropInto`, `returnTo` o `poof`.
@@ -87,8 +65,7 @@ export class FusionDragView {
   private readonly shadow: Phaser.GameObjects.Image;
   private readonly targets: Phaser.GameObjects.Graphics;
   private readonly hoverMark: Phaser.GameObjects.Graphics;
-  private label?: Phaser.GameObjects.Container;
-  private labelKey = '';
+  private readonly label: BoardLabel;
   private cellWidth: number;
   /** Donde quiere estar la planta (pies, en pantalla); la imagen la sigue con un poco de retraso. */
   private goal: ScreenPoint;
@@ -99,11 +76,12 @@ export class FusionDragView {
   constructor(
     private readonly scene: Phaser.Scene,
     private readonly fx: Effects,
-    cannons: CannonCount,
+    shooter: Shooter,
     foot: ScreenPoint,
     cellWidth: number,
   ) {
     this.cellWidth = cellWidth;
+    this.label = new BoardLabel(scene, fx);
     this.goal = { ...foot };
     this.targets = scene.add.graphics().setDepth(DEPTH.highlight);
     this.hoverMark = scene.add.graphics().setDepth(DEPTH.highlight + 0.5);
@@ -114,7 +92,7 @@ export class FusionDragView {
       .setAlpha(0.55)
       .setDepth(DEPTH.highlight + 1);
     this.plant = scene.add
-      .image(foot.x, foot.y, shooterTexture(cannons))
+      .image(foot.x, foot.y, shooterTexture(shooter.cannons, shooter.element))
       .setOrigin(0.5, SHOOTER_SIZE.footY / SHOOTER_SIZE.height)
       .setScale(this.plantScale(cellWidth))
       .setDepth(DEPTH.floatText - 10);
@@ -144,16 +122,18 @@ export class FusionDragView {
    * Casilla bajo la planta: `ok` en verde, `blocked` en rojo, null sin marca. El rotulo sale encima de `labelAt`
    * (los pies de la planta de esa casilla), por encima de la planta que se lleva en la mano, con una linea por cosa que contar.
    */
-  hover(cell: Cell | null, state: 'ok' | 'blocked' | null, lines: readonly DragLabelLine[] = [], labelAt?: ScreenPoint): void {
+  hover(cell: Cell | null, state: 'ok' | 'blocked' | null, lines: readonly LabelLine[] = [], labelAt?: ScreenPoint): void {
     this.hoverMark.clear();
     if (cell && state) {
       drawCell(this.hoverMark, cell, state === 'ok' ? DRAG_LOOK.hoverOkColor : DRAG_LOOK.hoverBlockedColor, 0.3, 5);
     }
-    const key = cell && labelAt ? `${cell.lane}:${cell.col}:${lines.map((l) => l.text).join('|')}` : '';
-    if (key === this.labelKey) return;
-    this.hideLabel();
-    this.labelKey = key;
-    if (key && labelAt && lines.length > 0) this.showLabel(lines, labelAt);
+    if (!cell || !labelAt || lines.length === 0) {
+      this.label.hide();
+      return;
+    }
+    // Por encima de la planta que se lleva en la mano, que flota sobre la casilla.
+    const key = `${cell.lane}:${cell.col}:${lines.map((l) => l.text).join('|')}`;
+    this.label.show(key, lines, labelAt.x, labelAt.y - this.cellWidth * (DRAG_LOOK.lift + 1.12), this.cellWidth);
   }
 
   /** Cada fotograma: la planta sigue al puntero con un poco de retraso y se inclina segun hacia donde va. */
@@ -226,7 +206,7 @@ export class FusionDragView {
   private release(now = false): void {
     this.released = true;
     this.scene.tweens.killTweensOf([this.plant, this.targets]);
-    this.hideLabel(now);
+    this.label.hide(now);
     for (const mark of [this.targets, this.hoverMark]) {
       this.scene.tweens.add({ targets: mark, alpha: 0, duration: 140, onComplete: () => mark.destroy() });
     }
@@ -235,37 +215,5 @@ export class FusionDragView {
 
   private plantScale(cellWidth: number): number {
     return ((cellWidth * DRAG_LOOK.scale) / SHOOTER_SIZE.width) * artInv();
-  }
-
-  private showLabel(lines: readonly DragLabelLine[], foot: ScreenPoint): void {
-    const w = this.cellWidth;
-    const fontSize = Math.round(Phaser.Math.Clamp(w * 0.2, 18, 28));
-    const tones: Record<DragLabelLine['tone'], FloatTextOptions> = {
-      ok: DRAG_LOOK.okText,
-      warn: DRAG_LOOK.warnText,
-      blocked: DRAG_LOOK.blockedText,
-    };
-    const texts = lines.map((line, i) =>
-      this.scene.add
-        .text(0, i * fontSize * 1.15, line.text, this.fx.textStyle({ fontSize, ...tones[line.tone] }))
-        .setOrigin(0.5, 1),
-    );
-    const top = foot.y - w * (DRAG_LOOK.lift + 1.12) - (lines.length - 1) * fontSize * 1.15;
-    const label = this.scene.add.container(foot.x, top, texts).setDepth(DEPTH.floatText - 1).setScale(0.5).setAlpha(0);
-    this.scene.tweens.add({ targets: label, scale: 1, alpha: 1, duration: 200, ease: 'Back.Out' });
-    this.scene.tweens.add({ targets: label, y: top - w * 0.05, duration: 700, yoyo: true, repeat: -1, ease: 'Sine.InOut', delay: 200 });
-    this.label = label;
-  }
-
-  private hideLabel(now = false): void {
-    const label = this.label;
-    if (!label) return;
-    this.label = undefined;
-    this.scene.tweens.killTweensOf(label);
-    if (now) {
-      label.destroy();
-      return;
-    }
-    this.scene.tweens.add({ targets: label, alpha: 0, scale: 0.7, duration: 120, onComplete: () => label.destroy() });
   }
 }

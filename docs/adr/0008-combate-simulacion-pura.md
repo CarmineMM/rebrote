@@ -23,17 +23,18 @@ Hay tres condiciones previas:
 ## Decisión
 
 ### El estado
-- `MatchState` (`src/game/core/match.ts`) contiene toda la partida: saldo, vidas, plantas con su vida y su recarga, enemigos, balas, generador de enemigos y siguiente id.
+- `MatchState` (`src/game/core/match.ts`) contiene toda la partida: saldo, vidas, plantas con su vida y su recarga, minas con su conteo (T-004), enemigos (con su quemadura), balas, generador de enemigos y siguiente id.
 - Enemigos y balas llevan un id único. Las plantas se identifican por su casilla.
 
 ### El paso
-- `stepCombat(state, dtMs)` (`src/game/core/combat.ts`) avanza la partida y devuelve el estado nuevo y la lista de eventos que pasaron: `shot`, `hit`, `bulletGone`, `bite`, `plantDestroyed`, `enemyKilled` y `enemyEscaped`.
+- `stepCombat(state, dtMs)` (`src/game/core/combat.ts`) avanza la partida y devuelve el estado nuevo y la lista de eventos que pasaron: `shot`, `hit`, `bulletGone`, `bite`, `plantDestroyed`, `enemyKilled` y `enemyEscaped`. Desde T-004, también `mineArmed` y `mineExploded`.
 - Es una función pura: no toca el estado recibido.
 - Un fotograma largo se reparte en pasos de 50 ms como mucho (`MAX_STEP_MS`). Así ninguna bala atraviesa a un gusano y ningún mordisco se pierde.
 - Orden dentro de cada paso:
-  1. Los enemigos muerden la planta que tocan o avanzan. Los que cruzan el borde izquierdo restan una vida.
-  2. Las balas avanzan. Cada una da al primer enemigo vivo de su carril que encuentra en su recorrido, o desaparece al salir del tablero.
-  3. Las plantas recargan y disparan si tienen a quién.
+  1. Los enemigos arden si tienen una quemadura (T-004) y muerden lo que tocan (planta o mina) o avanzan. Los que cruzan el borde izquierdo restan una vida.
+  2. Las minas (T-004) que detectan a un enemigo empiezan su conteo; las que lo terminan explotan. Una mina destruida a mordiscos en el paso 1 ya no explota.
+  3. Las balas avanzan. Cada una da al primer enemigo vivo de su carril que encuentra en su recorrido, o desaparece al salir del tablero. La de fuego deja además una quemadura.
+  4. Las plantas recargan y disparan si tienen a quién.
 - Las balas no llevan objetivo fijo. Por eso una bala cuyo objetivo murió sigue hasta el siguiente.
 - Sin vidas, `stepCombat` y el generador no hacen nada.
 - No se usa la física de Phaser.

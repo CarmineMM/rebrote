@@ -3,7 +3,7 @@ import type { Bullet } from '../core/combat';
 import type { Effects } from './effects';
 import { entityDepth, perspective } from './layout';
 import { PLANT_LOOK, barrelMuzzle, type Muzzle } from './plantView';
-import { SEED_SIZE, TEX, artInv } from './textures';
+import { SEED_SIZE, TEX, artInv, seedTexture } from './textures';
 
 const BULLET_LOOK = {
   /** Pixeles de diseno por casilla de la textura de la semilla (como la disparadora). */
@@ -26,6 +26,8 @@ export class BulletView {
   private readonly minX: number;
   /** Altura de vuelo sobre el suelo, en anchos de casilla: la de la boca del canon. */
   private readonly up: number;
+  /** Semilla de fuego (T-004): otra textura y revienta en llamas. */
+  private readonly fiery: boolean;
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -38,6 +40,7 @@ export class BulletView {
     this.cellWidth = perspective.cellWidthAt({ x: bullet.x, y: this.footY });
     this.minX = fresh ? bullet.x + muzzle.x : -Infinity;
     this.up = muzzle.up;
+    this.fiery = bullet.effect?.element === 'fire';
     const depth = entityDepth(perspective.toScreen({ x: bullet.x, y: this.footY }).y) + 0.5;
     const scale = (this.cellWidth / BULLET_LOOK.unitsPerCell) * BULLET_LOOK.size * artInv();
 
@@ -47,7 +50,7 @@ export class BulletView {
       .setAlpha(0.7)
       .setDepth(depth - 0.1);
     this.seed = scene.add
-      .image(0, 0, TEX.seed)
+      .image(0, 0, seedTexture(bullet.effect?.element ?? null))
       .setOrigin(SEED_SIZE.cx / SEED_SIZE.width, 0.5)
       .setScale(fresh ? scale * 0.3 : scale)
       .setDepth(depth);
@@ -61,13 +64,18 @@ export class BulletView {
     this.shadow.setPosition(ground.x, ground.y);
   }
 
-  /** Impacto: la semilla revienta en jugo verde con un anillo. */
+  /** Impacto: la semilla revienta en jugo verde con un anillo; la de fuego, en brasas con un anillo naranja. */
   impact(): void {
     const { x, y } = this.seed;
-    this.fx.juice(x, y, 6);
+    if (this.fiery) {
+      // Solo brasas: una fusionada dispara tres semillas a la vez y las llamas taparian al gusano.
+      this.fx.embers(x, y, 5);
+    } else {
+      this.fx.juice(x, y, 6);
+    }
     // Por encima del gusano al que le da, pero por debajo de lo que esta en el carril de delante.
-    // Pequeno, lima y translucido: con varias plantas dando al mismo gusano no debe taparle la cara.
-    this.fx.ring(x, y, this.cellWidth * 0.26, 0xb9ec5c, this.seed.depth + 5, 170, 0.5);
+    // Pequeno y translucido: con varias plantas dando al mismo gusano no debe taparle la cara.
+    this.fx.ring(x, y, this.cellWidth * 0.26, this.fiery ? 0xffa04d : 0xb9ec5c, this.seed.depth + 5, 170, 0.5);
     this.scene.tweens.killTweensOf(this.seed);
     this.shadow.destroy();
     this.scene.tweens.add({

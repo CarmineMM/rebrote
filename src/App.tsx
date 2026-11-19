@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { CardId } from './game/core/match';
-import { EventBus, GameEvents } from './game/EventBus';
+import { EventBus, GameEvents, type CardPreview } from './game/EventBus';
 import { Balance } from './ui/Balance';
 import { Card } from './ui/Card';
 import { DefeatScreen } from './ui/DefeatScreen';
@@ -19,6 +19,7 @@ export function App() {
   const [balance, setBalance] = useState<number | null>(null);
   const [lives, setLives] = useState<number | null>(null);
   const [selected, setSelected] = useState<CardId | null>(null);
+  const [preview, setPreview] = useState<CardPreview | null>(null);
   const [paused, setPaused] = useState(false);
   const [lost, setLost] = useState(false);
   const lostRef = useRef(lost);
@@ -39,6 +40,7 @@ export function App() {
     EventBus.on(GameEvents.balanceChanged, setBalance);
     EventBus.on(GameEvents.livesChanged, setLives);
     EventBus.on(GameEvents.selectionChanged, setSelected);
+    EventBus.on(GameEvents.cardPreview, setPreview);
     EventBus.on(GameEvents.matchLost, onLost);
     // Si la escena arranco antes que el HUD, que reenvie el estado.
     EventBus.emit(GameEvents.stateRequested);
@@ -47,6 +49,7 @@ export function App() {
       EventBus.off(GameEvents.balanceChanged, setBalance);
       EventBus.off(GameEvents.livesChanged, setLives);
       EventBus.off(GameEvents.selectionChanged, setSelected);
+      EventBus.off(GameEvents.cardPreview, setPreview);
       EventBus.off(GameEvents.matchLost, onLost);
     };
   }, []);
@@ -102,6 +105,13 @@ export function App() {
       <header className="hud" aria-hidden={paused || lost}>
         <div className="seed-tray" aria-label="Cartas">
           <Card card="shooter" label="Disparadora" balance={balance} selected={selected === 'shooter'} />
+          <Card
+            card="fire"
+            label="Fuego"
+            balance={balance}
+            selected={selected === 'fire'}
+            preview={preview?.card === 'fire' ? preview : null}
+          />
         </div>
         <div className="hud-right">
           <Lives lives={lives} />

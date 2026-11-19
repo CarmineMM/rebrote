@@ -1,10 +1,10 @@
 import * as Phaser from 'phaser';
 import type { Cell } from '../core/board';
-import type { CannonCount } from '../core/plants';
+import type { CannonCount, ElementType, Shooter } from '../core/plants';
 import type { ScreenPoint } from './perspective';
 import { type Effects, mixColor } from './effects';
 import { entityDepth, perspective } from './layout';
-import { SHOOTER_BARRELS, SHOOTER_DOTS, SHOOTER_SIZE, TEX, artInv, shooterTexture } from './textures';
+import { SHOOTER_BARRELS, SHOOTER_DOTS, SHOOTER_SIZE, TEX, artInv, shooterTexture, shooterVariant, type ShooterVariant } from './textures';
 
 /** Como se coloca y se ve la disparadora. Son medidas de aspecto, en anchos de casilla. */
 export const PLANT_LOOK = {
@@ -21,7 +21,21 @@ export const PLANT_LOOK = {
   dimAmount: 0.55,
   /** La planta que se esta arrastrando se queda en su casilla (sigue en combate), medio transparente. */
   liftedAlpha: 0.35,
+  /** La de fuego suelta una brasa cada tanto (ms en Alto; mas espaciadas en Bajo). */
+  emberEveryMs: 900,
 } as const;
+
+/** Colores de los efectos de cada variante: fogonazo del canon y destellos al fusionarse o infundirse. */
+const VARIANT_FX: Record<ShooterVariant, { muzzle: number; muzzleGlow: number; burst: number; burstGlow: number }> = {
+  normal: { muzzle: 0xd6ff96, muzzleGlow: 0xc8ff8a, burst: 0xc8ff8a, burstGlow: 0xd6ff96 },
+  fire: { muzzle: 0xffc46b, muzzleGlow: 0xff9a3d, burst: 0xffa04d, burstGlow: 0xffd27a },
+};
+
+/** Texto que salta al infundir cada elemento. */
+const INFUSED_TEXT: Record<ElementType, { text: string; color: string; stroke: string }> = {
+  fire: { text: '¡Fuego!', color: '#ffe3a0', stroke: '#8a2410' },
+  ice: { text: '¡Hielo!', color: '#e6f7ff', stroke: '#1f5a8a' },
+};
 
 /** Boca de un canon respecto a los pies, en anchos de casilla: hacia delante (`x`) y hacia arriba (`up`). */
 export interface Muzzle {
@@ -62,7 +76,10 @@ export class PlantView {
   private readonly cellWidth: number;
   private readonly scale: number;
   private cannons: CannonCount;
+  private element: ElementType | null;
   private wiltTint = 0xffffff;
+  /** Brasas en reposo de la planta de fuego. */
+  private embers?: Phaser.Time.TimerEvent;
   private dimmed = false;
   private flashTimer?: Phaser.Time.TimerEvent;
   private liftTween?: Phaser.Tweens.Tween;
@@ -71,7 +88,7 @@ export class PlantView {
     private readonly scene: Phaser.Scene,
     private readonly fx: Effects,
     cell: Cell,
-    cannons: CannonCount,
+    shooter: Shooter,
     hpRatio: number,
     sprout: boolean,
   ) {
@@ -79,7 +96,8 @@ export class PlantView {
     this.base = screen;
     this.cellWidth = cellWidth;
     this.scale = scale;
-    this.cannons = cannons;
+    this.cannons = shooter.cannons;
+    this.element = shooter.element;
     const depth = entityDepth(screen.y);
 
     this.shadow = scene.add
@@ -87,9 +105,10 @@ export class PlantView {
       .setDisplaySize(cellWidth * 0.8, cellWidth * 0.26)
       .setAlpha(sprout ? 0 : 1)
       .setDepth(depth - 0.5);
-    this.body = scene.add.image(0, 0, shooterTexture(cannons)).setOrigin(0.5, SHOOTER_SIZE.footY / SHOOTER_SIZE.height);
+    this.body = scene.add.image(0, 0, shooterTexture(this.cannons, this.element)).setOrigin(0.5, SHOOTER_SIZE.footY / SHOOTER_SIZE.height);
     this.holder = scene.add.container(screen.x, screen.y, [this.body]).setDepth(depth);
     this.setWilt(hpRatio);
+    this.startEmbers();
 
     if (!sprout) {
       this.body.setScale(scale);
@@ -149,8 +168,9 @@ export class PlantView {
     const depth = this.holder.depth + 0.6;
     // Con varios canones, fogonazos algo mas pequenos: salen a la vez y no deben tapar la cara.
     const size = this.cannons === 1 ? 1 : 0.75;
-    this.fx.ring(muzzle.x, muzzle.y, this.cellWidth * 0.3 * size, 0xd6ff96, depth, 180, 0.6);
-    this.fx.glow(muzzle.x, muzzle.y, this.cellWidth * 0.4 * size, 0xc8ff8a, depth, 160);
+    const colors = VARIANT_FX[shooterVariant(this.element)];
+    this.fx.ring(muzzle.x, muzzle.y, this.cellWidth * 0.3 * size, colors.muzzle, depth, 180, 0.6);
+    this.fx.glow(muzzle.x, muzzle.y, this.cellWidth * 0.4 * size, colors.muzzleGlow, depth, 160);
   }
 
   /** Al recibir un mordisco: se encoge hacia atras, destella y pierde unas hojas. Se marchita segun la vida que le queda. */
@@ -202,27 +222,14 @@ export class PlantView {
    */
   fuse(cannons: CannonCount, hpRatio: number): void {
     this.cannons = cannons;
-    this.flashTimer?.remove();
-    this.liftTween?.stop();
-    this.scene.tweens.killTweensOf(this.body);
-    this.body.setTexture(shooterTexture(cannons)).setAlpha(1).setAngle(0).setScale(this.scale * 1.3, this.scale * 0.62);
-    this.setWilt(hpRatio);
-    this.flash(140);
-    this.scene.tweens.add({
-      targets: this.body,
-      scaleX: this.scale,
-      scaleY: this.scale,
-      duration: 700,
-      ease: 'Elastic.Out',
-      easeParams: [1.2, 0.45],
-      onComplete: () => this.breathe(),
-    });
+    this.morph(hpRatio);
 
     const w = this.cellWidth;
     const depth = this.holder.depth + 0.7;
     const middle = { x: this.base.x, y: this.base.y - w * 0.5 };
-    this.fx.ring(middle.x, middle.y, w * 1.25, 0xc8ff8a, depth, 420, 0.85);
-    this.fx.glow(middle.x, middle.y, w * 1.4, 0xd6ff96, depth, 420);
+    const colors = VARIANT_FX[shooterVariant(this.element)];
+    this.fx.ring(middle.x, middle.y, w * 1.25, colors.burst, depth, 420, 0.85);
+    this.fx.glow(middle.x, middle.y, w * 1.4, colors.burstGlow, depth, 420);
     this.fx.sparkles(middle.x, middle.y, 16);
     this.fx.leaves(middle.x, this.base.y - w * 0.25, 8);
     // El punto nuevo del tallo destella.
@@ -233,8 +240,35 @@ export class PlantView {
     this.fx.sparkles(dotX, dotY, 6);
   }
 
+  /**
+   * Infundida con un elemento (T-004): las llamas suben por la planta, que se aplasta, destella,
+   * cambia a la textura de su variante y rebota. Como al fusionarse, va sobre el cuerpo.
+   */
+  infuse(element: ElementType): void {
+    this.element = element;
+    this.morph();
+    const w = this.cellWidth;
+    const depth = this.holder.depth + 0.7;
+    const middle = { x: this.base.x, y: this.base.y - w * 0.5 };
+    const colors = VARIANT_FX[shooterVariant(element)];
+    if (element === 'fire') {
+      this.fx.fire(this.base.x, this.base.y - w * 0.1, 14);
+      this.fx.fire(middle.x, middle.y, 8);
+      this.fx.embers(middle.x, middle.y, 12);
+    } else {
+      // El hielo (T-005) pondra su escarcha.
+      this.fx.sparkles(middle.x, middle.y, 16);
+    }
+    this.fx.ring(middle.x, middle.y, w * 1.3, colors.burst, depth, 460, 0.9);
+    this.fx.glow(middle.x, middle.y, w * 1.5, colors.burstGlow, depth, 460);
+    const label = INFUSED_TEXT[element];
+    this.fx.floatText(label.text, this.base.x, this.base.y - w * 1.05, label);
+    this.startEmbers();
+  }
+
   /** Se fue a fusionarse con otra: sale de su casilla estirandose hacia arriba y deja un poco de tierra. */
   uproot(): void {
+    this.embers?.remove();
     this.flashTimer?.remove();
     this.scene.tweens.killTweensOf([this.holder, this.body, this.shadow]);
     this.fx.dirt(this.base.x, this.base.y, 10);
@@ -253,6 +287,7 @@ export class PlantView {
 
   /** Destruida: se aplasta contra el suelo soltando hojas y tierra. */
   die(): void {
+    this.embers?.remove();
     this.flashTimer?.remove();
     this.scene.tweens.killTweensOf([this.holder, this.body, this.shadow]);
     this.body.setTintMode(Phaser.TintModes.MULTIPLY).setTint(this.wiltTint);
@@ -268,6 +303,47 @@ export class PlantView {
       onComplete: () => this.holder.destroy(),
     });
     this.scene.tweens.add({ targets: this.shadow, alpha: 0, duration: 300, onComplete: () => this.shadow.destroy() });
+  }
+
+  /**
+   * Cambio de aspecto con rebote (fusionarse, infundirse): se aplasta, destella, toma la textura de sus canones
+   * y su elemento, y rebota hasta su tamano. Sin `hpRatio`, el marchitarse se queda como estaba.
+   */
+  private morph(hpRatio?: number): void {
+    this.flashTimer?.remove();
+    this.liftTween?.stop();
+    this.scene.tweens.killTweensOf(this.body);
+    this.body
+      .setTexture(shooterTexture(this.cannons, this.element))
+      .setAlpha(1)
+      .setAngle(0)
+      .setScale(this.scale * 1.3, this.scale * 0.62);
+    if (hpRatio !== undefined) this.setWilt(hpRatio);
+    this.flash(140);
+    this.scene.tweens.add({
+      targets: this.body,
+      scaleX: this.scale,
+      scaleY: this.scale,
+      duration: 700,
+      ease: 'Elastic.Out',
+      easeParams: [1.2, 0.45],
+      onComplete: () => this.breathe(),
+    });
+  }
+
+  /** La de fuego suelta brasas de la cabeza de vez en cuando; asi se ve que arde aunque no dispare. */
+  private startEmbers(): void {
+    if (this.element !== 'fire' || this.embers) return;
+    const delay = this.fx.ambientDelay(PLANT_LOOK.emberEveryMs);
+    this.embers = this.scene.time.addEvent({
+      delay,
+      startAt: Math.random() * delay,
+      loop: true,
+      callback: () => {
+        const w = this.cellWidth;
+        this.fx.ember(this.base.x + Phaser.Math.FloatBetween(-0.2, 0.15) * w, this.base.y - w * Phaser.Math.FloatBetween(0.75, 0.95));
+      },
+    });
   }
 
   private breathe(): void {

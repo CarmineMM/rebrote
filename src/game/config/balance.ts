@@ -97,8 +97,35 @@ export const LEVELING = {
   fireRatePerLevel: 0.02,
 } as const;
 
-export const FIRE_MINE = {
+/**
+ * Elemento sembrado solo en una casilla vacia: una mina (T-004). Lo comun a fuego y hielo; lo que hace
+ * al explotar va en cada elemento. Distancias en casillas, medidas entre el centro de la mina y el del enemigo.
+ */
+export const MINE = {
+  /** Vida propia: los gusanos la muerden (y el escupidor de T-007 le dispara). PROVISIONAL. */
+  hp: 100,
+  /** Desde que detecta a un enemigo hasta que explota. */
   countdownMs: 2000,
+  /** Un enemigo a esta distancia o menos empieza el conteo. PROVISIONAL. */
+  detectRadius: 1.1,
+  /** Al explotar alcanza a todos los enemigos a esta distancia o menos (tambien en los carriles de al lado). PROVISIONAL. */
+  blastRadius: 1.5,
+} as const;
+
+/**
+ * Fuego (T-004). Solo, la mina dana en area. Infundido, cada semilla quema al enemigo que toca.
+ * La quemadura no se acumula: se queda la mas fuerte y un nuevo impacto reinicia su duracion.
+ */
+export const FIRE = {
+  /** Dano de la explosion de la mina a cada enemigo alcanzado. PROVISIONAL. */
+  blastDamage: 200,
+  /**
+   * Dano por segundo de la quemadura de una disparadora de fuego de un canon y nivel 1. Crece con el disparo
+   * entero (`damageMultiplier`): infundir N canones cuesta N fuegos y quema en proporcion. PROVISIONAL.
+   */
+  burnDps: 8,
+  /** Lo que dura la quemadura desde el ultimo impacto. PROVISIONAL. */
+  burnMs: 3000,
 } as const;
 
 export const WORLD_1 = {

@@ -7,7 +7,7 @@ Una task por archivo. El tamaño es orientativo.
 | T-001 | [Tablero] Sembrar disparadoras con moneda y HUD | Completada (19 nov 2026) | M | Ninguna | Ninguna (D-01 cerrada) |
 | T-002 | [Combate] Gusanos, disparos y derrota | Completada (19 nov 2026) | M | T-001 | D-07 |
 | T-003 | [Plantas] Subir de nivel | Pendiente | S | T-002 | D-03, D-05 |
-| T-004 | [Elementos] Fuego: mina e infusión | Pendiente | M | T-002 | D-04 |
+| T-004 | [Elementos] Fuego: mina e infusión | Completada (19 nov 2026) | M | T-002 | Ninguna (D-04 cerrada) |
 | T-005 | [Elementos] Hielo: mina e infusión | Pendiente | S | T-004 | D-06 |
 | T-006 | [Plantas] Fusionar por arrastre | Completada (19 nov 2026) | M | T-002 | Ninguna (D-02 cerrada) |
 | T-007 | [Rondas] Las 7 rondas del mundo 1 | Pendiente | L | T-003 a T-006 | Ninguna |

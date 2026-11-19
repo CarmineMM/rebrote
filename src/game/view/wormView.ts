@@ -3,7 +3,7 @@ import { ENEMIES } from '../config/balance';
 import type { Enemy } from '../core/combat';
 import type { Effects } from './effects';
 import { entityDepth, perspective } from './layout';
-import { TEX, WORM_SIZE, artInv } from './textures';
+import { FLAME_SIZE, TEX, WORM_SIZE, artInv } from './textures';
 
 /**
  * Aspecto del gusano. Las medidas locales son pixeles de diseno con 160 por casilla, como la disparadora.
@@ -24,6 +24,17 @@ const WORM_LOOK = {
   /** Ondas del cuerpo por casilla recorrida: el gusano "pisa" al avanzar y se queda quieto al morder. */
   wavesPerCell: 3.4,
   humpHeight: 7,
+  /** Quemado (T-004): llamas sobre la cabeza y el lomo (respecto a la cabeza y al segundo anillo), y tinte. */
+  flames: [
+    { x: 4, y: -30, scale: 1.45 },
+    { x: 2, y: -20, scale: 1.1 },
+  ],
+  /** Se suma al color del cuerpo mientras arde (tinte aditivo): el morado tira a rojo encendido. */
+  burnTint: 0x5a1e00,
+  /** Mientras arde pone cara de "ay" y suelta brasas cada tanto: asi se ve que sigue perdiendo vida. */
+  burnWinceMs: 700,
+  /** Muerto quemado: queda tostado un instante antes de deshacerse. */
+  charredTint: 0x8a6458,
 } as const;
 
 /** Valor animable suelto: cada reaccion tiene el suyo y se puede cortar sin tocar las demas. */
@@ -53,7 +64,12 @@ export class WormView {
   private readonly lunge: Pulse = { v: 0 };
   private readonly hurt: Pulse = { v: 0 };
   private readonly kick: Pulse = { v: 0 };
+  /** Salto al recibir una explosion. */
+  private readonly hop: Pulse = { v: 0 };
   private flashTimer?: Phaser.Time.TimerEvent;
+  private readonly flames: Phaser.GameObjects.Image[];
+  private burning = false;
+  private burnTimer?: Phaser.Time.TimerEvent;
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -77,8 +93,15 @@ export class WormView {
       .image(WORM_LOOK.head.x, WORM_LOOK.head.y, TEX.wormHead)
       .setOrigin(head.cx / head.width, head.cy / head.height)
       .setScale(artInv());
+    // Llamas del quemado: ocultas hasta que arde. Van por encima del cuerpo.
+    this.flames = WORM_LOOK.flames.map(() =>
+      scene.add
+        .image(0, 0, TEX.flame)
+        .setOrigin(0.5, FLAME_SIZE.footY / FLAME_SIZE.height)
+        .setVisible(false),
+    );
     // De la cola a la cabeza: cada anillo tapa al de atras y la cabeza va encima de todo.
-    this.holder = scene.add.container(ground.x, ground.y, [...this.segments, this.head]).setDepth(depth);
+    this.holder = scene.add.container(ground.x, ground.y, [...this.segments, this.head, ...this.flames]).setDepth(depth);
 
     if (emerge) this.emerge(ground);
     this.sync(enemy);
@@ -99,8 +122,9 @@ export class WormView {
     const lunge = this.lunge.v;
 
     const grow = this.scale * (0.3 + 0.7 * rise);
+    const hop = Math.sin(this.hop.v * Math.PI) * 26 * this.scale;
     this.holder
-      .setPosition(ground.x + this.kick.v * 10 * this.scale, ground.y + (1 - rise) * 20 * this.scale)
+      .setPosition(ground.x + this.kick.v * 10 * this.scale, ground.y + (1 - rise) * 20 * this.scale - hop)
       .setScale(grow * (1 + hurt * 0.1), grow * (1 - hurt * 0.1));
     this.shadow.setPosition(ground.x, ground.y).setAlpha(Math.min(1, rise));
 
@@ -117,6 +141,13 @@ export class WormView {
       .setPosition(WORM_LOOK.head.x + lean * 10 - lunge * 16, WORM_LOOK.head.y - lean * 7 + lunge * 9 + bob)
       .setAngle(lean * 10 - lunge * 12 + Math.sin(this.phase) * 4 * this.walk);
     this.setHead(hurt > 0.25 ? TEX.wormHeadHurt : lunge > 0.45 ? TEX.wormHead : windup > 0.35 ? TEX.wormHeadBite : TEX.wormHead);
+
+    this.setBurning(enemy.burn !== null);
+    if (this.burning) {
+      const [onHead, onBack] = WORM_LOOK.flames;
+      this.flames[0].setPosition(this.head.x + onHead.x, this.head.y + onHead.y);
+      this.flames[1].setPosition(this.segments[1].x + onBack.x, this.segments[1].y + onBack.y);
+    }
   }
 
   /** Mordisco: la cabeza se lanza hacia delante y cierra la boca. */
@@ -131,8 +162,17 @@ export class WormView {
     this.flash();
   }
 
-  /** Sin vida: destello, se infla un instante y se encoge soltando pixeles. */
+  /** Alcanzado por una explosion (mina, T-004): golpe fuerte, salto y retroceso. */
+  blasted(): void {
+    this.pulse(this.hurt, 420);
+    this.pulse(this.kick, 320);
+    this.pulse(this.hop, 380);
+    this.flash();
+  }
+
+  /** Sin vida: destello, se infla un instante y se encoge soltando pixeles. Si ardia, queda tostado y humea. */
   die(): void {
+    const charred = this.burning;
     this.stopReactions();
     const parts = [this.head, ...this.segments];
     parts.forEach((part) => part.setTint(0xffffff).setTintMode(Phaser.TintModes.FILL));
@@ -140,6 +180,10 @@ export class WormView {
     const x = this.holder.x;
     const y = this.holder.y - 45 * this.scale;
     const depth = this.holder.depth + 0.5;
+    if (charred) {
+      this.fx.smoke(x, y, 6);
+      this.fx.embers(x, y, 8);
+    }
     this.fx.bits(x, y, 16);
     this.fx.ring(x, y, this.cellWidth * 0.9, 0xd6b8ff, depth, 300);
     this.fx.glow(x, y, this.cellWidth, 0x39ff88, depth, 320);
@@ -150,7 +194,7 @@ export class WormView {
       duration: 90,
       ease: 'Quad.Out',
       onComplete: () => {
-        parts.forEach((part) => part.clearTint());
+        parts.forEach((part) => (charred ? part.setTintMode(Phaser.TintModes.MULTIPLY).setTint(WORM_LOOK.charredTint) : part.clearTint()));
         this.scene.tweens.add({
           targets: this.holder,
           scaleX: 0,
@@ -212,6 +256,62 @@ export class WormView {
     this.fx.glow(ground.x, ground.y, this.cellWidth * 1.1, 0x39ff88, this.holder.depth - 0.4, 420);
   }
 
+  /**
+   * Empieza o deja de arder: llamas que titilan, un tinte anaranjado y, cada tanto, cara de "ay" con brasas.
+   * Sigue al estado (`enemy.burn`), asi que vale tambien al continuar la partida.
+   */
+  private setBurning(burning: boolean): void {
+    if (burning === this.burning) return;
+    this.burning = burning;
+    this.scene.tweens.killTweensOf(this.flames);
+    if (burning) {
+      this.flames.forEach((flame, i) => {
+        const base = WORM_LOOK.flames[i].scale * artInv();
+        flame.setVisible(true).setAlpha(0.95).setScale(base * 0.3);
+        this.scene.tweens.add({ targets: flame, scaleX: base, scaleY: base, duration: 180, ease: 'Back.Out' });
+        this.scene.tweens.add({
+          targets: flame,
+          scaleY: { from: base * 0.82, to: base * 1.18 },
+          alpha: { from: 0.8, to: 1 },
+          duration: Phaser.Math.Between(110, 160),
+          yoyo: true,
+          repeat: -1,
+          delay: 180 + i * 60,
+        });
+      });
+      this.fx.fire(this.holder.x, this.holder.y - 50 * this.scale, 5);
+      this.burnTimer = this.scene.time.addEvent({
+        delay: WORM_LOOK.burnWinceMs,
+        loop: true,
+        callback: () => {
+          this.pulse(this.hurt, 200);
+          this.fx.embers(this.holder.x - 20 * this.scale, this.holder.y - 70 * this.scale, 3);
+        },
+      });
+    } else {
+      this.burnTimer?.remove();
+      this.burnTimer = undefined;
+      this.scene.tweens.add({
+        targets: this.flames,
+        scaleX: 0,
+        scaleY: 0,
+        alpha: 0,
+        duration: 220,
+        onComplete: () => this.flames.forEach((flame) => flame.setVisible(false)),
+      });
+      this.fx.smoke(this.holder.x, this.holder.y - 60 * this.scale, 3);
+    }
+    if (!this.flashTimer) this.applyRestingTint();
+  }
+
+  /** Tinte de reposo: anaranjado mientras arde. */
+  private applyRestingTint(): void {
+    for (const part of [this.head, ...this.segments]) {
+      if (this.burning) part.setTintMode(Phaser.TintModes.ADD).setTint(WORM_LOOK.burnTint);
+      else part.clearTint();
+    }
+  }
+
   private pulse(value: Pulse, durationMs: number): void {
     this.scene.tweens.killTweensOf(value);
     value.v = 1;
@@ -224,14 +324,16 @@ export class WormView {
     parts.forEach((part) => part.setTint(0xffffff).setTintMode(Phaser.TintModes.FILL));
     this.flashTimer = this.scene.time.delayedCall(70, () => {
       this.flashTimer = undefined;
-      parts.forEach((part) => part.clearTint());
+      this.applyRestingTint();
     });
   }
 
   private stopReactions(): void {
     this.flashTimer?.remove();
     this.flashTimer = undefined;
-    this.scene.tweens.killTweensOf([this.rise, this.lunge, this.hurt, this.kick]);
+    this.burnTimer?.remove();
+    this.burnTimer = undefined;
+    this.scene.tweens.killTweensOf([this.rise, this.lunge, this.hurt, this.kick, this.hop]);
   }
 
   private fadeShadow(durationMs: number): void {

@@ -40,6 +40,9 @@ export class Effects {
   private readonly leafBurst: Phaser.GameObjects.Particles.ParticleEmitter;
   private readonly bitBurst: Phaser.GameObjects.Particles.ParticleEmitter;
   private readonly juiceBurst: Phaser.GameObjects.Particles.ParticleEmitter;
+  private readonly fireBurst: Phaser.GameObjects.Particles.ParticleEmitter;
+  private readonly emberBurst: Phaser.GameObjects.Particles.ParticleEmitter;
+  private readonly smokeBurst: Phaser.GameObjects.Particles.ParticleEmitter;
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -113,6 +116,48 @@ export class Effects {
       },
       DEPTH.foreground - 1,
     );
+    // Fuego (T-004): llamas que saltan y suben, brasas que flotan y humo que se abre. Las llamas van con mezcla
+    // normal: aditivas, sobre el cesped claro se quedarian blancas. Las brasas, pequenas, si brillan.
+    const emberBlend = quality.glows ? Phaser.BlendModes.ADD : Phaser.BlendModes.NORMAL;
+    this.fireBurst = burst(
+      TEX.flame,
+      {
+        speed: { min: 60, max: 240 },
+        angle: { min: -175, max: -5 },
+        gravityY: -160,
+        lifespan: { min: 320, max: 620 },
+        scale: { start: 1.1 * artInv(), end: 0.2 * artInv() },
+        alpha: { start: 1, end: 0 },
+        tint: [0xffffff, 0xffe0a0, 0xffc080],
+      },
+      DEPTH.foreground - 1,
+    );
+    this.emberBurst = burst(
+      TEX.dot,
+      {
+        speed: { min: 15, max: 90 },
+        angle: { min: -130, max: -50 },
+        gravityY: -70,
+        lifespan: { min: 550, max: 1100 },
+        scale: { start: 0.45 * artInv(), end: 0 },
+        tint: [0xffd166, 0xff8a3d, 0xffb35c, 0xfff1a8],
+        blendMode: emberBlend,
+      },
+      DEPTH.foreground - 1,
+    );
+    this.smokeBurst = burst(
+      TEX.glow,
+      {
+        speed: { min: 15, max: 70 },
+        angle: { min: -120, max: -60 },
+        gravityY: -40,
+        lifespan: { min: 700, max: 1200 },
+        scale: { start: 0.25 * artInv(), end: 0.75 * artInv() },
+        alpha: { start: 0.5, end: 0 },
+        tint: [0x4f4440, 0x6b5a55, 0x3e3431],
+      },
+      DEPTH.foreground - 2,
+    );
   }
 
   /** Particulas de respuesta a una accion: menos en Bajo, pero nunca ninguna (son parte del gesto). */
@@ -138,6 +183,49 @@ export class Effects {
 
   juice(x: number, y: number, base: number): void {
     this.juiceBurst.explode(this.count(base), x, y);
+  }
+
+  fire(x: number, y: number, base: number): void {
+    this.fireBurst.explode(this.count(base), x, y);
+  }
+
+  embers(x: number, y: number, base: number): void {
+    this.emberBurst.explode(this.count(base), x, y);
+  }
+
+  smoke(x: number, y: number, base: number): void {
+    this.smokeBurst.explode(this.count(base), x, y);
+  }
+
+  /**
+   * Una sola brasa, para lo que arde en reposo (disparadora de fuego, gusano quemado). Es ambiente, no respuesta:
+   * quien la llama la espacia con `ambientDelay`, asi que en Bajo salen menos.
+   */
+  ember(x: number, y: number): void {
+    this.emberBurst.explode(1, x, y);
+  }
+
+  /** Espera entre particulas ambientales: `base` en Alto, mas larga en Bajo (ADR-0006). */
+  ambientDelay(base: number): number {
+    return base / this.quality.particles;
+  }
+
+  /**
+   * Anillo tumbado en el suelo: crece hasta `width` x `height` (la perspectiva lo aplasta) y se desvanece.
+   * Para ondas expansivas que deben verse sobre el cesped.
+   */
+  groundRing(x: number, y: number, width: number, height: number, tint: number, depth: number, durationMs = 380, alpha = 0.9): void {
+    const ring = this.scene.add.image(x, y, TEX.ring).setTint(tint).setDepth(depth).setAlpha(alpha);
+    ring.setDisplaySize(width * 0.25, height * 0.25);
+    this.scene.tweens.add({
+      targets: ring,
+      displayWidth: width,
+      displayHeight: height,
+      alpha: 0,
+      duration: durationMs,
+      ease: 'Cubic.Out',
+      onComplete: () => ring.destroy(),
+    });
   }
 
   /** Anillo que crece y se desvanece en el sitio: impactos, fogonazos y salidas. */

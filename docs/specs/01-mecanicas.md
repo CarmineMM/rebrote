@@ -41,6 +41,21 @@ El elemento solo siempre tiene un efecto mayor que su versión infundida, a camb
 - Solo sobre una disparadora ya sembrada y sin elemento.
 - Una planta tiene como máximo un elemento. No hay fuego y hielo a la vez.
 - Infundir una planta de N cañones cuesta N elementos.
+- **Interfaz (D-04, cerrada el 19 nov 2026 con la recomendación):** un solo arrastre. Al pasar la carta de elemento sobre una disparadora, su precio cambia a "×3 = 225". Si no alcanza la moneda, se pone en rojo y no deja soltar. Vale igual con clic en la carta y clic en la planta.
+- Infundir no cambia la vida, el nivel ni la recarga de la planta.
+
+### Fuego (T-004)
+- **Mina (fuego sembrado solo):** ocupa su casilla y tiene vida propia; los gusanos se paran a morderla como a una planta.
+  - Cuando un enemigo entra en su radio de detección, cuenta 2 s y explota. El conteo sigue aunque el enemigo salga del radio o muera.
+  - Al explotar daña a todos los enemigos dentro del radio de explosión, también en los carriles de al lado, y deja la casilla libre.
+  - Si la destruyen antes de terminar el conteo, no explota.
+  - Cada mina lleva su propio conteo.
+  - Los radios se miden en casillas, del centro de la mina al centro del enemigo.
+- **Disparadora de fuego (infundida):** cada semilla hace su daño de impacto y deja una quemadura que quita vida durante un tiempo.
+  - La quemadura no se acumula: se queda la más fuerte y un nuevo impacto reinicia su duración.
+  - Cada semilla lleva la quemadura con la fuerza del disparo entero (`damageMultiplier`). Así una de 3 cañones, que costó 3 fuegos, quema 3,5 veces más que una de 1. Como no se acumula, da igual que sean tres semillas: solo cuenta si la primera mata y la siguiente da a otro enemigo.
+  - Un enemigo que muere quemado da su moneda como cualquier otro.
+- Los valores están como PROVISIONAL en `MINE` y `FIRE` de `balance.ts`.
 
 ### Fusionar
 - Se hace arrastrando una disparadora sobre otra. La arrastrada deja su casilla y la de destino se queda con el resultado. No cuesta moneda.
@@ -63,7 +78,6 @@ El elemento solo siempre tiene un efecto mayor que su versión infundida, a camb
 | # | Pregunta | Opciones | Recomendación | Decide |
 |---|---|---|---|---|
 | D-03 | ¿Los niveles se reinician en cada partida o son permanentes? | a) Por partida. b) Permanentes | a para el prototipo. b es mejor gancho de retención pero pide guardado y economía aparte | Carmine |
-| D-04 | ¿Cómo se ve en la interfaz infundir una planta de 2 o 3 cañones? | a) Arrastrar N veces. b) Un solo arrastre con precio xN | b: al pasar la carta sobre la planta, el precio de la carta cambia a "x3 = 225"; si no alcanza la moneda, se pone en rojo y no deja soltar | Carmine |
 | D-05 | ¿Cuánto cuesta cada nivel? | Fijo o creciente | Creciente suave, para que subir una sola planta al máximo no sea siempre lo óptimo | Carmine |
 | D-06 | ¿Cuánto dura y cuánto frena el hielo solo? | Valores libres | Probar 70 % de ralentización durante 4 s | Carmine |
 | D-07 | ¿Cómo se pierde? | a) Un enemigo cruza y pierdes. b) Vidas | b con 3 vidas: perdona un error mientras se aprende | Carmine |
@@ -75,6 +89,6 @@ Los valores recomendados ya están como PROVISIONAL en `src/game/config/balance.
 
 Las reglas de fusionar e infundir y el multiplicador de daño están en `src/game/core/plants.ts`, con tests en `plants.test.ts`. Fusionar dos plantas del tablero (destinos válidos, vida resultante, quién deja la casilla) está en `src/game/core/match.ts` (`fusionBlocker`, `fusionTargets`, `fusePlants`). El reparto del daño entre las balas de una fusionada, en `combat.ts` (`bulletDamage`). Los valores de D-02 están en `FUSION` de `balance.ts`.
 
-Saldo, siembra y ocupación de casillas están en `src/game/core/match.ts`; la recompensa por enemigo y la moneda soltada, en `src/game/core/economy.ts`. Los valores están en `ECONOMY` de `balance.ts`.
+Saldo, siembra, infusión y ocupación de casillas están en `src/game/core/match.ts`: qué pasa al soltar una carta en una casilla lo dice `cardPlay` y lo aplica `playCard`. Una casilla puede tener una disparadora o una mina (`Sown`); la recompensa por enemigo y la moneda soltada, en `src/game/core/economy.ts`. Los valores están en `ECONOMY` de `balance.ts`.
 
-El combate (disparo, balas, mordisco, vidas y derrota) está en `src/game/core/combat.ts`, y el generador de gusanos de prueba hasta T-007, en `src/game/core/spawner.ts`. Los valores están en `LIVES`, `SHOOTER`, `ENEMIES` y `TEST_SPAWNER` de `balance.ts`. Cómo funciona la simulación: ADR-0008.
+El combate (disparo, balas, mordisco, minas, quemadura, vidas y derrota) está en `src/game/core/combat.ts`, y el generador de gusanos de prueba hasta T-007, en `src/game/core/spawner.ts`. Los valores están en `LIVES`, `SHOOTER`, `ENEMIES`, `MINE`, `FIRE` y `TEST_SPAWNER` de `balance.ts`. Cómo funciona la simulación: ADR-0008.
