@@ -1,6 +1,6 @@
 # [Combate] Gusanos, disparos y derrota
 
-**Prioridad:** Alta · **Tamaño estimado:** M (orientativo) · **Depende de:** T-001 · **Bloquea a:** T-003, T-004, T-006 · **Origen:** conversación de diseño del 18 y 19 nov 2026
+**Estado:** Pendiente · **Prioridad:** Alta · **Tamaño estimado:** M (orientativo) · **Depende de:** T-001 · **Bloquea a:** T-003, T-004, T-006 · **Origen:** conversación de diseño del 18 y 19 nov 2026
 
 ## Contexto
 Tras T-001 se pueden sembrar disparadoras, pero no hay nada contra qué defenderse. Esta task crea el bucle mínimo de juego.

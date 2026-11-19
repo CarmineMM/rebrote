@@ -1,6 +1,6 @@
 # [Elementos] Hielo: mina e infusión
 
-**Prioridad:** Media · **Tamaño estimado:** S (orientativo) · **Depende de:** T-004 · **Bloquea a:** T-007 · **Origen:** conversación de diseño del 18 y 19 nov 2026
+**Estado:** Pendiente · **Prioridad:** Media · **Tamaño estimado:** S (orientativo) · **Depende de:** T-004 · **Bloquea a:** T-007 · **Origen:** conversación de diseño del 18 y 19 nov 2026
 
 ## Contexto
 El hielo reutiliza todo lo construido en T-004 (carta, mina, infusión). Cambia el efecto: ralentiza en lugar de quemar. El tipo `ElementType` ya incluye `ice` (verificado en `src/game/core/plants.ts`).

@@ -1,6 +1,6 @@
 # [Rondas] Las 7 rondas del mundo 1
 
-**Prioridad:** Media · **Tamaño estimado:** L (orientativo) · **Depende de:** T-003, T-004, T-005, T-006 · **Bloquea a:** T-008 · **Origen:** conversación de diseño del 18 y 19 nov 2026
+**Estado:** Pendiente · **Prioridad:** Media · **Tamaño estimado:** L (orientativo) · **Depende de:** T-003, T-004, T-005, T-006 · **Bloquea a:** T-008 · **Origen:** conversación de diseño del 18 y 19 nov 2026
 
 ## Contexto
 Con las mecánicas listas falta la progresión. El diseño está en `docs/specs/02-mundo-1-gusanos.md`: 7 rondas, un concepto nuevo por ronda, dos enemigos nuevos.

@@ -1,6 +1,6 @@
 # [Plantas] Subir de nivel
 
-**Prioridad:** Media · **Tamaño estimado:** S (orientativo) · **Depende de:** T-002 · **Bloquea a:** T-007 · **Origen:** conversación de diseño del 18 y 19 nov 2026
+**Estado:** Pendiente · **Prioridad:** Media · **Tamaño estimado:** S (orientativo) · **Depende de:** T-002 · **Bloquea a:** T-007 · **Origen:** conversación de diseño del 18 y 19 nov 2026
 
 ## Contexto
 `Shooter` ya tiene el campo `level` y `damageMultiplier` ya lo usa (verificado en `src/game/core/plants.ts`). El tope de 20 está en `LIMITS.maxLevel`. Falta la acción del jugador y la medallita.

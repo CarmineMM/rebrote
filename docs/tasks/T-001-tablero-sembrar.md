@@ -1,6 +1,6 @@
 # [Tablero] Sembrar disparadoras con moneda y HUD
 
-**Prioridad:** Alta · **Tamaño estimado:** M (orientativo) · **Depende de:** ninguna · **Bloquea a:** T-002 · **Origen:** conversación de diseño del 18 y 19 nov 2026
+**Estado:** Completada (19 nov 2026) · **Prioridad:** Alta · **Tamaño estimado:** M (orientativo) · **Depende de:** ninguna · **Bloquea a:** T-002 · **Origen:** conversación de diseño del 18 y 19 nov 2026
 
 ## Contexto
 Hoy `BoardScene` solo dibuja el tablero de 5 carriles por 9 columnas (verificado en `src/game/scenes/BoardScene.ts`). No hay moneda, ni cartas, ni plantas. React muestra una cabecera fija en `src/App.tsx`.
@@ -22,28 +22,31 @@ Hoy `BoardScene` solo dibuja el tablero de 5 carriles por 9 columnas (verificado
 Cuánto dura en el suelo la moneda soltada no se decidió: queda en 8 s como PROVISIONAL en `ECONOMY.dropLifetimeMs`.
 
 ## Criterios de aceptación
+
+Todos comprobados el 19 nov 2026: con tests de Vitest y jugando en el navegador. Las bajas de enemigos se simularon con las teclas `K` y `D` hasta que exista T-002.
+
 ### Tablero
-- [ ] Al pasar el cursor con una carta seleccionada, la casilla bajo el cursor se resalta.
-- [ ] Al soltar sobre una casilla vacía con saldo suficiente, aparece la disparadora y el saldo baja en el costo de `COSTS.shooter`.
-- [ ] No se puede sembrar sobre una casilla ocupada.
-- [ ] No se puede sembrar si el saldo no alcanza, y la carta se ve desactivada.
+- [x] Al pasar el cursor con una carta seleccionada, la casilla bajo el cursor se resalta.
+- [x] Al soltar sobre una casilla vacía con saldo suficiente, aparece la disparadora y el saldo baja en el costo de `COSTS.shooter`.
+- [x] No se puede sembrar sobre una casilla ocupada.
+- [x] No se puede sembrar si el saldo no alcanza, y la carta se ve desactivada.
 
 ### HUD
-- [ ] El saldo se muestra en React y cambia en el mismo instante que en el juego.
-- [ ] La carta muestra su costo.
+- [x] El saldo se muestra en React y cambia en el mismo instante que en el juego.
+- [x] La carta muestra su costo.
 
 ### Moneda
-- [ ] El saldo sube `ECONOMY.passiveIncome` cada `ECONOMY.passiveIntervalMs`.
-- [ ] Al eliminar un enemigo, el 90 % de las veces suma `ECONOMY.killReward` sin hacer nada.
-- [ ] El otro 10 % aparece una moneda en el suelo con su valor; al hacerle clic suma `ceil(killReward × 1,15)` (29 con 25) y desaparece.
-- [ ] Hacer clic en una moneda con una carta elegida recoge la moneda y no siembra debajo.
-- [ ] La moneda que no se recoge parpadea al final y se pierde sin sumar nada.
-- [ ] El saldo nunca tiene decimales.
+- [x] El saldo sube `ECONOMY.passiveIncome` cada `ECONOMY.passiveIntervalMs`.
+- [x] Al eliminar un enemigo, el 90 % de las veces suma `ECONOMY.killReward` sin hacer nada.
+- [x] El otro 10 % aparece una moneda en el suelo con su valor; al hacerle clic suma `ceil(killReward × 1,15)` (29 con 25) y desaparece.
+- [x] Hacer clic en una moneda con una carta elegida recoge la moneda y no siembra debajo.
+- [x] La moneda que no se recoge parpadea al final y se pierde sin sumar nada.
+- [x] El saldo nunca tiene decimales.
 
 ### Calidad
-- [ ] Las reglas de saldo y ocupación están en `src/game/core/` sin importar Phaser, con tests.
-- [ ] Ningún número fuera de `balance.ts`.
-- [ ] `npm test` y `npm run build` pasan.
+- [x] Las reglas de saldo y ocupación están en `src/game/core/` sin importar Phaser, con tests.
+- [x] Ningún número fuera de `balance.ts`.
+- [x] `npm test` y `npm run build` pasan.
 
 ## Casos límite y riesgos
 - Soltar la carta fuera del tablero no cobra ni siembra.

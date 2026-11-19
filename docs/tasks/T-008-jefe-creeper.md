@@ -1,6 +1,6 @@
 # [Jefe] Creeper
 
-**Prioridad:** Baja · **Tamaño estimado:** M (orientativo) · **Depende de:** T-007 · **Bloquea a:** ninguna · **Origen:** conversación de diseño del 18 y 19 nov 2026
+**Estado:** Pendiente · **Prioridad:** Baja · **Tamaño estimado:** M (orientativo) · **Depende de:** T-007 · **Bloquea a:** ninguna · **Origen:** conversación de diseño del 18 y 19 nov 2026
 
 ## Contexto
 Tras la ronda 7 llega el jefe. La idea está en `docs/specs/02-mundo-1-gusanos.md`: Creeper salta de carril, como el original saltaba de máquina en máquina. El resto del diseño no está cerrado, así que esta task no se puede ejecutar todavía.

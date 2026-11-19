@@ -1,6 +1,6 @@
 # [Elementos] Fuego: mina e infusión
 
-**Prioridad:** Alta · **Tamaño estimado:** M (orientativo) · **Depende de:** T-002 · **Bloquea a:** T-005, T-007 · **Origen:** conversación de diseño del 18 y 19 nov 2026
+**Estado:** Pendiente · **Prioridad:** Alta · **Tamaño estimado:** M (orientativo) · **Depende de:** T-002 · **Bloquea a:** T-005, T-007 · **Origen:** conversación de diseño del 18 y 19 nov 2026
 
 ## Contexto
 Las reglas de infusión ya existen y están probadas: `canInfuse`, `infuse` e `infusionCost` en `src/game/core/plants.ts`. El conteo de la mina está en `FIRE_MINE.countdownMs` (2000 ms). Falta todo lo visible.

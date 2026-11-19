@@ -7,6 +7,7 @@ Juego de defensa por carriles. Stack: Phaser 4 + React 19 + Vite + TypeScript. S
 - Lee `docs/specs/01-mecanicas.md` (vocabulario y reglas) y la task que vayas a ejecutar en `docs/tasks/`.
 - Lo que aparece en "Decisiones pendientes" no se implementa por intuición: se pregunta.
 - Si la task pinta o anima algo (enemigos, plantas, efectos, escenarios, HUD), lee `docs/guias/graficos.md` y sigue sus listas de comprobación.
+- Al empezar una task, pon su estado en "En curso". Al cerrarla, marca sus criterios de aceptación y pon "Completada (fecha)". El estado se cambia en la cabecera de la task y en la tabla de `docs/tasks/README.md`, en el mismo commit.
 
 ## Reglas del proyecto
 

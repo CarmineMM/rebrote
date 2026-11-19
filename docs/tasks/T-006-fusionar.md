@@ -1,6 +1,6 @@
 # [Plantas] Fusionar por arrastre
 
-**Prioridad:** Alta · **Tamaño estimado:** M (orientativo) · **Depende de:** T-002 · **Bloquea a:** T-007 · **Origen:** conversación de diseño del 18 y 19 nov 2026
+**Estado:** Pendiente · **Prioridad:** Alta · **Tamaño estimado:** M (orientativo) · **Depende de:** T-002 · **Bloquea a:** T-007 · **Origen:** conversación de diseño del 18 y 19 nov 2026
 
 ## Contexto
 Es la mecánica que diferencia al juego. Las reglas ya existen y están probadas: `canFuse` y `fuse` en `src/game/core/plants.ts` (misma variante, máximo 3 cañones, nivel más bajo). El multiplicador provisional está en `FUSION.damageByCannons`.
