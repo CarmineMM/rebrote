@@ -12,6 +12,10 @@ export const GameEvents = {
   fpsSampled: 'fps-sampled',
   /** Phaser -> React. Payload: carta seleccionada (CardId | null). */
   selectionChanged: 'selection-changed',
+  /** Phaser -> React. Payload: vidas que quedan (number). */
+  livesChanged: 'lives-changed',
+  /** Phaser -> React. Sin payload: la partida se perdio; React muestra la pantalla de derrota. */
+  matchLost: 'match-lost',
   /** React -> Phaser. Payload: carta que el jugador toma del HUD (CardId). */
   cardPicked: 'card-picked',
   /** React -> Phaser. Payload: posicion del puntero mientras arrastra la carta (PagePoint). */
@@ -24,6 +28,8 @@ export const GameEvents = {
   pauseChanged: 'pause-changed',
   /** React -> Phaser. Sin payload: el HUD se monto y pide el estado actual. */
   stateRequested: 'state-requested',
+  /** React -> Phaser. Sin payload: empezar una partida nueva desde cero (pantalla de derrota). */
+  restartRequested: 'restart-requested',
 } as const;
 
 /** Coordenadas DOM de pagina; la escena las traduce a coordenadas del juego. */

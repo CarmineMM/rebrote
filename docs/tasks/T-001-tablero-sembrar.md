@@ -77,7 +77,7 @@ Reglas para lo que venga: `docs/guias/graficos.md`.
 2. Sembrar hasta agotar el saldo y comprobar la tabla anterior.
 3. Reducir la ventana a la mitad y sembrar en una esquina del tablero (también en las del fondo, que se ven más pequeñas).
 4. Esperar 10 s sin hacer nada: el saldo sube 25.
-5. Hasta que exista T-002, en `npm run dev` hay dos atajos: `K` simula un enemigo eliminado con la probabilidad real y `D` uno que siempre suelta la moneda. Pulsar `D`, hacer clic en la moneda y comprobar que suma 29. Pulsar `D` otra vez y no tocarla: desaparece a los 8 s sin sumar.
+5. Hasta que exista T-002, en `npm run dev` hay dos atajos: `K` simula un enemigo eliminado con la probabilidad real y `D` uno que siempre suelta la moneda. Pulsar `D`, hacer clic en la moneda y comprobar que suma 29. Pulsar `D` otra vez y no tocarla: desaparece a los 8 s sin sumar. (T-002 quitó estos atajos: ahora la moneda soltada se prueba eliminando gusanos, y sale en uno de cada diez.)
 6. Pausar (Esc o P), entrar en Ajustes y pasar de Medio a Bajo y a Alto: el escenario se recarga en pausa y el saldo y las plantas siguen ahí.
 7. Con una moneda en el suelo, pausar más de 10 s y continuar: ni el saldo subió durante la pausa ni la moneda caducó.
 8. Cambiar el tamaño de la ventana (más ancha, más alta): el juego sigue llenándola sin bandas y se siembra en la casilla correcta.

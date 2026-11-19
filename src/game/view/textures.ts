@@ -28,12 +28,28 @@ export const TEX = {
   flowers: ['fx-flower-0', 'fx-flower-1', 'fx-flower-2'],
   sparkle: 'fx-sparkle',
   beam: 'fx-beam',
+  ring: 'fx-ring',
   shooter: 'unit-shooter',
   coin: 'unit-coin',
+  seed: 'unit-seed',
+  wormHead: 'unit-worm-head',
+  wormHeadBite: 'unit-worm-head-bite',
+  wormHeadHurt: 'unit-worm-head-hurt',
+  wormSegment: 'unit-worm-segment',
 } as const;
 
 /** Punto de apoyo de la disparadora dentro de su textura (los pies). */
 export const SHOOTER_SIZE = { width: 160, height: 180, footY: 174 } as const;
+/**
+ * Gusano (T-002): la cabeza y los anillos van en texturas separadas para que el cuerpo ondule.
+ * `head.cx, cy` es el centro de la cabeza dentro de su textura. Medidas de diseno: 160 px por casilla.
+ */
+export const WORM_SIZE = {
+  head: { width: 104, height: 104, cx: 52, cy: 62, r: 34 },
+  segment: { size: 64, r: 27 },
+} as const;
+/** Bala de la disparadora: una semilla con estela. `cx` es el centro de la semilla (la estela queda detras). */
+export const SEED_SIZE = { width: 48, height: 28, cx: 32 } as const;
 /**
  * Copa del arbol: donde engancha con el tronco, dentro de su textura y en pantalla. La textura deja margen
  * y se alarga hacia la izquierda para que en pantallas anchas no se vea cortada.
@@ -109,8 +125,14 @@ export function registerTextures(scene: Phaser.Scene, scale = 1): void {
   TEX.flowers.forEach((key, i) => paint(key, 48, 96, (ctx, w, h) => paintFlower(ctx, w, h, i)));
   paint(TEX.sparkle, 32, 32, paintSparkle);
   paint(TEX.beam, 200, 900, paintBeam);
+  paint(TEX.ring, 64, 64, paintRing);
   paint(TEX.shooter, SHOOTER_SIZE.width, SHOOTER_SIZE.height, paintShooter);
   paint(TEX.coin, 72, 72, paintCoin);
+  paint(TEX.seed, SEED_SIZE.width, SEED_SIZE.height, paintSeed);
+  paint(TEX.wormHead, WORM_SIZE.head.width, WORM_SIZE.head.height, (ctx) => paintWormHead(ctx, 'idle'));
+  paint(TEX.wormHeadBite, WORM_SIZE.head.width, WORM_SIZE.head.height, (ctx) => paintWormHead(ctx, 'bite'));
+  paint(TEX.wormHeadHurt, WORM_SIZE.head.width, WORM_SIZE.head.height, (ctx) => paintWormHead(ctx, 'hurt'));
+  paint(TEX.wormSegment, WORM_SIZE.segment.size, WORM_SIZE.segment.size, paintWormSegment);
 }
 
 // ---------------------------------------------------------------------------
@@ -995,6 +1017,18 @@ function paintBeam(ctx: Ctx, w: number, h: number): void {
   ctx.globalCompositeOperation = 'source-over';
 }
 
+/** Anillo blanco de borde suave. Se tine al usarlo: impactos, fogonazos, salidas del agujero. */
+function paintRing(ctx: Ctx, w: number, h: number): void {
+  const cx = w / 2;
+  const cy = h / 2;
+  const g = ctx.createRadialGradient(cx, cy, w * 0.28, cx, cy, w / 2);
+  g.addColorStop(0, 'rgba(255, 255, 255, 0)');
+  g.addColorStop(0.55, 'rgba(255, 255, 255, 1)');
+  g.addColorStop(1, 'rgba(255, 255, 255, 0)');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, w, h);
+}
+
 function paintPixel(ctx: Ctx, w: number, h: number): void {
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(1, 1, w - 2, h - 2);
@@ -1214,4 +1248,199 @@ function paintCoin(ctx: Ctx, w: number, h: number): void {
     ctx.fill();
   }
   ellipse(ctx, cx - 10, cy - 13, 9, 4.5, 'rgba(255, 255, 255, 0.6)', -0.6);
+}
+
+/** Semilla que dispara la disparadora: verde lima, con brillo, una hojita y estela hacia atras. */
+function paintSeed(ctx: Ctx, _w: number, h: number): void {
+  const cy = h / 2;
+  const cx = SEED_SIZE.cx;
+  const trail = ctx.createLinearGradient(2, 0, cx - 2, 0);
+  trail.addColorStop(0, 'rgba(214, 255, 150, 0)');
+  trail.addColorStop(1, 'rgba(214, 255, 150, 0.6)');
+  ctx.fillStyle = trail;
+  ctx.beginPath();
+  ctx.moveTo(2, cy);
+  ctx.quadraticCurveTo(cx - 14, cy - 7, cx - 2, cy - 7.5);
+  ctx.lineTo(cx - 2, cy + 7.5);
+  ctx.quadraticCurveTo(cx - 14, cy + 7, 2, cy);
+  ctx.fill();
+
+  leafShape(ctx, cx + 2, cy - 7, 8, 3.2, -1.1);
+  ctx.fillStyle = '#7fcf5f';
+  ctx.fill();
+
+  const g = ctx.createRadialGradient(cx - 3, cy - 4, 1, cx, cy, 10);
+  g.addColorStop(0, '#fbffd6');
+  g.addColorStop(0.5, '#b9ec5c');
+  g.addColorStop(1, '#5aa82b');
+  ellipse(ctx, cx, cy, 10, 8.5, g);
+  ctx.strokeStyle = '#2f6b1f';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.ellipse(cx, cy, 10, 8.5, 0, 0, Math.PI * 2);
+  ctx.stroke();
+  ellipse(ctx, cx - 3, cy - 3.5, 3.5, 2.2, 'rgba(255, 255, 255, 0.85)', -0.4);
+}
+
+const WORM_OUTLINE = '#4a2a7a';
+
+/**
+ * Cabeza del gusano, mirando a la izquierda (por donde avanza). Morado con pecas de pixel verde neon
+ * y una antena de cable con bombilla: un virus, pero simpatico.
+ * - idle: sonrisa con un dientecito.
+ * - bite: boca abierta y cejas decididas (va a morder).
+ * - hurt: ojos apretados (>_<) y boca de "ay".
+ */
+function paintWormHead(ctx: Ctx, mood: 'idle' | 'bite' | 'hurt'): void {
+  const { cx, cy, r } = WORM_SIZE.head;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+
+  // Antena: un cable que sale de la coronilla con una bombilla encendida.
+  ctx.strokeStyle = WORM_OUTLINE;
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(cx + 10, cy - r + 5);
+  ctx.quadraticCurveTo(cx + 13, cy - r - 12, cx + 24, cy - r - 17);
+  ctx.stroke();
+  circle(ctx, cx + 26, cy - r - 18, 8, 'rgba(57, 255, 136, 0.3)');
+  const bulb = ctx.createRadialGradient(cx + 24, cy - r - 20, 1, cx + 26, cy - r - 18, 6);
+  bulb.addColorStop(0, '#eafff3');
+  bulb.addColorStop(0.5, '#39ff88');
+  bulb.addColorStop(1, '#13a352');
+  circle(ctx, cx + 26, cy - r - 18, 5.5, bulb);
+
+  // Cabeza
+  const head = ctx.createRadialGradient(cx - 12, cy - 14, 4, cx, cy, r);
+  head.addColorStop(0, '#ead6ff');
+  head.addColorStop(0.45, '#b48cff');
+  head.addColorStop(1, '#7a4cc8');
+  circle(ctx, cx, cy, r, head);
+  ctx.strokeStyle = WORM_OUTLINE;
+  ctx.lineWidth = 3.5;
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  ctx.stroke();
+
+  // Pecas de pixel en la nuca
+  ctx.fillStyle = 'rgba(57, 255, 136, 0.9)';
+  for (const [dx, dy, s] of [
+    [16, 0, 5],
+    [23, 7, 4],
+    [14, 11, 3.5],
+    [22, -8, 3],
+  ] as const) {
+    ctx.fillRect(cx + dx, cy + dy, s, s);
+  }
+
+  // Ojos: el de delante mas grande, mirando hacia donde va.
+  const eyes = [
+    { x: cx - 13, y: cy - 6, rx: 11, ry: 13, pupil: 6 },
+    { x: cx + 9, y: cy - 8, rx: 9, ry: 11.5, pupil: 5 },
+  ];
+  if (mood === 'hurt') {
+    ctx.strokeStyle = '#1d1030';
+    ctx.lineWidth = 3.2;
+    eyes.forEach((eye, i) => {
+      const dir = i === 0 ? 1 : -1;
+      ctx.beginPath();
+      ctx.moveTo(eye.x - dir * 6, eye.y - 7);
+      ctx.lineTo(eye.x + dir * 5, eye.y);
+      ctx.lineTo(eye.x - dir * 6, eye.y + 7);
+      ctx.stroke();
+    });
+  } else {
+    for (const eye of eyes) {
+      ellipse(ctx, eye.x, eye.y, eye.rx, eye.ry, '#ffffff');
+      ctx.strokeStyle = WORM_OUTLINE;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.ellipse(eye.x, eye.y, eye.rx, eye.ry, 0, 0, Math.PI * 2);
+      ctx.stroke();
+      const px = eye.x - eye.rx * 0.38;
+      const py = eye.y + 1;
+      circle(ctx, px, py, eye.pupil, '#1d1030');
+      circle(ctx, px - 2, py - 3, eye.pupil * 0.4, '#ffffff');
+    }
+    if (mood === 'bite') {
+      ctx.strokeStyle = WORM_OUTLINE;
+      ctx.lineWidth = 3;
+      for (const eye of eyes) {
+        ctx.beginPath();
+        ctx.moveTo(eye.x - eye.rx, eye.y - eye.ry - 1);
+        ctx.lineTo(eye.x + eye.rx * 0.6, eye.y - eye.ry + 5);
+        ctx.stroke();
+      }
+    }
+  }
+
+  // Mejilla
+  ellipse(ctx, cx - 24, cy + 11, 6.5, 4, 'rgba(255, 120, 170, 0.55)');
+
+  // Boca
+  const mx = cx - 17;
+  const my = cy + 16;
+  ctx.strokeStyle = WORM_OUTLINE;
+  ctx.lineWidth = 2.5;
+  if (mood === 'bite') {
+    ellipse(ctx, mx - 2, my + 1, 11, 10, '#3a1640');
+    ellipse(ctx, mx - 1, my + 6.5, 6.5, 3.5, '#ff7aa8');
+    ctx.fillStyle = '#ffffff';
+    for (const tx of [mx - 7, mx + 2]) {
+      ctx.beginPath();
+      ctx.moveTo(tx, my - 8);
+      ctx.lineTo(tx + 5, my - 8);
+      ctx.lineTo(tx + 2.5, my - 3);
+      ctx.closePath();
+      ctx.fill();
+    }
+    ctx.beginPath();
+    ctx.ellipse(mx - 2, my + 1, 11, 10, 0, 0, Math.PI * 2);
+    ctx.stroke();
+  } else if (mood === 'hurt') {
+    ellipse(ctx, mx, my + 2, 5, 6, '#3a1640');
+    ctx.beginPath();
+    ctx.ellipse(mx, my + 2, 5, 6, 0, 0, Math.PI * 2);
+    ctx.stroke();
+  } else {
+    ctx.beginPath();
+    ctx.arc(mx + 1, my - 3, 8, 0.2 * Math.PI, 0.85 * Math.PI);
+    ctx.stroke();
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(mx - 2, my + 4.5, 4.5, 4);
+    ctx.strokeRect(mx - 2, my + 4.5, 4.5, 4);
+  }
+
+  // Reflejo
+  ellipse(ctx, cx - 12, cy - 22, 10, 5.5, 'rgba(255, 255, 255, 0.45)', -0.5);
+}
+
+/** Anillo del cuerpo del gusano: morado con una banda de luz verde neon, como un LED. */
+function paintWormSegment(ctx: Ctx, w: number): void {
+  const c = w / 2;
+  const { r } = WORM_SIZE.segment;
+  const g = ctx.createRadialGradient(c - 9, c - 10, 3, c, c, r);
+  g.addColorStop(0, '#dcc2ff');
+  g.addColorStop(0.5, '#a77cf2');
+  g.addColorStop(1, '#6c40b8');
+  circle(ctx, c, c, r, g);
+
+  // La banda se ve en el lado derecho: el anillo de delante tapa el izquierdo.
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(c, c, r, 0, Math.PI * 2);
+  ctx.clip();
+  ctx.strokeStyle = 'rgba(57, 255, 136, 0.9)';
+  ctx.lineWidth = 5;
+  ctx.beginPath();
+  ctx.ellipse(c + 9, c, 7, r + 2, 0, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.restore();
+
+  ctx.strokeStyle = WORM_OUTLINE;
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.arc(c, c, r, 0, Math.PI * 2);
+  ctx.stroke();
+  ellipse(ctx, c - 9, c - 12, 8, 5, 'rgba(255, 255, 255, 0.4)', -0.5);
 }

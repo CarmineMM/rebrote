@@ -36,6 +36,49 @@ export const ECONOMY = {
   dropLifetimeMs: 8_000,
 } as const;
 
+/** Vidas de la partida: cada enemigo que cruza el borde izquierdo resta una. PROVISIONAL mientras D-07 siga abierta. */
+export const LIVES = {
+  start: 3,
+} as const;
+
+/** Disparadora de un canon y nivel 1. Fusionar y subir de nivel parten de estos valores (ver plants.ts). */
+export const SHOOTER = {
+  hp: 300, // PROVISIONAL
+  damage: 20, // PROVISIONAL
+  fireIntervalMs: 1400, // PROVISIONAL
+  /** Velocidad de la bala, en casillas por segundo. PROVISIONAL. */
+  bulletSpeed: 6,
+} as const;
+
+/** Enemigos. Posiciones y velocidades en casillas (ADR-0005): la logica no sabe de pixeles. */
+export const ENEMIES = {
+  worm: {
+    hp: 100, // PROVISIONAL
+    /** Casillas por segundo. PROVISIONAL. */
+    speed: 0.25,
+    biteDamage: 50, // PROVISIONAL
+    biteIntervalMs: 1000, // PROVISIONAL
+    /** Lo que tarda el primer mordisco desde que toca la planta. PROVISIONAL. */
+    firstBiteMs: 450,
+    /** Distancia entre el centro del gusano y el de la planta a la que empieza a morderla. */
+    reach: 0.6,
+    /** Del centro del gusano a su hocico: ahi le dan las balas. */
+    halfLength: 0.4,
+  },
+} as const;
+
+/**
+ * Generador de enemigos para probar el combate hasta que existan las rondas (T-007):
+ * un gusano por un carril al azar, cada vez un poco mas seguido, hasta un minimo. PROVISIONAL.
+ */
+export const TEST_SPAWNER = {
+  firstDelayMs: 12_000,
+  startIntervalMs: 10_000,
+  /** Cuanto se acorta el intervalo con cada gusano que sale. */
+  intervalStepMs: 350,
+  minIntervalMs: 3_000,
+} as const;
+
 export const FUSION = {
   /** Multiplicador de dano por cantidad de canones. PROVISIONAL (ver D-02 en docs/specs/01-mecanicas.md). */
   damageByCannons: { 1: 1, 2: 2.2, 3: 3.5 },

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BOARD, COSTS, ECONOMY } from '../config/balance';
+import { BOARD, COSTS, ECONOMY, LIVES, SHOOTER } from '../config/balance';
 import { canAfford, createMatch, earn, plantAt, plantBlocker, plantShooter } from './match';
 import { createShooter } from './plants';
 
@@ -12,13 +12,20 @@ describe('partida nueva', () => {
     expect(match.plants).toHaveLength(BOARD.lanes);
     expect(match.plants.every((lane) => lane.length === BOARD.columns && lane.every((p) => p === null))).toBe(true);
   });
+
+  it('arranca con todas las vidas y sin enemigos ni balas', () => {
+    const match = createMatch();
+    expect(match.lives).toBe(LIVES.start);
+    expect(match.enemies).toEqual([]);
+    expect(match.bullets).toEqual([]);
+  });
 });
 
 describe('sembrar', () => {
   it('coloca una disparadora y cobra su costo', () => {
     const match = plantShooter(createMatch(cost), { lane: 2, col: 4 });
     expect(match.balance).toBe(0);
-    expect(plantAt(match, { lane: 2, col: 4 })).toEqual(createShooter());
+    expect(plantAt(match, { lane: 2, col: 4 })).toEqual({ shooter: createShooter(), hp: SHOOTER.hp, reloadMs: 0 });
   });
 
   it('no modifica el estado anterior', () => {

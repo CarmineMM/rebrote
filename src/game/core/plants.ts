@@ -1,4 +1,4 @@
-import { COSTS, FUSION, LEVELING, LIMITS } from '../config/balance';
+import { COSTS, FUSION, LEVELING, LIMITS, SHOOTER } from '../config/balance';
 
 export type ElementType = 'fire' | 'ice';
 export type CannonCount = 1 | 2 | 3;
@@ -55,4 +55,14 @@ export function damageMultiplier(plant: Shooter): number {
   const byCannons = FUSION.damageByCannons[plant.cannons];
   const byLevel = 1 + (plant.level - 1) * LEVELING.damagePerLevel;
   return byCannons * byLevel;
+}
+
+/** Disparos por unidad de tiempo respecto a una de nivel 1: cada nivel dispara un poco mas seguido. */
+export function fireRateMultiplier(plant: Shooter): number {
+  return 1 + (plant.level - 1) * LEVELING.fireRatePerLevel;
+}
+
+/** Vida maxima de la planta sembrada. Con un solo canon es la de la disparadora; fusionar (T-006, D-02) la cambiara. */
+export function plantMaxHp(_plant: Shooter): number {
+  return SHOOTER.hp;
 }

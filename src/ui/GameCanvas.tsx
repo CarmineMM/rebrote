@@ -11,7 +11,7 @@ interface GameCanvasProps {
 
 /**
  * Monta el juego a pantalla completa. Al cambiar el nivel grafico se recrea con la nueva resolucion
- * y efectos, y continua la misma partida (saldo y plantas) y el mismo estado de pausa.
+ * y efectos, y continua la misma partida (saldo, plantas, gusanos, balas y vidas) y el mismo estado de pausa.
  */
 export function GameCanvas({ quality, paused }: GameCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);

@@ -58,6 +58,32 @@ body {
   60% { transform: translateX(3px); color: #ff8a8a; }
 }
 
+/* Vidas: un corazon por vida. Laten por turnos; el que se pierde se rompe y se apaga. */
+.hud-lives {
+  display: flex; align-items: center; gap: 3px;
+  padding: 7px 12px; border-radius: 999px;
+  background: rgba(22, 40, 22, 0.78); border: 2px solid rgba(255, 143, 163, 0.35);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+}
+.heart { width: 26px; height: 26px; overflow: visible; }
+.heart path { fill: #ff5d73; stroke: #8a1f33; stroke-width: 1.6; stroke-linejoin: round; transition: fill 0.45s 0.15s ease, stroke 0.45s 0.15s ease; }
+.heart-shine { fill: rgba(255, 255, 255, 0.6); transition: opacity 0.3s ease; }
+.heart.is-full { animation: heart-beat 2.6s ease-in-out infinite; }
+.heart.is-full:nth-child(2) { animation-delay: 0.25s; }
+.heart.is-full:nth-child(3) { animation-delay: 0.5s; }
+.heart.is-lost, .heart.is-breaking { opacity: 0.55; transform: scale(0.82); }
+.heart.is-lost path, .heart.is-breaking path { fill: #34452f; stroke: #1b2a18; }
+.heart.is-lost .heart-shine, .heart.is-breaking .heart-shine { opacity: 0; }
+.heart.is-breaking { animation: heart-break 0.75s ease-out both; }
+@keyframes heart-beat { 0%, 72%, 100% { transform: scale(1); } 80% { transform: scale(1.16); } 90% { transform: scale(0.96); } }
+@keyframes heart-break {
+  0% { opacity: 1; transform: scale(1.5); }
+  25% { opacity: 1; transform: scale(1.4) rotate(-14deg); }
+  45% { transform: scale(1.2) translateX(-3px) rotate(10deg); }
+  65% { transform: scale(1) translateX(3px) rotate(-6deg); }
+  100% { opacity: 0.55; transform: scale(0.82); }
+}
+
 .round-button {
   width: 48px; height: 48px; border-radius: 50%; display: grid; place-items: center;
   border: 2px solid rgba(255, 224, 102, 0.45); background: linear-gradient(180deg, #3d6b3f, #24412a);
@@ -172,6 +198,19 @@ body {
 .btn-primary:active { box-shadow: 0 2px 0 #8a5d08; }
 .btn-ghost { width: 42px; height: 42px; padding: 0; border-radius: 50%; flex: none; }
 
+/* Pantalla de derrota: misma tarjeta que la pausa, con el velo algo rojizo y un corazon que se parte. */
+.pause-overlay.is-defeat { background: rgba(48, 14, 24, 0.42); }
+.defeat-art { display: grid; place-items: center; margin-bottom: 4px; }
+.broken-heart { width: 76px; height: 76px; overflow: visible; filter: drop-shadow(0 4px 0 rgba(0, 0, 0, 0.25)); animation: heart-sway 2.8s 1.1s ease-in-out infinite; }
+.broken-heart path { fill: #ff5d73; stroke: #8a1f33; stroke-width: 1.1; stroke-linejoin: round; }
+.broken-heart-half { transform-box: fill-box; transform-origin: 50% 100%; animation: 0.7s 0.3s cubic-bezier(0.2, 1.5, 0.4, 1) both; }
+.broken-heart-half.is-left { animation-name: half-left; }
+.broken-heart-half.is-right { animation-name: half-right; }
+@keyframes half-left { to { transform: translateX(-1.5px) rotate(-14deg); } }
+@keyframes half-right { to { transform: translateX(1.5px) rotate(14deg); } }
+@keyframes heart-sway { 0%, 100% { transform: rotate(-4deg); } 50% { transform: rotate(4deg); } }
+.defeat-text { margin: -8px 0 20px; text-align: center; font-size: 1.1rem; font-weight: 700; color: #ffdfe4; }
+
 .settings-header { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
 .settings-section { margin-top: 14px; }
 .settings-section h3 { margin: 0 0 8px; font-size: 0.75rem; letter-spacing: 0.12em; text-transform: uppercase; color: #9fd88a; }
@@ -209,6 +248,8 @@ body {
 @media (max-width: 560px) {
   .card-label { display: none; }
   .hud-balance { font-size: 1.2rem; }
+  .hud-lives { padding: 6px 8px; }
+  .heart { width: 20px; height: 20px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

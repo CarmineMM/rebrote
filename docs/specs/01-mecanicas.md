@@ -31,6 +31,12 @@ El elemento solo siempre tiene un efecto mayor que su versión infundida, a camb
 - La moneda soltada que no se recoge se pierde al cabo de unos segundos.
 - La moneda siempre es entera: nunca hay decimales en el saldo.
 
+### Combate
+- La disparadora dispara solo a enemigos de su carril que están por delante de ella y ya pisan el césped. A los que ya la pasaron no les dispara.
+- Las balas no persiguen a nadie: dan al primer enemigo de su carril que encuentran. Si su objetivo muere antes, siguen hasta el siguiente. Desaparecen al impactar o al salir del tablero.
+- El gusano avanza a velocidad constante. Al tocar una planta se para y la muerde a intervalos hasta destruirla; luego sigue.
+- Cada enemigo que cruza el borde izquierdo resta una vida y desaparece. Sin vidas se pierde la partida (D-07 sigue abierta: de momento hay 3 vidas, como PROVISIONAL en `LIVES` de `balance.ts`).
+
 ### Infundir
 - Solo sobre una disparadora ya sembrada y sin elemento.
 - Una planta tiene como máximo un elemento. No hay fuego y hielo a la vez.
@@ -67,3 +73,5 @@ Los valores recomendados ya están como PROVISIONAL en `src/game/config/balance.
 Fusionar, infundir y multiplicador de daño están en `src/game/core/plants.ts` con tests en `plants.test.ts`.
 
 Saldo, siembra y ocupación de casillas están en `src/game/core/match.ts`; la recompensa por enemigo y la moneda soltada, en `src/game/core/economy.ts`. Los valores están en `ECONOMY` de `balance.ts`.
+
+El combate (disparo, balas, mordisco, vidas y derrota) está en `src/game/core/combat.ts`, y el generador de gusanos de prueba hasta T-007, en `src/game/core/spawner.ts`. Los valores están en `LIVES`, `SHOOTER`, `ENEMIES` y `TEST_SPAWNER` de `balance.ts`. Cómo funciona la simulación: ADR-0008.

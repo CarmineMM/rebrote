@@ -1,6 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import { COSTS } from '../config/balance';
-import { canFuse, canInfuse, createShooter, damageMultiplier, fuse, infuse, infusionCost, type Shooter } from './plants';
+import {
+  canFuse,
+  canInfuse,
+  createShooter,
+  damageMultiplier,
+  fireRateMultiplier,
+  fuse,
+  infuse,
+  infusionCost,
+  type Shooter,
+} from './plants';
 
 const shooter = (over: Partial<Shooter> = {}): Shooter => ({ ...createShooter(), ...over });
 
@@ -41,5 +51,13 @@ describe('infundir', () => {
 describe('dano', () => {
   it('fusionar rinde mas que la suma de las partes', () => {
     expect(damageMultiplier(shooter({ cannons: 3 }))).toBeGreaterThan(3 * damageMultiplier(shooter()));
+  });
+});
+
+describe('cadencia', () => {
+  it('nivel 1 dispara al ritmo base y cada nivel un poco mas seguido', () => {
+    expect(fireRateMultiplier(shooter())).toBe(1);
+    expect(fireRateMultiplier(shooter({ level: 2 }))).toBeGreaterThan(1);
+    expect(fireRateMultiplier(shooter({ level: 20 }))).toBeGreaterThan(fireRateMultiplier(shooter({ level: 10 })));
   });
 });
