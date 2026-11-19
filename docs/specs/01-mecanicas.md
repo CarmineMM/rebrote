@@ -26,6 +26,10 @@ El elemento solo siempre tiene un efecto mayor que su versión infundida, a camb
 
 ### Moneda
 - Hay una sola moneda. Sembrar, infundir y subir de nivel compiten por ella.
+- Se gana por enemigo eliminado y por goteo pasivo. No hay planta generadora en el mundo 1 (D-01, cerrada el 19 nov 2026).
+- Al eliminar un enemigo, el 90 % de las veces la moneda se cobra sola. El otro 10 % el enemigo la suelta en el suelo y solo se cobra si el jugador le hace clic; recogida así vale un 15 % más, redondeado hacia arriba (25 pasa a 29).
+- La moneda soltada que no se recoge se pierde al cabo de unos segundos.
+- La moneda siempre es entera: nunca hay decimales en el saldo.
 
 ### Infundir
 - Solo sobre una disparadora ya sembrada y sin elemento.
@@ -48,7 +52,6 @@ El elemento solo siempre tiene un efecto mayor que su versión infundida, a camb
 
 | # | Pregunta | Opciones | Recomendación | Decide |
 |---|---|---|---|---|
-| D-01 | ¿Cómo se gana la moneda? | a) Por enemigo eliminado. b) Goteo pasivo. c) Planta generadora | a + b, sin planta generadora en el mundo 1 (menos piezas que balancear) | Carmine |
 | D-02 | ¿Cuánto más pega una planta fusionada? | Valores libres | Daño x2,2 con 2 cañones y x3,5 con 3; vida igual a la suma. Ajustar jugando | Carmine |
 | D-03 | ¿Los niveles se reinician en cada partida o son permanentes? | a) Por partida. b) Permanentes | a para el prototipo. b es mejor gancho de retención pero pide guardado y economía aparte | Carmine |
 | D-04 | ¿Cómo se ve en la interfaz infundir una planta de 2 o 3 cañones? | a) Arrastrar N veces. b) Un solo arrastre con precio xN | b: al pasar la carta sobre la planta, el precio de la carta cambia a "x3 = 225"; si no alcanza la moneda, se pone en rojo y no deja soltar | Carmine |
@@ -62,3 +65,5 @@ Los valores recomendados ya están como PROVISIONAL en `src/game/config/balance.
 ## Reglas ya implementadas
 
 Fusionar, infundir y multiplicador de daño están en `src/game/core/plants.ts` con tests en `plants.test.ts`.
+
+Saldo, siembra y ocupación de casillas están en `src/game/core/match.ts`; la recompensa por enemigo y la moneda soltada, en `src/game/core/economy.ts`. Los valores están en `ECONOMY` de `balance.ts`.

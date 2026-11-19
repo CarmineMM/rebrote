@@ -26,7 +26,7 @@ Mientras D-07 no esté cerrada se implementa con un contador de vidas configurab
 ### Enemigos
 - [ ] El gusano aparece fuera del borde derecho y avanza a velocidad constante por un carril.
 - [ ] Al tocar una planta se detiene y le quita vida a intervalos hasta destruirla, y luego sigue.
-- [ ] Al quedarse sin vida desaparece.
+- [ ] Al quedarse sin vida desaparece con animación y paga su recompensa con `BoardScene.rewardKill(punto)`, donde `punto` es su posición en coordenadas de tablero (T-001 ya resuelve si se cobra sola o la suelta).
 
 ### Disparo
 - [ ] Una disparadora sin enemigos en su carril no dispara.
@@ -37,9 +37,18 @@ Mientras D-07 no esté cerrada se implementa con un contador de vidas configurab
 - [ ] Cada enemigo que cruza el borde izquierdo resta una vida y desaparece.
 - [ ] Con 0 vidas el juego se detiene y React muestra la pantalla de derrota con un botón que reinicia la partida.
 
+### Aspecto (ADR-0004, ADR-0005, ADR-0006)
+- [ ] Gusano, balas y daño siguen `docs/guias/graficos.md`, incluida su lista de comprobación de enemigo nuevo.
+- [ ] El gusano sale del agujero de su carril (`SCENERY.holeX`), avanza ondulando y tiene animación de mordisco, golpe recibido y muerte.
+- [ ] La disparadora reacciona al disparar (retroceso del cañón) y al recibir un mordisco.
+- [ ] Posiciones y velocidades en coordenadas de tablero (casillas y casillas por segundo); se pintan con `perspective.toScreen`.
+- [ ] Se ve bien en Bajo y aguanta en Ultra.
+- [ ] Con el menú de pausa abierto, gusanos, balas y mordiscos se quedan congelados (usan el reloj y los tweens de la escena, ADR-0007).
+- [ ] La pantalla de derrota es una superposición de React como el menú de pausa. Reiniciar empieza una partida nueva, sin continuar la anterior (`resume`).
+
 ### Calidad
 - [ ] El daño usa `damageMultiplier` de `src/game/core/plants.ts`.
-- [ ] Con 60 enemigos y 20 plantas en pantalla el juego se mantiene fluido.
+- [ ] Con 60 enemigos y 20 plantas en pantalla el juego se mantiene fluido en Medio (medir con "Mostrar FPS").
 - [ ] `npm test` y `npm run build` pasan.
 
 ## Casos límite y riesgos
@@ -53,6 +62,8 @@ Mientras D-07 no esté cerrada se implementa con un contador de vidas configurab
 | Disparadora en carril 2, gusano en carril 2 | Dispara y lo elimina antes de que llegue |
 | Disparadora en carril 2, gusano en carril 3 | No dispara; el gusano cruza y resta una vida |
 | Tres gusanos cruzan | Pantalla de derrota |
+
+Al cerrar esta task se quitan los atajos de depuración `K` y `D` de `BoardScene` (los añadió T-001 para probar la moneda sin enemigos).
 
 ## Cómo probarlo (QA)
 1. Sembrar una disparadora en un carril y dejar otro vacío.

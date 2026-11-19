@@ -4,7 +4,7 @@ Una task por archivo. El tamaño es orientativo.
 
 | # | Task | Tamaño | Depende de | Bloqueada por decisión |
 |---|---|---|---|---|
-| T-001 | [Tablero] Sembrar disparadoras con moneda y HUD | M | Ninguna | D-01 |
+| T-001 | [Tablero] Sembrar disparadoras con moneda y HUD | M | Ninguna | Ninguna (D-01 cerrada) |
 | T-002 | [Combate] Gusanos, disparos y derrota | M | T-001 | D-07 |
 | T-003 | [Plantas] Subir de nivel | S | T-002 | D-03, D-05 |
 | T-004 | [Elementos] Fuego: mina e infusión | M | T-002 | D-04 |
