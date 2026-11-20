@@ -1,5 +1,4 @@
 import { useLayoutEffect, useRef, useState, type CSSProperties, type RefObject } from 'react';
-import { LIMITS } from '../game/config/balance';
 import { levelBonus } from '../game/core/plants';
 import { EventBus, GameEvents, type PlantPanel } from '../game/EventBus';
 
@@ -25,7 +24,7 @@ export function LevelPanel({ panel, avoid }: LevelPanelProps) {
   const ref = useRef<HTMLDivElement>(null);
   const [place, setPlace] = useState<{ left: number; top: number; arrowX: number; below: boolean } | null>(null);
   const [shake, setShake] = useState(0);
-  const { level, cost, multiplier, affordable } = panel;
+  const { level, cap, capRaisedAt, cost, multiplier, affordable } = panel;
   const atMax = cost === null;
   const can = !atMax && affordable;
 
@@ -83,13 +82,17 @@ export function LevelPanel({ panel, avoid }: LevelPanelProps) {
       <p className="level-panel-stats">
         {level > 1 ? `Daño +${percent(now.damage)} % · Cadencia +${percent(now.fireRate)} %` : 'Daño y cadencia de base'}
       </p>
+      {/* En el tope de la ronda (T-009): hasta cuando. */}
+      {atMax && capRaisedAt !== null && <p className="level-panel-cap">Tope {cap}: sube en la ronda {capRaisedAt}</p>}
       <button
         type="button"
         className={`level-up${atMax ? ' is-max' : ''}${!atMax && !affordable ? ' is-short' : ''}`}
         aria-disabled={!can}
         title={
           atMax
-            ? `Ya está en el nivel ${LIMITS.maxLevel}`
+            ? capRaisedAt === null
+              ? `Ya está en el nivel máximo (${cap})`
+              : `Tope de nivel ${cap} hasta la ronda ${capRaisedAt}`
             : affordable
               ? `Cada nivel: +${percent(step.damage)} % de daño y +${percent(step.fireRate)} % de cadencia`
               : 'Saldo insuficiente'

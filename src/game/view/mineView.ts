@@ -70,6 +70,8 @@ export class MineView {
   private readonly jump: Pulse = { v: 0 };
   private readonly squash: Pulse = { v: 0 };
   private armed = false;
+  /** Se lleva en la mano para infundir una disparadora (T-009): se ve medio transparente en su casilla. */
+  private lifted = false;
   private shown = 0;
   private flashTimer?: Phaser.Time.TimerEvent;
   private sparks?: Phaser.Time.TimerEvent;
@@ -128,6 +130,45 @@ export class MineView {
     }
     if (mine.fuseMs !== null) this.arm(false);
     this.sync(mine);
+  }
+
+  /** Pies de la mina en pantalla. */
+  foot(): ScreenPoint {
+    return { ...this.base };
+  }
+
+  /** ¿Cae el punto de pantalla sobre la mina? (para agarrarla y arrastrarla, T-009). */
+  contains(x: number, y: number): boolean {
+    return this.holder.active && this.body.getBounds().contains(x, y);
+  }
+
+  /** Mientras se arrastra (T-009) se queda en su casilla medio transparente, como la planta que se arrastra. */
+  setLifted(lifted: boolean): void {
+    if (lifted === this.lifted || !this.holder.active) return;
+    this.lifted = lifted;
+    this.scene.tweens.add({ targets: this.holder, alpha: lifted ? PLANT_LOOK.liftedAlpha : 1, duration: lifted ? 120 : 160 });
+    if (!lifted) this.pulse(this.jump, 280);
+  }
+
+  /**
+   * Se gasta al infundir una disparadora (T-009): la que se llevaba en la mano ya se metio en la planta; la de la
+   * casilla se hunde en la tierra con unas chispas (o copos), sin explotar.
+   */
+  consume(): void {
+    this.stop();
+    this.fx.dirt(this.base.x, this.base.y, 8);
+    if (this.element === 'fire') this.fx.embers(this.base.x, this.base.y - this.cellWidth * 0.2, 3);
+    else this.fx.frost(this.base.x, this.base.y - this.cellWidth * 0.2, 3);
+    this.scene.tweens.add({
+      targets: this.holder,
+      scaleX: 1.2,
+      scaleY: 0,
+      alpha: 0,
+      duration: 260,
+      ease: 'Back.In',
+      onComplete: () => this.holder.destroy(),
+    });
+    this.fadeOut(260);
   }
 
   /** Sigue a la mina del estado: cuenta atras visible, parpadeo cada vez mas rapido y algo de hinchazon. */

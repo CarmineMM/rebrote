@@ -1,18 +1,22 @@
 import { describe, expect, it } from 'vitest';
-import { BOARD, ENEMIES, FIRE, ICE, LIVES, MINE, SHOOTER } from '../config/balance';
+import { BOARD, ENEMIES, ENEMY_LEVELS, FIRE, ICE, LEVELING, LIVES, MINE, SHOOTER } from '../config/balance';
 import type { Cell } from './board';
 import {
   MAX_STEP_MS,
   bulletDamage,
   bulletEffect,
   distanceToCell,
+  enemyDamage,
   enemyFront,
+  enemyLevelFactor,
   fireIntervalMs,
   hasTarget,
+  hpFraction,
   isDefeated,
   mineBlast,
   refreshBurn,
   refreshSlow,
+  rollEnemyLevel,
   spawnEnemy,
   stepCombat,
   type Bullet,
@@ -81,10 +85,40 @@ describe('gusano', () => {
     const one = spawnEnemy(createMatch(), 'worm', 2, HOLE_X);
     const two = spawnEnemy(one, 'worm', 4, HOLE_X);
     expect(two.enemies).toEqual([
-      { id: 1, kind: 'worm', lane: 2, x: HOLE_X, hp: worm.hp, attackMs: null, burn: null, slow: null, haste: 1, jump: null, jumpsUsed: 0 },
-      { id: 2, kind: 'worm', lane: 4, x: HOLE_X, hp: worm.hp, attackMs: null, burn: null, slow: null, haste: 1, jump: null, jumpsUsed: 0 },
+      { id: 1, kind: 'worm', lane: 2, x: HOLE_X, hp: worm.hp, attackMs: null, burn: null, slow: null, haste: 1, level: 1, jump: null, jumpsUsed: 0 },
+      { id: 2, kind: 'worm', lane: 4, x: HOLE_X, hp: worm.hp, attackMs: null, burn: null, slow: null, haste: 1, level: 1, jump: null, jumpsUsed: 0 },
     ]);
     expect(() => spawnEnemy(createMatch(), 'worm', BOARD.lanes, HOLE_X)).toThrow();
+  });
+
+  it('con nivel (T-009): +15 % de vida y de dano por nivel sobre el de nivel 1, misma velocidad', () => {
+    expect(enemyLevelFactor(1)).toBe(1);
+    expect(enemyLevelFactor(10)).toBeCloseTo(1 + 9 * ENEMY_LEVELS.perLevel, 9);
+    expect(ENEMY_LEVELS.perLevel).toBeCloseTo(LEVELING.damagePerLevel + 0.05, 9);
+    const strong = spawnEnemy(createMatch(), 'armored', 2, HOLE_X, undefined, 1, 5).enemies[0];
+    expect(strong).toMatchObject({ level: 5, hp: ENEMIES.armored.hp * 1.6 });
+    expect(hpFraction(strong)).toBe(1);
+    expect(enemyDamage(strong)).toBeCloseTo(ENEMIES.armored.biteDamage * 1.6, 9);
+    expect(enemyDamage({ kind: 'spitter', level: 3 })).toBeCloseTo(ENEMIES.spitter.spitDamage * 1.3, 9);
+    const walked = (level: number) => HOLE_X - stepCombat(spawnEnemy(createMatch(), 'worm', 2, HOLE_X, undefined, 1, level), 1000).state.enemies[0].x;
+    expect(walked(7)).toBeCloseTo(walked(1), 9);
+    expect(() => spawnEnemy(createMatch(), 'worm', 2, HOLE_X, undefined, 1, 0)).toThrow();
+  });
+
+  it('el nivel al azar sigue los pesos de la tabla; sin tabla, nivel 1', () => {
+    const table = { 2: 1, 5: 3 };
+    expect(rollEnemyLevel(undefined, () => 0.99)).toBe(1);
+    expect(rollEnemyLevel(table, () => 0)).toBe(2);
+    expect(rollEnemyLevel(table, () => 0.24)).toBe(2);
+    expect(rollEnemyLevel(table, () => 0.26)).toBe(5);
+    expect(rollEnemyLevel(table, () => 0.999)).toBe(5);
+  });
+
+  it('un enemigo con nivel muerde mas fuerte', () => {
+    let state = spawnEnemy(createMatch(), 'worm', 2, 3.5 + worm.reach - 0.01, undefined, 1, 3);
+    state = { ...state, plants: state.plants.map((lane, l) => lane.map((p, c) => (l === 2 && c === 3 ? createPlant() : p))) };
+    const after = stepCombat(state, worm.firstBiteMs + 10).state;
+    expect(after.plants[2][3]?.hp).toBeCloseTo(SHOOTER.hp - worm.biteDamage * 1.3, 9);
   });
 
   it('avanza a velocidad constante por su carril', () => {

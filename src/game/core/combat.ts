@@ -1,4 +1,4 @@
-import { BOARD, CREEPER, ENEMIES, FIRE, ICE, MINE, SHOOTER } from '../config/balance';
+import { BOARD, CREEPER, ENEMIES, ENEMY_LEVELS, FIRE, ICE, MINE, SHOOTER } from '../config/balance';
 import type { BoardPoint, Cell } from './board';
 import type { MatchState, Mine, Sown } from './match';
 import { damageMultiplier, fireRateMultiplier, type ElementType, type Shooter } from './plants';
@@ -58,6 +58,11 @@ export interface Enemy {
   readonly slow: Slow | null;
   /** Velocidad respecto a la de su tipo: mas de 1 si lo acelero Creeper (T-008, rondas 8 y 9 y sus copias). */
   readonly haste: number;
+  /**
+   * Nivel (T-009): cada uno suma `ENEMY_LEVELS.perLevel` a su vida y a su dano de nivel 1. El Creeper no tiene nivel
+   * (siempre 1: su vida y su mordisco son los suyos).
+   */
+  readonly level: number;
   /** Salto de carril en curso (solo el Creeper, T-008), o null. */
   readonly jump: Jump | null;
   /** Umbrales de vida de `CREEPER.jumpAt` ya gastados en saltos (solo cuenta en el Creeper). */
@@ -104,8 +109,11 @@ export type CombatEvent =
   | { readonly type: 'spitGone'; readonly spitId: number }
   /** Una disparadora o una mina se quedo sin vida (a mordiscos o a escupitajos). Una mina destruida asi no explota. */
   | { readonly type: 'plantDestroyed'; readonly cell: Cell }
-  /** Un enemigo se quedo sin vida. Al caer el Creeper (T-008) caen tambien los demas: sus copias se desconectan. */
-  | { readonly type: 'enemyKilled'; readonly enemyId: number; readonly at: BoardPoint }
+  /**
+   * Un enemigo se quedo sin vida. Al caer el Creeper (T-008) caen tambien los demas: sus copias se desconectan.
+   * `kind` dice cuanta moneda da (`ENEMIES[kind].reward`, T-009).
+   */
+  | { readonly type: 'enemyKilled'; readonly enemyId: number; readonly kind: EnemyKind; readonly at: BoardPoint }
   /** Cruzo el borde izquierdo: resta una vida. Si es el Creeper (T-008), se pierde la partida. */
   | { readonly type: 'enemyEscaped'; readonly enemyId: number; readonly lane: number; readonly kind: EnemyKind }
   /** El Creeper (T-008) cruzo un umbral de vida: se agacha para saltar y marca el carril de destino durante `warnMs`. */
@@ -198,28 +206,79 @@ export function isDefeated(state: MatchState): boolean {
   return state.lives <= 0;
 }
 
+/** Evento de un enemigo que se quedo sin vida. */
+function killed(e: Enemy): CombatEvent {
+  return { type: 'enemyKilled', enemyId: e.id, kind: e.kind, at: { x: e.x, y: e.lane + 0.5 } };
+}
+
+/**
+ * Lo que multiplica el nivel a la vida y al dano de nivel 1 (T-009): +`ENEMY_LEVELS.perLevel` por nivel.
+ * Nivel 1, por 1; nivel 10, por 2,35.
+ */
+export function enemyLevelFactor(level: number): number {
+  return 1 + (level - 1) * ENEMY_LEVELS.perLevel;
+}
+
+/** Vida llena de un enemigo de `kind` y nivel `level`. El Creeper no tiene nivel: la suya. */
+export function enemyMaxHp(kind: EnemyKind, level = 1): number {
+  return ENEMIES[kind].hp * (kind === 'creeper' ? 1 : enemyLevelFactor(level));
+}
+
+/**
+ * Dano de cada mordisco (los que muerden) o escupitajo (el escupidor), con su nivel. El Creeper muerde como un gusano
+ * de nivel `CREEPER.biteAsWormLevel` (T-009).
+ */
+export function enemyDamage(enemy: Pick<Enemy, 'kind' | 'level'>): number {
+  if (enemy.kind === 'creeper') return ENEMIES.worm.biteDamage * enemyLevelFactor(CREEPER.biteAsWormLevel);
+  const stats = ENEMIES[enemy.kind];
+  const base = stats.attack === 'spit' ? stats.spitDamage : stats.biteDamage;
+  return base * enemyLevelFactor(enemy.level);
+}
+
+/**
+ * Nivel al azar segun una tabla de pesos (`ENEMY_LEVELS.tables`, T-009): `random` en [0, 1), como Math.random.
+ * Sin tabla, nivel 1.
+ */
+export function rollEnemyLevel(table: Readonly<Record<number, number>> | undefined, random: () => number = Math.random): number {
+  if (!table) return 1;
+  const entries = Object.entries(table).map(([level, weight]) => [Number(level), weight] as const);
+  const total = entries.reduce((sum, [, weight]) => sum + weight, 0);
+  let roll = random() * total;
+  for (const [level, weight] of entries) {
+    roll -= weight;
+    if (roll < 0) return level;
+  }
+  return entries[entries.length - 1][0];
+}
+
 /** Enemigo recien salido: avanza, sin efectos ni salto. */
-function newEnemy(id: number, kind: EnemyKind, lane: number, x: number, hp: number, haste: number): Enemy {
-  return { id, kind, lane, x, hp, attackMs: null, burn: null, slow: null, haste, jump: null, jumpsUsed: 0 };
+function newEnemy(id: number, kind: EnemyKind, lane: number, x: number, hp: number, haste: number, level: number): Enemy {
+  return { id, kind, lane, x, hp, attackMs: null, burn: null, slow: null, haste, level, jump: null, jumpsUsed: 0 };
 }
 
 /**
  * Pone un enemigo con la vida llena en `x` de su carril. Queda el ultimo de `enemies`.
- * `hp` solo cambia en pruebas (por ejemplo, la prueba de rendimiento en desarrollo). `haste` es su velocidad respecto
- * a la de su tipo (las rondas 8 y 9 sacan enemigos acelerados, T-008).
+ * `hp` solo cambia en pruebas (por ejemplo, la prueba de rendimiento en desarrollo); sin ella, la vida llena de su
+ * nivel. `haste` es su velocidad respecto a la de su tipo (las rondas 8 y 9 sacan enemigos acelerados, T-008) y
+ * `level`, su nivel (T-009; el Creeper no tiene: siempre 1).
  */
 export function spawnEnemy(
   state: MatchState,
   kind: EnemyKind,
   lane: number,
   x: number,
-  hp: number = ENEMIES[kind].hp,
+  hp?: number,
   haste = 1,
+  level = 1,
 ): MatchState {
   if (!Number.isInteger(lane) || lane < 0 || lane >= BOARD.lanes) {
     throw new Error(`Carril invalido: ${lane}`);
   }
-  const enemy = newEnemy(state.nextId, kind, lane, x, hp, haste);
+  if (!Number.isInteger(level) || level < 1) {
+    throw new Error(`Nivel invalido: ${level}`);
+  }
+  const ownLevel = kind === 'creeper' ? 1 : level;
+  const enemy = newEnemy(state.nextId, kind, lane, x, hp ?? enemyMaxHp(kind, ownLevel), haste, ownLevel);
   return { ...state, enemies: [...state.enemies, enemy], nextId: state.nextId + 1 };
 }
 
@@ -228,9 +287,9 @@ export function isAirborne(enemy: Enemy): boolean {
   return enemy.jump?.stage === 'air';
 }
 
-/** Fraccion de la vida de su tipo que le queda. */
+/** Fraccion de su vida llena (la de su tipo y nivel) que le queda. */
 export function hpFraction(enemy: Enemy): number {
-  return enemy.hp / ENEMIES[enemy.kind].hp;
+  return enemy.hp / enemyMaxHp(enemy.kind, enemy.level);
 }
 
 /** Fase 2 del Creeper (T-008): con la mitad de la vida o menos salta mas a menudo, avisa menos y deja mas copias. */
@@ -301,7 +360,7 @@ function substep(state: MatchState, dtMs: number, events: CombatEvent[], random:
       e.hp -= (e.burn.dps * Math.min(dtMs, e.burn.ms)) / 1000;
       e.burn = e.burn.ms > dtMs ? { ...e.burn, ms: e.burn.ms - dtMs } : null;
       if (e.hp <= 0) {
-        events.push({ type: 'enemyKilled', enemyId: e.id, at: { x: e.x, y: e.lane + 0.5 } });
+        events.push(killed(e));
         if (e.kind === 'creeper') bossDown = true;
         continue;
       }
@@ -314,7 +373,7 @@ function substep(state: MatchState, dtMs: number, events: CombatEvent[], random:
     // no avanza ni muerde. El aviso y el vuelo no van mas lentos aunque este ralentizado: el aviso es una promesa.
     if (e.kind === 'creeper') {
       if (e.jump) {
-        stepJump(e, dtMs, plants, copies, events, newId);
+        stepJump(e, dtMs, plants, copies, events, newId, random);
         enemies.push(e);
         continue;
       }
@@ -331,7 +390,7 @@ function substep(state: MatchState, dtMs: number, events: CombatEvent[], random:
         e.attackMs = (e.attackMs ?? stats.firstSpitMs) - attackClockMs;
         if (e.attackMs <= 0) {
           e.attackMs += stats.spitIntervalMs;
-          const spit: Spit = { id: nextId++, lane: e.lane, x: e.x, damage: stats.spitDamage };
+          const spit: Spit = { id: nextId++, lane: e.lane, x: e.x, damage: enemyDamage(e) };
           launched.push(spit);
           events.push({ type: 'spat', enemyId: e.id, spit });
         }
@@ -346,7 +405,7 @@ function substep(state: MatchState, dtMs: number, events: CombatEvent[], random:
           e.attackMs += stats.biteIntervalMs;
           const cell = { lane: e.lane, col };
           events.push({ type: 'bite', enemyId: e.id, cell });
-          damageSown(plants, cell, stats.biteDamage, events);
+          damageSown(plants, cell, enemyDamage(e), events);
         }
         enemies.push(e);
         continue;
@@ -421,7 +480,7 @@ function substep(state: MatchState, dtMs: number, events: CombatEvent[], random:
         at: { x: Math.max(from, enemyFront(target)), y: bullet.lane + 0.5 },
       });
       if (target.hp <= 0) {
-        events.push({ type: 'enemyKilled', enemyId: target.id, at: { x: target.x, y: target.lane + 0.5 } });
+        events.push(killed(target));
       }
     } else if (to > BOARD.columns) {
       events.push({ type: 'bulletGone', bulletId: bullet.id });
@@ -434,7 +493,7 @@ function substep(state: MatchState, dtMs: number, events: CombatEvent[], random:
     for (const e of enemies) {
       if (e.hp <= 0) continue;
       e.hp = 0;
-      events.push({ type: 'enemyKilled', enemyId: e.id, at: { x: e.x, y: e.lane + 0.5 } });
+      events.push(killed(e));
     }
   }
   const alive = enemies.filter((e) => e.hp > 0);
@@ -483,7 +542,7 @@ function explode(mine: Mine, cell: Cell, enemies: Array<Mutable<Enemy>>, events:
   for (const e of hit) {
     e.hp -= damage;
     if (slow) e.slow = refreshSlow(e.slow, slow);
-    if (e.hp <= 0) events.push({ type: 'enemyKilled', enemyId: e.id, at: { x: e.x, y: e.lane + 0.5 } });
+    if (e.hp <= 0) events.push(killed(e));
   }
 }
 
@@ -502,9 +561,26 @@ function startJump(e: Mutable<Enemy>, random: () => number, events: CombatEvent[
 }
 
 /**
- * Avanza el salto del Creeper. Al acabar el aviso despega: pasa al carril de destino y deja sus copias (gusanos
- * acelerados) en el que abandona. Al acabar el vuelo aterriza y golpea lo primero sembrado que tiene delante; los
- * umbrales que cruzo mientras saltaba se gastan, asi que no encadena dos saltos seguidos.
+ * Tipo de una copia del Creeper (T-009, P-08): en la fase 1 un gusano; en la 2, al azar con los pesos de
+ * `CREEPER.copyKinds.enraged`.
+ */
+export function rollCopyKind(enraged: boolean, random: () => number = Math.random): EnemyKind {
+  const table: Readonly<Partial<Record<EnemyKind, number>>> = enraged ? CREEPER.copyKinds.enraged : CREEPER.copyKinds.calm;
+  const entries = Object.entries(table) as Array<[EnemyKind, number]>;
+  const total = entries.reduce((sum, [, weight]) => sum + weight, 0);
+  let roll = random() * total;
+  for (const [kind, weight] of entries) {
+    roll -= weight;
+    if (roll < 0) return kind;
+  }
+  return entries[entries.length - 1][0];
+}
+
+/**
+ * Avanza el salto del Creeper. Al acabar el aviso despega: pasa al carril de destino y deja sus copias (aceleradas y
+ * de nivel `CREEPER.copyLevel`; en la fase 2 pueden ser acorazados o escupidores) en el que abandona. Al acabar el
+ * vuelo aterriza y golpea lo primero sembrado que tiene delante; los umbrales que cruzo mientras saltaba se gastan,
+ * asi que no encadena dos saltos seguidos.
  */
 function stepJump(
   e: Mutable<Enemy>,
@@ -513,6 +589,7 @@ function stepJump(
   copies: Enemy[],
   events: CombatEvent[],
   newId: () => number,
+  random: () => number,
 ): void {
   const jump = e.jump as Jump;
   const ms = jump.ms - dtMs;
@@ -521,11 +598,13 @@ function stepJump(
     return;
   }
   if (jump.stage === 'crouch') {
-    const count = isEnraged(e) ? CREEPER.copies.enraged : CREEPER.copies.calm;
-    const kind = CREEPER.copyKind;
-    const left = Array.from({ length: count }, (_, i) =>
-      newEnemy(newId(), kind, jump.from, e.x + i * CREEPER.copyGap, ENEMIES[kind].hp, CREEPER.copyHaste),
-    );
+    const enraged = isEnraged(e);
+    const count = enraged ? CREEPER.copies.enraged : CREEPER.copies.calm;
+    const level = CREEPER.copyLevel;
+    const left = Array.from({ length: count }, (_, i) => {
+      const kind = rollCopyKind(enraged, random);
+      return newEnemy(newId(), kind, jump.from, e.x + i * CREEPER.copyGap, enemyMaxHp(kind, level), CREEPER.copyHaste, level);
+    });
     copies.push(...left);
     e.lane = jump.to;
     e.jump = { ...jump, stage: 'air', ms: CREEPER.airMs + ms, stageMs: CREEPER.airMs };

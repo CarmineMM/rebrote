@@ -88,8 +88,8 @@ function cardTitle(card: CardId, canInfuse: boolean): string {
     : 'Hielo: en una casilla vacía, mina que frena';
 }
 
-/** Dibujo de la carta, en CSS: la disparadora, o una llama o un copo sobre un montoncito de tierra. */
-function CardIcon({ card }: { card: CardId }) {
+/** Dibujo de la carta, en CSS: la disparadora, o una llama o un copo sobre un montoncito de tierra. Tambien en el aviso de desbloqueo (T-009). */
+export function CardIcon({ card }: { card: CardId }) {
   if (card === 'fire') {
     return (
       <span className="card-icon" aria-hidden="true">

@@ -11,9 +11,13 @@ import {
   fusedPlant,
   fusionBlocker,
   fusionTargets,
+  infuseWithMine,
   levelUpOffer,
   levelUpPlant,
   mineAt,
+  mineDragBlocker,
+  mineInfusion,
+  mineInfusionTargets,
   plantAt,
   playCard,
   cardPlay,
@@ -376,7 +380,14 @@ describe('subir de nivel', () => {
 
   it('ofrece el nivel de la planta y lo que cuesta el siguiente', () => {
     const match = withPlants(unlocked(1000), [at, { shooter: shooter({ level: 3 }) }]);
-    expect(levelUpOffer(match, at)).toEqual({ level: 3, cost: LEVELING.baseCost + 2 * LEVELING.costStep, multiplier: 1, blocker: null });
+    expect(levelUpOffer(match, at)).toEqual({
+      level: 3,
+      cap: 10,
+      capRaisedAt: null,
+      cost: LEVELING.baseCost + 2 * LEVELING.costStep,
+      multiplier: 1,
+      blocker: null,
+    });
   });
 
   it('una fusionada paga un nivel por canon', () => {
@@ -419,18 +430,30 @@ describe('subir de nivel', () => {
     expect(() => levelUpPlant(short, at)).toThrow();
   });
 
-  it('en el nivel maximo aparece como maximo y no se puede subir', () => {
-    const top = withPlants(unlocked(100_000), [at, { shooter: shooter({ level: LIMITS.maxLevel }) }]);
-    expect(levelUpOffer(top, at)).toEqual({ level: LIMITS.maxLevel, cost: null, multiplier: 1, blocker: 'max-level' });
+  it('en el tope de la ronda aparece como maximo y no se puede subir', () => {
+    const top = withPlants(unlocked(100_000), [at, { shooter: shooter({ level: 10 }) }]);
+    expect(levelUpOffer(top, at)).toEqual({ level: 10, cap: 10, capRaisedAt: null, cost: null, multiplier: 1, blocker: 'max-level' });
     expect(() => levelUpPlant(top, at)).toThrow();
+    // Por encima del tope (por ejemplo, el absoluto), tampoco.
+    const above = withPlants(unlocked(100_000), [at, { shooter: shooter({ level: LIMITS.maxLevel }) }]);
+    expect(levelUpOffer(above, at)?.blocker).toBe('max-level');
   });
 
-  it('subiendo de uno en uno llega al 20 y no pasa', () => {
+  it('subiendo de uno en uno en la ultima ronda llega al 10 y no pasa (T-009)', () => {
     let state = withPlants(unlocked(100_000), [at, {}]);
     while (levelUpOffer(state, at)?.blocker === null) state = levelUpPlant(state, at);
-    expect(plantAt(state, at)?.shooter.level).toBe(LIMITS.maxLevel);
-    // 75 + 100 + ... + 525: 19 niveles.
-    expect(100_000 - state.balance).toBe(19 * LEVELING.baseCost + LEVELING.costStep * ((18 * 19) / 2));
+    expect(plantAt(state, at)?.shooter.level).toBe(10);
+    // 75 + 100 + ... + 275: 9 niveles.
+    expect(100_000 - state.balance).toBe(9 * LEVELING.baseCost + LEVELING.costStep * ((8 * 9) / 2));
+  });
+
+  it('el tope es 5 de la ronda 2 a la 6 y avisa de que sube en la 7; desde la 7, 10 (T-009)', () => {
+    const inRound = (round: number, level: number) => withPlants(createMatch(100_000, round), [at, { shooter: shooter({ level }) }]);
+    expect(levelUpOffer(inRound(1, 4), at)).toMatchObject({ cap: 5, blocker: null });
+    expect(levelUpOffer(inRound(1, 5), at)).toMatchObject({ cap: 5, capRaisedAt: 6, cost: null, blocker: 'max-level' });
+    expect(levelUpOffer(inRound(5, 5), at)).toMatchObject({ cap: 5, capRaisedAt: 6, blocker: 'max-level' });
+    expect(levelUpOffer(inRound(6, 5), at)).toMatchObject({ cap: 10, blocker: null });
+    expect(levelUpOffer(inRound(6, 10), at)).toMatchObject({ cap: 10, capRaisedAt: null, blocker: 'max-level' });
   });
 
   it('reproduce la tabla de la task', () => {
@@ -438,11 +461,75 @@ describe('subir de nivel', () => {
     const one = levelUpPlant(withPlants(unlocked(250), [at, {}]), at);
     expect(plantAt(one, at)?.shooter.level).toBe(2);
     expect(one.balance).toBe(250 - LEVELING.baseCost);
-    // Nivel 20, subir: no disponible, "Maximo".
-    expect(levelUpOffer(withPlants(unlocked(250), [at, { shooter: shooter({ level: 20 }) }]), at)?.blocker).toBe('max-level');
+    // En el tope (10 en la ultima ronda, T-009), subir: no disponible, "Maximo".
+    expect(levelUpOffer(withPlants(unlocked(250), [at, { shooter: shooter({ level: 10 }) }]), at)?.blocker).toBe('max-level');
     // Nivel 3 con saldo insuficiente: no disponible, saldo sin cambios.
     const poor = withPlants(unlocked(50), [at, { shooter: shooter({ level: 3 }) }]);
     expect(levelUpOffer(poor, at)?.blocker).toBe('insufficient-funds');
     expect(poor.balance).toBe(50);
+  });
+});
+
+describe('infundir con una mina sembrada (T-009)', () => {
+  const mineCell = { lane: 1, col: 6 };
+  const plantCell = { lane: 3, col: 1 };
+  /** Mina de `element` ya sembrada (sin cobrar) y una disparadora. */
+  const board = (balance = 0, element: 'fire' | 'ice' = 'fire', over: Partial<Plant> & { shooter?: Shooter } = {}, round = ROUND_COUNT - 1) => {
+    const state = withPlants(createMatch(balance, round), [plantCell, over]);
+    const plants = state.plants.map((lane) => [...lane]);
+    plants[mineCell.lane][mineCell.col] = createMine(element);
+    return { ...state, plants };
+  };
+
+  it('la mina infunde a una disparadora de un canon gratis y deja su casilla', () => {
+    const before = board(0, 'ice');
+    expect(mineInfusion(before, mineCell, plantCell)).toEqual({ cost: 0, multiplier: 0, blocker: null });
+    const after = infuseWithMine(before, mineCell, plantCell);
+    expect(mineAt(after, mineCell)).toBeNull();
+    expect(sownAt(after, mineCell)).toBeNull();
+    expect(plantAt(after, plantCell)?.shooter.element).toBe('ice');
+    expect(after.balance).toBe(0);
+  });
+
+  it('en una de N canones la mina cuenta como un elemento y se pagan los demas', () => {
+    const before = board(1000, 'fire', { shooter: shooter({ cannons: 3 }), hp: 500, reloadMs: 120 });
+    expect(mineInfusion(before, mineCell, plantCell)).toEqual({ cost: 2 * COSTS.fire, multiplier: 2, blocker: null });
+    const after = infuseWithMine(before, mineCell, plantCell);
+    expect(after.balance).toBe(1000 - 2 * COSTS.fire);
+    expect(plantAt(after, plantCell)).toMatchObject({ shooter: { element: 'fire', cannons: 3, level: 1 }, hp: 500, reloadMs: 120 });
+    const poor = board(2 * COSTS.fire - 1, 'fire', { shooter: shooter({ cannons: 3 }) });
+    expect(mineInfusion(poor, mineCell, plantCell).blocker).toBe('insufficient-funds');
+    expect(() => infuseWithMine(poor, mineCell, plantCell)).toThrow();
+  });
+
+  it('no sirve sobre una disparadora con elemento, ni sobre una casilla sin disparadora', () => {
+    expect(mineInfusion(board(0, 'fire', { shooter: shooter({ element: 'ice' }) }), mineCell, plantCell).blocker).toBe('has-element');
+    expect(mineInfusion(board(), mineCell, { lane: 0, col: 0 }).blocker).toBe('no-plant');
+    expect(mineInfusion(board(), mineCell, mineCell).blocker).toBe('no-plant');
+    expect(mineInfusion(board(), plantCell, plantCell).blocker).toBe('no-mine');
+    expect(mineInfusion(board(), mineCell, { lane: 9, col: 0 }).blocker).toBe('off-board');
+  });
+
+  it('una mina que ya cuenta no se arrastra', () => {
+    const armed = board();
+    const plants = armed.plants.map((lane) => [...lane]);
+    plants[mineCell.lane][mineCell.col] = { ...createMine('fire'), fuseMs: 900 };
+    const state = { ...armed, plants };
+    expect(mineDragBlocker(state, mineCell)).toBe('armed');
+    expect(mineInfusion(state, mineCell, plantCell).blocker).toBe('armed');
+    expect(mineDragBlocker(board(), mineCell)).toBeNull();
+    expect(mineDragBlocker(board(), plantCell)).toBe('no-mine');
+  });
+
+  it('solo desde la ronda que desbloquea infundir (la 5)', () => {
+    expect(mineDragBlocker(board(0, 'fire', {}, 3), mineCell)).toBe('locked');
+    expect(mineInfusion(board(0, 'fire', {}, 3), mineCell, plantCell).blocker).toBe('locked');
+    expect(mineDragBlocker(board(0, 'ice', {}, 4), mineCell)).toBeNull();
+  });
+
+  it('marca como destinos las disparadoras que se pueden infundir', () => {
+    const other = { lane: 0, col: 2 };
+    const state = withPlants(board(), [other, { shooter: shooter({ element: 'fire' }) }]);
+    expect(mineInfusionTargets(state, mineCell)).toEqual([plantCell]);
   });
 });

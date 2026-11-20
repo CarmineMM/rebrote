@@ -41,6 +41,12 @@ export const GameEvents = {
    * el siguiente y donde esta en la pagina, para pintar el panel de subir de nivel junto a ella. Null al cerrarlo.
    */
   plantPanel: 'plant-panel',
+  /**
+   * Phaser -> React. Payload: UnlockInfo. Empieza una ronda con algo nuevo (T-009, tambien la 1): React muestra el aviso
+   * "¡YA LO TIENES!" y deja el juego en pausa hasta que el jugador lo acepta. Se repite al pedir el estado mientras no
+   * se acepte.
+   */
+  unlocked: 'unlocked',
   /** React -> Phaser. Payload: carta que el jugador toma del HUD (CardId). */
   cardPicked: 'card-picked',
   /** React -> Phaser. Payload: posicion del puntero mientras arrastra la carta (PagePoint). */
@@ -55,6 +61,8 @@ export const GameEvents = {
   attackRequested: 'attack-requested',
   /** React -> Phaser. Payload: si el juego queda en pausa (boolean). El menu de pausa lo controla. */
   pauseChanged: 'pause-changed',
+  /** React -> Phaser. Payload: ronda (desde 1) del aviso de desbloqueo que el jugador acepto (T-009). */
+  unlockAccepted: 'unlock-accepted',
   /** React -> Phaser. Sin payload: el HUD se monto y pide el estado actual. */
   stateRequested: 'state-requested',
   /** React -> Phaser. Sin payload: empezar una partida nueva desde cero (pantalla de derrota). */
@@ -78,7 +86,11 @@ export interface PlantPanel {
   /** Casilla de la planta ("carril:columna"): cambia al seleccionar otra. */
   id: string;
   level: number;
-  /** Lo que cuesta subir un nivel; null en el nivel maximo (el boton dice "Maximo"). */
+  /** Tope de nivel de la ronda (T-009). */
+  cap: number;
+  /** En el tope: ronda (desde 1) en la que sube, o null si ya no sube. */
+  capRaisedAt: number | null;
+  /** Lo que cuesta subir un nivel; null en el tope (el boton dice "Maximo"). */
   cost: number | null;
   /** Por cuanto se multiplica el costo de un canon: sus canones ("x3 = 225"). */
   multiplier: number;
@@ -124,6 +136,21 @@ export interface RoundInfo {
   infusable: ElementType[];
   /** Aviso de una linea con el concepto nuevo de la ronda. */
   notice: string;
+}
+
+/**
+ * Algo nuevo que se puede usar desde esta ronda (T-009). Infundir fuego y hielo llegan juntos y se cuentan como uno.
+ * `levelCap` es el tope de nivel nuevo de las disparadoras.
+ */
+export type UnlockItem =
+  | { id: 'shooter' | 'levelUp' | 'fireMine' | 'iceMine' | 'infuse' | 'fuse' }
+  | { id: 'levelCap'; level: number };
+
+/** Aviso de lo desbloqueado al empezar una ronda (T-009). Sale de `roundUnlocks` en core. */
+export interface UnlockInfo {
+  /** Ronda, desde 1. */
+  round: number;
+  items: UnlockItem[];
 }
 
 /** Coordenadas DOM de pagina; la escena las traduce a coordenadas del juego. */

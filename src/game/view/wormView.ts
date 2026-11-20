@@ -1,9 +1,9 @@
 import * as Phaser from 'phaser';
 import { ENEMIES } from '../config/balance';
-import { isEnraged, type Enemy, type EnemyKind } from '../core/combat';
+import { hpFraction, isEnraged, type Enemy, type EnemyKind } from '../core/combat';
 import type { Effects } from './effects';
 import { entityDepth, perspective } from './layout';
-import { FLAME_SIZE, FROST_SIZE, TEX, WORM_SIZE, artInv } from './textures';
+import { FLAME_SIZE, FROST_SIZE, TEX, WORM_SIZE, artInv, medalTexture } from './textures';
 
 /**
  * Aspecto del gusano. Las medidas locales son pixeles de diseno con 160 por casilla, como la disparadora.
@@ -60,6 +60,13 @@ export const WORM_LOOK = {
    * (altura en anchos de casilla, algo mas cuanto mas lejos salta) y su sombra se encoge en el suelo.
    */
   jump: { crouchSquash: 0.2, crouchShake: 2.2, liftCells: 0.75, liftPerLane: 0.12 },
+  /**
+   * Nivel (T-009): desde el 2, la medallita de las disparadoras prendida en la nuca (respecto a la cabeza, que mira a
+   * la izquierda: la nuca queda arriba a la derecha) y un poco mas grande por cada nivel. El de nivel 1 se ve como
+   * siempre.
+   */
+  medal: { x: 25, y: -27, scale: 0.92 },
+  growthPerLevel: 0.018,
 } as const;
 
 interface HeadSet {
@@ -144,9 +151,13 @@ export class WormView implements EnemyView {
   private readonly shadow: Phaser.GameObjects.Image;
   /** Rayas de velocidad del acelerado (T-008): ocultas si va a su velocidad. */
   private readonly streak: Phaser.GameObjects.Image;
+  /** Medallita de nivel (T-009), o null si es de nivel 1 o el Creeper. */
+  private readonly medal: Phaser.GameObjects.Image | null = null;
   private footY: number;
   private cellWidth: number;
   private scale: number;
+  /** Tamano respecto al gusano: el de su tipo, algo mayor cuanto mas nivel (T-009). */
+  private readonly size: number;
   /** Cada gusano ondula con su propio desfase para que no vayan al unisono. */
   private readonly phaseOffset = Math.random() * Math.PI * 2;
   private phase = 0;
@@ -184,16 +195,17 @@ export class WormView implements EnemyView {
     emergeDelayMs = 0,
   ) {
     this.look = KIND_LOOK[enemy.kind];
+    this.size = this.look.size * (1 + (enemy.level - 1) * WORM_LOOK.growthPerLevel);
     this.headKey = this.look.head.idle;
     this.footY = enemy.lane + WORM_LOOK.footY;
     const ground = perspective.toScreen({ x: enemy.x, y: this.footY });
     this.cellWidth = perspective.cellWidthAt({ x: enemy.x, y: this.footY });
-    this.scale = (this.cellWidth / WORM_LOOK.unitsPerCell) * this.look.size;
+    this.scale = (this.cellWidth / WORM_LOOK.unitsPerCell) * this.size;
     const depth = entityDepth(ground.y);
 
     this.shadow = scene.add
       .image(ground.x, ground.y, TEX.shadow)
-      .setDisplaySize(this.cellWidth * 0.95 * this.look.size, this.cellWidth * 0.24 * this.look.size)
+      .setDisplaySize(this.cellWidth * 0.95 * this.size, this.cellWidth * 0.24 * this.size)
       .setDepth(depth - 0.5);
     this.segments = WORM_LOOK.segments.map((s) => scene.add.image(s.x, s.y, this.look.segment).setScale(s.scale * artInv()));
     this.streak = scene.add
@@ -211,6 +223,10 @@ export class WormView implements EnemyView {
         plates: WORM_LOOK.segments.map((s) => scene.add.image(s.x, s.y, TEX.armorPlate).setScale(s.scale * artInv())),
         lost: 0,
       };
+    }
+    // Medallita de nivel (T-009): la misma de las disparadoras, en la nuca.
+    if (enemy.level > 1 && enemy.kind !== 'creeper') {
+      this.medal = scene.add.image(0, 0, medalTexture(enemy.level)).setScale(WORM_LOOK.medal.scale * artInv());
     }
     // Llamas del quemado: ocultas hasta que arde. Van por encima del cuerpo.
     this.flames = WORM_LOOK.flames.map(() =>
@@ -231,7 +247,7 @@ export class WormView implements EnemyView {
     // la escarcha y las llamas.
     const armor = this.armor;
     const body = this.segments.flatMap((segment, i) => (armor ? [segment, armor.plates[i]] : [segment]));
-    const top = armor ? [this.head, armor.helmet] : [this.head];
+    const top = [this.head, ...(armor ? [armor.helmet] : []), ...(this.medal ? [this.medal] : [])];
     this.holder = scene.add.container(ground.x, ground.y, [this.streak, ...body, ...top, ...this.frost, ...this.flames]).setDepth(depth);
 
     if (emerge && emergeDelayMs > 0) {
@@ -257,7 +273,7 @@ export class WormView implements EnemyView {
     const foot = { x: enemy.x, y: this.footY };
     const ground = perspective.toScreen(foot);
     this.cellWidth = perspective.cellWidthAt(foot);
-    this.scale = (this.cellWidth / WORM_LOOK.unitsPerCell) * this.look.size;
+    this.scale = (this.cellWidth / WORM_LOOK.unitsPerCell) * this.size;
     this.holder.setDepth(entityDepth(ground.y));
     this.shadow.setDepth(entityDepth(ground.y) - 0.5);
     const walking = enemy.attackMs === null && enemy.jump === null;
@@ -287,7 +303,7 @@ export class WormView implements EnemyView {
       .setScale(grow * (1 + hurt * 0.1 + squash * 0.6), grow * (1 - hurt * 0.1 - squash));
     this.shadow
       .setPosition(ground.x, ground.y)
-      .setDisplaySize(this.cellWidth * 0.95 * this.look.size * (1 - pose.lift * 0.35), this.cellWidth * 0.24 * this.look.size * (1 - pose.lift * 0.35))
+      .setDisplaySize(this.cellWidth * 0.95 * this.size * (1 - pose.lift * 0.35), this.cellWidth * 0.24 * this.size * (1 - pose.lift * 0.35))
       .setAlpha(Math.min(1, rise) * (1 - pose.lift * 0.45));
     // Acelerado: las rayas titilan mientras avanza y se apagan si se para.
     if (this.streak.visible) this.streak.setAlpha(this.walk * (0.65 + 0.35 * Math.sin(this.phase * 1.7)));
@@ -308,7 +324,10 @@ export class WormView implements EnemyView {
     // Agachado para saltar o en el aire, pone la cara decidida.
     const jumping = enemy.jump !== null;
     this.setHead(hurt > 0.25 ? head.hurt : lunge > 0.45 ? head.idle : windup > 0.35 || jumping ? head.attack : head.idle);
-    if (this.armor) this.syncArmor(enemy.hp / stats.hp);
+    if (this.medal) {
+      this.medal.setPosition(this.head.x + WORM_LOOK.medal.x, this.head.y + WORM_LOOK.medal.y).setAngle(this.head.angle * 0.6);
+    }
+    if (this.armor) this.syncArmor(hpFraction(enemy));
 
     this.setBurning(enemy.burn !== null);
     if (this.burning) {

@@ -527,6 +527,17 @@ export class CreeperOmen {
     }
   }
 
+  /**
+   * Manda a su escolta (T-009): se yergue de golpe, suelta pixeles y grita `text`. Los acorazados salen acelerados, asi
+   * que cada uno recibe ademas su chispazo (`zap`) como cualquier enemigo acelerado.
+   */
+  command(text: string): void {
+    if (this.done) return;
+    this.say(text, 2600);
+    this.scene.tweens.add({ targets: this.holder, scaleY: this.scale * 1.14, scaleX: this.scale * 0.92, duration: 140, yoyo: true, ease: 'Quad.Out' });
+    this.fx.bits(this.ground.x, this.ground.y - this.cellWidth * 0.6, 10);
+  }
+
   /** Empieza el combate: salta en curva hasta los pies de `foot` (el agujero de su carril) y desaparece al caer. */
   leapTo(foot: BoardPoint): void {
     if (this.done) return;

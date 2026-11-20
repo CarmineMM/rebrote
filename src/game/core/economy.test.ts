@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ECONOMY } from '../config/balance';
+import { ECONOMY, ENEMIES } from '../config/balance';
 import { droppedCoinValue, rollKillReward } from './economy';
 
 describe('moneda recogida a mano', () => {
@@ -26,7 +26,7 @@ describe('moneda recogida a mano', () => {
   });
 
   it('usa el extra configurado en balance.ts', () => {
-    expect(droppedCoinValue(ECONOMY.killReward)).toBe(droppedCoinValue(ECONOMY.killReward, ECONOMY.dropBonusPercent));
+    expect(droppedCoinValue(ENEMIES.worm.reward)).toBe(droppedCoinValue(ENEMIES.worm.reward, ECONOMY.dropBonusPercent));
   });
 });
 
@@ -49,7 +49,11 @@ describe('recompensa por enemigo eliminado', () => {
     expect(drops).toBe(Math.round(rolls * ECONOMY.dropChance));
   });
 
-  it('por defecto usa la recompensa de balance.ts', () => {
-    expect(rollKillReward(undefined, () => 0.99).amount).toBe(ECONOMY.killReward);
+  it('cada enemigo da lo suyo, sea cual sea su nivel (T-009): gusano 15, escupidor 20 y acorazado 25', () => {
+    expect(ENEMIES.worm.reward).toBe(15);
+    expect(ENEMIES.spitter.reward).toBe(20);
+    expect(ENEMIES.armored.reward).toBe(25);
+    expect(rollKillReward(ENEMIES.spitter.reward, () => 0.99)).toEqual({ kind: 'auto', amount: 20 });
+    expect(rollKillReward(ENEMIES.armored.reward, () => 0)).toEqual({ kind: 'drop', amount: 29 });
   });
 });

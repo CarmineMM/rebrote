@@ -1,16 +1,17 @@
 import * as Phaser from 'phaser';
 import { BOARD } from '../config/balance';
 import type { BoardPoint, Cell } from '../core/board';
-import type { Shooter } from '../core/plants';
+import type { ElementType, Shooter } from '../core/plants';
 import { BoardLabel, drawCell, type LabelLine } from './boardMarks';
 import type { Effects } from './effects';
 import { DEPTH, perspective } from './layout';
 import type { ScreenPoint } from './perspective';
-import { SHOOTER_SIZE, TEX, artInv, shooterTexture } from './textures';
+import { mineScale } from './mineView';
+import { MINE_SIZE, SHOOTER_SIZE, TEX, artInv, mineTexture, shooterTexture } from './textures';
 
 /**
- * Aspecto del arrastre para fusionar (T-006). Medidas en anchos de casilla salvo que se diga otra cosa.
- * Las reglas (que se puede fusionar con que) las decide core; aqui solo se pinta.
+ * Aspecto del arrastre para fusionar (T-006) o para infundir con una mina sembrada (T-009). Medidas en anchos de
+ * casilla salvo que se diga otra cosa. Las reglas (que se puede soltar sobre que) las decide core; aqui solo se pinta.
  */
 export const DRAG_LOOK = {
   /** Cuanto flota la planta arrastrada sobre el suelo: lo bastante para no tapar a la planta de destino. */
@@ -52,13 +53,35 @@ export function dragGround(pointer: ScreenPoint, grab: ScreenPoint, fallbackCell
   return { screen, board: perspective.toBoard(screen), cellWidth };
 }
 
+/** Lo que se lleva en la mano: su textura, por donde pisa y a que escala se pinta sembrado en una casilla de ese ancho. */
+export interface CarriedLook {
+  readonly texture: string;
+  /** Pies, en fraccion de la altura de la textura (origen vertical). */
+  readonly footY: number;
+  readonly scaleFor: (cellWidth: number) => number;
+}
+
+/** Una disparadora en la mano (T-006). */
+export function carriedShooter(shooter: Shooter): CarriedLook {
+  return {
+    texture: shooterTexture(shooter.cannons, shooter.element),
+    footY: SHOOTER_SIZE.footY / SHOOTER_SIZE.height,
+    scaleFor: (cellWidth) => (cellWidth / SHOOTER_SIZE.width) * artInv(),
+  };
+}
+
+/** Una mina sembrada en la mano, camino de infundir una disparadora (T-009). */
+export function carriedMine(element: ElementType): CarriedLook {
+  return { texture: mineTexture(element, false), footY: MINE_SIZE.footY / MINE_SIZE.height, scaleFor: mineScale };
+}
+
 /** ¿Cae el punto en el cesped o justo al lado? Fuera de ahi (cielo, seto) la sombra no se pinta. */
 const onLawn = (point: BoardPoint | null): boolean =>
   point !== null && point.x > -0.5 && point.x < BOARD.columns + 0.5 && point.y > -0.3 && point.y < BOARD.lanes + 0.3;
 
 /**
- * La planta que el jugador lleva en la mano, su sombra, las casillas de destino y el rotulo de lo que pasara.
- * Vive lo que dura un arrastre: la escena la crea al empezar y la suelta con `dropInto`, `returnTo` o `poof`.
+ * La planta (o la mina, T-009) que el jugador lleva en la mano, su sombra, las casillas de destino y el rotulo de lo
+ * que pasara. Vive lo que dura un arrastre: la escena la crea al empezar y la suelta con `dropInto`, `returnTo` o `poof`.
  */
 export class FusionDragView {
   private readonly plant: Phaser.GameObjects.Image;
@@ -76,7 +99,7 @@ export class FusionDragView {
   constructor(
     private readonly scene: Phaser.Scene,
     private readonly fx: Effects,
-    shooter: Shooter,
+    private readonly look: CarriedLook,
     foot: ScreenPoint,
     cellWidth: number,
   ) {
@@ -92,8 +115,8 @@ export class FusionDragView {
       .setAlpha(0.55)
       .setDepth(DEPTH.highlight + 1);
     this.plant = scene.add
-      .image(foot.x, foot.y, shooterTexture(shooter.cannons, shooter.element))
-      .setOrigin(0.5, SHOOTER_SIZE.footY / SHOOTER_SIZE.height)
+      .image(foot.x, foot.y, look.texture)
+      .setOrigin(0.5, look.footY)
       .setScale(this.plantScale(cellWidth))
       .setDepth(DEPTH.floatText - 10);
     // Se despega del suelo con un estiron.
@@ -103,7 +126,7 @@ export class FusionDragView {
     fx.dirt(foot.x, foot.y, 6);
   }
 
-  /** Marca en verde las casillas de las plantas con las que se puede fusionar. */
+  /** Marca en verde las casillas de las plantas sobre las que se puede soltar. */
   showTargets(cells: readonly Cell[]): void {
     this.targets.clear();
     for (const cell of cells) drawCell(this.targets, cell, DRAG_LOOK.targetColor, 0.22, 3);
@@ -214,6 +237,6 @@ export class FusionDragView {
   }
 
   private plantScale(cellWidth: number): number {
-    return ((cellWidth * DRAG_LOOK.scale) / SHOOTER_SIZE.width) * artInv();
+    return this.look.scaleFor(cellWidth) * DRAG_LOOK.scale;
   }
 }

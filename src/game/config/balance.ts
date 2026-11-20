@@ -12,6 +12,7 @@ export const BOARD = {
 
 export const LIMITS = {
   maxCannons: 3,
+  /** Tope absoluto de nivel de una disparadora. En el mundo 1 cada ronda pone el suyo (`levelCap` en `ROUNDS`, T-009). */
   maxLevel: 20,
 } as const;
 
@@ -22,7 +23,7 @@ export const COSTS = {
 } as const;
 
 /**
- * Economia (D-01 cerrada): moneda por enemigo eliminado mas goteo pasivo.
+ * Economia (D-01 cerrada): moneda por enemigo eliminado (`reward` de cada uno en `ENEMIES`, T-009) mas goteo pasivo.
  * Al eliminar un enemigo, la moneda se cobra sola salvo en `dropChance` de los casos:
  * entonces queda en el suelo y solo se cobra si el jugador la recoge con un clic,
  * con un `dropBonusPercent` extra redondeado hacia arriba. Siempre en enteros.
@@ -31,7 +32,6 @@ export const ECONOMY = {
   startingBalance: 250,
   passiveIncome: 25, // PROVISIONAL
   passiveIntervalMs: 10_000, // PROVISIONAL
-  killReward: 25, // PROVISIONAL
   dropChance: 0.1,
   dropBonusPercent: 15,
   /** Tiempo que la moneda soltada sigue en el suelo antes de perderse. PROVISIONAL. */
@@ -55,9 +55,12 @@ export const SHOOTER = {
 /**
  * Enemigos. Posiciones y velocidades en casillas (ADR-0005): la logica no sabe de pixeles.
  * `attack` dice como ataca: `bite` muerde lo que toca; `spit` se para a distancia y escupe (T-007).
+ * `hp` y el dano son los de nivel 1: cada nivel suma `ENEMY_LEVELS.perLevel` (T-009). `reward` es la moneda que da al
+ * caer (T-009, P-03): fija por tipo, sea cual sea su nivel.
  */
 export const ENEMIES = {
   worm: {
+    reward: 15,
     hp: 100, // PROVISIONAL
     /** Casillas por segundo. PROVISIONAL. */
     speed: 0.25,
@@ -73,6 +76,7 @@ export const ENEMIES = {
   },
   /** Gusano acorazado (T-007, desde la ronda 4): muerde como el gusano, con mucha mas vida y mas lento. */
   armored: {
+    reward: 25,
     /** Cuatro veces la del gusano. PROVISIONAL. */
     hp: 400,
     /** Casillas por segundo. PROVISIONAL. */
@@ -89,6 +93,7 @@ export const ENEMIES = {
    * (planta o mina) y le escupe. Nunca se para antes de pisar el cesped, para que las plantas puedan darle.
    */
   spitter: {
+    reward: 20,
     hp: 140, // PROVISIONAL
     /** Casillas por segundo. PROVISIONAL. */
     speed: 0.28,
@@ -109,17 +114,38 @@ export const ENEMIES = {
   /**
    * Creeper (T-008), jefe del mundo 1 y unico enemigo de la ronda 10: muerde como el gusano, con mucha mas vida, y
    * salta de carril al perder vida (`CREEPER`). Mas grande que el gusano: le dan antes y se para mas lejos a morder.
+   * No tiene nivel. Muerde como un gusano de nivel `CREEPER.biteAsWormLevel` (T-009). Al caer se gana la partida: no da
+   * moneda.
    */
   creeper: {
+    reward: 0,
     hp: 4000, // PROVISIONAL: con una defensa repartida, el combate dura cerca de un minuto
     /** Casillas por segundo. PROVISIONAL. */
     speed: 0.2,
     attack: 'bite',
-    biteDamage: 120, // PROVISIONAL
     biteIntervalMs: 1000, // PROVISIONAL
     firstBiteMs: 500,
     reach: 0.85,
     halfLength: 0.62,
+  },
+} as const;
+
+/**
+ * Niveles de los enemigos (T-009, P-04 y P-05, decididos el 20 nov 2026). Cada nivel suma `perLevel` a la vida y al dano
+ * (mordisco o escupitajo) de nivel 1; la velocidad no cambia. Cada ronda dice con que pesos sale cada nivel (`levels` en
+ * `ROUNDS`); sin tabla, todos de nivel 1. Las copias del Creeper y su escolta tienen nivel fijo. PROVISIONAL.
+ */
+export const ENEMY_LEVELS = {
+  /** Un 5 % mas que lo que suma al dano cada nivel de una disparadora (`LEVELING.damagePerLevel`). */
+  perLevel: 0.15,
+  /** Pesos de cada nivel (no hace falta que sumen 100). */
+  tables: {
+    /** Rondas 3 y 4: del 1 al 4, mas probable cuanto mas bajo. */
+    early: { 1: 40, 2: 30, 3: 20, 4: 10 },
+    /** Rondas 5 a 7: del 1 al 7, con el pico en el 4; menos el 1 y aun menos el 7. */
+    mid: { 1: 8, 2: 14, 3: 20, 4: 24, 5: 16, 6: 12, 7: 6 },
+    /** Rondas 8 a 10: del 3 al 10, con el pico en el 7; menos el 3 y aun menos el 10. */
+    late: { 3: 6, 4: 10, 5: 15, 6: 20, 7: 22, 8: 14, 9: 9, 10: 4 },
   },
 } as const;
 
@@ -130,6 +156,8 @@ export const ENEMIES = {
  * (gusanos normales, acelerados) en el carril que abandona. Por debajo de `enragedBelow` entra en su fase 2: salta
  * cada 10 % en vez de cada 20 %, avisa menos y deja dos copias en vez de una. Si cruza el borde izquierdo, se pierde
  * la partida. Al derrotarlo se desconectan sus copias.
+ * T-009 (P-07 y P-08): muerde como un gusano de nivel 10, sus copias son de nivel 10 y en la fase 2 cada copia puede
+ * ser un acorazado o un escupidor.
  */
 export const CREEPER = {
   /** Umbrales de vida que lo hacen saltar: cada 20 % en la fase 1 y cada 10 % en la 2 (que empieza saltando en el 50 %). */
@@ -144,7 +172,12 @@ export const CREEPER = {
   slamDamage: 150,
   /** Copias que deja en el carril que abandona al despegar (J-03). */
   copies: { calm: 1, enraged: 2 },
-  copyKind: 'worm',
+  /** De que tipo sale cada copia, con sus pesos: en la fase 1 siempre gusano; en la 2, 50 % gusano y 25 % cada otro. */
+  copyKinds: { calm: { worm: 1 }, enraged: { worm: 50, armored: 25, spitter: 25 } },
+  /** Nivel de sus copias (no salen al azar como el resto). */
+  copyLevel: 10,
+  /** Muerde como un gusano de este nivel. */
+  biteAsWormLevel: 10,
   /** Distancia entre copias, hacia atras (a la derecha) desde donde estaba. */
   copyGap: 0.8,
   /** Velocidad de sus copias respecto a la normal, como los gusanos que acelera en las rondas 8 y 9. PROVISIONAL. */
@@ -160,12 +193,16 @@ export const ROUND_PREP = {
 } as const;
 
 /**
- * Las rondas del mundo 1 (T-007; de 7 a 10 en T-008), en orden. Cada una desbloquea lo suyo al empezar su preparacion
- * (`unlocks`), avisa con una linea (`notice`) y saca sus grupos de enemigos: cada grupo, un enemigo por carril de
- * `lanes` a la vez, `atMs` milisegundos despues de que empiece el ataque (en orden). La ronda acaba cuando no quedan
- * enemigos por salir ni vivos. Los carriles van de 0 (el del fondo) a 4 (el de delante).
+ * Las rondas del mundo 1 (T-007; de 7 a 10 en T-008; progresion de T-009), en orden. Cada una desbloquea lo suyo al
+ * empezar su preparacion (`unlocks`, y el tope de nivel de las disparadoras en `levelCap`), avisa con una linea
+ * (`notice`) y saca sus grupos de enemigos: cada grupo, un enemigo por carril de `lanes` a la vez, `atMs` milisegundos
+ * despues de que empiece el ataque (en orden). La ronda acaba cuando no quedan enemigos por salir ni vivos. Los
+ * carriles van de 0 (el del fondo) a 4 (el de delante).
+ * Los enemigos salen con un nivel al azar segun `levels` (tablas de `ENEMY_LEVELS`; sin ella, nivel 1), salvo los
+ * grupos que fijan el suyo (`level`).
  * En las rondas 8 y 9 Creeper se prepara (`bossPreparing`, se le ve a la derecha) y acelera a sus enemigos (`haste`:
- * velocidad respecto a la normal). La 10 es el combate contra Creeper. PROVISIONAL: se ajusta jugando.
+ * velocidad respecto a la normal). La 10 es el combate contra Creeper: primero manda a su escolta (un grupo con su
+ * propio `level` y `haste`, y un grito, `shout`) y sale detras. PROVISIONAL: se ajusta jugando.
  */
 export const ROUNDS: readonly RoundScript[] = [
   {
@@ -184,7 +221,8 @@ export const ROUNDS: readonly RoundScript[] = [
   },
   {
     unlocks: ['levelUp'],
-    notice: 'Nuevo: subir de nivel. Toca una disparadora y mejórala',
+    levelCap: 5,
+    notice: 'Toca una disparadora para subirla de nivel (hasta el 5)',
     groups: [
       { atMs: 3_000, kind: 'worm', lanes: [2] },
       { atMs: 8_000, kind: 'worm', lanes: [2] },
@@ -201,7 +239,8 @@ export const ROUNDS: readonly RoundScript[] = [
   },
   {
     unlocks: ['fireMine'],
-    notice: 'Nuevo: fuego. Siémbralo solo y explota',
+    notice: 'Siembra fuego solo y explota. ¡Llega el acorazado, y los gusanos ya tienen nivel!',
+    levels: ENEMY_LEVELS.tables.early,
     groups: [
       { atMs: 3_000, kind: 'worm', lanes: [2] },
       { atMs: 10_000, kind: 'worm', lanes: [1, 2, 3] },
@@ -211,6 +250,7 @@ export const ROUNDS: readonly RoundScript[] = [
       { atMs: 36_000, kind: 'worm', lanes: [4] },
       { atMs: 37_500, kind: 'worm', lanes: [4] },
       { atMs: 39_000, kind: 'worm', lanes: [3, 4] },
+      { atMs: 45_000, kind: 'armored', lanes: [2] },
       { atMs: 52_000, kind: 'worm', lanes: [1, 2, 3] },
       { atMs: 54_000, kind: 'worm', lanes: [2] },
       { atMs: 64_000, kind: 'worm', lanes: [0, 1] },
@@ -218,16 +258,19 @@ export const ROUNDS: readonly RoundScript[] = [
     ],
   },
   {
-    unlocks: ['fireInfuse'],
-    notice: 'Nuevo: suelta el fuego sobre una disparadora para infundirla. ¡Llega el acorazado!',
+    unlocks: ['iceMine'],
+    notice: 'Siembra hielo solo y frena en área. ¡Llega el escupidor!',
+    levels: ENEMY_LEVELS.tables.early,
     groups: [
       { atMs: 3_000, kind: 'armored', lanes: [2] },
       { atMs: 12_000, kind: 'worm', lanes: [1, 3] },
       { atMs: 22_000, kind: 'worm', lanes: [0, 4] },
+      { atMs: 26_000, kind: 'spitter', lanes: [1] },
       { atMs: 30_000, kind: 'armored', lanes: [1] },
       { atMs: 36_000, kind: 'worm', lanes: [2, 3] },
       { atMs: 44_000, kind: 'armored', lanes: [4] },
       { atMs: 50_000, kind: 'worm', lanes: [0, 1] },
+      { atMs: 54_000, kind: 'spitter', lanes: [3] },
       { atMs: 58_000, kind: 'worm', lanes: [2] },
       { atMs: 60_000, kind: 'worm', lanes: [2] },
       { atMs: 66_000, kind: 'armored', lanes: [0, 3] },
@@ -235,8 +278,9 @@ export const ROUNDS: readonly RoundScript[] = [
     ],
   },
   {
-    unlocks: ['iceMine', 'iceInfuse'],
-    notice: 'Nuevo: hielo. Solo, frena en área; infundido, sus semillas frenan',
+    unlocks: ['fireInfuse', 'iceInfuse'],
+    notice: 'Suelta fuego o hielo sobre una disparadora (o arrastra una mina hasta ella) para infundirla',
+    levels: ENEMY_LEVELS.tables.mid,
     groups: [
       { atMs: 3_000, kind: 'worm', lanes: [1, 3] },
       { atMs: 10_000, kind: 'armored', lanes: [2] },
@@ -254,7 +298,8 @@ export const ROUNDS: readonly RoundScript[] = [
   },
   {
     unlocks: ['fuse'],
-    notice: 'Nuevo: arrastra una disparadora sobre otra igual para fusionarlas. ¡Llega el escupidor!',
+    notice: 'Arrastra una disparadora sobre otra igual para fusionarlas',
+    levels: ENEMY_LEVELS.tables.mid,
     groups: [
       { atMs: 3_000, kind: 'spitter', lanes: [2] },
       { atMs: 10_000, kind: 'worm', lanes: [1, 3] },
@@ -272,7 +317,9 @@ export const ROUNDS: readonly RoundScript[] = [
   },
   {
     unlocks: [],
-    notice: 'Todo junto, sin novedades. ¡Aguanta!',
+    levelCap: 10,
+    notice: 'Ya puedes subir tus disparadoras hasta el nivel 10. ¡Aguanta!',
+    levels: ENEMY_LEVELS.tables.mid,
     groups: [
       { atMs: 3_000, kind: 'worm', lanes: [0, 2, 4] },
       { atMs: 10_000, kind: 'armored', lanes: [1, 3] },
@@ -293,60 +340,103 @@ export const ROUNDS: readonly RoundScript[] = [
   },
   {
     unlocks: [],
-    notice: '¡Creeper se prepara! Sus gusanos llegan más rápido',
-    haste: 1.2,
+    notice: '¡Creeper se prepara! Sus tropas llegan más rápido y en mayor número',
+    haste: 1.25,
     bossPreparing: true,
+    levels: ENEMY_LEVELS.tables.late,
+    // T-009: un 50 % mas de cada tipo que en T-008 (50 gusanos, 12 acorazados y 12 escupidores).
     groups: [
       { atMs: 3_000, kind: 'worm', lanes: [0, 1, 3, 4] },
+      { atMs: 6_000, kind: 'worm', lanes: [1, 3] },
       { atMs: 9_000, kind: 'armored', lanes: [2] },
+      { atMs: 11_000, kind: 'spitter', lanes: [0, 4] },
       { atMs: 14_000, kind: 'spitter', lanes: [1, 3] },
+      { atMs: 17_000, kind: 'worm', lanes: [1, 3] },
       { atMs: 20_000, kind: 'worm', lanes: [0, 2, 4] },
       { atMs: 22_000, kind: 'worm', lanes: [0, 2, 4] },
+      { atMs: 26_000, kind: 'worm', lanes: [1, 2, 3] },
       { atMs: 30_000, kind: 'armored', lanes: [0, 4] },
       { atMs: 34_000, kind: 'spitter', lanes: [2] },
+      { atMs: 36_000, kind: 'armored', lanes: [1, 3] },
       { atMs: 40_000, kind: 'worm', lanes: [1, 2, 3] },
       { atMs: 42_000, kind: 'worm', lanes: [1, 2, 3] },
+      { atMs: 46_000, kind: 'worm', lanes: [0, 4] },
+      { atMs: 47_000, kind: 'spitter', lanes: [2] },
       { atMs: 52_000, kind: 'armored', lanes: [1, 3] },
       { atMs: 56_000, kind: 'spitter', lanes: [0, 4] },
+      { atMs: 58_000, kind: 'worm', lanes: [1, 3] },
       { atMs: 62_000, kind: 'worm', lanes: [0, 1, 2, 3, 4] },
+      { atMs: 66_000, kind: 'armored', lanes: [1, 3] },
+      { atMs: 69_000, kind: 'worm', lanes: [0, 2, 4] },
       { atMs: 72_000, kind: 'armored', lanes: [0, 2, 4] },
       { atMs: 76_000, kind: 'spitter', lanes: [1, 2, 3] },
+      { atMs: 79_000, kind: 'spitter', lanes: [2] },
       { atMs: 82_000, kind: 'worm', lanes: [0, 1, 2, 3, 4] },
       { atMs: 85_000, kind: 'worm', lanes: [0, 1, 2, 3, 4] },
       { atMs: 88_000, kind: 'worm', lanes: [1, 3] },
+      { atMs: 92_000, kind: 'worm', lanes: [0, 2, 4] },
     ],
   },
   {
     unlocks: [],
-    notice: 'Creeper casi está listo: más gusanos y aún más rápidos',
+    notice: 'Creeper casi está listo: aún más tropas y más rápidas',
     haste: 1.35,
     bossPreparing: true,
+    levels: ENEMY_LEVELS.tables.late,
+    // T-009: un 50 % mas de cada tipo que en T-008 (59 gusanos, 20 acorazados y 15 escupidores).
     groups: [
       { atMs: 3_000, kind: 'worm', lanes: [0, 1, 2, 3, 4] },
+      { atMs: 5_000, kind: 'worm', lanes: [1, 3] },
       { atMs: 8_000, kind: 'spitter', lanes: [0, 4] },
+      { atMs: 10_000, kind: 'worm', lanes: [0, 2, 4] },
       { atMs: 12_000, kind: 'armored', lanes: [1, 3] },
+      { atMs: 15_000, kind: 'armored', lanes: [2] },
       { atMs: 18_000, kind: 'worm', lanes: [0, 1, 2, 3, 4] },
       { atMs: 20_000, kind: 'worm', lanes: [1, 2, 3] },
+      { atMs: 23_000, kind: 'spitter', lanes: [1, 3] },
+      { atMs: 25_000, kind: 'worm', lanes: [0, 4] },
       { atMs: 28_000, kind: 'armored', lanes: [0, 2, 4] },
       { atMs: 32_000, kind: 'spitter', lanes: [1, 3] },
+      { atMs: 35_000, kind: 'armored', lanes: [0, 4] },
       { atMs: 38_000, kind: 'worm', lanes: [0, 2, 4] },
       { atMs: 40_000, kind: 'worm', lanes: [0, 2, 4] },
+      { atMs: 44_000, kind: 'worm', lanes: [1, 2, 3] },
       { atMs: 48_000, kind: 'spitter', lanes: [2] },
       { atMs: 50_000, kind: 'armored', lanes: [1, 3] },
+      { atMs: 53_000, kind: 'spitter', lanes: [0, 4] },
       { atMs: 56_000, kind: 'worm', lanes: [0, 1, 2, 3, 4] },
+      { atMs: 60_000, kind: 'worm', lanes: [0, 1, 3, 4] },
+      { atMs: 63_000, kind: 'armored', lanes: [2] },
       { atMs: 66_000, kind: 'armored', lanes: [0, 2, 4] },
       { atMs: 68_000, kind: 'spitter', lanes: [0, 1, 3, 4] },
+      { atMs: 72_000, kind: 'worm', lanes: [1, 2, 3] },
       { atMs: 76_000, kind: 'worm', lanes: [0, 1, 2, 3, 4] },
       { atMs: 79_000, kind: 'worm', lanes: [0, 1, 2, 3, 4] },
       { atMs: 82_000, kind: 'spitter', lanes: [2] },
+      { atMs: 85_000, kind: 'armored', lanes: [0, 4] },
       { atMs: 88_000, kind: 'worm', lanes: [0, 1, 2, 3, 4] },
       { atMs: 91_000, kind: 'armored', lanes: [1, 2, 3] },
+      { atMs: 94_000, kind: 'worm', lanes: [0, 2, 4] },
+      { atMs: 97_000, kind: 'spitter', lanes: [2] },
+      { atMs: 99_000, kind: 'armored', lanes: [2] },
     ],
   },
   {
     unlocks: [],
-    notice: '¡Llega Creeper! Salta de carril: reparte tus defensas',
-    groups: [{ atMs: 2_000, kind: 'creeper', lanes: [2] }],
+    notice: '¡Llega Creeper con su escolta! Salta de carril: reparte tus defensas',
+    levels: ENEMY_LEVELS.tables.late,
+    groups: [
+      // T-009 (P-10): su escolta, un acorazado de nivel 5 por carril, va a su paso para no dejarse adelantar.
+      {
+        atMs: 2_000,
+        kind: 'armored',
+        lanes: [0, 1, 2, 3, 4],
+        level: 5,
+        haste: ENEMIES.creeper.speed / ENEMIES.armored.speed,
+        shout: '¡ADELANTE, MIS ACORAZADOS!',
+      },
+      { atMs: 5_500, kind: 'creeper', lanes: [2] },
+    ],
   },
 ];
 

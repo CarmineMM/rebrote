@@ -1,6 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { CardId } from './game/core/match';
-import { EventBus, GameEvents, type BossInfo, type CardPreview, type LossInfo, type PlantPanel, type RoundInfo } from './game/EventBus';
+import {
+  EventBus,
+  GameEvents,
+  type BossInfo,
+  type CardPreview,
+  type LossInfo,
+  type PlantPanel,
+  type RoundInfo,
+  type UnlockInfo,
+} from './game/EventBus';
 import { Balance } from './ui/Balance';
 import { Card } from './ui/Card';
 import { DefeatScreen } from './ui/DefeatScreen';
@@ -9,6 +18,7 @@ import { LevelPanel } from './ui/LevelPanel';
 import { Lives } from './ui/Lives';
 import { PauseMenu } from './ui/PauseMenu';
 import { RoundHud } from './ui/RoundHud';
+import { UnlockModal } from './ui/UnlockModal';
 import { NO_AUTO_FULLSCREEN, useFullscreen } from './ui/useFullscreen';
 import { useSettings } from './ui/useSettings';
 import { VictoryScreen } from './ui/VictoryScreen';
@@ -22,8 +32,9 @@ const CARDS: ReadonlyArray<{ id: CardId; label: string }> = [
 
 /**
  * Pantalla completa con el HUD flotando encima del juego, menu de pausa con los ajustes (ADR-0007), ronda en curso
- * (T-007) con la barra del jefe (T-008) y pantallas de derrota y de victoria. Con la partida acabada no se abre el menu de pausa: solo se puede
- * jugar otra vez.
+ * (T-007) con la barra del jefe (T-008), aviso de lo desbloqueado (T-009) y pantallas de derrota y de victoria. Con la
+ * partida acabada no se abre el menu de pausa: solo se puede jugar otra vez. Mientras el aviso de lo desbloqueado esta
+ * abierto el juego espera en pausa.
  */
 export function App() {
   const [ready, setReady] = useState(false);
@@ -35,6 +46,10 @@ export function App() {
   const [round, setRound] = useState<RoundInfo | null>(null);
   const [boss, setBoss] = useState<BossInfo | null>(null);
   const [loss, setLoss] = useState<LossInfo | null>(null);
+  /** Aviso de lo desbloqueado que el jugador aun no acepto (T-009). */
+  const [unlock, setUnlock] = useState<UnlockInfo | null>(null);
+  /** Ronda del ultimo aviso aceptado: la escena lo repite al pedirle el estado y no debe volver a salir. */
+  const acceptedRound = useRef<number | null>(null);
   const hudRef = useRef<HTMLElement>(null);
   const [paused, setPaused] = useState(false);
   const [lost, setLost] = useState(false);
@@ -60,6 +75,9 @@ export function App() {
       setWon(true);
       setPaused(false);
     };
+    const onUnlocked = (info: UnlockInfo) => {
+      if (info.round !== acceptedRound.current) setUnlock(info);
+    };
     EventBus.on(GameEvents.sceneReady, onReady);
     EventBus.on(GameEvents.balanceChanged, setBalance);
     EventBus.on(GameEvents.livesChanged, setLives);
@@ -70,6 +88,7 @@ export function App() {
     EventBus.on(GameEvents.matchWon, onWon);
     EventBus.on(GameEvents.roundChanged, setRound);
     EventBus.on(GameEvents.bossChanged, setBoss);
+    EventBus.on(GameEvents.unlocked, onUnlocked);
     // Si la escena arranco antes que el HUD, que reenvie el estado.
     EventBus.emit(GameEvents.stateRequested);
     return () => {
@@ -83,6 +102,7 @@ export function App() {
       EventBus.off(GameEvents.matchWon, onWon);
       EventBus.off(GameEvents.roundChanged, setRound);
       EventBus.off(GameEvents.bossChanged, setBoss);
+      EventBus.off(GameEvents.unlocked, onUnlocked);
     };
   }, []);
 
@@ -95,8 +115,19 @@ export function App() {
     if (settings.fullscreen) fullscreen.enter();
   }, [settings.fullscreen, fullscreen]);
 
+  /** El jugador acepta el aviso de lo desbloqueado: el juego sigue. */
+  const acceptUnlock = useCallback(() => {
+    if (!unlock) return;
+    acceptedRound.current = unlock.round;
+    EventBus.emit(GameEvents.unlockAccepted, unlock.round);
+    setUnlock(null);
+  }, [unlock]);
+
   /** Partida nueva desde cero (sin continuar la anterior). */
   const restart = useCallback(() => {
+    // La partida nueva vuelve a avisar de lo de la ronda 1.
+    acceptedRound.current = null;
+    setUnlock(null);
     setLost(false);
     setLoss(null);
     setWon(false);
@@ -109,6 +140,11 @@ export function App() {
     const onKey = (event: KeyboardEvent) => {
       // Con la partida acabada solo cuenta el boton de jugar otra vez (Enter o espacio, que ya tiene el foco).
       if (event.repeat || over) return;
+      // Con el aviso de lo desbloqueado abierto, Esc lo acepta (Enter ya lo hace el boton, que tiene el foco).
+      if (unlock && !paused) {
+        if (event.key === 'Escape') acceptUnlock();
+        return;
+      }
       if (event.key === 'Escape') {
         if (fullscreen.exitedJustNow()) return;
         if (paused) resume();
@@ -122,7 +158,7 @@ export function App() {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [paused, selected, plantPanel, over, resume, fullscreen]);
+  }, [paused, selected, plantPanel, over, resume, fullscreen, unlock, acceptUnlock]);
 
   // Si el jugador cambia de pestana o minimiza, al volver encuentra el juego en pausa.
   useEffect(() => {
@@ -134,11 +170,11 @@ export function App() {
   }, [pause]);
 
   return (
-    // Con la pausa se congelan tambien las animaciones CSS que cuentan tiempo (el aviso de la ronda).
-    <main className={`app${paused ? ' is-paused' : ''}`}>
-      <GameCanvas quality={level} paused={paused} />
+    // Con la pausa (o el aviso de lo desbloqueado) se congelan tambien las animaciones CSS que cuentan tiempo (el aviso de la ronda).
+    <main className={`app${paused || unlock ? ' is-paused' : ''}`}>
+      <GameCanvas quality={level} paused={paused || unlock !== null} />
 
-      <header ref={hudRef} className="hud" aria-hidden={paused || over}>
+      <header ref={hudRef} className="hud" aria-hidden={paused || over || unlock !== null}>
         <div className="seed-tray" aria-label="Cartas">
           {CARDS.filter(({ id }) => (round?.cards ?? ['shooter']).includes(id)).map(({ id, label }) => (
             // Cada carta nueva entra en la bandeja con un salto al desbloquearse.
@@ -171,7 +207,7 @@ export function App() {
         </div>
       </header>
 
-      {plantPanel && !paused && !over && <LevelPanel key={plantPanel.id} panel={plantPanel} avoid={hudRef} />}
+      {plantPanel && !paused && !over && !unlock && <LevelPanel key={plantPanel.id} panel={plantPanel} avoid={hudRef} />}
 
       {settings.showFps && fps !== null && <div className="fps">{fps} FPS</div>}
 
@@ -185,6 +221,8 @@ export function App() {
       {lost && <DefeatScreen round={round} loss={loss} onRestart={restart} />}
 
       {won && !lost && <VictoryScreen rounds={round?.total ?? 0} onRestart={restart} />}
+
+      {unlock && !paused && !over && <UnlockModal unlock={unlock} onAccept={acceptUnlock} />}
 
       {paused && !over && (
         <PauseMenu

@@ -1,7 +1,7 @@
 import * as Phaser from 'phaser';
 import { BOARD, CREEPER, ECONOMY, ENEMIES, LIMITS, MINE } from '../config/balance';
 import { cellAt, cellCenter, type BoardPoint, type Cell } from '../core/board';
-import { isDefeated, isEnraged, spawnEnemy, stepCombat, type CombatEvent, type Enemy } from '../core/combat';
+import { isDefeated, isEnraged, spawnEnemy, stepCombat, type CombatEvent, type Enemy, type EnemyKind } from '../core/combat';
 import { rollKillReward } from '../core/economy';
 import {
   cardCost,
@@ -13,9 +13,13 @@ import {
   fusedPlant,
   fusionBlocker,
   fusionTargets,
+  infuseWithMine,
   levelUpOffer,
   levelUpPlant,
   mineAt,
+  mineDragBlocker,
+  mineInfusion,
+  mineInfusionTargets,
   plantAt,
   playCard,
   sownAt,
@@ -38,18 +42,30 @@ import {
   isUnlocked,
   isWon,
   roundScript,
+  roundUnlocks,
   startAttack,
   stepRound,
   unlockRound,
   type RoundEvent,
 } from '../core/rounds';
-import { EventBus, GameEvents, type BossInfo, type CardPreview, type LossInfo, type PagePoint, type PlantPanel, type RoundInfo } from '../EventBus';
+import {
+  EventBus,
+  GameEvents,
+  type BossInfo,
+  type CardPreview,
+  type LossInfo,
+  type PagePoint,
+  type PlantPanel,
+  type RoundInfo,
+  type UnlockInfo,
+  type UnlockItem,
+} from '../EventBus';
 import { createAmbience, type Ambience } from '../view/ambience';
 import { BoardLabel, drawArea, drawCell, type LabelLine } from '../view/boardMarks';
 import { BulletView } from '../view/bulletView';
 import { CreeperOmen, CreeperView, OMEN_LEAP_MS, bossLoadProgress } from '../view/creeperView';
 import { Effects } from '../view/effects';
-import { DRAG_LOOK, FusionDragView, dragGround } from '../view/fusionDragView';
+import { DRAG_LOOK, FusionDragView, carriedMine, carriedShooter, dragGround } from '../view/fusionDragView';
 import { DEPTH, SCENERY, entityDepth, perspective, viewFor } from '../view/layout';
 import { medalTier, showsMedal } from '../view/levelMedal';
 import { MineView, mineAreaColor, mineScale } from '../view/mineView';
@@ -121,22 +137,31 @@ const keyCell = (key: string): Cell => {
 };
 const sameCell = (a: Cell | null, b: Cell | null) => a !== null && b !== null && a.lane === b.lane && a.col === b.col;
 
-/** Planta pulsada con el boton aun abajo: si el puntero se mueve lo bastante, empieza a arrastrarse (T-006). */
+/**
+ * Planta (o mina, T-009) pulsada con el boton aun abajo: si el puntero se mueve lo bastante, empieza a arrastrarse
+ * (T-006).
+ */
 interface PlantPress {
+  /** Una disparadora (para fusionarla o seleccionarla) o una mina sembrada (para infundir con ella). */
+  kind: 'plant' | 'mine';
   cell: Cell;
   pointerId: number;
   x: number;
   y: number;
 }
 
-/** Arrastre en curso de una planta para fusionarla con otra (T-006). Mientras dura, la planta sigue en su casilla. */
+/**
+ * Arrastre en curso de una planta para fusionarla con otra (T-006), o de una mina para infundir una disparadora (T-009).
+ * Mientras dura, lo arrastrado sigue en su casilla.
+ */
 interface PlantDrag {
+  kind: 'plant' | 'mine';
   from: Cell;
   pointerId: number;
   /** Del punto pulsado a los pies de la planta, en anchos de casilla (ver `dragGround`). */
   grab: { x: number; y: number };
   view: FusionDragView;
-  /** Casillas de las plantas con las que se puede fusionar ahora mismo. */
+  /** Casillas de las plantas sobre las que se puede soltar ahora mismo (fusionar o infundir). */
   targets: Cell[];
   /** Casilla bajo la planta arrastrada, si cae en el tablero. */
   over: Cell | null;
@@ -204,6 +229,8 @@ export class BoardScene extends Phaser.Scene {
   /** Medicion de fps en tiempo real (el reloj del juego se frena cuando va lento, no sirve para esto). */
   private fpsWindowStart = 0;
   private fpsFrames = 0;
+  /** Aviso de desbloqueo (T-009) que el jugador aun no acepto: se repite si el HUD pide el estado. */
+  private pendingUnlock: UnlockInfo | null = null;
   /** Pausa pedida por el HUD. Phaser marca la escena como activa al terminar create(): se aplica despues. */
   private wantPaused = false;
   private created = false;
@@ -243,6 +270,7 @@ export class BoardScene extends Phaser.Scene {
     this.lostToBoss = false;
     this.bossKey = '';
     this.lastBoss = null;
+    this.pendingUnlock = null;
 
     registerTextures(this, this.quality.renderScale);
     this.fitView();
@@ -273,6 +301,8 @@ export class BoardScene extends Phaser.Scene {
     });
 
     EventBus.emit(GameEvents.sceneReady, this.scene.key);
+    // Partida nueva: aviso de lo que trae la ronda 1 (T-009). Una partida que se continua ya lo dio.
+    if (!this.resume) this.announceUnlocks(this.match.round.index);
     this.emitState();
     // Una partida perdida (o ganada) que se recrea (por ejemplo, al cambiar la calidad) sigue igual.
     if (isDefeated(this.match)) this.enterDefeat(0);
@@ -300,16 +330,21 @@ export class BoardScene extends Phaser.Scene {
       .centerOn(view.x + view.width / 2, view.y + view.height / 2);
   }
 
-  /** Congela la escena entera (temporizadores, tweens, particulas, input); se sigue viendo detras del menu. */
+  /**
+   * Congela la escena entera (temporizadores, tweens, particulas, input); se sigue viendo detras del menu.
+   * Se aplica en el acto (`sys`), no en cola como `this.scene.pause()`: si la pausa se quita y se vuelve a poner
+   * enseguida (aceptar un aviso de desbloqueo y que salga el siguiente, T-009), la cola leia un estado viejo y la escena
+   * se quedaba en pausa sin nada abierto.
+   */
   private applyPause(paused: boolean): void {
     this.wantPaused = paused;
     if (!this.created) return;
     // Un arrastre a medias no sobrevive a la pausa: la planta vuelve a su casilla.
     if (paused) this.cancelDrag();
     if (paused && this.sys.isActive()) {
-      this.scene.pause();
+      this.sys.pause();
     } else if (!paused && this.sys.isPaused()) {
-      this.scene.resume();
+      this.sys.resume();
       // La pausa no cuenta como fotogramas lentos.
       this.fpsWindowStart = performance.now();
       this.fpsFrames = 0;
@@ -342,11 +377,13 @@ export class BoardScene extends Phaser.Scene {
   }
 
   /**
-   * Recompensa por enemigo eliminado en `at` (punto del tablero).
-   * La mayoria de las veces se cobra sola; a veces la moneda queda en el suelo.
+   * Recompensa por un enemigo de `kind` eliminado en `at` (punto del tablero): la suya (`ENEMIES[kind].reward`, T-009).
+   * La mayoria de las veces se cobra sola; a veces la moneda queda en el suelo. El que no da nada (Creeper), nada.
    */
-  rewardKill(at: BoardPoint, random?: () => number): void {
-    const reward = rollKillReward(undefined, random);
+  rewardKill(at: BoardPoint, kind: EnemyKind, random?: () => number): void {
+    const base = ENEMIES[kind].reward;
+    if (base <= 0) return;
+    const reward = rollKillReward(base, random);
     if (reward.kind === 'auto') {
       this.credit(reward.amount, at);
     } else {
@@ -412,7 +449,7 @@ export class BoardScene extends Phaser.Scene {
         if (!pointer.isDown) {
           this.press = null;
         } else if (
-          this.canDragPlants() &&
+          (press.kind === 'mine' || this.canDragPlants()) &&
           Phaser.Math.Distance.Between(press.x, press.y, pointer.worldX, pointer.worldY) >= DRAG_LOOK.startDistance
         ) {
           this.startDrag(pointer);
@@ -438,11 +475,17 @@ export class BoardScene extends Phaser.Scene {
         // Un clic sobre una moneda la recoge; no debe sembrar en la casilla de debajo.
         if (over.length > 0 || this.drag) return;
         // Sin carta elegida, pulsar una planta la prepara para arrastrarla (T-006) o, si se suelta sin moverla,
-        // para seleccionarla (T-003). Cada gesto, solo si su ronda ya lo desbloqueo (T-007).
+        // para seleccionarla (T-003). Pulsar una mina que espera la prepara para arrastrarla e infundir (T-009). Cada
+        // gesto, solo si su ronda ya lo desbloqueo (T-007).
         const plantCell =
           this.canDragPlants() || this.canPickPlants() ? this.plantCellAtScreen(pointer.worldX, pointer.worldY) : null;
         if (plantCell) {
-          this.press = { cell: plantCell, pointerId: pointer.id, x: pointer.worldX, y: pointer.worldY };
+          this.press = { kind: 'plant', cell: plantCell, pointerId: pointer.id, x: pointer.worldX, y: pointer.worldY };
+          return;
+        }
+        const mineCell = this.draggableMineAtScreen(pointer.worldX, pointer.worldY);
+        if (mineCell) {
+          this.press = { kind: 'mine', cell: mineCell, pointerId: pointer.id, x: pointer.worldX, y: pointer.worldY };
           return;
         }
         // Un clic fuera de las plantas cierra el panel de nivel.
@@ -457,7 +500,7 @@ export class BoardScene extends Phaser.Scene {
       if (press?.pointerId === pointer.id) {
         this.press = null;
         // Pulsar y soltar una planta sin arrastrarla la selecciona (otra vez, la deselecciona).
-        if (inside && this.canPickPlants() && plantAt(this.match, press.cell)) {
+        if (inside && press.kind === 'plant' && this.canPickPlants() && plantAt(this.match, press.cell)) {
           this.pickPlant(sameCell(this.picked, press.cell) ? null : press.cell);
         }
       }
@@ -496,6 +539,9 @@ export class BoardScene extends Phaser.Scene {
       if (cell) this.tryPlay(cell);
     };
     const onStateRequested = () => this.emitState();
+    const onUnlockAccepted = (round: number) => {
+      if (this.pendingUnlock?.round === round) this.pendingUnlock = null;
+    };
     const onPause = (paused: boolean) => this.applyPause(paused);
     // Partida nueva desde cero: no continua la anterior (sin `resume`) y arranca sin pausa.
     const onRestart = () => this.scene.restart({ quality: this.level } satisfies BoardSceneData);
@@ -507,6 +553,7 @@ export class BoardScene extends Phaser.Scene {
     EventBus.on(GameEvents.cardDragged, onDragged);
     EventBus.on(GameEvents.cardDropped, onDropped);
     EventBus.on(GameEvents.stateRequested, onStateRequested);
+    EventBus.on(GameEvents.unlockAccepted, onUnlockAccepted);
     EventBus.on(GameEvents.pauseChanged, onPause);
     EventBus.on(GameEvents.restartRequested, onRestart);
 
@@ -518,6 +565,7 @@ export class BoardScene extends Phaser.Scene {
       EventBus.off(GameEvents.cardDragged, onDragged);
       EventBus.off(GameEvents.cardDropped, onDropped);
       EventBus.off(GameEvents.stateRequested, onStateRequested);
+      EventBus.off(GameEvents.unlockAccepted, onUnlockAccepted);
       EventBus.off(GameEvents.pauseChanged, onPause);
       EventBus.off(GameEvents.restartRequested, onRestart);
     };
@@ -539,6 +587,8 @@ export class BoardScene extends Phaser.Scene {
     const next = this.match.round.index + 1;
     if (this.defeated || this.won || next >= ROUND_COUNT) return;
     this.match = { ...this.match, round: createRound(next) };
+    this.cancelDrag();
+    this.announceUnlocks(next);
     this.emitRound();
     this.refreshHighlight();
   }
@@ -646,8 +696,37 @@ export class BoardScene extends Phaser.Scene {
       case 'roundStarted':
         // Lo recien desbloqueado puede cambiar lo que pasa al soltar la carta elegida (infundir).
         this.refreshHighlight();
+        this.announceUnlocks(event.index);
+        break;
+      case 'shout':
+        // Creeper manda a su escolta (T-009): lo grita desde donde se prepara y la acelera.
+        this.omen?.command(event.text);
         break;
     }
+  }
+
+  /**
+   * Avisa al HUD de lo nuevo de la ronda `index` (T-009): React lo muestra en un aviso que hay que aceptar y deja el
+   * juego en pausa mientras tanto. Una ronda sin nada nuevo no avisa.
+   */
+  private announceUnlocks(index: number): void {
+    const items: UnlockItem[] = [];
+    for (const unlock of roundUnlocks(index)) {
+      if (unlock.kind === 'levelCap') {
+        items.push({ id: 'levelCap', level: unlock.level });
+        continue;
+      }
+      const { feature } = unlock;
+      const id = feature === 'fireInfuse' || feature === 'iceInfuse' ? 'infuse' : feature;
+      if (!items.some((item) => item.id === id)) items.push({ id });
+    }
+    if (items.length === 0) return;
+    // Un arrastre o una carta a medias no sobreviven al aviso, que pausa el juego.
+    this.cancelDrag();
+    this.select(null);
+    this.pickPlant(null);
+    this.pendingUnlock = { round: index + 1, items };
+    EventBus.emit(GameEvents.unlocked, this.pendingUnlock);
   }
 
   /** Empieza el ataque: los agujeros brillan y salta "¡Ahí vienen!" junto a ellos. */
@@ -725,11 +804,14 @@ export class BoardScene extends Phaser.Scene {
       }
       case 'mineArmed':
         this.mineViews.get(cellKey(event.cell))?.arm();
+        // Una mina que empieza a contar ya no se puede llevar a una disparadora (T-009): vuelve a su casilla.
+        if (this.drag?.kind === 'mine' && sameCell(this.drag.from, event.cell)) this.cancelDrag();
         break;
       case 'mineExploded': {
         const key = cellKey(event.cell);
         this.mineViews.get(key)?.explode();
         this.mineViews.delete(key);
+        this.plantLostDuringDrag(event.cell);
         // La de fuego sacude a los alcanzados; la de hielo los deja tiesos y tiritando, con un temblor mas corto.
         if (event.element === 'fire') {
           event.enemyIds.forEach((id) => this.wormViews.get(id)?.blasted());
@@ -746,7 +828,7 @@ export class BoardScene extends Phaser.Scene {
         view?.die();
         this.wormViews.delete(event.enemyId);
         if (view instanceof CreeperView) this.cameras.main.shake(380, 0.008);
-        this.rewardKill(event.at);
+        this.rewardKill(event.at, event.kind);
         break;
       }
       case 'enemyEscaped':
@@ -1048,12 +1130,31 @@ export class BoardScene extends Phaser.Scene {
     return this.canTouchPlants() && isUnlocked(this.match, 'levelUp');
   }
 
-  /** Cursor sobre una planta: mano para arrastrarla, o dedo si solo se puede seleccionar. */
+  /** Cursor sobre una planta: mano para arrastrarla, o dedo si solo se puede seleccionar. Sobre una mina que se puede arrastrar (T-009), mano. */
   private plantCursor(x: number, y: number): string {
     const canDrag = this.canDragPlants();
-    if (!canDrag && !this.canPickPlants()) return 'default';
-    if (!this.plantCellAtScreen(x, y)) return 'default';
-    return canDrag ? 'grab' : 'pointer';
+    if ((canDrag || this.canPickPlants()) && this.plantCellAtScreen(x, y)) return canDrag ? 'grab' : 'pointer';
+    return this.draggableMineAtScreen(x, y) ? 'grab' : 'default';
+  }
+
+  /**
+   * Mina bajo un punto de pantalla que se puede arrastrar ahora para infundir (T-009): sin carta elegida, desde la
+   * ronda que desbloquea infundir su elemento y mientras aun espera (no cuenta). Primero la que se ve ahi; si no, la
+   * de la casilla bajo el punto.
+   */
+  private draggableMineAtScreen(x: number, y: number): Cell | null {
+    if (!this.canTouchPlants()) return null;
+    let found: Cell | null = null;
+    let bestFootY = -Infinity;
+    for (const [key, view] of this.mineViews) {
+      const footY = view.foot().y;
+      if (footY > bestFootY && view.contains(x, y)) {
+        found = keyCell(key);
+        bestFootY = footY;
+      }
+    }
+    const cell = found ?? this.cellAtScreen(x, y);
+    return cell && mineDragBlocker(this.match, cell) === null ? cell : null;
   }
 
   /**
@@ -1081,23 +1182,37 @@ export class BoardScene extends Phaser.Scene {
     this.input.setDefaultCursor(cursor);
   }
 
-  /** Empieza el arrastre: la planta sale a la mano, sus destinos se marcan en verde y el resto se atenua. */
+  /** Lo que se arrastra, en su casilla: la planta (T-006) o la mina (T-009). */
+  private dragSource(drag: Pick<PlantDrag, 'kind' | 'from'>): PlantView | MineView | undefined {
+    const key = cellKey(drag.from);
+    return drag.kind === 'plant' ? this.plantViews.get(key) : this.mineViews.get(key);
+  }
+
+  /** Destinos del arrastre ahora mismo: plantas con las que fusionar, o disparadoras que infundir con la mina. */
+  private dragTargets(drag: Pick<PlantDrag, 'kind' | 'from'>): Cell[] {
+    return drag.kind === 'plant' ? fusionTargets(this.match, drag.from) : mineInfusionTargets(this.match, drag.from);
+  }
+
+  /** Empieza el arrastre: la planta (o la mina) sale a la mano, sus destinos se marcan en verde y el resto se atenua. */
   private startDrag(pointer: Phaser.Input.Pointer): void {
     const press = this.press;
     this.press = null;
     if (!press) return;
-    const plant = plantAt(this.match, press.cell);
-    const view = this.plantViews.get(cellKey(press.cell));
-    if (!plant || !view) return;
+    const kind = press.kind;
+    const plant = kind === 'plant' ? plantAt(this.match, press.cell) : null;
+    const mine = kind === 'mine' && mineDragBlocker(this.match, press.cell) === null ? mineAt(this.match, press.cell) : null;
+    const view = this.dragSource({ kind, from: press.cell });
+    if ((!plant && !mine) || !view) return;
     // Arrastrar cierra el panel de nivel (de esta o de otra planta).
     this.pickPlant(null);
 
     const { cellWidth } = plantPlacement(press.cell);
     const foot = view.foot();
     const grab = { x: (foot.x - press.x) / cellWidth, y: (foot.y - press.y) / cellWidth };
-    const targets = fusionTargets(this.match, press.cell);
-    const dragView = new FusionDragView(this, this.fx, plant.shooter, foot, cellWidth);
-    this.drag = { from: press.cell, pointerId: pointer.id, grab, view: dragView, targets, over: null, cellWidth };
+    const targets = this.dragTargets({ kind, from: press.cell });
+    const look = plant ? carriedShooter(plant.shooter) : carriedMine((mine as Mine).element);
+    const dragView = new FusionDragView(this, this.fx, look, foot, cellWidth);
+    this.drag = { kind, from: press.cell, pointerId: pointer.id, grab, view: dragView, targets, over: null, cellWidth };
     view.setLifted(true);
     this.markTargets(true);
     this.plantViews.forEach((other, key) => {
@@ -1142,6 +1257,10 @@ export class BoardScene extends Phaser.Scene {
       drag.view.hover(null, null);
       return;
     }
+    if (drag.kind === 'mine') {
+      this.refreshMineDragHover(drag, to, toView.foot());
+      return;
+    }
     const blocker = fusionBlocker(this.match, drag.from, to);
     if (blocker === null) {
       const source = plantAt(this.match, drag.from) as Plant;
@@ -1161,6 +1280,35 @@ export class BoardScene extends Phaser.Scene {
     }
   }
 
+  /**
+   * Con una mina en la mano (T-009), sobre una disparadora: "Infundir con la mina", con lo que se paga aparte si es una
+   * fusionada ("+ ×2 = 150"), o por que no se puede.
+   */
+  private refreshMineDragHover(drag: PlantDrag, to: Cell, labelAt: { x: number; y: number }): void {
+    const play = mineInfusion(this.match, drag.from, to);
+    const plant = plantAt(this.match, to);
+    const extra = play.multiplier > 1 ? `×${play.multiplier} = ${play.cost}` : `${play.cost}`;
+    const pay = play.cost > 0 ? `Infundir: mina + ${extra}` : 'Infundir con la mina';
+    if (play.blocker === null) {
+      drag.view.hover(to, 'ok', [{ text: pay, tone: 'ok' }], labelAt);
+    } else if (play.blocker === 'has-element') {
+      const element = plant?.shooter.element === 'fire' ? 'fuego' : 'hielo';
+      drag.view.hover(to, 'blocked', [{ text: `Ya tiene ${element}`, tone: 'blocked' }], labelAt);
+    } else if (play.blocker === 'insufficient-funds') {
+      drag.view.hover(
+        to,
+        'blocked',
+        [
+          { text: pay, tone: 'blocked' },
+          { text: 'No alcanza la moneda', tone: 'blocked' },
+        ],
+        labelAt,
+      );
+    } else {
+      drag.view.hover(null, null);
+    }
+  }
+
   /** Suelta la planta: si cae sobre un destino valido se fusionan; si no, vuelve a su casilla sin cambios. */
   private dropDrag(pointer: Phaser.Input.Pointer): void {
     const drag = this.drag;
@@ -1168,6 +1316,10 @@ export class BoardScene extends Phaser.Scene {
     this.moveDrag(pointer);
     this.endDrag();
     const to = drag.over;
+    if (drag.kind === 'mine') {
+      this.dropMine(drag, to);
+      return;
+    }
     if (!to || fusionBlocker(this.match, drag.from, to) !== null) {
       this.returnDrag(drag);
       return;
@@ -1189,6 +1341,31 @@ export class BoardScene extends Phaser.Scene {
     this.refreshHighlight();
   }
 
+  /**
+   * Suelta la mina (T-009): sobre una disparadora que se puede infundir, la regla se aplica en el acto, la de la mano se
+   * mete en la planta, la de la casilla se hunde y la planta se infunde con su animacion de siempre. Si no, vuelve.
+   */
+  private dropMine(drag: PlantDrag, to: Cell | null): void {
+    const mine = mineAt(this.match, drag.from);
+    if (!to || !mine || mineInfusion(this.match, drag.from, to).blocker !== null) {
+      this.returnDrag(drag);
+      return;
+    }
+    this.match = infuseWithMine(this.match, drag.from, to);
+    const fromKey = cellKey(drag.from);
+    this.mineViews.get(fromKey)?.consume();
+    this.mineViews.delete(fromKey);
+    const toView = this.plantViews.get(cellKey(to));
+    if (toView) {
+      drag.view.dropInto(toView.foot(), plantPlacement(to).cellWidth);
+      toView.infuse(mine.element);
+    } else {
+      drag.view.poof();
+    }
+    this.emitBalance();
+    this.refreshHighlight();
+  }
+
   /** Corta el arrastre sin fusionar: la planta vuelve a su casilla. */
   private cancelDrag(): void {
     this.press = null;
@@ -1205,18 +1382,27 @@ export class BoardScene extends Phaser.Scene {
     this.setCursor('default');
   }
 
-  /** La planta de la mano vuelve volando a su casilla y la de la casilla recupera su aspecto. */
+  /** La planta (o la mina) de la mano vuelve volando a su casilla y la de la casilla recupera su aspecto. */
   private returnDrag(drag: PlantDrag): void {
-    const key = cellKey(drag.from);
-    const view = this.plantViews.get(key);
+    const view = this.dragSource(drag);
     if (!view) {
       drag.view.poof();
       return;
     }
     drag.view.returnTo(view.foot(), plantPlacement(drag.from).cellWidth, () => {
       // Si mientras volaba murio o se empezo a arrastrar otra vez, no hay nada que devolver.
-      if (this.plantViews.get(key) === view && !sameCell(this.drag?.from ?? null, drag.from)) view.setLifted(false);
+      if (this.dragSource(drag) === view && !sameCell(this.drag?.from ?? null, drag.from)) view.setLifted(false);
     });
+  }
+
+  /** Vuelve a calcular a que se puede soltar lo que se lleva en la mano (cambio el saldo o murio una planta). */
+  private refreshDragTargets(): void {
+    const drag = this.drag;
+    if (!drag) return;
+    drag.targets = this.dragTargets(drag);
+    drag.view.showTargets(drag.targets);
+    this.markTargets(true);
+    this.refreshDragHover();
   }
 
   /**
@@ -1231,9 +1417,7 @@ export class BoardScene extends Phaser.Scene {
       drag.view.poof();
       return;
     }
-    drag.targets = fusionTargets(this.match, drag.from);
-    drag.view.showTargets(drag.targets);
-    this.refreshDragHover();
+    this.refreshDragTargets();
   }
 
   // -------------------------------------------------------------------------
@@ -1276,6 +1460,8 @@ export class BoardScene extends Phaser.Scene {
       panel = {
         id: cellKey(cell),
         level: offer.level,
+        cap: offer.cap,
+        capRaisedAt: offer.capRaisedAt === null ? null : offer.capRaisedAt + 1,
         cost: offer.cost,
         multiplier: offer.multiplier,
         affordable: offer.blocker === null,
@@ -1431,6 +1617,8 @@ export class BoardScene extends Phaser.Scene {
     this.emitBalance();
     // Si hay una carta elegida, el saldo nuevo puede cambiar el color del resaltado.
     this.refreshHighlight();
+    // Con una mina en la mano, el saldo nuevo puede alcanzar para infundir una fusionada (T-009).
+    if (this.drag?.kind === 'mine') this.refreshDragTargets();
     if (at) {
       const ground = perspective.toScreen(at);
       this.fx.floatText(`+${amount}`, ground.x, ground.y - perspective.cellWidthAt(at) * 0.8);
@@ -1506,5 +1694,6 @@ export class BoardScene extends Phaser.Scene {
     EventBus.emit(GameEvents.cardPreview, null);
     this.panelKey = 'stale';
     this.emitPlantPanel();
+    if (this.pendingUnlock) EventBus.emit(GameEvents.unlocked, this.pendingUnlock);
   }
 }

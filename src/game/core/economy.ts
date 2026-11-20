@@ -15,7 +15,7 @@ export function droppedCoinValue(amount: number, bonusPercent: number = ECONOMY.
 }
 
 /** `random` devuelve un valor en [0, 1), como Math.random. Se inyecta para poder testearlo. */
-export function rollKillReward(base: number = ECONOMY.killReward, random: () => number = Math.random): KillReward {
+export function rollKillReward(base: number, random: () => number = Math.random): KillReward {
   return random() < ECONOMY.dropChance
     ? { kind: 'drop', amount: droppedCoinValue(base) }
     : { kind: 'auto', amount: base };

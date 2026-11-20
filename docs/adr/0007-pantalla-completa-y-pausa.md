@@ -43,7 +43,9 @@ React pinta el HUD encima del juego:
 
 ### Menú de pausa
 - Se abre con el botón del HUD, con **Esc** (si no hay carta elegida; con carta, Esc la suelta) o con **P**. También se abre solo al cambiar de pestaña o salir de pantalla completa.
-- **Pausar** congela la escena entera con `scene.pause()`: temporizadores, tweens, partículas, el goteo pasivo y la vida de las monedas soltadas. El juego se sigue viendo, desenfocado, detrás del menú.
+- **Pausar** congela la escena entera: temporizadores, tweens, partículas, el goteo pasivo y la vida de las monedas soltadas. El juego se sigue viendo, desenfocado, detrás del menú.
+  - Se aplica en el acto con `this.sys.pause()` y `this.sys.resume()`, no con `this.scene.pause()`, que espera en cola al siguiente fotograma. Con la cola, quitar la pausa y volver a ponerla enseguida (aceptar un aviso de desbloqueo y que salga el siguiente, T-009) dejaba la escena en pausa sin nada abierto.
+  - El aviso de desbloqueo de T-009 también pausa el juego mientras está abierto, igual que el menú.
 - Desde el menú se llega a **Ajustes**: pantalla completa, calidad gráfica (ADR-0006) y mostrar FPS.
 - Si se cambia la calidad con el menú abierto, el juego nuevo arranca ya en pausa y con la misma partida.
 - Las preferencias se guardan en `localStorage` (`rebrote.ajustes`).

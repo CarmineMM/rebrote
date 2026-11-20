@@ -362,6 +362,8 @@ body {
 /* Al subir de nivel el texto salta como la medallita. */
 .level-panel-level { display: inline-block; animation: cost-pop 0.35s cubic-bezier(0.2, 1.6, 0.4, 1); transform-origin: left center; }
 .level-panel-stats { margin: 0; font-size: 0.78rem; font-weight: 700; color: #cfe8c2; white-space: nowrap; }
+/* En el tope de la ronda (T-009): hasta cuando. */
+.level-panel-cap { margin: 0; font-size: 0.75rem; font-weight: 800; color: #ffe066; white-space: nowrap; }
 
 /* La misma medallita que en la planta: disco con borde ondulado, color por tramo de 5 niveles. */
 .medal {
@@ -476,6 +478,49 @@ body {
 @keyframes star-twinkle { 0%, 100% { opacity: 0.45; transform: scale(0.6); } 50% { opacity: 1; transform: scale(1.2) rotate(45deg); } }
 .victory-text { margin: -8px 0 20px; text-align: center; font-size: 1.1rem; font-weight: 700; color: #fff6c0; }
 
+/* ---------- Aviso de lo desbloqueado (T-009): "¡YA LO TIENES!" brillando, con rayos que giran detras ---------- */
+.pause-overlay.is-unlock { background: rgba(40, 32, 6, 0.4); overflow: hidden; }
+.unlock-rays {
+  position: absolute; left: 50%; top: 50%; width: 160vmax; height: 160vmax; margin: -80vmax 0 0 -80vmax; pointer-events: none;
+  background: repeating-conic-gradient(from 0deg, rgba(255, 224, 102, 0.16) 0deg 9deg, rgba(255, 224, 102, 0) 9deg 22.5deg);
+  -webkit-mask-image: radial-gradient(circle, #000 0%, transparent 42%); mask-image: radial-gradient(circle, #000 0%, transparent 42%);
+  animation: fade-in 0.5s ease-out both, rays-spin 24s linear infinite;
+}
+@keyframes rays-spin { to { transform: rotate(360deg); } }
+.unlock-card { position: relative; width: min(460px, 100%); border-color: #ffd23f; box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5), 0 0 0 4px rgba(255, 210, 63, 0.25), 0 0 40px rgba(255, 210, 63, 0.35), inset 0 2px 0 rgba(255, 255, 255, 0.08); animation: pop-in 0.28s cubic-bezier(0.2, 1.3, 0.4, 1), unlock-halo 1.8s 0.3s ease-in-out infinite; }
+@keyframes unlock-halo { 50% { box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5), 0 0 0 6px rgba(255, 210, 63, 0.35), 0 0 64px rgba(255, 210, 63, 0.6), inset 0 2px 0 rgba(255, 255, 255, 0.08); } }
+.unlock-card .victory-star { z-index: 1; }
+.unlock-title {
+  margin: 2px 0 16px; text-align: center; font-size: 2.6rem; font-weight: 900; letter-spacing: 0.02em; line-height: 1.05;
+  background: linear-gradient(100deg, #d1920f 0%, #ffd23f 30%, #fffbe6 45%, #ffd23f 60%, #d1920f 100%) 0 0 / 250% 100%;
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  filter: drop-shadow(0 3px 0 #6b4505) drop-shadow(0 0 14px rgba(255, 210, 63, 0.55));
+  animation: unlock-jump 0.6s 0.1s cubic-bezier(0.2, 1.6, 0.4, 1) both, unlock-shine 2.2s 0.7s ease-in-out infinite;
+}
+@keyframes unlock-jump { from { opacity: 0; transform: scale(0.3) rotate(-6deg); } to { opacity: 1; transform: none; } }
+@keyframes unlock-shine { from { background-position: 100% 0; } to { background-position: -150% 0; } }
+.unlock-list { display: grid; gap: 10px; margin: 0 0 20px; padding: 0; list-style: none; }
+.unlock-item {
+  display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 14px;
+  background: rgba(0, 0, 0, 0.22); border: 2px solid rgba(255, 224, 102, 0.35);
+  animation: unlock-item-in 0.45s cubic-bezier(0.2, 1.4, 0.4, 1) both;
+}
+@keyframes unlock-item-in { from { opacity: 0; transform: translateY(14px) scale(0.9); } to { opacity: 1; transform: none; } }
+.unlock-icon { flex: none; display: grid; place-items: center; width: 52px; height: 44px; animation: icon-wiggle 1.6s ease-in-out infinite; }
+.unlock-pair { display: flex; }
+.unlock-pair .card-icon { width: 30px; zoom: 0.85; }
+.unlock-pair.is-fuse .card-icon + .card-icon { margin-left: -6px; }
+.unlock-arrow {
+  width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center;
+  background: radial-gradient(circle at 36% 30%, #fff6c0, #ffd23f 55%, #d1920f); border: 2px solid #6b4505;
+}
+.unlock-arrow::after { content: ''; border-left: 9px solid transparent; border-right: 9px solid transparent; border-bottom: 12px solid #6b4505; margin-top: -3px; }
+.unlock-medal { width: 32px; height: 32px; font-size: 0.95rem; }
+.unlock-text { display: grid; gap: 2px; text-align: left; }
+.unlock-text strong { font-size: 1.1rem; font-weight: 900; color: #fff6c0; }
+.unlock-text small { font-size: 0.85rem; font-weight: 700; color: #d9f0cc; line-height: 1.3; }
+.unlock-go { font-size: 1.2rem; }
+
 .settings-header { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
 .settings-section { margin-top: 14px; }
 .settings-section h3 { margin: 0 0 8px; font-size: 0.75rem; letter-spacing: 0.12em; text-transform: uppercase; color: #9fd88a; }
@@ -533,6 +578,9 @@ body {
   .round-title { font-size: 0.95rem; }
   .round-number { font-size: 1.1rem; }
   .round-notice { font-size: 0.95rem; padding: 8px 14px; }
+  .unlock-title { font-size: 2rem; margin-bottom: 10px; }
+  .unlock-item { padding: 8px 10px; }
+  .unlock-text small { font-size: 0.8rem; }
 }
 @media (max-width: 600px) {
   /* zoom y no transform: la carta elegida anima el transform del icono. */

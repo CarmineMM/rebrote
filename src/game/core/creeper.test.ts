@@ -1,11 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { BOARD, CREEPER, ENEMIES, FIRE, ICE } from '../config/balance';
+import { BOARD, CREEPER, ENEMIES, FIRE, ICE, SHOOTER } from '../config/balance';
 import type { Cell } from './board';
 import {
+  enemyDamage,
+  enemyMaxHp,
   isAirborne,
   isDefeated,
   isEnraged,
   jumpsCrossed,
+  rollCopyKind,
   spawnEnemy,
   stepCombat,
   type CombatEvent,
@@ -148,7 +151,15 @@ describe('copias (J-03)', () => {
     const [jumped] = ofType(events, 'jumped');
     expect(jumped.copies).toHaveLength(CREEPER.copies.calm);
     const [copy] = jumped.copies;
-    expect(copy).toMatchObject({ kind: CREEPER.copyKind, lane: 2, x: 6, hp: ENEMIES.worm.hp, haste: CREEPER.copyHaste, jump: null });
+    expect(copy).toMatchObject({
+      kind: 'worm',
+      lane: 2,
+      x: 6,
+      level: CREEPER.copyLevel,
+      hp: enemyMaxHp('worm', CREEPER.copyLevel),
+      haste: CREEPER.copyHaste,
+      jump: null,
+    });
     expect(state.enemies.map((e) => e.id)).toContain(copy.id);
     expect(new Set(state.enemies.map((e) => e.id)).size).toBe(state.enemies.length);
   });
@@ -174,6 +185,49 @@ describe('fase 2 (J-04): con la mitad de la vida o menos', () => {
       [2, 6],
       [2, 6 + CREEPER.copyGap],
     ]);
+  });
+});
+
+describe('mas duro (T-009)', () => {
+  it('no tiene nivel y muerde como un gusano de nivel 10', () => {
+    const creeper = creeperOf(withCreeper());
+    expect(creeper.level).toBe(1);
+    expect(creeper.hp).toBe(boss.hp);
+    expect(enemyDamage(creeper)).toBeCloseTo(enemyDamage({ kind: 'worm', level: CREEPER.biteAsWormLevel }), 9);
+    expect(enemyDamage(creeper)).toBeCloseTo(117.5, 9);
+    // Aunque le pongan otro nivel al sacarlo.
+    expect(spawnEnemy(createMatch(), 'creeper', 2, 6, undefined, 1, 7).enemies[0]).toMatchObject({ level: 1, hp: boss.hp });
+  });
+
+  it('su mordisco quita lo de un gusano de nivel 10', () => {
+    let state = withPlant(withCreeper(2, 4), { lane: 2, col: 2 });
+    state = { ...state, enemies: [{ ...state.enemies[0], x: 2.5 + boss.reach - 0.01 }] };
+    const { state: after } = run(state, boss.firstBiteMs + 20);
+    expect(sownAt(after, { lane: 2, col: 2 })?.hp).toBeCloseTo(SHOOTER.hp - 117.5, 6);
+  });
+
+  it('en la fase 1 la copia siempre es un gusano; en la 2, mitad gusanos y el resto acorazados o escupidores', () => {
+    for (let i = 0; i < 20; i++) expect(rollCopyKind(false, () => i / 20)).toBe('worm');
+    const kinds = Array.from({ length: 100 }, (_, i) => rollCopyKind(true, () => (i + 0.5) / 100));
+    const count = (kind: string) => kinds.filter((k) => k === kind).length;
+    expect(count('worm')).toBe(50);
+    expect(count('armored')).toBe(25);
+    expect(count('spitter')).toBe(25);
+  });
+
+  it('en la fase 2 las dos copias pueden salir acorazado y escupidor, de nivel 10 y aceleradas', () => {
+    const rolls = [0, 0.6, 0.9];
+    let i = 0;
+    // El primer numero elige el carril; los siguientes, el tipo de cada copia.
+    const random = () => rolls[Math.min(i++, rolls.length - 1)];
+    const warned = stepCombat(withCreeper(2, 6, 0.49), 16, random).state;
+    const { events } = run(warned, CREEPER.warnMs.enraged + 16, random);
+    const [jumped] = ofType(events, 'jumped');
+    expect(jumped.copies.map((c) => [c.kind, c.level, c.haste])).toEqual([
+      ['armored', CREEPER.copyLevel, CREEPER.copyHaste],
+      ['spitter', CREEPER.copyLevel, CREEPER.copyHaste],
+    ]);
+    expect(jumped.copies.map((c) => c.hp)).toEqual([enemyMaxHp('armored', 10), enemyMaxHp('spitter', 10)]);
   });
 });
 

@@ -78,7 +78,7 @@ Cómo se pinta y se anima Rebrote, para que todo lo nuevo (enemigos, mundos, efe
 | `plantDestroyed` | La planta se aplasta contra el suelo con hojas y tierra. La mina se hunde y su mecha se apaga con un hilo de humo: no explota |
 | `mineArmed` | La mina abre los ojos de susto, salta, sale un "!", aparece la cuenta atrás ("2", "1") y su alcance en el suelo (sección 7) |
 | `mineExploded` | Fuego: bola de fuego, llamas, brasas, humo, onda en el suelo del tamaño del alcance y chamuscado que se apaga. Los gusanos alcanzados saltan (`blasted`) y la cámara tiembla un poco. Hielo (T-005): destello helado, copos, esquirlas, vaho, onda azul, cristales que brotan del suelo y escarcha que se derrite. Los gusanos alcanzados se quedan tiesos con un destello azul y tiritan (`frosted`), y la cámara tiembla menos |
-| `enemyKilled` | El gusano se infla, se encoge y se deshace en píxeles verdes y morados. Sale su moneda (`rewardKill`) |
+| `enemyKilled` | El gusano se infla, se encoge y se deshace en píxeles verdes y morados. Sale su moneda (`rewardKill`, con lo que da su tipo, T-009) |
 | `enemyEscaped` | El gusano se mete bajo tierra en el camino. "−1 ♥", un temblor corto y React rompe un corazón |
 | `spat` (T-007) | El escupidor se lanza hacia delante con un chorrito de moco en la boca y el escupitajo nace ahí, pequeño, y crece con un rebote |
 | `spitHit` (T-007) | El escupitajo revienta en moco verde con un anillo. La planta o la mina reaccionan como a un mordisco |
@@ -88,6 +88,7 @@ Cómo se pinta y se anima Rebrote, para que todo lo nuevo (enemigos, mundos, efe
 | Derrota | Las balas y los escupitajos se apagan y los gusanos saltan de contentos. A los 1,1 s React muestra la pantalla de derrota |
 | Victoria (`won`, T-007) | Las balas y los escupitajos se apagan, las plantas saltan en oleada con "¡Creeper atrapado!" (T-008; antes de existir el jefe, "¡Jardín a salvo!"), y caen hojas y destellos por el césped. A los 1,6 s React muestra la pantalla de victoria |
 | Enemigos acelerados (T-008) | Al salir en las rondas 8 y 9, Creeper (que se prepara a la derecha) parpadea y manda un chispazo de píxeles verdes y morados al agujero de cada carril, que brilla al llegar |
+| `shout` (T-009) | Creeper, que se prepara a la derecha, se yergue de golpe, suelta píxeles y grita en su bocadillo de terminal ("¡ADELANTE, MIS ACORAZADOS!"). Su escolta sale acelerada, así que cada acorazado recibe su chispazo |
 | `jumpWarned` (T-008) | El Creeper se agacha y tiembla (sale del estado, sección 7). Sale tierra a sus pies y un "!" sobre la diana del carril de destino. Una de cada dos veces suelta una frase ("¡HOP!", "¡POR AQUÍ!"…) |
 | `jumped` (T-008) | Tierra, píxeles y una onda verde donde estaba. Sus copias salen del suelo ahí, con un destello y un anillo verdes de "copiarse" |
 | `landed` (T-008) | Se aplasta contra el suelo y rebota, onda roja en el suelo (más encendida en la fase 2), tierra y un temblor de cámara. Lo golpeado reacciona como a un mordisco; si lo rompe, como `plantDestroyed` |
@@ -98,7 +99,7 @@ Cómo se pinta y se anima Rebrote, para que todo lo nuevo (enemigos, mundos, efe
 
 - **Varios efectos en el mismo sitio.** Varias plantas pueden dar a la vez al mismo gusano. Los efectos que se repiten mucho (impactos) van pequeños y translúcidos para no tapar la cara del enemigo.
 
-## 6. Arrastrar y fusionar (T-006)
+## 6. Arrastrar y fusionar (T-006), o infundir con una mina (T-009)
 
 - **Las reglas son de core.** Qué plantas sirven de destino (`fusionTargets`), por qué no se puede (`fusionBlocker`), cómo queda la planta (`fusedPlant`) y la fusión (`fusePlants`) están en `src/game/core/match.ts`. La escena solo lleva el puntero, pinta y anima.
 - **Mientras se arrastra, el combate sigue.** La planta arrastrada sigue en su casilla: dispara y la muerden. Se ve medio transparente (`PLANT_LOOK.liftedAlpha`).
@@ -115,6 +116,11 @@ Cómo se pinta y se anima Rebrote, para que todo lo nuevo (enemigos, mundos, efe
   - **En un destino válido:** la regla se aplica en el acto. La de la mano se mete en la de destino. La de origen se estira hacia arriba y deja tierra. La de destino se aplasta, destella, cambia de textura y rebota (`PlantView.fuse`) con anillo, chispas, hojas, destello del punto nuevo y "¡Fusión!". Esta animación va sobre la figura (cuerpo y medallita) y no sobre el contenedor de reacciones: así un disparo o un mordisco a la vez no la cortan.
   - **En cualquier otro sitio:** la de la mano vuelve volando a su casilla y la de origen recupera su aspecto con un saltito.
 - **Cancelar:** pausa, clic derecho, tomar una carta o perder la partida devuelven la planta. Si la de origen muere, la de la mano se deshace en hojas.
+- **Con una mina (T-009).** Una mina que aún espera se arrastra igual que una planta: el mismo `FusionDragView` con otra figura en la mano (`carriedMine`; la planta es `carriedShooter`). Las reglas son de core (`mineInfusionTargets`, `mineInfusion`, `infuseWithMine`).
+  - Se agarra por la mina (`MineView.contains`) o por su casilla, y en su casilla se queda medio transparente (`MineView.setLifted`). El cursor es la mano sobre una mina que se puede arrastrar.
+  - Destinos: las disparadoras que se pueden infundir, en verde. Rótulo "Infundir con la mina", o "Infundir: mina + ×2 = 150" en una fusionada; en rojo, "Ya tiene fuego" o "No alcanza la moneda".
+  - Al soltar en un destino, la de la mano se mete en la planta, la de la casilla se hunde en la tierra con brasas o copos sin explotar (`MineView.consume`) y la planta se infunde con su animación de siempre (`PlantView.infuse`).
+  - Si la mina se arma mientras se lleva, vuelve a su casilla. Si la rompen o explota, la de la mano se deshace.
 - **Capa:** la planta en la mano va casi arriba del todo (`DEPTH.floatText - 10`). Su sombra y las marcas de casilla van en la capa `highlight`.
 
 ## 7. Cartas, minas e infundir (T-004, T-005)
@@ -147,6 +153,7 @@ Cómo se pinta y se anima Rebrote, para que todo lo nuevo (enemigos, mundos, efe
   - **Bocadillo de terminal:** fondo de pantalla, borde y letras de fósforo (rojo en la fase 2), con un cursor que parpadea. Sigue a la cabeza; si a la derecha no cabe en la pantalla, se abre a la izquierda.
   - **Luz de la antena:** un brillo que parpadea, más deprisa en la fase 2. Solo con `quality.glows`.
 - **Creeper preparándose (T-008, `CreeperOmen`).** En las rondas 8 y 9 y en la preparación de la 10, enroscado en `OMEN_SPOT` (suelo corrupto, detrás de los agujeros, dentro del diseño de 1600 × 900). Respira, cabecea, suelta píxeles (`ambientDelay`) y tiene un halo verde que late (solo con `quality.glows`). En su pantalla, "CARGANDO" y una barra que se llena con las rondas (`bossLoadProgress`). Al aparecer brota del suelo y dice "CARGANDO… ¡YA CASI ESTOY!". Al empezar el combate salta en curva al agujero del carril del centro y el Creeper de verdad sale del suelo al caer.
+- **Enemigo con nivel (T-009).** El de nivel 1 se ve como siempre. Desde el 2 lleva en la nuca la medallita de las disparadoras (la misma textura, `medalTexture`, con sus colores por tramo) y es un 1,8 % más grande por nivel (`WORM_LOOK.medal` y `growthPerLevel`). La medallita va en el contenedor del gusano, sigue a la cabeza y se inclina un poco con ella; en el acorazado va sobre el casco. El Creeper no lleva.
 - **Gusano acelerado (T-008).** Mientras `enemy.haste` es mayor que 1: rayas de velocidad verde neón con borde oscuro detrás de la cola (`TEX.hasteStreak`), que titilan mientras avanza y se apagan si se para. Ondula más deprisa sin código extra, porque ondula según lo que avanza.
 - **Gusano frenado (T-005).** Mientras `enemy.slow` existe: cristales de escarcha en la nuca y la cola, el cuerpo tira a azul frío (tinte multiplicado `WORM_LOOK.chillTint`) y cada 0,9 s tirita y suelta un copo. Ondula más despacio sin código extra, porque ondula según lo que avanza. Si muere frenado (y no ardía), queda congelado y se rompe en esquirlas.
   - Quemado y frenado a la vez: se ven las llamas y la escarcha (no se tapan: llamas en la coronilla y el lomo, escarcha en la nuca y la cola), con el cuerpo azul.
@@ -254,6 +261,8 @@ Orden de dibujo, de atrás hacia delante (`DEPTH` en `layout.ts`):
   - La ronda (T-007) cae con el resto del HUD. Su número salta al cambiar y la semillita de la ronda actual late. La cuenta atrás salta cada segundo y se pone roja en los tres últimos.
   - El aviso de la ronda entra con un salto, se queda 7 s y se va. Lo lleva una animación CSS que se congela con la pausa (`.app.is-paused`). Con `prefers-reduced-motion` lo quita un temporizador.
   - Una carta recién desbloqueada entra en la bandeja con un salto y brilla tres veces. La animación va en un envoltorio (`.card-slot`) y no en la carta, que ya anima su `transform` al estar elegida.
+  - **Aviso de desbloqueo (T-009, `UnlockModal`).** Velo dorado con rayos que giran despacio detrás de la tarjeta, que tiene el borde dorado y un halo que late. "¡YA LO TIENES!" entra de un salto y un brillo le cruza las letras cada poco. Debajo, una fila por cosa nueva con su dibujo (los iconos de las cartas, `CardIcon`, que se balancean; una flecha dorada para subir de nivel y la medallita del tope) que entran una tras otra. Destellos como los de la victoria. El juego queda en pausa detrás (también se congela el aviso de una línea de la ronda).
+  - En el tope de nivel de la ronda (T-009), el panel de nivel dice en dorado "Tope 5: sube en la ronda 7".
   - La pantalla de victoria entra como la de derrota, con una copa con un brote que salta y destellos que titilan.
   - **Jefe (T-008):** en la ronda del jefe la ronda dice "Combate final" y su semillita es una pantallita de monitor. La barra del Creeper (`BossBar`) entra con un salto bajo la ronda: monitor en miniatura que parpadea, nombre, fase y vida con una marca por umbral de salto (las gastadas, apagadas). Lo que pierde se queda un momento en claro y luego se va. En la fase 2 se pone roja y su halo late; derrotado, dice "¡Atrapado!".
   - El menú de pausa entra con un pequeño rebote.
@@ -297,7 +306,8 @@ Ejemplos: el acorazado y el escupidor de T-007, en `wormView.ts` (`KIND_LOOK`).
 - [ ] Animaciones de entrada (sale del agujero de su carril, `SCENERY.holeX`), avance, mordisco, golpe recibido (destello o retroceso) y muerte (encoge y suelta partículas).
 - [ ] Sus reglas están en `stepCombat` con su evento y su test; la vista, en un módulo como `wormView.ts`, sigue al estado en `sync` y anima cada evento (sección 5).
 - [ ] Se mueve en coordenadas de tablero y se pinta con `toScreen`, `cellWidthAt` y `entityDepth`.
-- [ ] Al morir llama a `rewardKill(punto)`.
+- [ ] Tiene su `reward` en `ENEMIES`, y al morir la escena llama a `rewardKill(punto, tipo)`.
+- [ ] Con nivel (T-009): de nivel 2 en adelante lleva la medallita en la nuca y no le tapa la cara.
 - [ ] Partículas según el nivel gráfico; probado en Bajo y en Ultra.
 - [ ] Se mueve con el reloj y los tweens de la escena: con el menú de pausa abierto se queda quieto.
 

@@ -15,7 +15,7 @@ import {
   type FuseBlocker,
   type Shooter,
 } from './plants';
-import { createRound, infuseFeature, isUnlocked, sowFeature, type RoundState } from './rounds';
+import { createRound, infuseFeature, isUnlocked, levelCap, levelCapRaisedAfter, sowFeature, type RoundState } from './rounds';
 
 /** Cartas que se pueden jugar desde el HUD: la disparadora y los elementos. */
 export type CardId = 'shooter' | ElementType;
@@ -194,6 +194,83 @@ export function playCard(state: MatchState, card: CardId, cell: Cell): MatchStat
 }
 
 /**
+ * Por que no se puede arrastrar una mina sembrada sobre una disparadora para infundirla (T-009, P-12): infundir su
+ * elemento aun no esta desbloqueado, fuera del tablero, en el origen no hay mina, la mina ya cuenta para explotar, en
+ * el destino no hay disparadora, la disparadora ya tiene elemento, o no alcanza para los canones que faltan.
+ */
+export type MineInfusionBlocker = 'locked' | 'off-board' | 'no-mine' | 'armed' | 'no-plant' | 'has-element' | 'insufficient-funds';
+
+/** Lo que pasaria al soltar la mina de una casilla sobre la disparadora de otra. */
+export interface MineInfusion {
+  /** Lo que se cobra: la mina cuenta como un elemento y se pagan los que faltan, uno por canon mas alla del primero. */
+  readonly cost: number;
+  /** Elementos que se pagan aparte de la mina: los canones menos uno. */
+  readonly multiplier: number;
+  readonly blocker: MineInfusionBlocker | null;
+}
+
+/**
+ * Por que no se puede empezar a arrastrar la mina de `cell` (o null si se puede): solo una mina que aun espera, y
+ * desde la ronda que desbloquea infundir su elemento.
+ */
+export function mineDragBlocker(state: MatchState, cell: Cell): 'locked' | 'no-mine' | 'armed' | null {
+  const mine = mineAt(state, cell);
+  if (!mine) return 'no-mine';
+  if (!isUnlocked(state, infuseFeature(mine.element))) return 'locked';
+  return mine.fuseMs === null ? null : 'armed';
+}
+
+/**
+ * Que pasa al soltar la mina de `from` sobre lo sembrado en `to` (T-009, P-12): infunde la disparadora con el elemento
+ * de la mina, que deja su casilla. La mina vale un elemento; en una de N canones se pagan los N - 1 que faltan.
+ */
+export function mineInfusion(state: MatchState, from: Cell, to: Cell): MineInfusion {
+  const result = (blocker: MineInfusionBlocker | null, cost = 0, multiplier = 0): MineInfusion => ({ cost, multiplier, blocker });
+  if (!isOnBoard(from) || !isOnBoard(to)) return result('off-board');
+  const mine = mineAt(state, from);
+  if (!mine) return result('no-mine');
+  const plant = plantAt(state, to);
+  if (!plant) return result('no-plant');
+  const multiplier = plant.shooter.cannons - 1;
+  const cost = COSTS[mine.element] * multiplier;
+  if (!isUnlocked(state, infuseFeature(mine.element))) return result('locked', cost, multiplier);
+  if (mine.fuseMs !== null) return result('armed', cost, multiplier);
+  if (!canInfuse(plant.shooter)) return result('has-element', cost, multiplier);
+  return result(canAfford(state.balance, cost) ? null : 'insufficient-funds', cost, multiplier);
+}
+
+/** Casillas de las disparadoras sobre las que se puede soltar la mina de `from` para infundirlas. */
+export function mineInfusionTargets(state: MatchState, from: Cell): Cell[] {
+  const targets: Cell[] = [];
+  state.plants.forEach((lane, laneIndex) =>
+    lane.forEach((_sown, col) => {
+      const to = { lane: laneIndex, col };
+      if (mineInfusion(state, from, to).blocker === null) targets.push(to);
+    }),
+  );
+  return targets;
+}
+
+/** Infunde la disparadora de `to` con la mina de `from`, que deja su casilla, y cobra los canones que faltan. */
+export function infuseWithMine(state: MatchState, from: Cell, to: Cell): MatchState {
+  const play = mineInfusion(state, from, to);
+  if (play.blocker) {
+    throw new Error(`No se puede infundir con la mina: ${play.blocker}`);
+  }
+  const mine = mineAt(state, from) as Mine;
+  const plant = plantAt(state, to) as Plant;
+  const infused: Plant = { ...plant, shooter: infuse(plant.shooter, mine.element) };
+  const plants = state.plants.map((lane, laneIndex) =>
+    lane.map((sown, col) => {
+      if (laneIndex === from.lane && col === from.col) return null;
+      if (laneIndex === to.lane && col === to.col) return infused;
+      return sown;
+    }),
+  );
+  return { ...state, balance: state.balance - play.cost, plants };
+}
+
+/**
  * Por que no se puede fusionar la planta de una casilla sobre la de otra: fusionar aun no esta desbloqueado (T-007),
  * fuera del tablero, la misma casilla, alguna de las dos sin disparadora (vacia o con una mina), o las reglas de
  * `fuseBlocker` (otra variante, mas de 3 canones).
@@ -253,15 +330,19 @@ export function fusePlants(state: MatchState, from: Cell, to: Cell): MatchState 
 }
 
 /**
- * Por que no se puede subir de nivel una disparadora: aun no esta desbloqueado (T-007), ya esta en el maximo
- * o el saldo no alcanza.
+ * Por que no se puede subir de nivel una disparadora: aun no esta desbloqueado (T-007), ya esta en el tope de la ronda
+ * (T-009) o en el maximo, o el saldo no alcanza.
  */
 export type LevelUpBlocker = 'locked' | 'max-level' | 'insufficient-funds';
 
 /** Lo que ofrece el panel de una disparadora seleccionada (T-003): su nivel y lo que cuesta el siguiente. */
 export interface LevelUpOffer {
   readonly level: number;
-  /** Lo que se cobra al subir: `levelUpCost`. Null en el nivel maximo. */
+  /** Tope de nivel de la ronda (T-009). */
+  readonly cap: number;
+  /** En el tope: ronda (desde 0) en la que sube, o null si ya no sube mas. */
+  readonly capRaisedAt: number | null;
+  /** Lo que se cobra al subir: `levelUpCost`. Null en el tope. */
   readonly cost: number | null;
   /** Por cuanto se multiplica el costo de un canon: sus canones, como al infundir ("x3 = 225"). */
   readonly multiplier: number;
@@ -274,7 +355,9 @@ export function levelUpOffer(state: MatchState, cell: Cell): LevelUpOffer | null
   const plant = plantAt(state, cell);
   if (!plant) return null;
   const { shooter } = plant;
-  const cost = levelUpCost(shooter);
+  const cap = levelCap(state);
+  const capped = shooter.level >= cap;
+  const cost = capped ? null : levelUpCost(shooter);
   const blocker = !isUnlocked(state, 'levelUp')
     ? 'locked'
     : cost === null
@@ -282,7 +365,8 @@ export function levelUpOffer(state: MatchState, cell: Cell): LevelUpOffer | null
       : canAfford(state.balance, cost)
         ? null
         : 'insufficient-funds';
-  return { level: shooter.level, cost, multiplier: shooter.cannons, blocker };
+  const capRaisedAt = capped ? levelCapRaisedAfter(state.round.index, shooter.level) : null;
+  return { level: shooter.level, cap, capRaisedAt, cost, multiplier: shooter.cannons, blocker };
 }
 
 /**
