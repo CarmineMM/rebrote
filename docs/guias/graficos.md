@@ -1,6 +1,6 @@
 # Guía de gráficos y animación
 
-Cómo se pinta y se anima Rebrote, para que todo lo nuevo (enemigos, mundos, efectos, plantas) encaje con lo que ya hay. Las decisiones de fondo están en los ADR-0004 (arte bonito y animado), ADR-0005 (cámara inclinada), ADR-0006 (ajustes gráficos), ADR-0007 (pantalla completa y pausa), ADR-0008 (combate como simulación pura) y ADR-0010 (menú de inicio y portada). Los textos que se pintan siguen la guía de idiomas (`docs/guias/idiomas.md`, ADR-0009).
+Cómo se pinta y se anima Rebrote, para que todo lo nuevo (enemigos, mundos, efectos, plantas) encaje con lo que ya hay. Las decisiones de fondo están en los ADR-0004 (arte bonito y animado), ADR-0005 (cámara inclinada), ADR-0006 (ajustes gráficos), ADR-0007 (pantalla completa y pausa), ADR-0008 (combate como simulación pura), ADR-0010 (menú de inicio y portada) y ADR-0011 (en móvil, solo en horizontal). Los textos que se pintan siguen la guía de idiomas (`docs/guias/idiomas.md`, ADR-0009).
 
 ## 1. Principios
 
@@ -36,7 +36,7 @@ Cómo se pinta y se anima Rebrote, para que todo lo nuevo (enemigos, mundos, efe
 | `src/game/scenes/TitleScene.ts` | Portada del menú de inicio (T-011): el jardín animado con la cámara corrida para dejar sitio al menú, y `TitleCover` encima. Deja paso al tablero al pedir una partida |
 | `src/game/view/titleCover.ts` | Batalla de la portada (T-011): reparto fijo, combate de verdad con todos fijos en su sitio e inmortales, y respuesta al clic (`COVER_LOOK`) |
 | `src/game/scenes/sceneKit.ts` | Lo que comparten las dos escenas: cámara a pantalla completa (`fitCamera`, con desplazamiento opcional), filtros de Ultra (`applyPostFx`) y fps (`FpsMeter`) |
-| `src/ui/` | HUD flotante (cartas con su precio, ronda con su cuenta atrás y su aviso en `RoundHud`, barra del jefe en `BossBar`, vidas, saldo), panel de nivel de la planta seleccionada (`LevelPanel`), ficha de información (`InfoPanel`, T-010), menú de pausa, ajustes (`SettingsPanel`, con el idioma), pantallas de derrota y de victoria, y menú de inicio con su título, créditos y logo de Claude (`TitleScreen`, `Credits`, `ClaudeLogo`, T-011) (React) |
+| `src/ui/` | HUD flotante (cartas con su precio, ronda con su cuenta atrás y su aviso en `RoundHud`, barra del jefe en `BossBar`, vidas, saldo), panel de nivel de la planta seleccionada (`LevelPanel`), ficha de información (`InfoPanel`, T-010), menú de pausa, ajustes (`SettingsPanel`, con el idioma), pantallas de derrota y de victoria, menú de inicio con su título, créditos y logo de Claude (`TitleScreen`, `Credits`, `ClaudeLogo`, T-011), y aviso de girar la pantalla en un móvil en vertical (`RotateNotice`, `useLandscapeOnly`, ADR-0011) (React) |
 
 ## 3. Coordenadas y perspectiva
 
@@ -62,9 +62,10 @@ Cómo se pinta y se anima Rebrote, para que todo lo nuevo (enemigos, mundos, efe
   - En pantallas anchas se ve más jardín a la izquierda y más suelo corrupto a la derecha.
   - En pantallas altas se ve más cielo y un corte de tierra más hondo.
 - **Todo decorado nuevo** (texturas fijas, partículas ambientales, nubes, bichos) cubre `WORLD`, no solo el diseño. Hay que comprobar que no se ve ningún borde recto ni ninguna zona vacía.
-- **Lo que tapa el HUD:** la franja de arriba de la pantalla (bandeja de cartas a la izquierda, ronda en el centro, saldo y pausa a la derecha). Ahí solo va decorado. Por debajo de 1250 px de ancho la ronda baja a una segunda fila, y su aviso cuelga debajo unos segundos.
+- **Lo que tapa el HUD:** la franja de arriba de la pantalla (bandeja de cartas a la izquierda, ronda en el centro, saldo y pausa a la derecha). Ahí solo va decorado. Por debajo de 1250 px de ancho la ronda baja a una segunda fila, y su aviso cuelga debajo unos segundos. Con menos de 860 px de ancho o 560 de alto (un móvil en horizontal), la ronda dice solo en cuál se está ("Ronda 3 de 10"), sin la fila de semillitas (T-012).
 - **Lo que depende de la pantalla** se calcula con la cámara (`cameras.main.worldView`), nunca con 1600 × 900. Por ejemplo, las monedas vuelan a la esquina donde está el saldo.
 - **Pausa:** congela la escena entera. Todo lo que pasa con el tiempo usa `this.time`, tweens y partículas de la escena; así la pausa lo congela sin código extra.
+- **Solo en horizontal (ADR-0011):** en un móvil o una tableta en vertical (`(orientation: portrait) and (pointer: coarse)`) React tapa todo con el aviso de girar la pantalla (`RotateNotice`), el bucle de Phaser duerme (`setGameAsleep`) y la partida queda en pausa. Una ventana de escritorio estrecha no cuenta. Nada del juego se diseña para verse en vertical en un móvil.
 
 ## 5. Combate en pantalla (ADR-0008)
 
@@ -174,8 +175,8 @@ Cómo se pinta y se anima Rebrote, para que todo lo nuevo (enemigos, mundos, efe
   - Se cierra al hacer clic fuera de las plantas, con Esc o clic derecho, al tomar una carta, al empezar a arrastrar, si la planta muere y al perder.
   - La casilla se marca en dorado y late despacio (`LOOK.pickedColor`, capa `highlight`), y la planta da un saltito.
 - **Panel (React, `LevelPanel`).** Es HUD: lo pinta React, no Phaser.
-  - La escena le manda `plantPanel` con el nivel, el precio, si alcanza, el tramo de la medallita y dos puntos de la página: sobre la cabeza y bajo los pies. Lo reenvía cuando algo cambia, también si cambia la ventana: lo comprueba en cada `update` y solo avisa si cambió.
-  - El panel va encima de la cabeza; si ahí choca con el HUD, bajo los pies. Siempre dentro de la pantalla, con la flechita apuntando a la planta.
+  - La escena le manda `plantPanel` con el nivel, el precio, si alcanza, el tramo de la medallita y cuatro puntos de la página: sobre la cabeza, bajo los pies y a cada lado del cuerpo (`right`, `left`, T-012). Lo reenvía cuando algo cambia, también si cambia la ventana: lo comprueba en cada `update` y solo avisa si cambió.
+  - El panel va encima de la cabeza; si ahí choca con el HUD, bajo los pies; si tampoco cabe (un móvil en horizontal, en las filas de abajo), a un lado de la planta, a la derecha o a la izquierda. Siempre dentro de la pantalla, sin meterse bajo lo que del HUD le cae encima (bandeja, ronda y su aviso, marcadores), y con la flechita apuntando a la planta. Lo decide `placeLevelPanel` (`src/ui/levelPanelPlace.ts`, con test).
   - El botón manda `levelUpRequested`. Con la pausa se oculta.
   - Para pasar del mundo a la página: `worldToPage` en la escena, el inverso de lo que hacen las cartas (`cardCellAtPage`).
 - **Al subir (`PlantView.levelUp`):**
@@ -282,6 +283,7 @@ Orden de dibujo, de atrás hacia delante (`DEPTH` en `layout.ts`):
   - **Jefe (T-008):** en la ronda del jefe la ronda dice "Combate final" y su semillita es una pantallita de monitor. La barra del Creeper (`BossBar`) entra con un salto bajo la ronda: monitor en miniatura que parpadea, nombre, fase y vida con una marca por umbral de salto (las gastadas, apagadas). Lo que pierde se queda un momento en claro y luego se va. En la fase 2 se pone roja y su halo late; derrotado, dice "¡Atrapado!".
   - El menú de pausa entra con un pequeño rebote.
   - La pantalla de carga muestra un brote que crece.
+  - **Aviso de girar la pantalla (ADR-0011, `RotateNotice`):** fondo de la carga, un móvil de pie que gira con un rebote hasta ponerse de lado, con una flecha dorada curva que se dibuja marcando el sentido. El jardín de su pantalla (cielo, sol, brote y gusanito) está pintado en horizontal: de pie sale tumbado y apagado; al girar queda derecho, se ilumina y el brote salta. Debajo, "Gira la pantalla", la explicación y, si hay partida, "Tu partida te espera en pausa". Tapa también la pausa y la carga.
   - Con `prefers-reduced-motion` las animaciones CSS se apagan.
 - **Duraciones orientativas:** reacciones de 150 a 450 ms, reposo de 0,9 a 3,5 s por ciclo y cielo de 15 a 120 s.
 
@@ -324,7 +326,7 @@ Todo efecto nuevo se engancha a un ajuste del perfil (`QualityProfile`):
 - **Título (React).** "REBROTE" en letras gordas de hoja verde con contorno oscuro (texto con degradado recortado y `-webkit-text-stroke`), cada letra algo torcida (`--tilt`). Caen una tras otra con rebote y luego se mecen por turnos. De la "O" sale un brote en SVG que brota y se balancea. Debajo, el lema en un cartel de madera como la bandeja de cartas.
 - **Menú (React).** Panel a la derecha con la tarjeta del menú de pausa, que entra deslizándose. Las opciones, los créditos y la confirmación de partida nueva salen en el mismo panel; si no caben, se desplaza con una barra fina. "Cargar partida" lleva debajo la ronda, las vidas, las monedas y cuándo se guardó. "Jefes" va desactivado con un candado y "Próximamente". En el pie, el selector de idioma corto y la versión.
 - **Créditos.** Una fila por crédito que entra una tras otra; la de Claude, en su terracota, con su logo (`ClaudeLogo`, la chispa dibujada con código) que respira.
-- **Pantallas pequeñas:** con menos de 860 px de ancho o 560 de alto, el título y el panel encogen; con menos de 700 px de ancho, el lema se parte para no meterse bajo el panel; con menos de 420 de alto, se quitan el subtítulo del panel y la fecha de la guardada. En vertical, el panel baja y ocupa el ancho.
+- **Pantallas pequeñas:** con menos de 860 px de ancho o 560 de alto, el título y el panel encogen; con menos de 700 px de ancho, el lema se parte para no meterse bajo el panel; con menos de 420 de alto, se quitan el subtítulo del panel y la fecha de la guardada. En una ventana de escritorio en vertical, el panel baja y ocupa el ancho (en un móvil o una tableta en vertical sale el aviso de girar la pantalla, ADR-0011).
 
 ## 15. Listas de comprobación
 
@@ -374,6 +376,11 @@ Ejemplos: el acorazado y el escupidor de T-007, en `wormView.ts` (`KIND_LOOK`).
 - [ ] Aparece y desaparece con animación.
 - [ ] Respeta `artInv()` y su ajuste de calidad.
 - [ ] No bloquea ni retrasa la regla que acompaña.
+
+### HUD o menú nuevo (React)
+- [ ] Probado en un móvil en horizontal (812 × 375 y 568 × 320): no se sale de la pantalla y no tapa lo que se juega.
+- [ ] En un móvil en vertical no hace falta: sale el aviso de girar la pantalla (ADR-0011). Si va por encima de todo, va por debajo de ese aviso (`z-index` menor que 10).
+- [ ] Si flota junto a algo del tablero (como el panel de nivel), se coloca con una función pura con test que lo mantenga dentro de la pantalla y fuera del HUD.
 
 ### Texto nuevo en pantalla (T-011)
 - [ ] Sigue la lista de `docs/guias/idiomas.md`: en `es.ts` y en `en.ts`, leído con `text()` o `useText()`, y cabe en los dos idiomas.

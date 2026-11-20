@@ -118,9 +118,14 @@ export interface PlantPanel {
   affordable: boolean;
   /** Tramo de color de la medallita (cambia cada 5 niveles), para pintar la misma en el panel; null en nivel 1, que no lleva. */
   medalTier: number | null;
-  /** Donde se apoya el panel: sobre la cabeza de la planta, o bajo sus pies si arriba no cabe. */
+  /**
+   * Donde se apoya el panel: sobre la cabeza de la planta, o bajo sus pies si arriba no cabe; si tampoco (un movil en
+   * horizontal, en las filas de abajo), a la altura de su cuerpo, a su derecha o a su izquierda.
+   */
   above: PagePoint;
   below: PagePoint;
+  right: PagePoint;
+  left: PagePoint;
 }
 
 /** Como se perdio la partida. */

@@ -39,6 +39,28 @@ export function createGame(parent: HTMLElement, data: GameData): Phaser.Game {
 }
 
 /**
+ * Duerme o despierta el bucle entero del juego (ADR-0011): mientras el movil esta en vertical no se simula ni se pinta
+ * nada, tampoco la portada, y no se gasta bateria. Si el juego aun no arranco su bucle, se duerme tras su primer
+ * fotograma (las escenas ya creadas). Al despertar se reinicia la cuenta del tiempo para que no haya un salto.
+ */
+export function setGameAsleep(game: Phaser.Game, asleep: boolean): void {
+  game.events.off(Phaser.Core.Events.POST_RENDER, sleepLoop, game);
+  if (asleep) {
+    if (game.loop.started) game.loop.sleep();
+    else game.events.once(Phaser.Core.Events.POST_RENDER, sleepLoop, game);
+    return;
+  }
+  if (game.loop.started && !game.loop.running) {
+    game.loop.resetDelta();
+    game.loop.wake();
+  }
+}
+
+function sleepLoop(this: Phaser.Game): void {
+  this.loop.sleep();
+}
+
+/**
  * Partida en curso, para continuarla en un juego nuevo (al cambiar el nivel grafico o el idioma). Con la portada en
  * pantalla no hay partida.
  */

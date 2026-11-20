@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { lockLandscape } from './useLandscapeOnly';
 
 /** Atributo para zonas (menus) donde un clic no debe activar la pantalla completa automatica. */
 export const NO_AUTO_FULLSCREEN = 'data-no-autofullscreen';
@@ -35,9 +36,13 @@ export function useFullscreen(preferred: boolean, onExit: () => void) {
 
   const enter = useCallback(() => {
     if (!supported || document.fullscreenElement) return;
-    document.documentElement.requestFullscreen({ navigationUI: 'hide' }).catch(() => {
-      // El navegador lo rechazo (sin gesto valido o bloqueado): se sigue en ventana.
-    });
+    document.documentElement
+      .requestFullscreen({ navigationUI: 'hide' })
+      // En movil, a pantalla completa el dispositivo se queda en horizontal donde el navegador lo deja (ADR-0011).
+      .then(lockLandscape)
+      .catch(() => {
+        // El navegador lo rechazo (sin gesto valido o bloqueado): se sigue en ventana.
+      });
   }, [supported]);
 
   const exit = useCallback(() => {

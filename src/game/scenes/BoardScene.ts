@@ -106,6 +106,8 @@ const LOOK = {
   /** Donde se apoya el panel de nivel: sobre la cabeza y bajo los pies de la planta, en anchos de casilla. */
   panelAbove: 1.08,
   panelBelow: 0.14,
+  /** Si no cabe ni encima ni debajo, a un lado de la planta: a la altura del cuerpo, en anchos de casilla. */
+  panelSide: { x: 0.5, y: 0.5 },
   /** Empieza el ataque de una ronda (T-007): aviso junto a los agujeros, en los colores de la corrupcion. */
   attackText: { color: '#b8ffd4', stroke: '#2b2034', fontSize: 44 },
   /** Ronda superada (T-007): texto en el centro del cesped. */
@@ -1559,6 +1561,8 @@ export class BoardScene extends Phaser.Scene {
         medalTier: showsMedal(offer.level) ? medalTier(offer.level) : null,
         above: this.worldToPage(foot.x, foot.y - cellWidth * LOOK.panelAbove),
         below: this.worldToPage(foot.x, foot.y + cellWidth * LOOK.panelBelow),
+        right: this.worldToPage(foot.x + cellWidth * LOOK.panelSide.x, foot.y - cellWidth * LOOK.panelSide.y),
+        left: this.worldToPage(foot.x - cellWidth * LOOK.panelSide.x, foot.y - cellWidth * LOOK.panelSide.y),
       };
     }
     const key = panel ? JSON.stringify(panel) : '';

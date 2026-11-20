@@ -16,6 +16,13 @@ export const es = {
     loading: 'Cargando el jardín…',
   },
 
+  /** Aviso de girar la pantalla en un movil o tableta en vertical (ADR-0011). */
+  rotate: {
+    title: 'Gira la pantalla',
+    body: 'Rebrote se juega en horizontal. Pon el móvil o la tableta de lado para jugar.',
+    paused: 'Tu partida te espera en pausa.',
+  },
+
   time: {
     justNow: 'ahora mismo',
   },

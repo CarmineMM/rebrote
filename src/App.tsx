@@ -23,10 +23,12 @@ import { InfoPanel } from './ui/InfoPanel';
 import { LevelPanel } from './ui/LevelPanel';
 import { Lives } from './ui/Lives';
 import { PauseMenu } from './ui/PauseMenu';
+import { RotateNotice } from './ui/RotateNotice';
 import { RoundHud } from './ui/RoundHud';
 import { TitleScreen } from './ui/TitleScreen';
 import { UnlockModal } from './ui/UnlockModal';
 import { NO_AUTO_FULLSCREEN, useFullscreen } from './ui/useFullscreen';
+import { useNeedsLandscape } from './ui/useLandscapeOnly';
 import { useSettings } from './ui/useSettings';
 import { useText } from './ui/useText';
 import { VictoryScreen } from './ui/VictoryScreen';
@@ -43,7 +45,8 @@ const SCENE_OF: Record<GameScreen, string> = { title: SCENES.title, board: SCENE
  * informacion (T-010) y pantallas de derrota y de victoria. Con la partida acabada no se abre el menu de pausa: solo se
  * puede jugar otra vez o volver al menu. Mientras el aviso de lo desbloqueado o una ficha estan abiertos el juego espera
  * en pausa. La partida se guarda sola (T-011): la escena guarda al empezar cada ronda y aqui se le pide al ocultar o
- * cerrar la pestana y al salir al menu.
+ * cerrar la pestana y al salir al menu. En un movil o una tableta en vertical se tapa todo con el aviso de girar la
+ * pantalla (ADR-0011): el juego duerme y la partida queda en pausa para cuando se gire.
  */
 export function App() {
   const t = useText();
@@ -84,6 +87,12 @@ export function App() {
     if (pausable.current) setPaused(true);
   }, []);
   const fullscreen = useFullscreen(settings.fullscreen, pause);
+  const needsLandscape = useNeedsLandscape();
+
+  // Al ponerse en vertical, la partida se pausa: al girar de nuevo el jugador la encuentra en el menu de pausa.
+  useEffect(() => {
+    if (needsLandscape) pause();
+  }, [needsLandscape, pause]);
 
   useEffect(() => {
     // La escena que arranca dice en que pantalla estamos: si el juego se recrea sin partida, vuelve la portada.
@@ -218,7 +227,8 @@ export function App() {
     const onKey = (event: KeyboardEvent) => {
       // En el menu de inicio las teclas las atiende el propio menu.
       // Con la partida acabada solo cuentan sus botones (Enter o espacio, que ya tienen el foco).
-      if (event.repeat || !onBoard || over) return;
+      // Con el aviso de girar la pantalla no se juega.
+      if (event.repeat || !onBoard || over || needsLandscape) return;
       // Con el aviso de lo desbloqueado abierto, Esc lo acepta (Enter ya lo hace el boton, que tiene el foco).
       if (unlock && !paused) {
         if (event.key === 'Escape') acceptUnlock();
@@ -242,7 +252,7 @@ export function App() {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [onBoard, paused, selected, plantPanel, over, resume, fullscreen, unlock, acceptUnlock, info, closeInfo]);
+  }, [onBoard, paused, selected, plantPanel, over, resume, fullscreen, unlock, acceptUnlock, info, closeInfo, needsLandscape]);
 
   // Si el jugador cambia de pestana, minimiza o cierra, la partida se guarda en ese momento (T-011) y al volver encuentra
   // el juego en pausa.
@@ -264,7 +274,7 @@ export function App() {
   return (
     // Con la pausa (o el aviso de lo desbloqueado, o una ficha) se congelan tambien las animaciones CSS que cuentan tiempo (el aviso de la ronda).
     <main className={`app${halted ? ' is-paused' : ''}`}>
-      <GameCanvas quality={level} language={settings.language} screen={screen} paused={halted} />
+      <GameCanvas quality={level} language={settings.language} screen={screen} paused={halted} asleep={needsLandscape} />
 
       {screen === 'title' && (
         <TitleScreen
@@ -342,6 +352,8 @@ export function App() {
           onExit={exitToMenu}
         />
       )}
+
+      {needsLandscape && <RotateNotice paused={onBoard && !over} />}
     </main>
   );
 }

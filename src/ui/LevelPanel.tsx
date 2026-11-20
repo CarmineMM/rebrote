@@ -2,18 +2,14 @@ import { useLayoutEffect, useRef, useState, type CSSProperties, type RefObject }
 import { levelBonus } from '../game/core/plants';
 import { EventBus, GameEvents, type PlantPanel } from '../game/EventBus';
 import { formatPercent } from '../i18n';
+import { placeLevelPanel, type PanelPlace } from './levelPanelPlace';
 import { useText } from './useText';
 
 interface LevelPanelProps {
   panel: PlantPanel;
-  /** El HUD de arriba: el panel no se mete debajo; si encima de la planta no cabe, va bajo sus pies. */
+  /** El HUD de arriba: el panel no se mete debajo de lo que tenga encima (bandeja, ronda y su aviso, marcadores). */
   avoid: RefObject<HTMLElement | null>;
 }
-
-/** Separacion con los bordes de la pantalla y con el HUD. */
-const MARGIN = 8;
-/** Lo que asoma la flechita que apunta a la planta. */
-const ARROW = 9;
 
 /**
  * Panel de la disparadora seleccionada (T-003): su medallita y nivel, lo que suma ese nivel, y el boton para subir
@@ -22,29 +18,28 @@ const ARROW = 9;
  */
 export function LevelPanel({ panel, avoid }: LevelPanelProps) {
   const ref = useRef<HTMLDivElement>(null);
-  const [place, setPlace] = useState<{ left: number; top: number; arrowX: number; below: boolean } | null>(null);
+  const [place, setPlace] = useState<PanelPlace | null>(null);
   const [shake, setShake] = useState(0);
   const { level, cap, capRaisedAt, cost, multiplier, affordable } = panel;
   const atMax = cost === null;
   const can = !atMax && affordable;
   const t = useText();
 
-  // Se coloca antes de pintarse: encima de la cabeza si cabe, si no bajo los pies; siempre dentro de la pantalla.
+  // Se coloca antes de pintarse: encima de la cabeza si cabe, si no bajo los pies, y si no a un lado de la planta;
+  // siempre dentro de la pantalla y sin meterse bajo el HUD (`levelPanelPlace.ts`).
   useLayoutEffect(() => {
     const element = ref.current;
     if (!element) return;
-    const width = element.offsetWidth;
-    const height = element.offsetHeight;
-    const top = (avoid.current?.getBoundingClientRect().bottom ?? 0) + MARGIN;
-    const below = panel.above.pageY - height - ARROW < top;
-    const anchor = below ? panel.below : panel.above;
-    const left = Math.min(Math.max(MARGIN, anchor.pageX - width / 2), window.innerWidth - width - MARGIN);
-    setPlace({
-      left,
-      top: below ? anchor.pageY + ARROW : anchor.pageY - height - ARROW,
-      arrowX: Math.min(Math.max(16, anchor.pageX - left), width - 16),
-      below,
-    });
+    const hud = avoid.current;
+    const obstacles = hud ? [...hud.querySelectorAll(':scope > *, .round-notice')].map((node) => node.getBoundingClientRect()) : [];
+    setPlace(
+      placeLevelPanel(
+        { width: element.offsetWidth, height: element.offsetHeight },
+        panel,
+        obstacles,
+        { width: window.innerWidth, height: window.innerHeight },
+      ),
+    );
   }, [panel, avoid]);
 
   function onLevelUp() {
@@ -59,13 +54,13 @@ export function LevelPanel({ panel, avoid }: LevelPanelProps) {
     left: place?.left ?? 0,
     top: place?.top ?? 0,
     visibility: place ? 'visible' : 'hidden',
-    '--arrow-x': `${place?.arrowX ?? 0}px`,
+    '--arrow': `${place?.arrow ?? 0}px`,
   } as CSSProperties;
 
   return (
     <div
       ref={ref}
-      className={`level-panel${place?.below ? ' is-below' : ''}`}
+      className={`level-panel is-${place?.side ?? 'above'}`}
       style={style}
       role="group"
       aria-label={t.level.aria(level)}

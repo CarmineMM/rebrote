@@ -28,6 +28,7 @@ Hay dos problemas técnicos:
   - Más alta: más cielo arriba y más tierra abajo.
 - Alrededor del diseño hay **decorado extra** (`BLEED`, `WORLD`): 360 por los lados, 360 arriba y 200 abajo. Cubre desde 1,1:1 hasta 2,58:1.
 - Al redimensionar la ventana la escena reajusta lienzo y cámara (`fitView`). La lógica no cambia: sigue en coordenadas de tablero.
+- En un móvil o una tableta en vertical no se juega: sale un aviso de girar la pantalla (ADR-0011).
 
 ### HUD flotante
 Durante la partida React pinta el HUD encima del juego (en el menú de inicio, el título y el menú, ADR-0010):

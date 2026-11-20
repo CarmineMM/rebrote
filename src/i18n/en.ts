@@ -15,6 +15,13 @@ export const en: Dictionary = {
     loading: 'Loading the garden…',
   },
 
+  /** Aviso de girar la pantalla en un movil o tableta en vertical (ADR-0011). */
+  rotate: {
+    title: 'Turn your screen',
+    body: 'Rebrote is played in landscape. Turn your phone or tablet sideways to play.',
+    paused: 'Your game is paused and waiting for you.',
+  },
+
   time: {
     justNow: 'just now',
   },

@@ -342,6 +342,79 @@ body {
 @keyframes leaves-sway { from { transform: translateY(14px) rotate(-8deg) scale(0.8); } to { transform: rotate(8deg) scale(1); } }
 @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
 
+/*
+ * ---------- Aviso de girar la pantalla (ADR-0011) ----------
+ * Movil o tableta en vertical: tapa todo (tambien la pausa y la carga) con el fondo de la carga. Un movil de pie gira y
+ * se pone de lado; el jardin de su pantalla esta pintado en horizontal, asi que de pie sale tumbado y al girar queda
+ * derecho. Una flecha curva marca el sentido del giro.
+ */
+.rotate-notice {
+  position: absolute; inset: 0; z-index: 10; display: grid; place-content: center; justify-items: center; gap: 12px;
+  padding: max(24px, env(safe-area-inset-top)) max(24px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(24px, env(safe-area-inset-left));
+  background: radial-gradient(ellipse at 50% 38%, #2e5a33 0%, #10200f 78%);
+  text-align: center; animation: fade-in 0.25s ease-out;
+}
+.rotate-art { position: relative; width: 168px; height: 150px; margin-bottom: 8px; }
+.rotate-arrow { position: absolute; right: 0; top: 0; width: 54px; height: 54px; overflow: visible; }
+.rotate-arrow path { fill: none; stroke: #ffe066; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; filter: drop-shadow(0 2px 0 #5a3d00); }
+.rotate-arrow path:first-child { stroke-dasharray: 100; animation: arrow-draw 3.6s ease-in-out infinite; }
+.rotate-arrow-head { animation: arrow-head 3.6s ease-in-out infinite; }
+.rotate-phone {
+  position: absolute; left: 50%; top: 50%; width: 66px; height: 112px; margin: -56px 0 0 -33px;
+  border-radius: 14px; border: 3px solid #5fa54f;
+  background: linear-gradient(180deg, #2e5233 0%, #1b3020 100%);
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.45), inset 0 2px 0 rgba(255, 255, 255, 0.12);
+  animation: phone-turn 3.6s ease-in-out infinite;
+}
+/* Altavoz del movil. */
+.rotate-phone::before { content: ''; position: absolute; left: 50%; top: 4px; width: 16px; height: 3px; margin-left: -8px; border-radius: 2px; background: #142a17; }
+.rotate-screen {
+  position: absolute; inset: 11px 5px; overflow: hidden; border-radius: 6px; background: #8fd0ff;
+  animation: screen-glow 3.6s ease-in-out infinite;
+}
+/* El jardin mide como la pantalla tumbada y va girado 90 grados: el cesped queda a la izquierda del movil de pie. */
+.rotate-garden {
+  position: absolute; left: 50%; top: 50%; width: 84px; height: 50px; margin: -25px 0 0 -42px; transform: rotate(90deg);
+  background:
+    linear-gradient(180deg, transparent 62%, #4aa236 62%, #3b8a2c 100%),
+    linear-gradient(180deg, #9fe0ff 0%, #d9f4ff 62%);
+}
+.rotate-sun { position: absolute; right: 8px; top: 6px; width: 11px; height: 11px; border-radius: 50%; background: radial-gradient(circle at 40% 35%, #fff6c0, #ffd23f); box-shadow: 0 0 8px rgba(255, 210, 63, 0.8); }
+.rotate-sprout { position: absolute; left: 20px; bottom: 16px; width: 18px; height: 20px; transform-origin: 50% 100%; animation: sprout-pop 3.6s ease-in-out infinite; }
+.rotate-sprout::before { content: ''; position: absolute; left: 8px; bottom: 0; width: 3px; height: 14px; border-radius: 2px; background: #3f9a35; }
+.rotate-sprout::after {
+  content: ''; position: absolute; left: 0; top: 0; width: 18px; height: 9px;
+  background:
+    radial-gradient(ellipse 5px 4px at 5px 5px, #7fcf5f 98%, transparent),
+    radial-gradient(ellipse 5px 4px at 13px 5px, #62c046 98%, transparent);
+}
+.rotate-worm {
+  position: absolute; right: 12px; bottom: 15px; width: 20px; height: 8px; border-radius: 6px;
+  background: linear-gradient(90deg, #ff9fb4, #e8708e); box-shadow: inset -3px 0 0 #c9506f;
+  transform-origin: 50% 100%; animation: worm-wiggle 0.9s ease-in-out infinite alternate;
+}
+.rotate-title { margin: 0; font-size: 1.9rem; font-weight: 900; color: #e9ffd6; text-shadow: 0 3px 0 #17301a; }
+.rotate-body { margin: 0; max-width: 30ch; font-size: 1.05rem; font-weight: 700; line-height: 1.4; color: #cfe8c2; }
+.rotate-paused {
+  margin: 6px 0 0; padding: 6px 14px; border-radius: 999px;
+  background: rgba(22, 40, 22, 0.78); border: 2px solid rgba(255, 224, 102, 0.35);
+  font-size: 0.9rem; font-weight: 800; color: #ffe066;
+}
+/* De pie, gira a tumbado con un rebote, se queda un rato asi y vuelve a empezar desvaneciendose. */
+@keyframes phone-turn {
+  0%, 18% { transform: rotate(0); opacity: 1; }
+  44% { transform: rotate(-96deg); }
+  50%, 84% { transform: rotate(-90deg); opacity: 1; }
+  90% { transform: rotate(-90deg); opacity: 0; }
+  91% { transform: rotate(0); opacity: 0; }
+  100% { transform: rotate(0); opacity: 1; }
+}
+@keyframes screen-glow { 0%, 40%, 92%, 100% { filter: brightness(0.62) saturate(0.7); } 52%, 84% { filter: brightness(1.05) saturate(1.1); } }
+@keyframes sprout-pop { 0%, 46%, 100% { transform: scale(0.75); } 54% { transform: scale(1.25); } 62%, 88% { transform: scale(1); } }
+@keyframes worm-wiggle { from { transform: scaleX(1) translateY(0); } to { transform: scaleX(0.82) translateY(-1px); } }
+@keyframes arrow-draw { 0%, 6% { stroke-dashoffset: 100; opacity: 0; } 12% { opacity: 1; } 40%, 70% { stroke-dashoffset: 0; opacity: 1; } 80%, 100% { stroke-dashoffset: 0; opacity: 0; } }
+@keyframes arrow-head { 0%, 34% { opacity: 0; } 40%, 70% { opacity: 1; } 80%, 100% { opacity: 0; } }
+
 /* ---------- Panel de nivel (T-003): flota junto a la disparadora seleccionada y la apunta con una flechita ---------- */
 .level-panel {
   position: absolute; z-index: 3; width: max-content; min-width: 168px; max-width: calc(100vw - 16px);
@@ -349,18 +422,25 @@ body {
   border-radius: 16px; border: 2px solid rgba(255, 224, 102, 0.6);
   background: linear-gradient(180deg, #2e5233 0%, #1b3020 100%);
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35), inset 0 2px 0 rgba(255, 255, 255, 0.1);
-  transform-origin: var(--arrow-x) calc(100% + 9px);
+  transform-origin: var(--arrow) calc(100% + 9px);
   animation: panel-pop 0.26s cubic-bezier(0.2, 1.5, 0.4, 1) both;
   user-select: none; -webkit-user-select: none;
 }
-.level-panel.is-below { transform-origin: var(--arrow-x) -9px; }
-/* Flechita: un rombo con el borde del panel, asomando por abajo (o por arriba si el panel va bajo los pies). */
+.level-panel.is-below { transform-origin: var(--arrow) -9px; }
+.level-panel.is-right { transform-origin: -9px var(--arrow); }
+.level-panel.is-left { transform-origin: calc(100% + 9px) var(--arrow); }
+/*
+ * Flechita: un rombo con el borde del panel, asomando por abajo (o por arriba si el panel va bajo los pies, o por el
+ * lado de la planta si va a un lado: movil en horizontal, filas de abajo).
+ */
 .level-panel::after {
-  content: ''; position: absolute; left: var(--arrow-x); top: 100%; width: 14px; height: 14px;
+  content: ''; position: absolute; left: var(--arrow); top: 100%; width: 14px; height: 14px;
   background: #1b3020; border: 2px solid rgba(255, 224, 102, 0.6); border-top: 0; border-left: 0;
   transform: translate(-50%, -6px) rotate(45deg);
 }
 .level-panel.is-below::after { top: 0; background: #2e5233; transform: translate(-50%, -8px) rotate(-135deg); }
+.level-panel.is-right::after { left: 0; top: var(--arrow); background: #24412a; transform: translate(-8px, -50%) rotate(135deg); }
+.level-panel.is-left::after { left: 100%; top: var(--arrow); background: #24412a; transform: translate(-6px, -50%) rotate(-45deg); }
 @keyframes panel-pop { from { opacity: 0; transform: scale(0.6) translateY(8px); } to { opacity: 1; transform: none; } }
 
 .level-panel-title { display: flex; align-items: center; gap: 8px; font-size: 1.1rem; font-weight: 900; color: #e9ffd6; text-shadow: 0 2px 0 #17301a; }
@@ -702,6 +782,9 @@ body {
   /* zoom y no transform: la carta elegida anima el transform del icono. */
   .seed-tray { --card-w: 80px; --card-icon-zoom: 0.72; }
   .hud-balance-value { min-width: 0; }
+}
+/* Pantalla pequena (movil en horizontal): la ronda dice solo en cual se esta ("Ronda 3 de 10"), sin la fila de semillitas. */
+@media (max-width: 860px), (max-height: 560px) {
   .round-progress { display: none; }
 }
 
