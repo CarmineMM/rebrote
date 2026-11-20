@@ -3,5 +3,3 @@ dist
 *.local
 .DS_Store
 
-# Paquetes de sonido y candidatos de la pagina de prueba (T-014): se regeneran con `npm run audio`
-audio-lab

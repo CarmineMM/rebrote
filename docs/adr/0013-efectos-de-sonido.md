@@ -40,6 +40,6 @@ Un módulo propio en `src/game/audio/`, con Web Audio, y Phaser sin audio (`audi
 ## Consecuencias
 
 - Una mecánica nueva llega con su sonido (regla de `CLAUDE.md`): su efecto en `SfxId` y `SFX`, su fuente en `scripts/audio/manifest.ts`, su regla en `cues.ts` (con test) y su archivo con `npm run audio`. La guía de gráficos tiene la lista "Sonido nuevo".
-- Cambiar un sonido no toca código del juego: se cambia el manifiesto y se vuelve a pasar `npm run audio`. Los paquetes de Kenney van en `audio-lab/kenney/`, que no se sube al repositorio.
+- Cambiar un sonido no toca código del juego: se cambia el manifiesto y se vuelve a pasar `npm run audio`. Los paquetes de Kenney (`audio-lab/kenney/`, unos 10 MB) y las alternativas de la página de prueba (`audio-lab/candidatos/`) van en el repositorio: tras clonar funcionan `npm run build`, `npm run audio` y `/sonidos.html` sin bajar nada.
 - La música (T-015) usará el mismo módulo con un canal más y su propio volumen.
 - Pendiente de comprobar en un iPhone de verdad: que Safari decodifica el OGG (si no, el módulo usa el MP3) y que el primer toque desbloquea el audio.

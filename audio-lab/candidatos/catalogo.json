@@ -1,0 +1,1263 @@
+{
+  "generated": "2026-11-20T23:20:12.306Z",
+  "sounds": [
+    {
+      "id": "sow",
+      "about": "Sembrar una disparadora o una mina: un bloop con un poco de tierra",
+      "spec": {
+        "bus": "world",
+        "volume": 0.7,
+        "maxVoices": 2,
+        "minGapMs": 60,
+        "burst": 2,
+        "pitchJitter": 1,
+        "variants": 1
+      },
+      "pick": [
+        {
+          "url": "audio/sow",
+          "source": "Kenney Interface Sounds: `drop_003.ogg` + Kenney Impact Sounds: `footstep_grass_001.ogg` (recortado 0-260 ms, -6 dB)",
+          "seconds": 0.188
+        }
+      ],
+      "alternatives": [
+        {
+          "url": "audio-lab/candidatos/sow/1",
+          "source": "Kenney Impact Sounds: `impactSoft_medium_001.ogg` + Kenney Impact Sounds: `footstep_grass_000.ogg` (recortado 0-300 ms, -4 dB)",
+          "seconds": 0.18,
+          "recipes": []
+        },
+        {
+          "url": "audio-lab/candidatos/sow/2",
+          "source": "Kenney Interface Sounds: `drop_002.ogg`",
+          "seconds": 0.188,
+          "recipes": []
+        }
+      ]
+    },
+    {
+      "id": "shot",
+      "about": "Disparo de una disparadora normal (uno por planta, aunque tenga 3 cañones)",
+      "spec": {
+        "bus": "world",
+        "volume": 0.34,
+        "maxVoices": 4,
+        "minGapMs": 45,
+        "burst": 2,
+        "pitchJitter": 1.2,
+        "variants": 1
+      },
+      "pick": [
+        {
+          "url": "audio/shot",
+          "source": "Kenney Interface Sounds: `pluck_001.ogg` (velocidad 0.65, sin agudos por encima de 2800 Hz)",
+          "seconds": 0.153
+        }
+      ],
+      "alternatives": [
+        {
+          "url": "audio-lab/candidatos/shot/1",
+          "source": "Kenney Interface Sounds: `pluck_001.ogg` (velocidad 0.55, sin agudos por encima de 2400 Hz)",
+          "seconds": 0.181,
+          "recipes": []
+        },
+        {
+          "url": "audio-lab/candidatos/shot/2",
+          "source": "Kenney Interface Sounds: `pluck_001.ogg` (velocidad 0.65)",
+          "seconds": 0.153,
+          "recipes": []
+        },
+        {
+          "url": "audio-lab/candidatos/shot/3",
+          "source": "Kenney Interface Sounds: `pluck_001.ogg` (velocidad 0.8)",
+          "seconds": 0.124,
+          "recipes": []
+        }
+      ]
+    },
+    {
+      "id": "shotFire",
+      "about": "Disparo de una disparadora de fuego: el pluck con un siseo de brasa y un eco corto",
+      "spec": {
+        "bus": "world",
+        "volume": 0.36,
+        "maxVoices": 4,
+        "minGapMs": 45,
+        "burst": 2,
+        "pitchJitter": 1.2,
+        "variants": 1
+      },
+      "pick": [
+        {
+          "url": "audio/shotFire",
+          "source": "Kenney Interface Sounds: `pluck_002.ogg` (eco de 110 ms) + Kenney Sci-Fi Sounds: `thrusterFire_000.ogg` (recortado 200-350 ms, -8 dB)",
+          "seconds": 0.308
+        }
+      ],
+      "alternatives": [
+        {
+          "url": "audio-lab/candidatos/shotFire/1",
+          "source": "Kenney Interface Sounds: `pluck_002.ogg` (eco de 70 ms) + Kenney Sci-Fi Sounds: `thrusterFire_000.ogg` (recortado 200-350 ms, -8 dB)",
+          "seconds": 0.226,
+          "recipes": []
+        },
+        {
+          "url": "audio-lab/candidatos/shotFire/2",
+          "source": "Kenney Interface Sounds: `pluck_002.ogg` (eco de 160 ms) + Kenney Sci-Fi Sounds: `thrusterFire_000.ogg` (recortado 200-350 ms, -8 dB)",
+          "seconds": 0.408,
+          "recipes": []
+        },
+        {
+          "url": "audio-lab/candidatos/shotFire/3",
+          "source": "Kenney Interface Sounds: `pluck_002.ogg` + Kenney Sci-Fi Sounds: `thrusterFire_000.ogg` (recortado 200-350 ms, -8 dB)",
+          "seconds": 0.144,
+          "recipes": []
+        }
+      ]
+    },
+    {
+      "id": "shotIce",
+      "about": "Disparo de una disparadora de hielo: un tin de cristal",
+      "spec": {
+        "bus": "world",
+        "volume": 0.32,
+        "maxVoices": 4,
+        "minGapMs": 45,
+        "burst": 2,
+        "pitchJitter": 1.2,
+        "variants": 1
+      },
+      "pick": [
+        {
+          "url": "audio/shotIce",
+          "source": "Kenney Interface Sounds: `glass_006.ogg`",
+          "seconds": 0.071
+        }
+      ],
+      "alternatives": [
+        {
+          "url": "audio-lab/candidatos/shotIce/1",
+          "source": "Kenney Interface Sounds: `glass_005.ogg`",
+          "seconds": 0.067,
+          "recipes": []
+        },
+        {
+          "url": "audio-lab/candidatos/shotIce/2",
+          "source": "Kenney Interface Sounds: `glass_002.ogg`",
+          "seconds": 0.122,
+          "recipes": []
+        }
+      ]
+    },
+    {
+      "id": "infuseFire",
+      "about": "Infundir fuego en una disparadora: soplido de llama y un tono que sube",
+      "spec": {
+        "bus": "world",
+        "volume": 0.75,
+        "maxVoices": 2,
+        "minGapMs": 80,
+        "burst": 2,
+        "pitchJitter": 0.5,
+        "variants": 1
+      },
+      "pick": [
+        {
+          "url": "audio/infuseFire",
+          "source": "jsfxr: receta `firePower`",
+          "seconds": 0.452
+        }
+      ],
+      "alternatives": [
+        {
+          "url": "audio-lab/candidatos/infuseFire/1",
+          "source": "Kenney Sci-Fi Sounds: `thrusterFire_001.ogg` (recortado 300-850 ms, -2 dB) + Kenney Interface Sounds: `maximize_006.ogg` (-3 dB)",
+          "seconds": 0.543,
+          "recipes": []
+        },
+        {
+          "url": "audio-lab/candidatos/infuseFire/2",
+          "source": "Kenney Sci-Fi Sounds: `thrusterFire_001.ogg` (recortado 300-900 ms)",
+          "seconds": 0.585,
+          "recipes": []
+        }
+      ]
+    },
+    {
+      "id": "infuseIce",
+      "about": "Infundir hielo en una disparadora: cristal y un brillo que se queda",
+      "spec": {
+        "bus": "world",
+        "volume": 0.7,
+        "maxVoices": 2,
+        "minGapMs": 80,
+        "burst": 2,
+        "pitchJitter": 0.5,
+        "variants": 1
+      },
+      "pick": [
+        {
+          "url": "audio/infuseIce",
+          "source": "Kenney Impact Sounds: `impactGlass_light_001.ogg` (-4 dB) + Kenney Interface Sounds: `glass_004.ogg` (+40 ms)",
+          "seconds": 0.731
+        }
+      ],
+      "alternatives": [
+        {
+          "url": "audio-lab/candidatos/infuseIce/1",
+          "source": "Kenney Interface Sounds: `glass_004.ogg`",
+          "seconds": 0.691,
+          "recipes": []
+        },
+        {
+          "url": "audio-lab/candidatos/infuseIce/2",
+          "source": "Kenney Sci-Fi Sounds: `forceField_000.ogg` (recortado 0-500 ms)",
+          "seconds": 0.489,
+          "recipes": []
+        }
+      ]
+    },
+    {
+      "id": "fuse",
+      "about": "Fusionar dos disparadoras: un golpe blando y unas notas que suben",
+      "spec": {
+        "bus": "world",
+        "volume": 0.8,
+        "maxVoices": 2,
+        "minGapMs": 0,
+        "burst": 2,
+        "pitchJitter": 0,
+        "variants": 1
+      },
+      "pick": [
+        {
+          "url": "audio/fuse",
+          "source": "Kenney Interface Sounds: `confirmation_004.ogg` + Kenney Impact Sounds: `impactSoft_medium_000.ogg` (-6 dB)",
+          "seconds": 0.485
+        }
+      ],
+      "alternatives": [
+        {
+          "url": "audio-lab/candidatos/fuse/1",
+          "source": "Kenney Interface Sounds: `maximize_009.ogg`",
+          "seconds": 0.206,
+          "recipes": []
+        },
+        {
+          "url": "audio-lab/candidatos/fuse/2",
+          "source": "Kenney Interface Sounds: `open_002.ogg`",
+          "seconds": 0.31,
+          "recipes": []
+        }
+      ]
+    },
+    {
+      "id": "levelUp",
+      "about": "Subir de nivel: un arpegio brillante que sube",
+      "spec": {
+        "bus": "world",
+        "volume": 0.7,
+        "maxVoices": 2,
+        "minGapMs": 0,
+        "burst": 2,
+        "pitchJitter": 0,
+        "variants": 1
+      },
+      "pick": [
+        {
+          "url": "audio/levelUp",
+          "source": "Kenney Interface Sounds: `maximize_005.ogg`",
+          "seconds": 0.517
+        }
+      ],
+      "alternatives": [
+        {
+          "url": "audio-lab/candidatos/levelUp/1",
+          "source": "Kenney Interface Sounds: `confirmation_001.ogg`",
+          "seconds": 0.29,
+          "recipes": []
+        },
+        {
+          "url": "audio-lab/candidatos/levelUp/2",
+          "source": "Kenney Digital Audio: `powerUp8.ogg`",
+          "seconds": 0.262,
+          "recipes": []
+        }
+      ]
+    },
+    {
+      "id": "plantDestroyed",
+      "about": "Una planta o una mina se rompen a mordiscos: golpe sordo y hojas",
+      "spec": {
+        "bus": "world",
+        "volume": 0.6,
+        "maxVoices": 2,
+        "minGapMs": 120,
+        "burst": 2,
+        "pitchJitter": 1,
+        "variants": 1
+      },
+      "pick": [
+        {
+          "url": "audio/plantDestroyed",
+          "source": "Kenney Impact Sounds: `impactPunch_medium_000.ogg`",
+          "seconds": 0.284
+        }
+      ],
+      "alternatives": [
+        {
+          "url": "audio-lab/candidatos/plantDestroyed/1",
+          "source": "Kenney Impact Sounds: `impactWood_light_000.ogg` + Kenney Impact Sounds: `footstep_grass_000.ogg` (recortado 0-400 ms, -4 dB)",
+          "seconds": 0.146,
+          "recipes": []
+        },
+        {
+          "url": "audio-lab/candidatos/plantDestroyed/2",
+          "source": "Kenney Impact Sounds: `impactSoft_heavy_001.ogg` + Kenney Impact Sounds: `footstep_grass_002.ogg` (recortado 0-400 ms, -4 dB)",
+          "seconds": 0.569,
+          "recipes": []
+        }
+      ]
+    },
+    {
+      "id": "coin",
+      "about": "Recoger la moneda del suelo (la que se cobra sola no suena, S-05)",
+      "spec": {
+        "bus": "world",
+        "volume": 0.7,
+        "maxVoices": 3,
+        "minGapMs": 50,
+        "burst": 2,
+        "pitchJitter": 0.6,
+        "variants": 1
+      },
+      "pick": [
+        {
+          "url": "audio/coin",
+          "source": "Kenney RPG Audio: `handleCoins2.ogg`",
+          "seconds": 0.278
+        }
+      ],
+      "alternatives": [
+        {
+          "url": "audio-lab/candidatos/coin/1",
+          "source": "jsfxr: receta `coin`",
+          "seconds": 0.209,
+          "recipes": [
+            {
+              "name": "coin",
+              "code": "34T6PkyDRjVur4SFeVy9zc1W8HAVD9JBx6NoLxi3KomnNGG2Lq17tfwYcdSBsZ2K58Uryno9GxGwM2wk3H5PT88NkNHbVhGhrFm7VTB4mSPGMxu7vGzGosu4s"
+            }
+          ]
+        },
+        {
+          "url": "audio-lab/candidatos/coin/2",
+          "source": "Kenney Interface Sounds: `confirmation_003.ogg`",
+          "seconds": 0.317,
+          "recipes": []
+        }
+      ]
+    },
+    {
+      "id": "hit",
+      "about": "Semilla normal que da a un gusano (tres variantes)",
+      "spec": {
+        "bus": "world",
+        "volume": 0.3,
+        "maxVoices": 3,
+        "minGapMs": 50,
+        "burst": 2,
+        "pitchJitter": 1.5,
+        "variants": 3
+      },
+      "pick": [
+        {
+          "url": "audio/hit-1",
+          "source": "Kenney Impact Sounds: `impactGeneric_light_000.ogg`",
+          "seconds": 0.14
+        },
+        {
+          "url": "audio/hit-2",
+          "source": "Kenney Impact Sounds: `impactGeneric_light_001.ogg`",
+          "seconds": 0.115
+        },
+        {
+          "url": "audio/hit-3",
+          "source": "Kenney Impact Sounds: `impactGeneric_light_002.ogg`",
+          "seconds": 0.143
+        }
+      ],
+      "alternatives": [
+        {
+          "url": "audio-lab/candidatos/hit/1",
+          "source": "Kenney Impact Sounds: `impactSoft_medium_002.ogg`",
+          "seconds": 0.132,
+          "recipes": []
+        },
+        {
+          "url": "audio-lab/candidatos/hit/2",
+          "source": "jsfxr: receta `hitThud`",
+          "seconds": 0.04,
+          "recipes": [
+            {
+              "name": "hitThud",
+              "code": "7BMHBGL5s2mfnjRaPBXcGPaESR2tEfw1UYbSHTPvtiwTzDYQppf6fBXcvDxjnRZ2SMRhyMDa35UECYUw9JzZsVF74gD1PEMvUcpHSLj26a88e4LeXkLSpCEMV"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "hitFire",
+      "about": "Semilla de fuego que da a un gusano: golpe con chisporroteo",
+      "spec": {
+        "bus": "world",
+        "volume": 0.28,
+        "maxVoices": 3,
+        "minGapMs": 60,
+        "burst": 2,
+        "pitchJitter": 1.5,
+        "variants": 1
+      },
+      "pick": [
+        {
+          "url": "audio/hitFire",
+          "source": "Kenney Impact Sounds: `impactGeneric_light_003.ogg` (-3 dB) + Kenney Sci-Fi Sounds: `thrusterFire_000.ogg` (recortado 100-260 ms, -4 dB)",
+          "seconds": 0.158
+        }
+      ],
+      "alternatives": [
+        {
+          "url": "audio-lab/candidatos/hitFire/1",
+          "source": "jsfxr: receta `fizz`",
+          "seconds": 0.099,
+          "recipes": [
+            {
+              "name": "fizz",
+              "code": "7BMHBGL5rZbg8FVXPRuUAZvqJrahwp7mjPaVq6A1wUAN5ZmiLeeQXWDPKcWb9DA9vCiKQgw7ccpFcQJPR5XgiQ2iXge8nYN3Xbw4Pch4WCPLY8YqZMd8Nat9m"
+            }
+          ]
+        },
+        {
+          "url": "audio-lab/candidatos/hitFire/2",
+          "source": "Kenney Impact Sounds: `impactGeneric_light_004.ogg` (-3 dB) + jsfxr: receta `fizz` (-6 dB)",
+          "seconds": 0.137,
+          "recipes": [
+            {
+              "name": "fizz",
+              "code": "7BMHBGL5rZbg8FVXPRuUAZvqJrahwp7mjPaVq6A1wUAN5ZmiLeeQXWDPKcWb9DA9vCiKQgw7ccpFcQJPR5XgiQ2iXge8nYN3Xbw4Pch4WCPLY8YqZMd8Nat9m"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "hitIce",
+      "about": "Semilla de hielo que da a un gusano: cristalito (tres variantes)",
+      "spec": {
+        "bus": "world",
+        "volume": 0.3,
+        "maxVoices": 3,
+        "minGapMs": 60,
+        "burst": 2,
+        "pitchJitter": 1.5,
+        "variants": 3
+      },
+      "pick": [
+        {
+          "url": "audio/hitIce-1",
+          "source": "Kenney Impact Sounds: `impactGlass_light_000.ogg`",
+          "seconds": 0.204
+        },
+        {
+          "url": "audio/hitIce-2",
+          "source": "Kenney Impact Sounds: `impactGlass_light_001.ogg`",
+          "seconds": 0.207
+        },
+        {
+          "url": "audio/hitIce-3",
+          "source": "Kenney Impact Sounds: `impactGlass_light_002.ogg`",
+          "seconds": 0.207
+        }
+      ],
+      "alternatives": [
+        {
+          "url": "audio-lab/candidatos/hitIce/1",
+          "source": "Kenney Interface Sounds: `glass_003.ogg`",
+          "seconds": 0.121,
+          "recipes": []
+        },
+        {
+          "url": "audio-lab/candidatos/hitIce/2",
+          "source": "Kenney Interface Sounds: `glass_001.ogg`",
+          "seconds": 0.276,
+          "recipes": []
+        }
+      ]
+    },
+    {
+      "id": "hitArmor",
+      "about": "Semilla normal que da a un acorazado: metal (tres variantes)",
+      "spec": {
+        "bus": "world",
+        "volume": 0.32,
+        "maxVoices": 2,
+        "minGapMs": 80,
+        "burst": 2,
+        "pitchJitter": 1.5,
+        "variants": 3
+      },
+      "pick": [
+        {
+          "url": "audio/hitArmor-1",
+          "source": "Kenney Impact Sounds: `impactMetal_light_000.ogg`",
+          "seconds": 0.347
+        },
+        {
+          "url": "audio/hitArmor-2",
+          "source": "Kenney Impact Sounds: `impactMetal_light_001.ogg`",
+          "seconds": 0.249
+        },
+        {
+          "url": "audio/hitArmor-3",
+          "source": "Kenney Impact Sounds: `impactMetal_light_002.ogg`",
+          "seconds": 0.233
+        }
+      ],
+      "alternatives": [
+        {
+          "url": "audio-lab/candidatos/hitArmor/1",
+          "source": "Kenney Impact Sounds: `impactTin_medium_000.ogg`",
+          "seconds": 0.156,
+          "recipes": []
+        },
+        {
+          "url": "audio-lab/candidatos/hitArmor/2",
+          "source": "Kenney Sci-Fi Sounds: `impactMetal_000.ogg` (recortado 0-400 ms)",
+          "seconds": 0.306,
+          "recipes": []
+        }
+      ]
+    },
+    {
+      "id": "bite",
+      "about": "Mordisco de un gusano a una planta o una mina: crujido (tres variantes)",
+      "spec": {
+        "bus": "world",
+        "volume": 0.45,
+        "maxVoices": 2,
+        "minGapMs": 120,
+        "burst": 2,
+        "pitchJitter": 1,
+        "variants": 3
+      },
+      "pick": [
+        {
+          "url": "audio/bite-1",
+          "source": "Kenney Impact Sounds: `footstep_snow_000.ogg`",
+          "seconds": 0.371
+        },
+        {
+          "url": "audio/bite-2",
+          "source": "Kenney Impact Sounds: `footstep_snow_001.ogg`",
+          "seconds": 0.371
+        },
+        {
+          "url": "audio/bite-3",
+          "source": "Kenney Impact Sounds: `footstep_snow_002.ogg`",
+          "seconds": 0.371
+        }
+      ],
+      "alternatives": [
+        {
+          "url": "audio-lab/candidatos/bite/1",
+          "source": "Kenney Impact Sounds: `impactPunch_medium_001.ogg`",
+          "seconds": 0.279,
+          "recipes": []
+        },
+        {
+          "url": "audio-lab/candidatos/bite/2",
+          "source": "Kenney RPG Audio: `chop.ogg`",
+          "seconds": 0.24,
+          "recipes": []
+        }
+      ]
+    },
+    {
+      "id": "spit",
+      "about": "El escupidor escupe: moco",
+      "spec": {
+        "bus": "world",
+        "volume": 0.45,
+        "maxVoices": 2,
+        "minGapMs": 100,
+        "burst": 2,
+        "pitchJitter": 1,
+        "variants": 1
+      },
+      "pick": [
+        {
+          "url": "audio/spit",
+          "source": "Kenney Sci-Fi Sounds: `slime_000.ogg`",
+          "seconds": 0.495
+        }
+      ],
+      "alternatives": [
+        {
+          "url": "audio-lab/candidatos/spit/1",
+          "source": "Kenney Interface Sounds: `drop_004.ogg` (velocidad 0.8)",
+          "seconds": 0.355,
+          "recipes": []
+        },
+        {
+          "url": "audio-lab/candidatos/spit/2",
+          "source": "jsfxr: receta `spit`",
+          "seconds": 0.094,
+          "recipes": [
+            {
+              "name": "spit",
+              "code": "7BMHBGAc8o7hqpxpjq6RL1FGMWx2W8h6f9jmT3i5Mo6ferVE7CxcPWAEuWfxPjEQ4ghmvSXmnHxoDsKUAaaqZtm5vEdygJkEcsWnwyKhPJ4MqHtnzQTsavg9V"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "spitHit",
+      "about": "El escupitajo da a una planta: plaf",
+      "spec": {
+        "bus": "world",
+        "volume": 0.42,
+        "maxVoices": 2,
+        "minGapMs": 100,
+        "burst": 2,
+        "pitchJitter": 1,
+        "variants": 1
+      },
+      "pick": [
+        {
+          "url": "audio/spitHit",
+          "source": "Kenney Sci-Fi Sounds: `slime_001.ogg` (recortado 0-350 ms) + Kenney Impact Sounds: `impactSoft_medium_002.ogg` (-6 dB)",
+          "seconds": 0.344
+        }
+      ],
+      "alternatives": [
+        {
+          "url": "audio-lab/candidatos/spitHit/1",
+          "source": "Kenney Interface Sounds: `drop_002.ogg` (velocidad 0.85)",
+          "seconds": 0.221,
+          "recipes": []
+        },
+        {
+          "url": "audio-lab/candidatos/spitHit/2",
+          "source": "Kenney Impact Sounds: `impactSoft_medium_002.ogg`",
+          "seconds": 0.132,
+          "recipes": []
+        }
+      ]
+    },
+    {
+      "id": "enemyKilled",
+      "about": "Un enemigo eliminado: pop corto de píxeles, más bajo que el disparo (S-06)",
+      "spec": {
+        "bus": "world",
+        "volume": 0.28,
+        "maxVoices": 2,
+        "minGapMs": 90,
+        "burst": 2,
+        "pitchJitter": 1.5,
+        "variants": 1
+      },
+      "pick": [
+        {
+          "url": "audio/enemyKilled",
+          "source": "jsfxr: receta `pixelPop`",
+          "seconds": 0.118
+        }
+      ],
+      "alternatives": [
+        {
+          "url": "audio-lab/candidatos/enemyKilled/1",
+          "source": "jsfxr: receta `pixelCrunch`",
+          "seconds": 0.079,
+          "recipes": [
+            {
+              "name": "pixelCrunch",
+              "code": "7BMHBGQSJ3xbdyhVvfmVEJg9nkC85M38xMypnLpXgwWsZgp88nbiJWw4iyFtfjxk9HrV4Y9bCBW3m7Sd2YUn7Js578zdCd4Zd6jsHRr5Pz1oA5wSCzRS1YMdH"
+            }
+          ]
+        },
+        {
+          "url": "audio-lab/candidatos/enemyKilled/2",
+          "source": "Kenney Digital Audio: `pepSound3.ogg` (recortado 0-260 ms)",
+          "seconds": 0.178,
+          "recipes": []
+        }
+      ]
+    },
+    {
+      "id": "enemyEscaped",
+      "about": "Un enemigo se cuela y se pierde una vida: tres notas que bajan (\"oh, oh\")",
+      "spec": {
+        "bus": "world",
+        "volume": 0.75,
+        "maxVoices": 1,
+        "minGapMs": 200,
+        "burst": 0,
+        "pitchJitter": 0,
+        "variants": 1
+      },
+      "pick": [
+        {
+          "url": "audio/enemyEscaped",
+          "source": "Kenney Interface Sounds: `question_002.ogg`",
+          "seconds": 0.328
+        }
+      ],
+      "alternatives": [
+        {
+          "url": "audio-lab/candidatos/enemyEscaped/1",
+          "source": "Kenney Interface Sounds: `error_006.ogg`",
+          "seconds": 0.231,
+          "recipes": []
+        },
+        {
+          "url": "audio-lab/candidatos/enemyEscaped/2",
+          "source": "jsfxr: receta `womp`",
+          "seconds": 0.408,
+          "recipes": [
+            {
+              "name": "womp",
+              "code": "34T6PkuZgh5KamNXFEVS5cckD5Ekg5QmMKVxSdNQVXi7VZ4uCe94gUt3rgm83zLtwGTNr2eQ4LejsorTv8qdQhLJD9RVaHVaCy9Z71KFJe7DPyVazjrrCyPMH"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mineTick",
+      "about": "Tic de la cuenta atrás de una mina (uno al armarse y otro por segundo)",
+      "spec": {
+        "bus": "world",
+        "volume": 0.55,
+        "maxVoices": 3,
+        "minGapMs": 0,
+        "burst": 2,
+        "pitchJitter": 0,
+        "variants": 1
+      },
+      "pick": [
+        {
+          "url": "audio/mineTick",
+          "source": "Kenney Interface Sounds: `tick_004.ogg`",
+          "seconds": 0.055
+        }
+      ],
+      "alternatives": [
+        {
+          "url": "audio-lab/candidatos/mineTick/1",
+          "source": "Kenney Interface Sounds: `tick_002.ogg`",
+          "seconds": 0.02,
+          "recipes": []
+        },
+        {
+          "url": "audio-lab/candidatos/mineTick/2",
+          "source": "Kenney Impact Sounds: `impactTin_medium_000.ogg` (recortado 0-120 ms)",
+          "seconds": 0.116,
+          "recipes": []
+        }
+      ]
+    },
+    {
+      "id": "fireExplosion",
+      "about": "Explota la mina de fuego: crujido con un golpe grave debajo",
+      "spec": {
+        "bus": "world",
+        "volume": 0.85,
+        "maxVoices": 2,
+        "minGapMs": 80,
+        "burst": 2,
+        "pitchJitter": 0.8,
+        "variants": 1
+      },
+      "pick": [
+        {
+          "url": "audio/fireExplosion",
+          "source": "Kenney Sci-Fi Sounds: `explosionCrunch_000.ogg` + Kenney Sci-Fi Sounds: `lowFrequency_explosion_001.ogg` (recortado 0-800 ms, -4 dB)",
+          "seconds": 0.774
+        }
+      ],
+      "alternatives": [
+        {
+          "url": "audio-lab/candidatos/fireExplosion/1",
+          "source": "Kenney Sci-Fi Sounds: `explosionCrunch_002.ogg`",
+          "seconds": 1.225,
+          "recipes": []
+        },
+        {
+          "url": "audio-lab/candidatos/fireExplosion/2",
+          "source": "Kenney Sci-Fi Sounds: `lowFrequency_explosion_001.ogg`",
+          "seconds": 1,
+          "recipes": []
+        }
+      ]
+    },
+    {
+      "id": "iceExplosion",
+      "about": "Estalla la mina de hielo: cristal que se rompe y brillo",
+      "spec": {
+        "bus": "world",
+        "volume": 0.8,
+        "maxVoices": 2,
+        "minGapMs": 80,
+        "burst": 2,
+        "pitchJitter": 0.8,
+        "variants": 1
+      },
+      "pick": [
+        {
+          "url": "audio/iceExplosion",
+          "source": "Kenney Impact Sounds: `impactGlass_heavy_000.ogg` + Kenney Interface Sounds: `glass_004.ogg` (-5 dB, +60 ms)",
+          "seconds": 0.707
+        }
+      ],
+      "alternatives": [
+        {
+          "url": "audio-lab/candidatos/iceExplosion/1",
+          "source": "Kenney Impact Sounds: `impactGlass_heavy_002.ogg`",
+          "seconds": 0.244,
+          "recipes": []
+        },
+        {
+          "url": "audio-lab/candidatos/iceExplosion/2",
+          "source": "Kenney Sci-Fi Sounds: `forceField_001.ogg` (recortado 0-600 ms)",
+          "seconds": 0.574,
+          "recipes": []
+        }
+      ]
+    },
+    {
+      "id": "creeperWarn",
+      "about": "Creeper se agacha para saltar de carril: alarma digital",
+      "spec": {
+        "bus": "world",
+        "volume": 0.6,
+        "maxVoices": 1,
+        "minGapMs": 0,
+        "burst": 2,
+        "pitchJitter": 0,
+        "variants": 1
+      },
+      "pick": [
+        {
+          "url": "audio/creeperWarn",
+          "source": "jsfxr: receta `alarm`",
+          "seconds": 0.6
+        }
+      ],
+      "alternatives": [
+        {
+          "url": "audio-lab/candidatos/creeperWarn/1",
+          "source": "Kenney Digital Audio: `twoTone1.ogg`",
+          "seconds": 0.372,
+          "recipes": []
+        },
+        {
+          "url": "audio-lab/candidatos/creeperWarn/2",
+          "source": "Kenney Digital Audio: `threeTone1.ogg`",
+          "seconds": 0.493,
+          "recipes": []
+        }
+      ]
+    },
+    {
+      "id": "creeperTakeoff",
+      "about": "Creeper despega: zumbido que sube",
+      "spec": {
+        "bus": "world",
+        "volume": 0.65,
+        "maxVoices": 1,
+        "minGapMs": 0,
+        "burst": 2,
+        "pitchJitter": 0,
+        "variants": 1
+      },
+      "pick": [
+        {
+          "url": "audio/creeperTakeoff",
+          "source": "Kenney Digital Audio: `phaserUp3.ogg`",
+          "seconds": 0.409
+        }
+      ],
+      "alternatives": [
+        {
+          "url": "audio-lab/candidatos/creeperTakeoff/1",
+          "source": "jsfxr: receta `jumpUp`",
+          "seconds": 0.251,
+          "recipes": [
+            {
+              "name": "jumpUp",
+              "code": "1111111UE2QmoXVboXukT1QL2fZNrqfaKQawBFiCtQ3W3sZG2R8nLcHTJ9vEKX7i9L4gjfxDLno2dqetn3vxpwk71NZmtcZQxwpNkpVv1KxP5YbPmoP6MB5"
+            }
+          ]
+        },
+        {
+          "url": "audio-lab/candidatos/creeperTakeoff/2",
+          "source": "Kenney Digital Audio: `phaseJump1.ogg`",
+          "seconds": 0.365,
+          "recipes": []
+        }
+      ]
+    },
+    {
+      "id": "creeperLand",
+      "about": "Creeper aterriza: golpe fuerte con temblor grave",
+      "spec": {
+        "bus": "world",
+        "volume": 0.85,
+        "maxVoices": 1,
+        "minGapMs": 0,
+        "burst": 2,
+        "pitchJitter": 0,
+        "variants": 1
+      },
+      "pick": [
+        {
+          "url": "audio/creeperLand",
+          "source": "Kenney Impact Sounds: `impactPunch_heavy_000.ogg` + Kenney Sci-Fi Sounds: `lowFrequency_explosion_001.ogg` (recortado 0-600 ms, -6 dB)",
+          "seconds": 0.588
+        }
+      ],
+      "alternatives": [
+        {
+          "url": "audio-lab/candidatos/creeperLand/1",
+          "source": "Kenney Impact Sounds: `impactMining_000.ogg`",
+          "seconds": 0.794,
+          "recipes": []
+        },
+        {
+          "url": "audio-lab/candidatos/creeperLand/2",
+          "source": "Kenney Impact Sounds: `impactPunch_heavy_001.ogg`",
+          "seconds": 0.489,
+          "recipes": []
+        }
+      ]
+    },
+    {
+      "id": "creeperTalk",
+      "about": "Creeper suelta una frase en su bocadillo de terminal",
+      "spec": {
+        "bus": "world",
+        "volume": 0.45,
+        "maxVoices": 1,
+        "minGapMs": 300,
+        "burst": 0,
+        "pitchJitter": 0.5,
+        "variants": 1
+      },
+      "pick": [
+        {
+          "url": "audio/creeperTalk",
+          "source": "jsfxr: receta `terminal`",
+          "seconds": 0.2
+        }
+      ],
+      "alternatives": [
+        {
+          "url": "audio-lab/candidatos/creeperTalk/1",
+          "source": "Kenney Sci-Fi Sounds: `computerNoise_000.ogg` (recortado 0-350 ms, -4 dB)",
+          "seconds": 0.341,
+          "recipes": []
+        },
+        {
+          "url": "audio-lab/candidatos/creeperTalk/2",
+          "source": "Kenney Interface Sounds: `glitch_004.ogg`",
+          "seconds": 0.02,
+          "recipes": []
+        }
+      ]
+    },
+    {
+      "id": "creeperRage",
+      "about": "Creeper pasa a la fase 2: gruñido digital",
+      "spec": {
+        "bus": "world",
+        "volume": 0.8,
+        "maxVoices": 1,
+        "minGapMs": 0,
+        "burst": 2,
+        "pitchJitter": 0,
+        "variants": 1
+      },
+      "pick": [
+        {
+          "url": "audio/creeperRage",
+          "source": "jsfxr: receta `rage`",
+          "seconds": 0.639
+        }
+      ],
+      "alternatives": [
+        {
+          "url": "audio-lab/candidatos/creeperRage/1",
+          "source": "Kenney Digital Audio: `zapThreeToneDown.ogg`",
+          "seconds": 1.259,
+          "recipes": []
+        },
+        {
+          "url": "audio-lab/candidatos/creeperRage/2",
+          "source": "Kenney Digital Audio: `lowRandom.ogg`",
+          "seconds": 0.402,
+          "recipes": []
+        }
+      ]
+    },
+    {
+      "id": "creeperDefeated",
+      "about": "Cae Creeper: apagón que baja con un crujido",
+      "spec": {
+        "bus": "world",
+        "volume": 0.9,
+        "maxVoices": 1,
+        "minGapMs": 0,
+        "burst": 2,
+        "pitchJitter": 0,
+        "variants": 1
+      },
+      "pick": [
+        {
+          "url": "audio/creeperDefeated",
+          "source": "Kenney Digital Audio: `phaserDown3.ogg` + Kenney Sci-Fi Sounds: `explosionCrunch_003.ogg` (-6 dB)",
+          "seconds": 1.553
+        }
+      ],
+      "alternatives": [
+        {
+          "url": "audio-lab/candidatos/creeperDefeated/1",
+          "source": "Kenney Digital Audio: `lowDown.ogg`",
+          "seconds": 0.647,
+          "recipes": []
+        },
+        {
+          "url": "audio-lab/candidatos/creeperDefeated/2",
+          "source": "jsfxr: receta `powerDown`",
+          "seconds": 0.927,
+          "recipes": [
+            {
+              "name": "powerDown",
+              "code": "11111Fc13SdX6aXTZbZ5RD9BTDuZmocvi5NhcTFyZM5MxbBzYnRhp6aGcP5RsBLnbktMNBTmEnyB3Wat5ruouqjqh31ZfVJ67VUxRkiE5qfYrgo78nWiK56F"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "attackStarted",
+      "about": "Empieza el ataque (\"¡Ahí vienen!\"): trino de 8 bits",
+      "spec": {
+        "bus": "world",
+        "volume": 0.55,
+        "maxVoices": 1,
+        "minGapMs": 0,
+        "burst": 2,
+        "pitchJitter": 0,
+        "variants": 1
+      },
+      "pick": [
+        {
+          "url": "audio/attackStarted",
+          "source": "Kenney Music Jingles: `jingles_NES13.ogg`",
+          "seconds": 1.015
+        }
+      ],
+      "alternatives": [
+        {
+          "url": "audio-lab/candidatos/attackStarted/1",
+          "source": "jsfxr: receta `alarmLow`",
+          "seconds": 0.589,
+          "recipes": [
+            {
+              "name": "alarmLow",
+              "code": "4i1ZtnHXo6Sa1uYRzt7kfA43Fq6m64GeJjn3JU6TZk8MbmPfApWmtgVTP2qxjcQdzuZbWZBSGghJkURJvJ57B32ZLiebNavxRnUbQkZYc773UEoBjqTNW8Q6T"
+            }
+          ]
+        },
+        {
+          "url": "audio-lab/candidatos/attackStarted/2",
+          "source": "Kenney Digital Audio: `threeTone1.ogg`",
+          "seconds": 0.493,
+          "recipes": []
+        }
+      ]
+    },
+    {
+      "id": "roundCleared",
+      "about": "Ronda superada: ta-da corto de pizzicato que sube",
+      "spec": {
+        "bus": "world",
+        "volume": 0.6,
+        "maxVoices": 1,
+        "minGapMs": 0,
+        "burst": 2,
+        "pitchJitter": 0,
+        "variants": 1
+      },
+      "pick": [
+        {
+          "url": "audio/roundCleared",
+          "source": "Kenney Music Jingles: `jingles_PIZZI04.ogg`",
+          "seconds": 0.555
+        }
+      ],
+      "alternatives": [
+        {
+          "url": "audio-lab/candidatos/roundCleared/1",
+          "source": "Kenney Music Jingles: `jingles_PIZZI10.ogg`",
+          "seconds": 0.797,
+          "recipes": []
+        },
+        {
+          "url": "audio-lab/candidatos/roundCleared/2",
+          "source": "Kenney Music Jingles: `jingles_PIZZI16.ogg`",
+          "seconds": 0.461,
+          "recipes": []
+        }
+      ]
+    },
+    {
+      "id": "unlock",
+      "about": "Aviso \"¡YA LO TIENES!\": escala mágica que sube",
+      "spec": {
+        "bus": "ui",
+        "volume": 0.6,
+        "maxVoices": 1,
+        "minGapMs": 0,
+        "burst": 0,
+        "pitchJitter": 0,
+        "variants": 1
+      },
+      "pick": [
+        {
+          "url": "audio/unlock",
+          "source": "Kenney Music Jingles: `jingles_PIZZI02.ogg`",
+          "seconds": 0.945
+        }
+      ],
+      "alternatives": [
+        {
+          "url": "audio-lab/candidatos/unlock/1",
+          "source": "Kenney Music Jingles: `jingles_STEEL02.ogg`",
+          "seconds": 1.387,
+          "recipes": []
+        },
+        {
+          "url": "audio-lab/candidatos/unlock/2",
+          "source": "Kenney Music Jingles: `jingles_SAX02.ogg`",
+          "seconds": 0.82,
+          "recipes": []
+        }
+      ]
+    },
+    {
+      "id": "defeat",
+      "about": "Derrota: cuatro notas que bajan",
+      "spec": {
+        "bus": "ui",
+        "volume": 0.7,
+        "maxVoices": 1,
+        "minGapMs": 0,
+        "burst": 0,
+        "pitchJitter": 0,
+        "variants": 1
+      },
+      "pick": [
+        {
+          "url": "audio/defeat",
+          "source": "Kenney Music Jingles: `jingles_PIZZI07.ogg`",
+          "seconds": 1.324
+        }
+      ],
+      "alternatives": [
+        {
+          "url": "audio-lab/candidatos/defeat/1",
+          "source": "Kenney Music Jingles: `jingles_STEEL07.ogg`",
+          "seconds": 1.555,
+          "recipes": []
+        },
+        {
+          "url": "audio-lab/candidatos/defeat/2",
+          "source": "Kenney Music Jingles: `jingles_NES00.ogg`",
+          "seconds": 1.711,
+          "recipes": []
+        }
+      ]
+    },
+    {
+      "id": "victory",
+      "about": "Victoria: notas que suben con steel drum",
+      "spec": {
+        "bus": "ui",
+        "volume": 0.7,
+        "maxVoices": 1,
+        "minGapMs": 0,
+        "burst": 0,
+        "pitchJitter": 0,
+        "variants": 1
+      },
+      "pick": [
+        {
+          "url": "audio/victory",
+          "source": "Kenney Music Jingles: `jingles_STEEL10.ogg`",
+          "seconds": 0.909
+        }
+      ],
+      "alternatives": [
+        {
+          "url": "audio-lab/candidatos/victory/1",
+          "source": "Kenney Music Jingles: `jingles_SAX10.ogg`",
+          "seconds": 0.589,
+          "recipes": []
+        },
+        {
+          "url": "audio-lab/candidatos/victory/2",
+          "source": "Kenney Music Jingles: `jingles_STEEL16.ogg`",
+          "seconds": 0.909,
+          "recipes": []
+        }
+      ]
+    },
+    {
+      "id": "button",
+      "about": "Botón de un menú",
+      "spec": {
+        "bus": "ui",
+        "volume": 0.45,
+        "maxVoices": 2,
+        "minGapMs": 40,
+        "burst": 0,
+        "pitchJitter": 0,
+        "variants": 1
+      },
+      "pick": [
+        {
+          "url": "audio/button",
+          "source": "Kenney Interface Sounds: `select_001.ogg`",
+          "seconds": 0.04
+        }
+      ],
+      "alternatives": [
+        {
+          "url": "audio-lab/candidatos/button/1",
+          "source": "Kenney Interface Sounds: `click_002.ogg`",
+          "seconds": 0.012,
+          "recipes": []
+        },
+        {
+          "url": "audio-lab/candidatos/button/2",
+          "source": "Kenney Interface Sounds: `toggle_002.ogg`",
+          "seconds": 0.097,
+          "recipes": []
+        }
+      ]
+    }
+  ]
+}

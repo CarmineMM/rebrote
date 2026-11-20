@@ -8,7 +8,7 @@ Defensa por carriles: plantas contra virus informáticos históricos que una IA 
     npm run dev      # http://localhost:5173
     npm test         # reglas del juego (Vitest)
     npm run build    # chequeo de tipos + build
-    npm run audio    # vuelve a fabricar los efectos de sonido (ffmpeg y los paquetes de Kenney en audio-lab/kenney/)
+    npm run audio    # solo para cambiar sonidos: los vuelve a fabricar (necesita ffmpeg y unzip)
 
 ## Cómo se juega
 

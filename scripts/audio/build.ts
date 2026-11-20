@@ -10,10 +10,12 @@
  *   solo en desarrollo).
  *
  * Necesita ffmpeg y unzip. Los paquetes de Kenney (CC0) se bajan de https://kenney.nl/assets/<paquete> (ver
- * `KENNEY_PACKS`) y se dejan, sin descomprimir, en `audio-lab/kenney/`, que no va al repositorio.
+ * `KENNEY_PACKS`) y estan, sin descomprimir, en `audio-lab/kenney/`, dentro del repositorio. Si falta algo, se para sin
+ * tocar `public/audio/`; todo se fabrica primero en una carpeta temporal. Con `bitexact`, dos pasadas dan los mismos
+ * archivos.
  */
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import jsfxr from 'jsfxr';
@@ -191,8 +193,8 @@ function encode(source: Source, base: string, mp3: boolean): number {
   const gain = Math.min(TARGET_RMS_DB - rmsDb, PEAK_DB - peakDb);
   const fade = Math.min(0.005, seconds / 4);
   const af = `volume=${gain.toFixed(2)}dB,afade=t=out:st=${Math.max(0, seconds - fade).toFixed(4)}:d=${fade.toFixed(4)}`;
-  ffmpeg(['-i', wav, '-af', af, '-ac', '1', '-ar', String(RATE), '-c:a', 'libvorbis', '-q:a', '4', `${base}.ogg`]);
-  if (mp3) ffmpeg(['-i', wav, '-af', af, '-ac', '1', '-ar', String(RATE), '-c:a', 'libmp3lame', '-b:a', '96k', `${base}.mp3`]);
+  ffmpeg(['-i', wav, '-af', af, '-ac', '1', '-ar', String(RATE), '-c:a', 'libvorbis', '-q:a', '4', '-fflags', '+bitexact', '-flags:a', '+bitexact', `${base}.ogg`]);
+  if (mp3) ffmpeg(['-i', wav, '-af', af, '-ac', '1', '-ar', String(RATE), '-c:a', 'libmp3lame', '-b:a', '96k', '-fflags', '+bitexact', '-flags:a', '+bitexact', `${base}.mp3`]);
   return seconds;
 }
 
@@ -227,11 +229,44 @@ function recipesOf(source: Source): RecipeName[] {
 
 // ---------------------------------------------------------------------------
 
+/**
+ * Antes de tocar nada: que esten ffmpeg, unzip y todos los paquetes de Kenney que usa el manifiesto. Si falta algo, se
+ * para aqui y `public/audio/` queda como estaba.
+ */
+function preflight(): void {
+  const missing: string[] = [];
+  for (const tool of ['ffmpeg', 'ffprobe', 'unzip']) {
+    try {
+      run(tool, tool === 'unzip' ? ['-v'] : ['-version']);
+    } catch {
+      missing.push(`el programa ${tool}`);
+    }
+  }
+  const packs = new Set<KenneyPack>();
+  for (const entry of Object.values(MANIFEST)) {
+    const picks = Array.isArray(entry.pick) ? entry.pick : [entry.pick];
+    for (const source of [...picks, ...entry.alternatives] as Source[]) {
+      for (const layer of Array.isArray(source) ? source.flat() : [source]) if ('kenney' in layer) packs.add(layer.kenney);
+    }
+  }
+  for (const pack of packs) {
+    const zip = join(KENNEY_DIR, `${pack}.zip`);
+    if (!existsSync(zip)) missing.push(`${zip} (bajalo de https://kenney.nl/assets/${pack})`);
+  }
+  if (missing.length) {
+    rmSync(work, { recursive: true, force: true });
+    process.stderr.write(`No se fabrica nada: falta\n${missing.map((m) => `- ${m}`).join('\n')}\npublic/audio/ no se ha tocado.\n`);
+    process.exit(1);
+  }
+}
+
 function main(): void {
-  rmSync(PUBLIC_DIR, { recursive: true, force: true });
-  rmSync(LAB_DIR, { recursive: true, force: true });
-  mkdirSync(PUBLIC_DIR, { recursive: true });
-  mkdirSync(LAB_DIR, { recursive: true });
+  preflight();
+  // Todo se fabrica primero en una carpeta temporal: si algo falla a medias, public/audio/ queda como estaba.
+  const PUBLIC_OUT = join(work, 'public-audio');
+  const LAB_OUT = join(work, 'candidatos');
+  mkdirSync(PUBLIC_OUT, { recursive: true });
+  mkdirSync(LAB_OUT, { recursive: true });
 
   const licenseRows: string[] = [];
   const usedRecipes = new Set<RecipeName>();
@@ -246,14 +281,14 @@ function main(): void {
       throw new Error(`${id}: SFX dice ${files.length} variantes y el manifiesto trae ${picks.length}`);
     }
     const pickInfo = picks.map((source, i) => {
-      const seconds = encode(source, join(PUBLIC_DIR, files[i]), true);
+      const seconds = encode(source, join(PUBLIC_OUT, files[i]), true);
       recipesOf(source).forEach((recipe) => usedRecipes.add(recipe));
       licenseRows.push(`| \`${files[i]}\` | ${describeSource(source)} | ${licenseOf(source)} |`);
       return { url: `audio/${files[i]}`, source: describeSource(source), seconds: Number(seconds.toFixed(3)) };
     });
-    mkdirSync(join(LAB_DIR, id), { recursive: true });
+    mkdirSync(join(LAB_OUT, id), { recursive: true });
     const alternatives = entry.alternatives.map((source, i) => {
-      const seconds = encode(source, join(LAB_DIR, id, String(i + 1)), false);
+      const seconds = encode(source, join(LAB_OUT, id, String(i + 1)), false);
       return { url: `audio-lab/candidatos/${id}/${i + 1}`, source: describeSource(source), seconds: Number(seconds.toFixed(3)), recipes: recipesOf(source).map((r) => ({ name: r, code: recipeCode(r) })) };
     });
     catalog.push({ id, about: entry.about, spec: SFX[id], pick: pickInfo, alternatives });
@@ -262,7 +297,7 @@ function main(): void {
 
   const recipeRows = [...usedRecipes].map((recipe) => `| \`${recipe}\` | ${RECIPES[recipe].about} | https://sfxr.me/#${recipeCode(recipe)} |`);
   writeFileSync(
-    join(PUBLIC_DIR, 'LICENCIAS.md'),
+    join(PUBLIC_OUT, 'LICENCIAS.md'),
     [
       '# Efectos de sonido: origen y licencia',
       '',
@@ -286,10 +321,21 @@ function main(): void {
       '',
     ].join('\n'),
   );
-  writeFileSync(join(LAB_DIR, 'catalogo.json'), JSON.stringify({ generated: new Date().toISOString(), sounds: catalog }, null, 2));
+  writeFileSync(join(LAB_OUT, 'catalogo.json'), JSON.stringify({ generated: new Date().toISOString(), sounds: catalog }, null, 2));
+  // Todo salio bien: ahora si se sustituyen las carpetas de verdad.
+  for (const [from, to] of [[PUBLIC_OUT, PUBLIC_DIR], [LAB_OUT, LAB_DIR]]) {
+    rmSync(to, { recursive: true, force: true });
+    cpSync(from, to, { recursive: true });
+  }
   rmSync(work, { recursive: true, force: true });
   const size = Number(run('du', ['-sk', PUBLIC_DIR]).toString().split('\t')[0]);
   process.stdout.write(`\nListo: ${SFX_IDS.length} efectos en public/audio/ (${size} KB).\n`);
 }
 
-main();
+try {
+  main();
+} catch (error) {
+  rmSync(work, { recursive: true, force: true });
+  process.stderr.write(`\nNo se termino: ${(error as Error).message}\npublic/audio/ no se ha tocado.\n`);
+  process.exit(1);
+}

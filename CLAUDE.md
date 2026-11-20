@@ -27,4 +27,4 @@ Juego de defensa por carriles. Stack: Phaser 4 + React 19 + Vite + TypeScript. S
 ## Comandos
 
 - `npm run dev`, `npm test`, `npm run build` (incluye chequeo de tipos).
-- `npm run audio` fabrica los efectos de sonido (necesita ffmpeg y los paquetes de Kenney en `audio-lab/kenney/`). Con `npm run dev`, `/sonidos.html` deja oírlos.
+- `npm run build` no necesita nada más: los sonidos terminados están en `public/audio/`. `npm run audio` los vuelve a fabricar (necesita ffmpeg y unzip; los paquetes de Kenney ya están en `audio-lab/kenney/`). Si falta algo, se para sin tocar `public/audio/`, y dos pasadas dan los mismos archivos. Con `npm run dev`, `/sonidos.html` deja oírlos.
