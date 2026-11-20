@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { parseVolume } from '../game/audio/voices';
+import { AUDIO } from '../game/config/audio';
 import { EventBus, GameEvents } from '../game/EventBus';
 import { detectLanguage, parseLanguage, setLanguage, type Language } from '../i18n';
 import {
@@ -19,6 +21,8 @@ export interface Settings {
   language: Language;
   /** Tours de ayuda (T-013): ensenan cada cosa nueva la primera vez. Por defecto si. */
   help: boolean;
+  /** Volumen de los efectos de sonido (T-014), de 0 a 100. Con 0 no suena nada. Lo guardado antes de T-014 no lo trae. */
+  sfxVolume: number;
 }
 
 /** Idiomas preferidos del navegador, del mas al menos preferido. */
@@ -27,7 +31,14 @@ function browserLanguages(): readonly string[] {
   return navigator.languages?.length ? navigator.languages : [navigator.language ?? ''];
 }
 
-const defaults = (): Settings => ({ quality: 'auto', showFps: false, fullscreen: true, language: detectLanguage(browserLanguages()), help: true });
+const defaults = (): Settings => ({
+  quality: 'auto',
+  showFps: false,
+  fullscreen: true,
+  language: detectLanguage(browserLanguages()),
+  help: true,
+  sfxVolume: AUDIO.defaultSfxVolume,
+});
 const STORAGE_KEY = 'rebrote.ajustes';
 /** Segundos que se ignoran tras crear el juego (carga de texturas) y segundos que se miden despues. */
 const WARMUP_SAMPLES = 3;
@@ -43,6 +54,7 @@ function load(): Settings {
       fullscreen: data.fullscreen !== false,
       language: parseLanguage(data.language) ?? detectLanguage(browserLanguages()),
       help: data.help !== false,
+      sfxVolume: parseVolume(data.sfxVolume),
     };
   } catch {
     return defaults();

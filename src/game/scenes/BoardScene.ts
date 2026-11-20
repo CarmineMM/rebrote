@@ -1,4 +1,7 @@
 import * as Phaser from 'phaser';
+import { actionCue, combatCues, mineTicks, roundCues } from '../audio/cues';
+import { sfx } from '../audio/sfx';
+import { panAt } from '../audio/voices';
 import { BOARD, CREEPER, ECONOMY, ENEMIES, LIMITS, MINE } from '../config/balance';
 import { cellAt, cellCenter, type BoardPoint, type Cell } from '../core/board';
 import { enemyMaxHp, isDefeated, isEnraged, spawnEnemy, stepCombat, type CombatEvent, type Enemy, type EnemyKind } from '../core/combat';
@@ -325,6 +328,8 @@ export class BoardScene extends Phaser.Scene {
     this.fitView();
     this.scale.on(Phaser.Scale.Events.RESIZE, this.fitView, this);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.scale.off(Phaser.Scale.Events.RESIZE, this.fitView, this));
+    // Salir al menu o empezar otra partida: lo que sonaba en el jardin se calla (T-014).
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => sfx.stopWorld());
     this.ambience = createAmbience(this, this.quality);
     applyPostFx(this, this.quality);
     this.createCursorFeedback();
@@ -662,15 +667,20 @@ export class BoardScene extends Phaser.Scene {
     this.match = round.state;
     this.showSpawned(round.spawned);
     round.events.forEach((event) => this.showRoundEvent(event));
+    sfx.playCues(roundCues(round.events));
 
     const income = stepIncome(this.match, delta);
     this.match = income.state;
     if (income.earned > 0) this.balanceGained();
 
     const livesBefore = this.match.lives;
+    const before = this.match;
     const { state, events } = stepCombat(this.match, delta);
     this.match = state;
     events.forEach((event) => this.showEvent(event));
+    // Lo que suena (T-014) lo deciden las reglas de `cues.ts`: un disparo por planta, sin repetir lo que ya suena.
+    sfx.playCues(combatCues(events, before));
+    sfx.playCues(mineTicks(before, this.match));
 
     for (const enemy of this.match.enemies) this.wormViews.get(enemy.id)?.sync(enemy);
     for (const bullet of this.match.bullets) this.bulletViews.get(bullet.id)?.sync(bullet);
@@ -964,6 +974,8 @@ export class BoardScene extends Phaser.Scene {
     this.wormViews.forEach((worm) => worm.cheer());
     // Perder obliga a empezar desde la ronda 1 (I-04): no queda partida que cargar.
     clearSave();
+    // Una partida perdida que se recrea (al cambiar la calidad) no vuelve a sonar.
+    if (delayMs > 0) sfx.play('defeat');
     const loss: LossInfo = { byBoss: this.lostToBoss };
     this.time.delayedCall(delayMs, () => EventBus.emit(GameEvents.matchLost, loss));
   }
@@ -988,6 +1000,7 @@ export class BoardScene extends Phaser.Scene {
     this.emitRound();
     this.emitBoss();
     if (delayMs > 0) {
+      sfx.play('victory');
       this.celebrate(isBossRound(this.match.round.index) ? text().board.bossDown : text().board.gardenSafe);
       for (let i = 0; i < 6; i++) {
         this.time.delayedCall(180 + i * 190, () => {
@@ -1153,7 +1166,7 @@ export class BoardScene extends Phaser.Scene {
     }
     this.select(null);
     this.emitBalance();
-    this.emitAction(action === 'infuse' && element ? { type: 'infuse', element, withMine: false } : { type: 'sow', card });
+    this.emitAction(action === 'infuse' && element ? { type: 'infuse', element, withMine: false } : { type: 'sow', card }, cell);
   }
 
   // -------------------------------------------------------------------------
@@ -1384,7 +1397,7 @@ export class BoardScene extends Phaser.Scene {
     toView.fuse(fused.shooter.cannons, fused.hp / plantMaxHp(fused.shooter), fused.shooter.level);
     this.fx.floatText(text().board.fused, foot.x, foot.y - cellWidth * 1.05, LOOK.fusedText);
     this.refreshHighlight();
-    this.emitAction({ type: 'fuse' });
+    this.emitAction({ type: 'fuse' }, to);
   }
 
   /**
@@ -1410,7 +1423,7 @@ export class BoardScene extends Phaser.Scene {
     }
     this.emitBalance();
     this.refreshHighlight();
-    this.emitAction({ type: 'infuse', element: mine.element, withMine: true });
+    this.emitAction({ type: 'infuse', element: mine.element, withMine: true }, to);
   }
 
   /** Corta el arrastre sin fusionar: la planta vuelve a su casilla. */
@@ -1581,7 +1594,7 @@ export class BoardScene extends Phaser.Scene {
     const plant = plantAt(this.match, cell) as Plant;
     this.plantViews.get(cellKey(cell))?.levelUp(plant.shooter.level);
     this.emitBalance();
-    this.emitAction({ type: 'levelUp' });
+    this.emitAction({ type: 'levelUp' }, cell);
   }
 
   /** Avisa al HUD de como esta el panel de la planta seleccionada (o de que se cerro), solo si cambia. */
@@ -1637,9 +1650,11 @@ export class BoardScene extends Phaser.Scene {
     this.emitTourBoard();
   }
 
-  /** El jugador acaba de hacer algo que un tour puede estar ensenando. */
-  private emitAction(action: PlayerAction): void {
+  /** El jugador acaba de hacer algo que un tour puede estar ensenando. Si se oye (T-014), suena desde su casilla. */
+  private emitAction(action: PlayerAction, cell: Cell | null = null): void {
     EventBus.emit(GameEvents.playerAction, action);
+    const cue = cell ? actionCue(action, cell.col + 0.5) : null;
+    if (cue) sfx.play(cue.id, cue.pan);
   }
 
   /** Dibujos de los bocadillos: las mismas texturas del tablero, recortadas (como la foto de la ficha, sin fondo). */
@@ -1862,6 +1877,7 @@ export class BoardScene extends Phaser.Scene {
       [shadow, glow, label, hit].forEach((part) => part.destroy());
       coin.setScale(coinScale);
       this.credit(amount);
+      sfx.play('coin', panAt(at.x, BOARD.columns));
       this.fx.floatText(`+${amount}`, coin.x, coin.y - size);
       this.fx.sparkles(coin.x, coin.y, 14);
       this.flyToBalance(coin, coinScale);

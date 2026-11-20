@@ -29,6 +29,8 @@ import { TitleScreen } from './ui/TitleScreen';
 import { UnlockModal } from './ui/UnlockModal';
 import { NO_AUTO_FULLSCREEN, useFullscreen } from './ui/useFullscreen';
 import { useNeedsLandscape } from './ui/useLandscapeOnly';
+import { sfx } from './game/audio/sfx';
+import { useButtonSounds } from './ui/useButtonSounds';
 import { useSettings } from './ui/useSettings';
 import { useText } from './ui/useText';
 import { VictoryScreen } from './ui/VictoryScreen';
@@ -87,6 +89,9 @@ export function App() {
   const pausable = useRef(false);
   pausable.current = onBoard && !over;
   const { settings, update, level, autoLevel, fps } = useSettings();
+  // Efectos de sonido (T-014): el volumen del jugador y el sonido de los botones de los menus.
+  useEffect(() => sfx.setVolume(settings.sfxVolume), [settings.sfxVolume]);
+  useButtonSounds();
   const pause = useCallback(() => {
     if (pausable.current) setPaused(true);
   }, []);
@@ -296,7 +301,7 @@ export function App() {
 
       {onBoard && (
         <header ref={hudRef} className="hud" aria-hidden={halted || over}>
-          <div className="seed-tray" aria-label={t.hud.cards}>
+          <div className="seed-tray" aria-label={t.hud.cards} data-silent>
             {CARDS.filter((id) => (round?.cards ?? ['shooter']).includes(id)).map((id) => (
               // Cada carta nueva entra en la bandeja con un salto al desbloquearse.
               <span key={id} className="card-slot" data-tour={`card-${id}`}>

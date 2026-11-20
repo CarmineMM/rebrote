@@ -84,6 +84,8 @@ export function LevelPanel({ panel, avoid }: LevelPanelProps) {
         type="button"
         className={`level-up${atMax ? ' is-max' : ''}${!atMax && !affordable ? ' is-short' : ''}`}
         data-tour="level-up"
+        // Suena con la subida de nivel de la escena (T-014), no como boton de menu.
+        data-silent
         aria-disabled={!can}
         title={
           atMax

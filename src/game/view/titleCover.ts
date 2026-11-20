@@ -1,5 +1,8 @@
 import * as Phaser from 'phaser';
-import { ENEMIES, MINE } from '../config/balance';
+import { combatCues, mineTicks } from '../audio/cues';
+import { sfx } from '../audio/sfx';
+import { panAt } from '../audio/voices';
+import { BOARD, ENEMIES, MINE } from '../config/balance';
 import type { Cell } from '../core/board';
 import { enemyMaxHp, spawnEnemy, stepCombat, type CombatEvent, type Enemy, type EnemyKind } from '../core/combat';
 import { createMatch, createMine, createPlant, sownAt, sownMaxHp, type MatchState, type Sown } from '../core/match';
@@ -102,6 +105,12 @@ export class TitleCover {
   private readonly spitViews = new Map<number, SpitView>();
   /** La primera frase de portada es la de entrada, que ya dice al salir: se empieza por la segunda. */
   private taunts = 1;
+  /**
+   * En la portada solo suena lo que el jugador pulsa (T-014, S-04): las plantas pulsadas hacen sonar su siguiente disparo,
+   * y sus semillas, el impacto. Las minas solo se arman con un clic, asi que su cuenta atras y su explosion suenan.
+   */
+  private readonly voicedCells = new Set<string>();
+  private readonly voicedBullets = new Set<number>();
   private cursor = 'default';
 
   constructor(
@@ -138,9 +147,12 @@ export class TitleCover {
 
   /** Avanza el combate, anima lo que paso y devuelve a todos a su sitio con la vida llena. */
   update(deltaMs: number): void {
+    const before = this.state;
     const { state, events } = stepCombat(this.state, deltaMs);
     // Las reacciones (planta que amarillea al morderla) leen la vida antes de recuperarla.
     events.forEach((event) => this.show(event, state));
+    sfx.playCues(combatCues(this.voicedEvents(events), before));
+    sfx.playCues(mineTicks(before, state));
     this.state = this.pin(state, deltaMs);
 
     for (const enemy of this.state.enemies) this.enemyViews.get(enemy.id)?.sync(enemy, this.strides.get(enemy.id) ?? 0);
@@ -159,11 +171,15 @@ export class TitleCover {
     if (!target) return;
     if (target.kind === 'enemy') {
       const view = this.enemyViews.get(target.id);
+      const enemy = this.state.enemies.find((e) => e.id === target.id);
+      const pan = panAt(enemy?.x ?? BOARD.columns / 2, BOARD.columns);
       if (view instanceof CreeperView) {
         view.hit();
-        this.taunt();
+        sfx.play('hit', pan);
+        this.taunt(true);
       } else if (view) {
         view.hit();
+        sfx.play('hit', pan);
         const at = view.ground();
         this.fx.juice(at.x, at.y - at.cellWidth * 0.5, 6);
         this.fx.floatText(text().cover.wormOuch, at.x, at.y - at.cellWidth * 0.9, COVER_LOOK.ouchText);
@@ -174,6 +190,7 @@ export class TitleCover {
     if (sown?.kind === 'shooter') {
       // Dispara en el acto (en el siguiente paso) y da un saltito.
       this.setSown(target.cell, { ...sown, reloadMs: 0 });
+      this.voicedCells.add(cellKey(target.cell));
       this.plantViews.get(cellKey(target.cell))?.beckon();
     } else if (sown?.kind === 'mine' && sown.fuseMs === null) {
       // Se arma: cuenta como en el juego y explota (la regla de la mina hace el resto).
@@ -205,11 +222,32 @@ export class TitleCover {
     return found[0]?.target ?? null;
   }
 
-  /** Creeper suelta una de sus frases de portada, por turnos. */
-  private taunt(): void {
+  /** Creeper suelta una de sus frases de portada, por turnos. Solo suena si es porque le hicieron clic. */
+  private taunt(voiced = false): void {
     const creeper = [...this.enemyViews.values()].find((view): view is CreeperView => view instanceof CreeperView);
     const lines = text().cover.creeperLines;
-    creeper?.taunt(lines[this.taunts++ % lines.length], COVER_LOOK.tauntLifeMs);
+    creeper?.taunt(lines[this.taunts++ % lines.length], COVER_LOOK.tauntLifeMs, voiced);
+  }
+
+  /** De los eventos de un paso, los que vienen de un clic: el disparo de una planta pulsada, sus impactos y las minas. */
+  private voicedEvents(events: readonly CombatEvent[]): CombatEvent[] {
+    const voiced: CombatEvent[] = [];
+    const fired = new Set<string>();
+    for (const event of events) {
+      if (event.type === 'shot' && this.voicedCells.has(cellKey(event.cell))) {
+        this.voicedBullets.add(event.bullet.id);
+        fired.add(cellKey(event.cell));
+        voiced.push(event);
+      } else if (event.type === 'hit' && this.voicedBullets.delete(event.bulletId)) {
+        voiced.push(event);
+      } else if (event.type === 'bulletGone') {
+        this.voicedBullets.delete(event.bulletId);
+      } else if (event.type === 'mineExploded') {
+        voiced.push(event);
+      }
+    }
+    fired.forEach((key) => this.voicedCells.delete(key));
+    return voiced;
   }
 
   /**
@@ -247,6 +285,8 @@ export class TitleCover {
   private addEnemy(enemy: Enemy, delayMs: number): void {
     const view =
       enemy.kind === 'creeper' ? new CreeperView(this.scene, this.fx, enemy, true, delayMs) : new WormView(this.scene, this.fx, enemy, true, delayMs);
+    // Sus frases de portada van calladas: solo suena la que suelta al hacerle clic (S-04).
+    if (view instanceof CreeperView) view.voiced = false;
     this.enemyViews.set(enemy.id, view);
   }
 

@@ -1,4 +1,6 @@
 import * as Phaser from 'phaser';
+import { sfx } from '../audio/sfx';
+import { panAt } from '../audio/voices';
 import { BOARD, ROUNDS } from '../config/balance';
 import type { BoardPoint } from '../core/board';
 import { isEnraged, type Enemy } from '../core/combat';
@@ -164,6 +166,13 @@ export class CreeperView implements EnemyView {
   private enraged: boolean;
   private jumps = 0;
   private gone = false;
+  /** Columna en la que esta (en casillas): de ahi suena su voz (T-014). */
+  private boardX: number;
+  /**
+   * Si sus frases suenan (T-014). En la portada del menu no: alli solo suena lo que el jugador pulsa (S-04), y la frase
+   * que suelta al hacerle clic se pide con `taunt(..., true)`.
+   */
+  voiced = true;
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -176,6 +185,7 @@ export class CreeperView implements EnemyView {
     this.groundMark = scene.add.graphics().setDepth(DEPTH.highlight + 1);
     this.arcMark = scene.add.graphics().setDepth(DEPTH.pollen - 1);
     this.enraged = isEnraged(enemy);
+    this.boardX = enemy.x;
     if (fx.quality.glows) {
       this.led = scene.add.image(0, 0, TEX.glow).setTint(CREEPER_LOOK.warnColor).setBlendMode(Phaser.BlendModes.ADD).setAlpha(0.9);
       this.blinkLed();
@@ -186,6 +196,7 @@ export class CreeperView implements EnemyView {
 
   sync(enemy: Enemy, stride = 0): void {
     this.worm.sync(enemy, stride);
+    this.boardX = enemy.x;
     const angry = isEnraged(enemy);
     if (angry && !this.enraged) this.enrage();
     this.enraged = angry;
@@ -292,13 +303,17 @@ export class CreeperView implements EnemyView {
     this.say(text().creeper.cheer, 2400);
   }
 
-  /** Suelta una frase en su bocadillo de terminal (en la portada del menu, T-011, cuando le hacen clic o cada tanto). */
-  taunt(line: string, lifeMs = 2600): void {
-    if (!this.gone) this.say(line, lifeMs);
+  /**
+   * Suelta una frase en su bocadillo de terminal (en la portada del menu, T-011, cuando le hacen clic o cada tanto). Con
+   * `voiced` suena aunque sus frases vayan calladas (el clic de la portada).
+   */
+  taunt(line: string, lifeMs = 2600, voiced = this.voiced): void {
+    if (!this.gone) this.say(line, lifeMs, voiced);
   }
 
-  /** Dice una frase en su bocadillo de terminal. */
-  private say(text: string, lifeMs: number): void {
+  /** Dice una frase en su bocadillo de terminal, con su pitido de terminal (T-014). */
+  private say(text: string, lifeMs: number, voiced = this.voiced): void {
+    if (voiced) sfx.play('creeperTalk', panAt(this.boardX, BOARD.columns));
     this.bubble?.close();
     this.bubble = new SpeechBubble(this.scene, this.fx, text, this.enraged ? 'angry' : 'calm', lifeMs);
     const top = this.worm.headPoint(10, -58);
@@ -313,7 +328,9 @@ export class CreeperView implements EnemyView {
     this.fx.smoke(head.x, head.y, 8);
     this.fx.ring(head.x, head.y, cellWidth * 1.8, CREEPER_LOOK.angryColor, this.worm.depth() + 0.5, 420);
     this.scene.cameras.main.shake(200, 0.004);
-    this.say(text().creeper.angry, 2200);
+    if (this.voiced) sfx.play('creeperRage', panAt(this.boardX, BOARD.columns));
+    // El rugido ya lleva su voz: la frase va sin pitido para no pisarlo.
+    this.say(text().creeper.angry, 2200, false);
     this.blinkLed();
   }
 
@@ -602,6 +619,7 @@ export class CreeperOmen {
 
   private say(text: string, lifeMs: number): void {
     if (this.done) return;
+    sfx.play('creeperTalk', panAt(OMEN_SPOT.x, BOARD.columns));
     this.bubble?.close();
     this.bubble = new SpeechBubble(this.scene, this.fx, text, 'calm', lifeMs);
     const top = this.facePoint(10, -58);

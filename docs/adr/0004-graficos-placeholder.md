@@ -14,7 +14,7 @@ Carmine cambió la prioridad: la idea es que sea un juego bonito. Cuanta más an
 ### Cómo se hace el arte
 - El arte se genera por código: Canvas 2D y Phaser (degradados, sombras, brillos, partículas, tweens, filtros). No hace falta esperar archivos de imagen para avanzar.
 - Se pueden usar sprites o arte externo si son propios o tienen una licencia que permita un uso comercial futuro. La fuente se anota junto al archivo.
-- Sin sonido por ahora. Es otra decisión y se tomará aparte.
+- El sonido se decidió aparte: efectos de sonido en el ADR-0013 (T-014).
 
 ### Todo se anima
 - **Plantas:** respiran en reposo, aparecen con un salto al sembrarlas y reaccionan al disparar y al recibir daño.
@@ -43,3 +43,4 @@ Al construir enemigos, escenarios y efectos hay libertad creativa para que el ju
 
 - **2026-11-19, versión original:** "Formas simples hasta validar que el juego divierte": círculos y rectángulos de colores, sin sprites, sin animaciones de arte, sin sonido, hasta poder jugar el mundo 1 completo.
 - **2026-11-19, modificación:** Carmine pidió un juego bonito y lo más animado posible, con libertad creativa en enemigos, escenarios y efectos. Se levantan las prohibiciones de sprites y de animación, y se mantiene la de sonido.
+- **2026-11-20, modificación:** el juego ya suena (T-014). El porqué está en el ADR-0013.

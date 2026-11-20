@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, type ReactNode } from 'react';
+import { sfx } from '../game/audio/sfx';
 import { MINE } from '../game/config/balance';
 import type { UnlockInfo, UnlockItem } from '../game/EventBus';
 import { formatSeconds, type Dictionary } from '../i18n';
@@ -102,6 +103,8 @@ export function UnlockModal({ unlock, onAccept }: UnlockModalProps) {
 
   useEffect(() => {
     button.current?.focus();
+    // Suena con el aviso (T-014), por el canal de los menus: el juego espera en pausa detras.
+    sfx.play('unlock');
   }, [unlock.round]);
 
   const t = useText();

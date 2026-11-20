@@ -8,10 +8,11 @@ Defensa por carriles: plantas contra virus informáticos históricos que una IA 
     npm run dev      # http://localhost:5173
     npm test         # reglas del juego (Vitest)
     npm run build    # chequeo de tipos + build
+    npm run audio    # vuelve a fabricar los efectos de sonido (ffmpeg y los paquetes de Kenney en audio-lab/kenney/)
 
 ## Cómo se juega
 
-- Al abrir el juego sale el menú de inicio, con una portada en movimiento: nueva partida, cargar la partida guardada, opciones (idioma, pantalla completa, calidad y FPS), jefes (próximamente) y créditos. Haz clic en las plantas, los gusanos, Creeper o la mina de la portada.
+- Al abrir el juego sale el menú de inicio, con una portada en movimiento: nueva partida, cargar la partida guardada, opciones (idioma, volumen de los efectos, pantalla completa, calidad y FPS), jefes (próximamente) y créditos. Haz clic en las plantas, los gusanos, Creeper o la mina de la portada.
 - La partida se guarda sola en el navegador: al empezar cada ronda, al salir al menú y al cerrar la pestaña. Al perder (o ganar) se borra.
 - El juego está en español y en inglés; por defecto, en el idioma del navegador.
 - Los gusanos salen de los agujeros de la derecha y avanzan por su carril. Si un gusano cruza el césped, pierdes una vida; con 3 vidas perdidas se acaba la partida.
@@ -21,7 +22,8 @@ Defensa por carriles: plantas contra virus informáticos históricos que una IA 
 - Cada gusano eliminado da moneda. A veces la suelta en el suelo: haz clic en ella para recogerla, vale un poco más.
 - Arrastra una disparadora sobre otra de la misma variante para fusionarlas: la de destino suma los cañones (hasta 3) y pega más que las dos por separado. Las plantas con las que se puede fusionar se marcan en verde. Si sueltas en otro sitio, vuelve a su casilla.
 - Esc o clic derecho suelta la carta elegida (o devuelve a su casilla la planta que arrastras).
-- Esc (sin carta elegida), P o el botón de pausa abren el menú de pausa, con los ajustes (idioma, pantalla completa, calidad gráfica y FPS) y "Salir al menú".
+- Esc (sin carta elegida), P o el botón de pausa abren el menú de pausa, con los ajustes (idioma, volumen de los efectos, pantalla completa, calidad gráfica y FPS) y "Salir al menú".
+- El juego suena desde el primer clic. En desarrollo, `/sonidos.html` deja oír cada efecto con sus alternativas.
 - En desarrollo, `H` lanza la prueba de rendimiento: 20 disparadoras gratis y 60 gusanos con mucha vida.
 
 ## Dónde está cada cosa
@@ -31,6 +33,7 @@ Defensa por carriles: plantas contra virus informáticos históricos que una IA 
 - `src/game/config/balance.ts` todos los números de balance.
 - `src/game/scenes/` escenas de Phaser (solo pintan y leen input): la portada del menú de inicio y el tablero.
 - `src/game/save.ts` partida guardada en el navegador.
+- `src/game/audio/` efectos de sonido (`src/game/config/audio.ts` sus volúmenes y límites, `public/audio/` los archivos, `scripts/audio/` de dónde sale cada uno). Reglas en `docs/guias/graficos.md` y el ADR-0013.
 - `src/i18n/` textos del juego en español e inglés. Reglas en `docs/guias/idiomas.md`.
 - `src/game/view/` cómo se ve: cámara inclinada, arte pintado por código, escenario animado y niveles gráficos. Reglas en `docs/guias/graficos.md`.
 - `src/ui/` interfaz en React (menú de inicio, HUD, menús).

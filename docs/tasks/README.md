@@ -17,7 +17,7 @@ Una task por archivo. El tamaño es orientativo.
 | T-011 | [Interfaz] Menú de inicio, partida guardada, créditos e idiomas | Completada (20 nov 2026) | L | T-010 | Ninguna (I-01 a I-12 cerradas) |
 | T-012 | [Interfaz] Móvil: solo en horizontal, panel de nivel en las filas de abajo y ronda en pantalla pequeña | Completada (20 nov 2026) | S | T-011 | Ninguna (M-01 a M-05 cerradas) |
 | T-013 | [Interfaz] Tours de ayuda: cada cosa nueva se enseña la primera vez | Completada (20 nov 2026) | L | T-012 | Ninguna (G-01 a G-10 cerradas) |
-| T-014 | [Audio] Efectos de sonido y volumen | Pendiente | M | Ninguna | S-01, S-02 |
+| T-014 | [Audio] Efectos de sonido y volumen | Completada (21 nov 2026) | M | Ninguna | Ninguna (S-01 a S-06 cerradas) |
 | T-015 | [Audio] Música de fondo | Pendiente | S | T-014 | U-01, U-02 (faltan las pistas) |
 | T-016 | [Arte] Rediseño de la disparadora | Pendiente | M | Ninguna | X-03 (entre la fase 1 y la 2) |
 | T-017 | [Guardado] Progreso permanente separado de la partida en curso | Pendiente | M | Ninguna | Ninguna |

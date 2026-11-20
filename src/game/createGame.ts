@@ -31,6 +31,9 @@ export function createGame(parent: HTMLElement, data: GameData): Phaser.Game {
     scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
     // En portatiles con dos GPU, pide la dedicada: el escenario animado lo agradece.
     render: { powerPreference: 'high-performance' },
+    // El sonido lo lleva `src/game/audio/` (T-014, ADR-0013), que sobrevive a recrear el juego. Sin esto Phaser crearia
+    // su propio contexto de audio antes del primer gesto y el navegador avisaria en la consola.
+    audio: { noAudio: true },
   });
   const { screen, ...board } = data;
   game.scene.add(SCENES.title, TitleScene, screen === 'title', { quality: data.quality });

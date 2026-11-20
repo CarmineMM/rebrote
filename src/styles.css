@@ -643,6 +643,47 @@ body {
 .switch-text { display: grid; gap: 2px; }
 .switch-text small { opacity: 0.7; }
 
+/* Volumen de los efectos (T-014): pista como la de los interruptores, rellena en dorado hasta el valor. */
+.volume { display: grid; gap: 8px; padding: 8px 4px; }
+.volume-text { display: grid; gap: 2px; }
+.volume-text small { opacity: 0.7; }
+.volume-row { display: flex; align-items: center; gap: 12px; }
+.volume-icon {
+  position: relative; flex: none; width: 22px; height: 18px;
+  background: linear-gradient(#cfe8c4, #cfe8c4) 0 5px / 7px 8px no-repeat;
+}
+.volume-icon::before {
+  content: ''; position: absolute; left: 4px; top: 1px; border-style: solid; border-width: 8px 9px 8px 0;
+  border-color: transparent #cfe8c4 transparent transparent;
+}
+.volume-icon::after {
+  content: ''; position: absolute; left: 13px; top: 3px; width: 8px; height: 12px; border-radius: 0 12px 12px 0;
+  border: 2px solid #ffe066; border-left: 0; transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.volume-icon.is-muted::after { opacity: 0; transform: scale(0.4); }
+.volume-row input[type='range'] {
+  flex: 1; min-width: 0; height: 26px; margin: 0; background: transparent; cursor: pointer; appearance: none; -webkit-appearance: none;
+}
+.volume-row input[type='range']::-webkit-slider-runnable-track {
+  height: 12px; border-radius: 999px; border: 2px solid #4f8f45;
+  background: linear-gradient(90deg, #6f9f3a 0 var(--fill), #1a2a1b var(--fill) 100%);
+}
+.volume-row input[type='range']::-moz-range-track {
+  height: 12px; border-radius: 999px; border: 2px solid #4f8f45;
+  background: linear-gradient(90deg, #6f9f3a 0 var(--fill), #1a2a1b var(--fill) 100%);
+}
+.volume-row input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none; width: 22px; height: 22px; margin-top: -7px; border-radius: 50%;
+  background: #fff6c0; border: 2px solid #ffe066; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+  transition: transform 0.15s cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+.volume-row input[type='range']::-moz-range-thumb {
+  width: 18px; height: 18px; border-radius: 50%; background: #fff6c0; border: 2px solid #ffe066; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+}
+.volume-row input[type='range']:active::-webkit-slider-thumb { transform: scale(1.15); }
+.volume-row input[type='range']:focus-visible { outline: 3px solid #ffe066; outline-offset: 2px; border-radius: 999px; }
+.volume-value { flex: none; min-width: 3.4em; text-align: right; font-weight: 800; font-variant-numeric: tabular-nums; color: #fff6c0; }
+
 /* ---------- Ficha de informacion (T-010): foto a la izquierda y datos a la derecha, con el juego en pausa ---------- */
 .pause-overlay.is-info { background: rgba(10, 25, 12, 0.32); }
 .info-card {

@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import type { MatchState } from '../game/core/match';
+import { sfx } from '../game/audio/sfx';
 import { createGame, setGameAsleep, snapshotMatch, type GameScreen } from '../game/createGame';
 import { EventBus, GameEvents } from '../game/EventBus';
 import type { QualityLevel } from '../game/view/quality';
@@ -60,10 +61,14 @@ export function GameCanvas({ quality, language, screen, paused, asleep }: GameCa
 
   useEffect(() => {
     EventBus.emit(GameEvents.pauseChanged, paused);
+    // Con la pausa se calla lo que suena en el jardin (T-014); los botones de los menus siguen sonando.
+    sfx.pauseWorld(paused);
   }, [paused]);
 
   useEffect(() => {
     if (gameRef.current) setGameAsleep(gameRef.current, asleep);
+    // Con el aviso de girar la pantalla no suena nada (ADR-0011).
+    sfx.hold('rotate', asleep);
   }, [asleep]);
 
   return <div ref={containerRef} className="game-canvas" />;

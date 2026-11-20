@@ -1,5 +1,6 @@
-import type { ReactNode, RefObject } from 'react';
-import { LANGUAGES, LANGUAGE_NAMES, type Language } from '../i18n';
+import type { CSSProperties, ReactNode, RefObject } from 'react';
+import { sfx } from '../game/audio/sfx';
+import { LANGUAGES, LANGUAGE_NAMES, formatPercent, type Language } from '../i18n';
 import { QUALITY_LEVELS, type QualityLevel, type QualitySetting } from '../game/view/quality';
 import type { Settings } from './useSettings';
 import { useText } from './useText';
@@ -23,8 +24,8 @@ interface SettingsPanelProps {
 }
 
 /**
- * Ajustes del jugador (ADR-0006, ADR-0007, T-011 y T-013): idioma, pantalla completa, calidad grafica, tours de ayuda y
- * FPS. Los mismos en el menu de inicio ("Opciones") y en el de pausa ("Ajustes").
+ * Ajustes del jugador (ADR-0006, ADR-0007, T-011, T-013 y T-014): idioma, volumen de los efectos, pantalla completa,
+ * calidad grafica, tours de ayuda y FPS. Los mismos en el menu de inicio ("Opciones") y en el de pausa ("Ajustes").
  */
 export function SettingsPanel({ titleId, firstButton, title, backLabel, settings, autoLevel, fullscreenSupported, onChange, onBack, footer }: SettingsPanelProps) {
   const t = useText();
@@ -49,6 +50,11 @@ export function SettingsPanel({ titleId, firstButton, title, backLabel, settings
         <h3>{t.settings.language}</h3>
         <LanguagePicker value={settings.language} onChange={(language) => onChange({ language })} />
         <p className="settings-note">{t.settings.languageNote}</p>
+      </section>
+
+      <section className="settings-section">
+        <h3>{t.settings.sound}</h3>
+        <VolumeSlider label={t.settings.sfxVolume} help={t.settings.sfxVolumeHelp} value={settings.sfxVolume} onChange={(sfxVolume) => onChange({ sfxVolume })} />
       </section>
 
       <section className="settings-section">
@@ -117,6 +123,47 @@ export function SettingsPanel({ titleId, firstButton, title, backLabel, settings
 
       {footer}
     </>
+  );
+}
+
+interface VolumeSliderProps {
+  label: string;
+  help: string;
+  /** De 0 a 100. */
+  value: number;
+  onChange: (value: number) => void;
+}
+
+/**
+ * Volumen de 0 a 100 (T-014). Al soltarlo suena una muestra con el volumen nuevo, por el canal de los menus: se oye
+ * tambien con el juego en pausa.
+ */
+function VolumeSlider({ label, help, value, onChange }: VolumeSliderProps) {
+  const shown = formatPercent(value / 100);
+  const preview = () => sfx.preview('coin');
+  return (
+    <label className="volume">
+      <span className="volume-text">
+        <strong>{label}</strong>
+        <small>{help}</small>
+      </span>
+      <span className="volume-row">
+        <span className={`volume-icon${value === 0 ? ' is-muted' : ''}`} aria-hidden="true" />
+        <input
+          type="range"
+          min={0}
+          max={100}
+          step={5}
+          value={value}
+          aria-valuetext={shown}
+          style={{ '--fill': `${value}%` } as CSSProperties}
+          onChange={(e) => onChange(Number(e.target.value))}
+          onPointerUp={preview}
+          onKeyUp={preview}
+        />
+        <output className="volume-value">{shown}</output>
+      </span>
+    </label>
   );
 }
 

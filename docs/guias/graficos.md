@@ -1,6 +1,6 @@
 # Guía de gráficos y animación
 
-Cómo se pinta y se anima Rebrote, para que todo lo nuevo (enemigos, mundos, efectos, plantas) encaje con lo que ya hay. Las decisiones de fondo están en los ADR-0004 (arte bonito y animado), ADR-0005 (cámara inclinada), ADR-0006 (ajustes gráficos), ADR-0007 (pantalla completa y pausa), ADR-0008 (combate como simulación pura), ADR-0010 (menú de inicio y portada), ADR-0011 (en móvil, solo en horizontal) y ADR-0012 (tours de ayuda). Los textos que se pintan siguen la guía de idiomas (`docs/guias/idiomas.md`, ADR-0009).
+Cómo se pinta y se anima Rebrote, para que todo lo nuevo (enemigos, mundos, efectos, plantas) encaje con lo que ya hay. Las decisiones de fondo están en los ADR-0004 (arte bonito y animado), ADR-0005 (cámara inclinada), ADR-0006 (ajustes gráficos), ADR-0007 (pantalla completa y pausa), ADR-0008 (combate como simulación pura), ADR-0010 (menú de inicio y portada), ADR-0011 (en móvil, solo en horizontal), ADR-0012 (tours de ayuda) y ADR-0013 (efectos de sonido). Los textos que se pintan siguen la guía de idiomas (`docs/guias/idiomas.md`, ADR-0009).
 
 ## 1. Principios
 
@@ -37,6 +37,13 @@ Cómo se pinta y se anima Rebrote, para que todo lo nuevo (enemigos, mundos, efe
 | `src/game/scenes/TitleScene.ts` | Portada del menú de inicio (T-011): el jardín animado con la cámara corrida para dejar sitio al menú, y `TitleCover` encima. Deja paso al tablero al pedir una partida |
 | `src/game/view/titleCover.ts` | Batalla de la portada (T-011): reparto fijo, combate de verdad con todos fijos en su sitio e inmortales, y respuesta al clic (`COVER_LOOK`) |
 | `src/game/scenes/sceneKit.ts` | Lo que comparten las dos escenas: cámara a pantalla completa (`fitCamera`, con desplazamiento opcional), filtros de Ultra (`applyPostFx`) y fps (`FpsMeter`) |
+| `src/game/audio/sfx.ts` | Efectos de sonido (T-014, ADR-0013): el único que reproduce (`sfx.play`). Espera el primer gesto, descarga y decodifica los archivos, calla el jardín en pausa y lo suspende todo con la pestaña oculta o el aviso de girar |
+| `src/game/audio/cues.ts` | Qué suena con cada evento del combate y de las rondas, con el tic de las minas y con lo que hace el jugador, sin Phaser y con test (`combatCues`, `roundCues`, `mineTicks`, `actionCue`) |
+| `src/game/audio/voices.ts` | Cuánto suena, sin Phaser y con test: voces a la vez, separación, ráfagas, variación de tono y volumen, paneo (`VoiceGate`, `panAt`) |
+| `src/game/config/audio.ts` | Cada efecto (`SfxId`) con su volumen, voces, separación, ráfaga, variación de tono y variantes (`SFX`), y la mezcla general (`AUDIO`) |
+| `scripts/audio/` | De dónde sale cada sonido (`manifest.ts`), recetas de jsfxr (`sfxr.ts`) y quien fabrica los archivos (`build.ts`, `npm run audio`) |
+| `public/audio/` | Los archivos que carga el juego (OGG y MP3) y `LICENCIAS.md` con el origen y la licencia de cada uno |
+| `sonidos.html`, `src/dev/` | Página de prueba de los sonidos, solo con `npm run dev` |
 | `src/ui/tour/` | Tours de ayuda (T-013, ADR-0012): qué tours hay y sus pasos (`tours.ts`), tours vistos (`tourProgress.ts`), dónde va el bocadillo (`placeBubble.ts`), velo, aros y bocadillo (`TourOverlay`), la mano (`TourHand`), los dibujos animados y Brotito (`TourPicture`), la pista de la moneda (`CoinHint`) y quién los pone en marcha (`useTours`) |
 | `src/ui/` | HUD flotante (cartas con su precio, ronda con su cuenta atrás y su aviso en `RoundHud`, barra del jefe en `BossBar`, vidas, saldo), panel de nivel de la planta seleccionada (`LevelPanel`), ficha de información (`InfoPanel`, T-010), menú de pausa, ajustes (`SettingsPanel`, con el idioma), pantallas de derrota y de victoria, menú de inicio con su título, créditos y logo de Claude (`TitleScreen`, `Credits`, `ClaudeLogo`, T-011), y aviso de girar la pantalla en un móvil en vertical (`RotateNotice`, `useLandscapeOnly`, ADR-0011) (React) |
 
@@ -344,7 +351,33 @@ Detalle y porqué en el ADR-0012. Los pinta React encima del juego vivo; la esce
 - **Pista de la moneda.** Sin velo ni pausa: un aro dorado alrededor de la moneda del suelo, la mano que la toca y un bocadillo pequeño encima (sobre el "+18" de la escena). La escena avisa con `coinDropped` (también si cambia la ventana) y `coinGone`.
 - **Capa.** `z-index` 3: encima del HUD y del panel de nivel, debajo de la pausa, los avisos y el aviso de girar.
 
-## 16. Listas de comprobación
+## 16. Sonido (T-014)
+
+Detalle y porqué en el ADR-0013. El arte se pinta con código; el sonido sale de archivos (Kenney y jsfxr) que fabrica `npm run audio`.
+
+- **Un solo módulo reproduce** (`sfx.play(id, pan)`). Nadie más usa Phaser ni Web Audio para sonar. Phaser va sin audio.
+- **Lo decide una regla pura.** La escena pasa los eventos de cada paso a `combatCues` y `roundCues` y reproduce lo que devuelven; el tic de la mina sale del estado (`mineTicks`), como su número. Lo que hace el jugador suena en `emitAction` (`actionCue`), desde su casilla. Las vistas solo suenan con lo que sale de su `sync` y no es un evento: la voz y el rugido del Creeper.
+- **Suena desde donde pasa.** El paneo sale de la columna en el tablero (`panAt`), nunca de los píxeles.
+- **Sin saturar.** Una planta de 3 cañones suena como un disparo. Cada efecto tiene un máximo de voces, una separación mínima y una ráfaga: diez cosas iguales en el mismo instante suenan como unas pocas, escalonadas y con tonos algo distintos. Lo que no cabe no suena; nunca se corta uno que suena. Lo grande tapa lo pequeño: los que caen en una explosión no suenan aparte.
+- **Pausa.** Lo del jardín se calla con un fundido corto y no suena nada nuevo; al reanudar sigue (la mina vuelve a hacer tic). Los botones de los menús siguen sonando. Con la pestaña oculta o el aviso de girar no suena nada.
+- **Portada.** Solo suena lo que el jugador pulsa y lo que eso provoca (S-04). La batalla de fondo y las frases que Creeper suelta solo van calladas (`CreeperView.voiced = false`).
+- **Botones de los menús.** Suenan todos con un solo oyente (`useButtonSounds`). Lo que ya suena por lo que hace (cartas, "Subir", "¡Que vengan!") lleva `data-silent`.
+- **Archivos.** Mono, OGG Vorbis con respaldo en MP3, con el volumen igualado (`build.ts`). La mezcla entre efectos se ajusta con el `volume` de cada uno en `SFX`, no editando archivos.
+- **Elegir de oído.** `npm run dev` y abrir `/sonidos.html`: cada efecto con el elegido y sus alternativas, y pruebas de carga con el combate de verdad. Para cambiar uno, se mueve la alternativa a `pick` en `scripts/audio/manifest.ts` y se pasa `npm run audio`.
+
+| Momento | Efecto |
+|---|---|
+| Sembrar, infundir fuego o hielo, fusionar, subir de nivel | `sow`, `infuseFire`, `infuseIce`, `fuse`, `levelUp` |
+| `shot` (uno por planta) y `hit` | `shot`, `shotFire`, `shotIce`; `hit`, `hitFire`, `hitIce` y `hitArmor` (semilla normal en un acorazado) |
+| `bite`, `spat`, `spitHit`, `plantDestroyed` | `bite`, `spit`, `spitHit`, `plantDestroyed` |
+| `enemyKilled`, `enemyEscaped` | `enemyKilled` (más bajo que el disparo), `enemyEscaped`; el Creeper, `creeperDefeated` |
+| Mina armada y cada segundo de su cuenta; `mineExploded` | `mineTick`; `fireExplosion` o `iceExplosion` |
+| `jumpWarned`, `jumped`, `landed`, bocadillo de Creeper, fase 2 | `creeperWarn`, `creeperTakeoff`, `creeperLand`, `creeperTalk`, `creeperRage` |
+| Moneda recogida del suelo (la que se cobra sola no suena, S-05) | `coin` |
+| `attackStarted`, `roundCleared`, aviso de desbloqueo, derrota, victoria | `attackStarted`, `roundCleared`, `unlock`, `defeat`, `victory` |
+| Botón de un menú | `button` |
+
+## 17. Listas de comprobación
 
 ### Enemigo nuevo
 Ejemplos: el acorazado y el escupidor de T-007, en `wormView.ts` (`KIND_LOOK`).
@@ -359,6 +392,7 @@ Ejemplos: el acorazado y el escupidor de T-007, en `wormView.ts` (`KIND_LOOK`).
 - [ ] Tiene ficha (T-010): nombre, subtítulo y cómo funciona en `entityInfo.ts`, sus texturas en `ENEMY_ART` de `portrait.ts` para la foto, y su caja de doble clic (`contains`) le cubre cabeza y cuerpo.
 - [ ] Partículas según el nivel gráfico; probado en Bajo y en Ultra.
 - [ ] Se mueve con el reloj y los tweens de la escena: con el menú de pausa abierto se queda quieto.
+- [ ] Suena: sus ataques y su muerte siguen la lista "Sonido nuevo" (si muerde o escupe como los de ahora, ya suena).
 
 ### Variante de planta nueva (fuego, hielo...)
 - [ ] Una textura por número de cañones (1, 2 y 3), con los tubos de `SHOOTER_BARRELS` y los puntos del tallo de `SHOOTER_DOTS`. Se distingue de la normal por el color (paleta de la sección 10), no por la forma.
@@ -377,6 +411,7 @@ Ejemplos: el acorazado y el escupidor de T-007, en `wormView.ts` (`KIND_LOOK`).
 - [ ] Carta en el HUD con su icono en CSS.
 - [ ] Ficha de su mina y de su disparadora infundida (T-010), con su foto.
 - [ ] Probado en Bajo y en Ultra: sus partículas no se quedan blancas sobre el césped.
+- [ ] Su disparo, su impacto, su explosión y su infusión suenan distinto de los demás elementos (lista "Sonido nuevo").
 
 ### Carta nueva (T-010)
 - [ ] Cabe en el tamaño fijo de las cartas (`--card-w` × `--card-h`) con su nombre, su icono y su precio, también con el de infundir ("×3 = 225") y en el HUD compacto (860 y 568 px de ancho).
@@ -401,6 +436,15 @@ Ejemplos: el acorazado y el escupidor de T-007, en `wormView.ts` (`KIND_LOOK`).
 - [ ] Su dibujo animado en `TourPicture`, con el arte de la escena (`tourArt`), no pintado en React.
 - [ ] Frases en `tour.steps` de `es.ts` y `en.ts` (el test lo comprueba) y nombre en `tour.names`.
 - [ ] Probado a 1600 × 900, 812 × 375 y 568 × 320: el bocadillo no tapa lo que señala, y si falta lo que señalar el paso sale igual.
+- [ ] Suena (regla 10 de `CLAUDE.md`): su gesto y lo que provoca siguen la lista "Sonido nuevo".
+
+### Sonido nuevo (T-014, ADR-0013)
+- [ ] Su efecto en `SfxId` y en `SFX` (`src/game/config/audio.ts`): canal (`world` si es del jardín, `ui` si es de un menú), volumen, voces, separación, ráfaga, variación de tono y variantes. Si se repite mucho, bajo, corto y con pocas voces.
+- [ ] Su fuente en `scripts/audio/manifest.ts`, con dos o tres alternativas: capas de Kenney (CC0) o una receta nueva en `scripts/audio/sfxr.ts`. Otra fuente o licencia se anota en el manifiesto y sale en `LICENCIAS.md`.
+- [ ] `npm run audio` y, en `/sonidos.html`, se oye solo y en su prueba de carga. Lo elige Carmine de oído.
+- [ ] Lo pide una regla de `cues.ts` con su test (o, si sale del estado y no de un evento, la vista con `sfx.play`). Nunca Phaser ni Web Audio directamente.
+- [ ] Suena desde su columna (`panAt`) si pasa en el tablero.
+- [ ] Con el menú de pausa abierto no suena; en la portada, solo si lo provoca un clic.
 
 ### HUD o menú nuevo (React)
 - [ ] Probado en un móvil en horizontal (812 × 375 y 568 × 320): no se sale de la pantalla y no tapa lo que se juega.
