@@ -1,6 +1,6 @@
 import * as Phaser from 'phaser';
 import { ENEMIES } from '../config/balance';
-import type { Enemy, EnemyKind } from '../core/combat';
+import { isEnraged, type Enemy, type EnemyKind } from '../core/combat';
 import type { Effects } from './effects';
 import { entityDepth, perspective } from './layout';
 import { FLAME_SIZE, FROST_SIZE, TEX, WORM_SIZE, artInv } from './textures';
@@ -9,7 +9,7 @@ import { FLAME_SIZE, FROST_SIZE, TEX, WORM_SIZE, artInv } from './textures';
  * Aspecto del gusano. Las medidas locales son pixeles de diseno con 160 por casilla, como la disparadora.
  * La cabeza va levantada a la altura del canon, para que las semillas le den en la cara.
  */
-const WORM_LOOK = {
+export const WORM_LOOK = {
   unitsPerCell: 160,
   /** Donde apoya dentro de su carril: un pelo por delante de las plantas, para tapar a la que muerde. */
   footY: 0.64,
@@ -53,13 +53,27 @@ const WORM_LOOK = {
   spitChargeMs: 650,
   /** Boca del escupidor respecto a la cabeza (pixeles de la textura de la cabeza, desde su centro). */
   mouth: { x: -20, y: 17 },
+  /** Acelerado por Creeper (T-008): rayas de velocidad detras de la cola, que titilan mientras avanza. */
+  streak: { x: 74, y: -24, scale: 1.3 },
+  /**
+   * Salto de carril (T-008, Creeper). Agachado: se aplasta y tiembla mientras avisa. En el aire: sube en curva
+   * (altura en anchos de casilla, algo mas cuanto mas lejos salta) y su sombra se encoge en el suelo.
+   */
+  jump: { crouchSquash: 0.2, crouchShake: 2.2, liftCells: 0.75, liftPerLane: 0.12 },
 } as const;
+
+interface HeadSet {
+  idle: string;
+  attack: string;
+  hurt: string;
+}
 
 /**
  * Lo que cambia con cada enemigo (T-007): texturas de la cabeza (tranquila, atacando y dolorida) y del anillo,
- * tamano, y si lleva armadura. El acorazado es un gusano mas grande con casco y una placa por anillo.
+ * tamano, y si lleva armadura. El acorazado es un gusano mas grande con casco y una placa por anillo. El Creeper
+ * (T-008) es mucho mas grande, con cabeza de monitor, y en su fase 2 cambia de cara (`angryHead`).
  */
-const KIND_LOOK: Record<EnemyKind, { head: { idle: string; attack: string; hurt: string }; segment: string; size: number; armor: boolean }> = {
+const KIND_LOOK: Record<EnemyKind, { head: HeadSet; angryHead?: HeadSet; segment: string; size: number; armor: boolean }> = {
   worm: { head: { idle: TEX.wormHead, attack: TEX.wormHeadBite, hurt: TEX.wormHeadHurt }, segment: TEX.wormSegment, size: 1, armor: false },
   armored: { head: { idle: TEX.wormHead, attack: TEX.wormHeadBite, hurt: TEX.wormHeadHurt }, segment: TEX.wormSegment, size: 1.12, armor: true },
   spitter: {
@@ -68,7 +82,43 @@ const KIND_LOOK: Record<EnemyKind, { head: { idle: string; attack: string; hurt:
     size: 1,
     armor: false,
   },
+  creeper: {
+    head: { idle: TEX.creeperHead, attack: TEX.creeperHeadBite, hurt: TEX.creeperHeadHurt },
+    angryHead: { idle: TEX.creeperHeadAngry, attack: TEX.creeperHeadAngryBite, hurt: TEX.creeperHeadAngryHurt },
+    segment: TEX.creeperSegment,
+    size: 1.7,
+    armor: false,
+  },
 };
+
+/** Tamano del Creeper respecto al gusano, para quien lo pinta fuera de su vista (Creeper preparandose). */
+export const CREEPER_SIZE = KIND_LOOK.creeper.size;
+
+/** Lo que la escena le pide a la vista de cualquier enemigo. `CreeperView` (T-008) envuelve a un `WormView`. */
+export interface EnemyView {
+  sync(enemy: Enemy): void;
+  chomp(): void;
+  spat(): void;
+  hit(): void;
+  blasted(): void;
+  frosted(): void;
+  die(): void;
+  escape(): void;
+  cheer(): void;
+}
+
+/**
+ * Postura del salto de carril (T-008), sacada del estado: en que carril se pinta (entre el de salida y el de destino
+ * mientras vuela), cuanto sube (0 a 1, en curva) y cuanto se agacha (0 a 1, mientras avisa).
+ */
+export function jumpPose(enemy: Enemy): { lane: number; lift: number; crouch: number } {
+  const { jump } = enemy;
+  if (!jump) return { lane: enemy.lane, lift: 0, crouch: 0 };
+  const t = Phaser.Math.Clamp(1 - jump.ms / jump.stageMs, 0, 1);
+  if (jump.stage === 'crouch') return { lane: jump.from, lift: 0, crouch: Math.min(1, t * 2.2) };
+  const eased = t * t * (3 - 2 * t);
+  return { lane: jump.from + (jump.to - jump.from) * eased, lift: Math.sin(t * Math.PI), crouch: Math.max(0, 1 - t * 5) };
+}
 
 /** Armadura del acorazado: el casco y una placa por anillo, de la cola a la cabeza. Las placas se caen con la vida. */
 interface Armor {
@@ -87,14 +137,16 @@ interface Pulse {
  * Gusano en pantalla. Sigue al enemigo del estado (posicion y si muerde) en `sync`, y anima lo que
  * la escena le cuenta: mordisco, golpe, muerte o huida. No decide nada (ADR-0008).
  */
-export class WormView {
+export class WormView implements EnemyView {
   private readonly holder: Phaser.GameObjects.Container;
   private readonly head: Phaser.GameObjects.Image;
   private readonly segments: Phaser.GameObjects.Image[];
   private readonly shadow: Phaser.GameObjects.Image;
-  private readonly footY: number;
-  private readonly cellWidth: number;
-  private readonly scale: number;
+  /** Rayas de velocidad del acelerado (T-008): ocultas si va a su velocidad. */
+  private readonly streak: Phaser.GameObjects.Image;
+  private footY: number;
+  private cellWidth: number;
+  private scale: number;
   /** Cada gusano ondula con su propio desfase para que no vayan al unisono. */
   private readonly phaseOffset = Math.random() * Math.PI * 2;
   private phase = 0;
@@ -111,6 +163,8 @@ export class WormView {
   private readonly hop: Pulse = { v: 0 };
   /** Tiritona del ralentizado. */
   private readonly shiver: Pulse = { v: 0 };
+  /** Aplastado al aterrizar de un salto (Creeper, T-008). */
+  private readonly thud: Pulse = { v: 0 };
   private flashTimer?: Phaser.Time.TimerEvent;
   private readonly flames: Phaser.GameObjects.Image[];
   private burning = false;
@@ -126,6 +180,8 @@ export class WormView {
     private readonly fx: Effects,
     enemy: Enemy,
     emerge: boolean,
+    /** Sale del suelo pasado este tiempo, sin verse antes (el Creeper aterriza desde donde se preparaba, T-008). */
+    emergeDelayMs = 0,
   ) {
     this.look = KIND_LOOK[enemy.kind];
     this.headKey = this.look.head.idle;
@@ -140,6 +196,11 @@ export class WormView {
       .setDisplaySize(this.cellWidth * 0.95 * this.look.size, this.cellWidth * 0.24 * this.look.size)
       .setDepth(depth - 0.5);
     this.segments = WORM_LOOK.segments.map((s) => scene.add.image(s.x, s.y, this.look.segment).setScale(s.scale * artInv()));
+    this.streak = scene.add
+      .image(WORM_LOOK.streak.x, WORM_LOOK.streak.y, TEX.hasteStreak)
+      .setOrigin(0, 0.5)
+      .setScale(WORM_LOOK.streak.scale * artInv())
+      .setVisible(enemy.haste > 1);
     const { head } = WORM_SIZE;
     const headOrigin = { x: head.cx / head.width, y: head.cy / head.height };
     this.head = scene.add.image(WORM_LOOK.head.x, WORM_LOOK.head.y, this.headKey).setOrigin(headOrigin.x, headOrigin.y).setScale(artInv());
@@ -171,17 +232,35 @@ export class WormView {
     const armor = this.armor;
     const body = this.segments.flatMap((segment, i) => (armor ? [segment, armor.plates[i]] : [segment]));
     const top = armor ? [this.head, armor.helmet] : [this.head];
-    this.holder = scene.add.container(ground.x, ground.y, [...body, ...top, ...this.frost, ...this.flames]).setDepth(depth);
+    this.holder = scene.add.container(ground.x, ground.y, [this.streak, ...body, ...top, ...this.frost, ...this.flames]).setDepth(depth);
 
-    if (emerge) this.emerge(ground);
+    if (emerge && emergeDelayMs > 0) {
+      this.rise.v = 0;
+      this.holder.setVisible(false);
+      scene.time.delayedCall(emergeDelayMs, () => {
+        if (!this.holder.active) return;
+        this.holder.setVisible(true);
+        this.emerge({ x: this.shadow.x, y: this.shadow.y });
+      });
+    } else if (emerge) {
+      this.emerge(ground);
+    }
     this.sync(enemy);
   }
 
   /** Coloca y pone en postura al gusano segun el estado. Se llama en cada fotograma mientras vive. */
   sync(enemy: Enemy): void {
     const stats = ENEMIES[enemy.kind];
-    const ground = perspective.toScreen({ x: enemy.x, y: this.footY });
-    const walking = enemy.attackMs === null;
+    // El carril solo cambia al saltar (Creeper): entonces cambian tambien el tamano, la profundidad y el suelo.
+    const pose = jumpPose(enemy);
+    this.footY = pose.lane + WORM_LOOK.footY;
+    const foot = { x: enemy.x, y: this.footY };
+    const ground = perspective.toScreen(foot);
+    this.cellWidth = perspective.cellWidthAt(foot);
+    this.scale = (this.cellWidth / WORM_LOOK.unitsPerCell) * this.look.size;
+    this.holder.setDepth(entityDepth(ground.y));
+    this.shadow.setDepth(entityDepth(ground.y) - 0.5);
+    const walking = enemy.attackMs === null && enemy.jump === null;
     this.walk += ((walking ? 1 : 0) - this.walk) * 0.25;
     if (walking) this.phase = this.phaseOffset - enemy.x * WORM_LOOK.wavesPerCell * Math.PI * 2;
     // Se echa atras mientras espera el mordisco (o carga el escupitajo) y se lanza al atacar (ver chomp y spat).
@@ -197,10 +276,21 @@ export class WormView {
     const grow = this.scale * (0.3 + 0.7 * rise);
     const hop = Math.sin(this.hop.v * Math.PI) * 26 * this.scale;
     const shiver = Math.sin(this.shiver.v * Math.PI * 9) * 3.5 * this.shiver.v;
+    // Salto de carril: agachado tiembla y se aplasta; en el aire sube en curva y se estira; al caer se aplasta.
+    const look = WORM_LOOK.jump;
+    const span = enemy.jump ? Math.abs(enemy.jump.to - enemy.jump.from) : 0;
+    const lift = pose.lift * this.cellWidth * (look.liftCells + look.liftPerLane * span);
+    const shake = pose.crouch * Math.sin(this.scene.time.now / 28) * look.crouchShake;
+    const squash = pose.crouch * look.crouchSquash + this.thud.v * 0.22 - pose.lift * 0.08;
     this.holder
-      .setPosition(ground.x + (this.kick.v * 10 + shiver) * this.scale, ground.y + (1 - rise) * 20 * this.scale - hop)
-      .setScale(grow * (1 + hurt * 0.1), grow * (1 - hurt * 0.1));
-    this.shadow.setPosition(ground.x, ground.y).setAlpha(Math.min(1, rise));
+      .setPosition(ground.x + (this.kick.v * 10 + shiver + shake) * this.scale, ground.y + (1 - rise) * 20 * this.scale - hop - lift)
+      .setScale(grow * (1 + hurt * 0.1 + squash * 0.6), grow * (1 - hurt * 0.1 - squash));
+    this.shadow
+      .setPosition(ground.x, ground.y)
+      .setDisplaySize(this.cellWidth * 0.95 * this.look.size * (1 - pose.lift * 0.35), this.cellWidth * 0.24 * this.look.size * (1 - pose.lift * 0.35))
+      .setAlpha(Math.min(1, rise) * (1 - pose.lift * 0.45));
+    // Acelerado: las rayas titilan mientras avanza y se apagan si se para.
+    if (this.streak.visible) this.streak.setAlpha(this.walk * (0.65 + 0.35 * Math.sin(this.phase * 1.7)));
 
     const last = this.segments.length - 1;
     this.segments.forEach((image, i) => {
@@ -214,8 +304,10 @@ export class WormView {
     this.head
       .setPosition(WORM_LOOK.head.x + lean * 10 - lunge * 16, WORM_LOOK.head.y - lean * 7 * rear + lunge * 9 + bob)
       .setAngle(lean * 10 * rear - lunge * 12 + Math.sin(this.phase) * 4 * this.walk);
-    const { head } = this.look;
-    this.setHead(hurt > 0.25 ? head.hurt : lunge > 0.45 ? head.idle : windup > 0.35 ? head.attack : head.idle);
+    const head = this.look.angryHead && isEnraged(enemy) ? this.look.angryHead : this.look.head;
+    // Agachado para saltar o en el aire, pone la cara decidida.
+    const jumping = enemy.jump !== null;
+    this.setHead(hurt > 0.25 ? head.hurt : lunge > 0.45 ? head.idle : windup > 0.35 || jumping ? head.attack : head.idle);
     if (this.armor) this.syncArmor(enemy.hp / stats.hp);
 
     this.setBurning(enemy.burn !== null);
@@ -235,6 +327,32 @@ export class WormView {
   /** Mordisco: la cabeza se lanza hacia delante y cierra la boca. */
   chomp(): void {
     this.pulse(this.lunge, 300);
+  }
+
+  /** Aterriza de un salto de carril (Creeper, T-008): se aplasta contra el suelo y rebota. */
+  landed(): void {
+    this.pulse(this.thud, 380);
+  }
+
+  /** Pies en pantalla (en el suelo, aunque este en el aire) y ancho de casilla ahi. */
+  ground(): { x: number; y: number; cellWidth: number } {
+    return { x: this.shadow.x, y: this.shadow.y, cellWidth: this.cellWidth };
+  }
+
+  /** Profundidad del cuerpo, para poner encima lo que lo acompana. */
+  depth(): number {
+    return this.holder.depth;
+  }
+
+  /**
+   * Punto de la cabeza en pantalla, en pixeles de la textura de la cabeza respecto a su centro (por ejemplo, la antena
+   * o la pantalla del Creeper).
+   */
+  headPoint(dx = 0, dy = 0): { x: number; y: number } {
+    return {
+      x: this.holder.x + (this.head.x + dx) * this.holder.scaleX,
+      y: this.holder.y + (this.head.y + dy) * this.holder.scaleY,
+    };
   }
 
   /**
@@ -572,7 +690,7 @@ export class WormView {
     this.burnTimer = undefined;
     this.chillTimer?.remove();
     this.chillTimer = undefined;
-    this.scene.tweens.killTweensOf([this.rise, this.lunge, this.hurt, this.kick, this.hop, this.shiver]);
+    this.scene.tweens.killTweensOf([this.rise, this.lunge, this.hurt, this.kick, this.hop, this.shiver, this.thud]);
   }
 
   private fadeShadow(durationMs: number): void {

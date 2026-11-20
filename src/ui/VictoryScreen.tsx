@@ -8,9 +8,8 @@ interface VictoryScreenProps {
 }
 
 /**
- * Victoria provisional (T-007): se superaron todas las rondas del mundo 1. Cuando exista el jefe (T-008), esto
- * llegara despues de vencerlo. Misma tarjeta que la pausa y la derrota, con una copa que salta y destellos.
- * "Jugar otra vez" empieza una partida nueva desde la ronda 1.
+ * Victoria del mundo 1 (T-008): se superaron sus rondas y se atrapo al Creeper en la ultima. Misma tarjeta que la
+ * pausa y la derrota, con una copa que salta y destellos. "Jugar otra vez" empieza una partida nueva desde la ronda 1.
  */
 export function VictoryScreen({ rounds, onRestart }: VictoryScreenProps) {
   const titleId = useId();
@@ -46,15 +45,15 @@ export function VictoryScreen({ rounds, onRestart }: VictoryScreenProps) {
         </div>
         <p className="pause-kicker">Mundo 1: Gusanos</p>
         <h2 id={titleId} className="pause-title">
-          ¡Jardín a salvo!
+          ¡Atrapaste a Creeper!
         </h2>
-        <p className="victory-text">Superaste las {rounds} rondas.</p>
+        <p className="victory-text">Superaste las {rounds} rondas y el jardín está a salvo.</p>
         <div className="pause-actions">
           <button ref={button} type="button" className="btn btn-primary" onClick={onRestart}>
             <span aria-hidden="true">↻</span> Jugar otra vez
           </button>
         </div>
-        <p className="pause-hint">Pronto: el Creeper, el primer gusano de la historia.</p>
+        <p className="pause-hint">Creeper (1971) fue el primer gusano informático: saltaba de máquina en máquina.</p>
       </div>
     </div>
   );

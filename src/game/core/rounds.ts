@@ -7,7 +7,7 @@ import type { ElementType } from './plants';
  * Rondas con guion (T-007). Cada ronda empieza con una preparacion (se puede sembrar, infundir, fusionar y subir
  * de nivel) y sigue con un ataque que saca sus grupos de enemigos a su hora. Acaba cuando no quedan enemigos por
  * salir ni vivos; tras la ultima, la partida esta ganada. El guion vive en `ROUNDS` (balance.ts): anadir o cambiar
- * una ronda es editar esos datos.
+ * una ronda es editar esos datos. La ultima del mundo 1 es el combate contra Creeper (T-008): un grupo mas del guion.
  */
 
 /**
@@ -29,6 +29,13 @@ export interface RoundScript {
   readonly unlocks: readonly Feature[];
   /** Aviso de una linea con el concepto nuevo, al empezar la ronda. */
   readonly notice: string;
+  /**
+   * Velocidad de los enemigos de la ronda respecto a la normal (T-008: Creeper los acelera en las rondas 8 y 9).
+   * Sin ella, 1.
+   */
+  readonly haste?: number;
+  /** El jefe se prepara durante esta ronda: se le ve esperando a la derecha (T-008). */
+  readonly bossPreparing?: boolean;
   readonly groups: readonly RoundGroup[];
 }
 
@@ -125,6 +132,36 @@ export function isWon(state: MatchState): boolean {
   return state.round.phase === 'won';
 }
 
+/** Velocidad de los enemigos que saca la ronda `index` respecto a la normal (1 si no los acelera). */
+export function roundHaste(index: number): number {
+  return roundScript(index).haste ?? 1;
+}
+
+/** ¿Saca la ronda `index` a Creeper? Es la del combate final (T-008). */
+export function isBossRound(index: number): boolean {
+  return roundScript(index).groups.some((group) => group.kind === 'creeper');
+}
+
+/** Ronda (desde 0) del combate contra Creeper, o null si el guion no lo saca. */
+export function bossRoundIndex(): number | null {
+  const index = ROUNDS.findIndex((round) => round.groups.some((group) => group.kind === 'creeper'));
+  return index < 0 ? null : index;
+}
+
+/**
+ * ¿Se ve a Creeper preparandose a la derecha? En las rondas que lo dicen (`bossPreparing`) y en la del combate hasta
+ * que sale. Lo pinta la vista; aqui solo se decide cuando.
+ */
+export function isBossPreparing(state: MatchState): boolean {
+  const { round } = state;
+  if (round.phase === 'won') return false;
+  const script = roundScript(round.index);
+  if (script.bossPreparing) return true;
+  if (!isBossRound(round.index)) return false;
+  const bossGroup = script.groups.findIndex((group) => group.kind === 'creeper');
+  return round.phase === 'prep' || round.released <= bossGroup;
+}
+
 /** El jugador adelanta el ataque ("¡Que vengan!"): la preparacion acaba en el siguiente paso. Fuera de ella no hace nada. */
 export function startAttack(state: MatchState): MatchState {
   if (state.round.phase !== 'prep' || isDefeated(state)) return state;
@@ -158,7 +195,7 @@ export function stepRound(state: MatchState, dtMs: number, spawnX: number): Roun
   while (released < groups.length && groups[released].atMs <= elapsedMs) {
     const group = groups[released];
     for (const lane of group.lanes) {
-      current = spawnEnemy(current, group.kind, lane, spawnX);
+      current = spawnEnemy(current, group.kind, lane, spawnX, undefined, roundHaste(round.index));
       spawned.push(current.enemies[current.enemies.length - 1]);
     }
     released++;

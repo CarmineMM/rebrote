@@ -1,4 +1,4 @@
-import { BOARD, ENEMIES, FIRE, ICE, MINE, SHOOTER } from '../config/balance';
+import { BOARD, CREEPER, ENEMIES, FIRE, ICE, MINE, SHOOTER } from '../config/balance';
 import type { BoardPoint, Cell } from './board';
 import type { MatchState, Mine, Sown } from './match';
 import { damageMultiplier, fireRateMultiplier, type ElementType, type Shooter } from './plants';
@@ -25,9 +25,24 @@ export interface Slow {
   readonly ms: number;
 }
 
+/**
+ * Salto de carril del Creeper (T-008). Primero se agacha en su carril (`crouch`: el aviso, con el destino marcado) y
+ * luego vuela al carril de destino (`air`: ya esta en `to`, pero no le dan las balas ni las minas).
+ */
+export interface Jump {
+  readonly stage: 'crouch' | 'air';
+  readonly from: number;
+  readonly to: number;
+  /** Lo que le queda a la etapa. */
+  readonly ms: number;
+  /** Lo que dura la etapa entera: con `ms`, la vista sabe por donde va (agacharse, la curva del vuelo). */
+  readonly stageMs: number;
+}
+
 export interface Enemy {
   readonly id: number;
   readonly kind: EnemyKind;
+  /** Carril en el que esta. Al despegar de un salto (Creeper), ya es el de destino. */
   readonly lane: number;
   /** Centro del cuerpo, en casillas. Avanza hacia la izquierda, hacia x = 0. */
   readonly x: number;
@@ -41,6 +56,12 @@ export interface Enemy {
   readonly burn: Burn | null;
   /** Ralentizacion activa, o null si va a su velocidad. Convive con la quemadura. */
   readonly slow: Slow | null;
+  /** Velocidad respecto a la de su tipo: mas de 1 si lo acelero Creeper (T-008, rondas 8 y 9 y sus copias). */
+  readonly haste: number;
+  /** Salto de carril en curso (solo el Creeper, T-008), o null. */
+  readonly jump: Jump | null;
+  /** Umbrales de vida de `CREEPER.jumpAt` ya gastados en saltos (solo cuenta en el Creeper). */
+  readonly jumpsUsed: number;
 }
 
 /** Lo que deja una bala infundida al impactar, ademas de su dano: la de fuego quema y la de hielo frena. */
@@ -83,8 +104,16 @@ export type CombatEvent =
   | { readonly type: 'spitGone'; readonly spitId: number }
   /** Una disparadora o una mina se quedo sin vida (a mordiscos o a escupitajos). Una mina destruida asi no explota. */
   | { readonly type: 'plantDestroyed'; readonly cell: Cell }
+  /** Un enemigo se quedo sin vida. Al caer el Creeper (T-008) caen tambien los demas: sus copias se desconectan. */
   | { readonly type: 'enemyKilled'; readonly enemyId: number; readonly at: BoardPoint }
-  | { readonly type: 'enemyEscaped'; readonly enemyId: number; readonly lane: number }
+  /** Cruzo el borde izquierdo: resta una vida. Si es el Creeper (T-008), se pierde la partida. */
+  | { readonly type: 'enemyEscaped'; readonly enemyId: number; readonly lane: number; readonly kind: EnemyKind }
+  /** El Creeper (T-008) cruzo un umbral de vida: se agacha para saltar y marca el carril de destino durante `warnMs`. */
+  | { readonly type: 'jumpWarned'; readonly enemyId: number; readonly from: number; readonly to: number; readonly warnMs: number }
+  /** El Creeper despega hacia `to` y deja sus copias (ya en el estado) en el carril que abandona. */
+  | { readonly type: 'jumped'; readonly enemyId: number; readonly from: number; readonly to: number; readonly copies: readonly Enemy[] }
+  /** El Creeper aterriza en `lane`. Si golpeo algo sembrado, `cell` dice donde (y si lo destruyo, sigue `plantDestroyed`). */
+  | { readonly type: 'landed'; readonly enemyId: number; readonly lane: number; readonly cell: Cell | null }
   /** Un enemigo entro en el radio de la mina: empieza su conteo. */
   | { readonly type: 'mineArmed'; readonly cell: Cell }
   /** La mina exploto y dejo su casilla. `enemyIds` son los enemigos alcanzados; los que mueren llevan su `enemyKilled`. */
@@ -169,16 +198,50 @@ export function isDefeated(state: MatchState): boolean {
   return state.lives <= 0;
 }
 
+/** Enemigo recien salido: avanza, sin efectos ni salto. */
+function newEnemy(id: number, kind: EnemyKind, lane: number, x: number, hp: number, haste: number): Enemy {
+  return { id, kind, lane, x, hp, attackMs: null, burn: null, slow: null, haste, jump: null, jumpsUsed: 0 };
+}
+
 /**
  * Pone un enemigo con la vida llena en `x` de su carril. Queda el ultimo de `enemies`.
- * `hp` solo cambia en pruebas (por ejemplo, la prueba de rendimiento en desarrollo).
+ * `hp` solo cambia en pruebas (por ejemplo, la prueba de rendimiento en desarrollo). `haste` es su velocidad respecto
+ * a la de su tipo (las rondas 8 y 9 sacan enemigos acelerados, T-008).
  */
-export function spawnEnemy(state: MatchState, kind: EnemyKind, lane: number, x: number, hp: number = ENEMIES[kind].hp): MatchState {
+export function spawnEnemy(
+  state: MatchState,
+  kind: EnemyKind,
+  lane: number,
+  x: number,
+  hp: number = ENEMIES[kind].hp,
+  haste = 1,
+): MatchState {
   if (!Number.isInteger(lane) || lane < 0 || lane >= BOARD.lanes) {
     throw new Error(`Carril invalido: ${lane}`);
   }
-  const enemy: Enemy = { id: state.nextId, kind, lane, x, hp, attackMs: null, burn: null, slow: null };
+  const enemy = newEnemy(state.nextId, kind, lane, x, hp, haste);
   return { ...state, enemies: [...state.enemies, enemy], nextId: state.nextId + 1 };
+}
+
+/** En el aire, a mitad de un salto (Creeper, T-008): no le dan las balas ni las minas, y las plantas no le apuntan. */
+export function isAirborne(enemy: Enemy): boolean {
+  return enemy.jump?.stage === 'air';
+}
+
+/** Fraccion de la vida de su tipo que le queda. */
+export function hpFraction(enemy: Enemy): number {
+  return enemy.hp / ENEMIES[enemy.kind].hp;
+}
+
+/** Fase 2 del Creeper (T-008): con la mitad de la vida o menos salta mas a menudo, avisa menos y deja mas copias. */
+export function isEnraged(enemy: Enemy): boolean {
+  return enemy.kind === 'creeper' && hpFraction(enemy) <= CREEPER.enragedBelow;
+}
+
+/** Umbrales de salto (`CREEPER.jumpAt`) que ya cruzo con la vida que le queda. */
+export function jumpsCrossed(enemy: Enemy): number {
+  const fraction = hpFraction(enemy);
+  return CREEPER.jumpAt.filter((threshold) => fraction <= threshold).length;
 }
 
 /**
@@ -187,7 +250,7 @@ export function spawnEnemy(state: MatchState, kind: EnemyKind, lane: number, x: 
  */
 export function hasTarget(enemies: readonly Enemy[], cell: Cell): boolean {
   const plantX = cell.col + 0.5;
-  return enemies.some((e) => e.lane === cell.lane && e.hp > 0 && e.x > plantX && onLawn(e));
+  return enemies.some((e) => e.lane === cell.lane && e.hp > 0 && e.x > plantX && onLawn(e) && !isAirborne(e));
 }
 
 /** Ya pisa el cesped: las plantas le pueden disparar (y el escupidor puede pararse a escupir). */
@@ -195,27 +258,35 @@ export function onLawn(enemy: Enemy): boolean {
   return enemyFront(enemy) <= BOARD.columns;
 }
 
-/** Avanza el combate `dtMs` milisegundos. No modifica el estado recibido. */
-export function stepCombat(state: MatchState, dtMs: number): CombatStep {
+/**
+ * Avanza el combate `dtMs` milisegundos. No modifica el estado recibido. `random` (en [0, 1), como Math.random) elige
+ * el carril al que salta el Creeper (T-008); se inyecta para poder testearlo.
+ */
+export function stepCombat(state: MatchState, dtMs: number, random: () => number = Math.random): CombatStep {
   const events: CombatEvent[] = [];
   let current = state;
   let remaining = dtMs;
   while (remaining > 0 && !isDefeated(current)) {
     const dt = Math.min(remaining, MAX_STEP_MS);
-    current = substep(current, dt, events);
+    current = substep(current, dt, events, random);
     remaining -= dt;
   }
   return { state: current, events };
 }
 
 /**
- * Un paso: primero arden, se mueven y atacan los enemigos (muerden o escupen, mas despacio si estan ralentizados);
- * luego vuelan los escupitajos; despues cuentan y explotan las minas, vuelan las balas y al final disparan las plantas.
+ * Un paso: primero arden, se mueven y atacan los enemigos (muerden o escupen, mas despacio si estan ralentizados; el
+ * Creeper, ademas, salta de carril); luego vuelan los escupitajos; despues cuentan y explotan las minas, vuelan las
+ * balas y al final disparan las plantas. Si el Creeper cae, caen con el los demas enemigos.
  */
-function substep(state: MatchState, dtMs: number, events: CombatEvent[]): MatchState {
+function substep(state: MatchState, dtMs: number, events: CombatEvent[], random: () => number): MatchState {
   const plants = state.plants.map((lane) => [...lane]);
   let lives = state.lives;
   let nextId = state.nextId;
+  const newId = () => nextId++;
+  /** Copias que deja el Creeper al despegar: entran en juego despues de mover a los demas. */
+  const copies: Enemy[] = [];
+  let bossDown = false;
 
   // Enemigos: arden si tienen una quemadura, y atacan o avanzan, mas despacio si estan ralentizados. Los que muerden
   // atacan lo que tocan (planta o mina); el escupidor, lo primero sembrado en su carril a su distancia. Los que
@@ -231,6 +302,7 @@ function substep(state: MatchState, dtMs: number, events: CombatEvent[]): MatchS
       e.burn = e.burn.ms > dtMs ? { ...e.burn, ms: e.burn.ms - dtMs } : null;
       if (e.hp <= 0) {
         events.push({ type: 'enemyKilled', enemyId: e.id, at: { x: e.x, y: e.lane + 0.5 } });
+        if (e.kind === 'creeper') bossDown = true;
         continue;
       }
     }
@@ -238,6 +310,20 @@ function substep(state: MatchState, dtMs: number, events: CombatEvent[]): MatchS
     const walkMs = e.slow ? dtMs - e.slow.amount * Math.min(dtMs, e.slow.ms) : dtMs;
     if (e.slow) e.slow = e.slow.ms > dtMs ? { ...e.slow, ms: e.slow.ms - dtMs } : null;
     const attackClockMs = ICE.slowsAttacks ? walkMs : dtMs;
+    // Creeper (T-008): al cruzar un umbral de vida se agacha para saltar y luego vuela a otro carril. Mientras tanto
+    // no avanza ni muerde. El aviso y el vuelo no van mas lentos aunque este ralentizado: el aviso es una promesa.
+    if (e.kind === 'creeper') {
+      if (e.jump) {
+        stepJump(e, dtMs, plants, copies, events, newId);
+        enemies.push(e);
+        continue;
+      }
+      if (e.jumpsUsed < CREEPER.jumpAt.length && hpFraction(e) <= CREEPER.jumpAt[e.jumpsUsed]) {
+        startJump(e, random, events);
+        enemies.push(e);
+        continue;
+      }
+    }
     const lane = plants[e.lane];
     if (stats.attack === 'spit') {
       const col = spitColumn(lane, e, stats.range);
@@ -267,14 +353,16 @@ function substep(state: MatchState, dtMs: number, events: CombatEvent[]): MatchS
       }
     }
     e.attackMs = null;
-    e.x -= (stats.speed * walkMs) / 1000;
+    e.x -= (stats.speed * e.haste * walkMs) / 1000;
     if (e.x < 0) {
-      lives = Math.max(0, lives - 1);
-      events.push({ type: 'enemyEscaped', enemyId: e.id, lane: e.lane });
+      // El Creeper que cruza gana la partida el solo.
+      lives = e.kind === 'creeper' ? 0 : Math.max(0, lives - 1);
+      events.push({ type: 'enemyEscaped', enemyId: e.id, lane: e.lane, kind: e.kind });
       continue;
     }
     enemies.push(e);
   }
+  enemies.push(...copies.map((copy) => ({ ...copy })));
 
   // Escupitajos: dan a lo primero sembrado que encuentran en su carril (planta o mina) o desaparecen al salir
   // del tablero. Los que acaban de salir esperan al siguiente paso. Una mina destruida asi ya no explota.
@@ -301,7 +389,7 @@ function substep(state: MatchState, dtMs: number, events: CombatEvent[]): MatchS
       if (sown?.kind !== 'mine') return;
       const cell = { lane: laneIndex, col };
       if (sown.fuseMs === null) {
-        if (enemies.some((e) => e.hp > 0 && distanceToCell(e, cell) <= MINE.detectRadius)) {
+        if (enemies.some((e) => e.hp > 0 && !isAirborne(e) && distanceToCell(e, cell) <= MINE.detectRadius)) {
           lane[col] = { ...sown, fuseMs: MINE.countdownMs };
           events.push({ type: 'mineArmed', cell });
         }
@@ -339,6 +427,14 @@ function substep(state: MatchState, dtMs: number, events: CombatEvent[]): MatchS
       events.push({ type: 'bulletGone', bulletId: bullet.id });
     } else {
       bullets.push({ ...bullet, x: to });
+    }
+  }
+  // Sin el Creeper (T-008), sus copias y los demas se desconectan: la partida esta ganada.
+  if (bossDown || enemies.some((e) => e.kind === 'creeper' && e.hp <= 0)) {
+    for (const e of enemies) {
+      if (e.hp <= 0) continue;
+      e.hp = 0;
+      events.push({ type: 'enemyKilled', enemyId: e.id, at: { x: e.x, y: e.lane + 0.5 } });
     }
   }
   const alive = enemies.filter((e) => e.hp > 0);
@@ -381,7 +477,7 @@ export function distanceToCell(enemy: Enemy, cell: Cell): number {
  * elemento (`mineBlast`): la de fuego dana y la de hielo frena.
  */
 function explode(mine: Mine, cell: Cell, enemies: Array<Mutable<Enemy>>, events: CombatEvent[]): void {
-  const hit = enemies.filter((e) => e.hp > 0 && distanceToCell(e, cell) <= MINE.blastRadius);
+  const hit = enemies.filter((e) => e.hp > 0 && !isAirborne(e) && distanceToCell(e, cell) <= MINE.blastRadius);
   const { damage, slow } = mineBlast(mine.element);
   events.push({ type: 'mineExploded', cell, element: mine.element, enemyIds: hit.map((e) => e.id) });
   for (const e of hit) {
@@ -389,6 +485,71 @@ function explode(mine: Mine, cell: Cell, enemies: Array<Mutable<Enemy>>, events:
     if (slow) e.slow = refreshSlow(e.slow, slow);
     if (e.hp <= 0) events.push({ type: 'enemyKilled', enemyId: e.id, at: { x: e.x, y: e.lane + 0.5 } });
   }
+}
+
+/**
+ * El Creeper (T-008) cruzo un umbral de vida: se agacha y marca el carril de destino, uno al azar que no es el suyo.
+ * Gasta los umbrales que ya cruzo (un golpe fuerte que cruza dos da un solo salto).
+ */
+function startJump(e: Mutable<Enemy>, random: () => number, events: CombatEvent[]): void {
+  const others = Array.from({ length: BOARD.lanes }, (_, lane) => lane).filter((lane) => lane !== e.lane);
+  const to = others[Math.min(others.length - 1, Math.floor(random() * others.length))];
+  const warnMs = isEnraged(e) ? CREEPER.warnMs.enraged : CREEPER.warnMs.calm;
+  e.jumpsUsed = jumpsCrossed(e);
+  e.attackMs = null;
+  e.jump = { stage: 'crouch', from: e.lane, to, ms: warnMs, stageMs: warnMs };
+  events.push({ type: 'jumpWarned', enemyId: e.id, from: e.lane, to, warnMs });
+}
+
+/**
+ * Avanza el salto del Creeper. Al acabar el aviso despega: pasa al carril de destino y deja sus copias (gusanos
+ * acelerados) en el que abandona. Al acabar el vuelo aterriza y golpea lo primero sembrado que tiene delante; los
+ * umbrales que cruzo mientras saltaba se gastan, asi que no encadena dos saltos seguidos.
+ */
+function stepJump(
+  e: Mutable<Enemy>,
+  dtMs: number,
+  plants: Array<Array<Sown | null>>,
+  copies: Enemy[],
+  events: CombatEvent[],
+  newId: () => number,
+): void {
+  const jump = e.jump as Jump;
+  const ms = jump.ms - dtMs;
+  if (ms > 0) {
+    e.jump = { ...jump, ms };
+    return;
+  }
+  if (jump.stage === 'crouch') {
+    const count = isEnraged(e) ? CREEPER.copies.enraged : CREEPER.copies.calm;
+    const kind = CREEPER.copyKind;
+    const left = Array.from({ length: count }, (_, i) =>
+      newEnemy(newId(), kind, jump.from, e.x + i * CREEPER.copyGap, ENEMIES[kind].hp, CREEPER.copyHaste),
+    );
+    copies.push(...left);
+    e.lane = jump.to;
+    e.jump = { ...jump, stage: 'air', ms: CREEPER.airMs + ms, stageMs: CREEPER.airMs };
+    events.push({ type: 'jumped', enemyId: e.id, from: jump.from, to: jump.to, copies: left });
+    return;
+  }
+  e.jump = null;
+  e.attackMs = null;
+  e.jumpsUsed = jumpsCrossed(e);
+  const col = slamColumn(plants[e.lane], e.x, ENEMIES.creeper.halfLength);
+  const cell = col === null ? null : { lane: e.lane, col };
+  events.push({ type: 'landed', enemyId: e.id, lane: e.lane, cell });
+  if (cell) damageSown(plants, cell, CREEPER.slamDamage, events);
+}
+
+/**
+ * Columna de lo que golpea el Creeper al aterrizar en `x`: lo primero sembrado que tiene delante, contando lo que
+ * queda bajo su cuerpo (hasta `behind` casillas por detras de su centro). Null si no tiene nada delante.
+ */
+function slamColumn(lane: ReadonlyArray<Sown | null>, x: number, behind: number): number | null {
+  for (let col = lane.length - 1; col >= 0; col--) {
+    if (lane[col] && col + 0.5 <= x + behind) return col;
+  }
+  return null;
 }
 
 /** Quita vida a lo sembrado en `cell` (planta o mina). Si se queda sin vida, deja la casilla libre. */
@@ -439,7 +600,7 @@ function bittenColumn(lane: ReadonlyArray<Sown | null>, x: number, reach: number
 function firstInPath(enemies: Array<Mutable<Enemy>>, lane: number, from: number, to: number): Mutable<Enemy> | null {
   let first: Mutable<Enemy> | null = null;
   for (const e of enemies) {
-    if (e.lane !== lane || e.hp <= 0 || e.x < from || enemyFront(e) > to) continue;
+    if (e.lane !== lane || e.hp <= 0 || isAirborne(e) || e.x < from || enemyFront(e) > to) continue;
     if (!first || enemyFront(e) < enemyFront(first)) first = e;
   }
   return first;

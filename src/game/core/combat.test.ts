@@ -81,8 +81,8 @@ describe('gusano', () => {
     const one = spawnEnemy(createMatch(), 'worm', 2, HOLE_X);
     const two = spawnEnemy(one, 'worm', 4, HOLE_X);
     expect(two.enemies).toEqual([
-      { id: 1, kind: 'worm', lane: 2, x: HOLE_X, hp: worm.hp, attackMs: null, burn: null, slow: null },
-      { id: 2, kind: 'worm', lane: 4, x: HOLE_X, hp: worm.hp, attackMs: null, burn: null, slow: null },
+      { id: 1, kind: 'worm', lane: 2, x: HOLE_X, hp: worm.hp, attackMs: null, burn: null, slow: null, haste: 1, jump: null, jumpsUsed: 0 },
+      { id: 2, kind: 'worm', lane: 4, x: HOLE_X, hp: worm.hp, attackMs: null, burn: null, slow: null, haste: 1, jump: null, jumpsUsed: 0 },
     ]);
     expect(() => spawnEnemy(createMatch(), 'worm', BOARD.lanes, HOLE_X)).toThrow();
   });
@@ -273,7 +273,7 @@ describe('vidas y derrota', () => {
   it('cada enemigo que cruza el borde izquierdo resta una vida y desaparece', () => {
     const state = spawnEnemy(createMatch(), 'worm', 4, 0.05);
     const { state: after, events } = stepCombat(state, 1000);
-    expect(events).toEqual([{ type: 'enemyEscaped', enemyId: 1, lane: 4 }]);
+    expect(events).toEqual([{ type: 'enemyEscaped', enemyId: 1, lane: 4, kind: 'worm' }]);
     expect(after.enemies).toHaveLength(0);
     expect(after.lives).toBe(LIVES.start - 1);
   });
@@ -425,7 +425,7 @@ describe('mina de fuego (T-004)', () => {
     state = spawnEnemy(state, 'worm', 2, near.col + 0.5 + 2, TOUGH);
     const { events } = run(state, 20_000, 50);
     const at = (type: CombatEvent['type'], col: number) =>
-      events.filter((e) => e.type === type && 'cell' in e && e.cell.col === col).map((e) => e.t);
+      events.filter((e) => e.type === type && 'cell' in e && e.cell?.col === col).map((e) => e.t);
     expect(at('mineArmed', near.col)).toHaveLength(1);
     expect(at('mineArmed', cell.col)).toHaveLength(1);
     expect(at('mineArmed', cell.col)[0]).toBeGreaterThan(at('mineExploded', near.col)[0]);

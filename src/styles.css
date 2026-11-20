@@ -251,6 +251,68 @@ body {
 }
 @keyframes spark-spin { to { transform: rotate(360deg); } }
 
+/* ---------- Jefe (T-008): "Combate final", semillita del jefe y barra de vida de Creeper ---------- */
+.round-title.is-boss .round-number { font-size: 1.15rem; color: #ffd6df; letter-spacing: 0.02em; }
+/* La ronda del jefe: una pantallita de monitor en vez de semilla. */
+.round-seed.is-boss { width: 13px; border-radius: 3px; background: linear-gradient(180deg, #1c3a28, #071a10); border-color: #8a7550; box-shadow: inset 0 0 0 1.5px #efe0bc; }
+.round-seed.is-boss.is-current { background: radial-gradient(circle at 50% 45%, #b8ffd4, #39ff88 45%, #0b4a26); border-color: #5a4528; }
+.round-seed.is-boss.is-done { background: radial-gradient(circle at 35% 30%, #fff6c0, #ffd23f 55%, #d1920f); border-color: #6b4505; box-shadow: none; }
+
+.boss-bar {
+  --boss-edge: #39ff88; --boss-light: #eafff3; --boss-mid: #39ff88; --boss-dark: #13a352;
+  display: flex; align-items: center; gap: 10px; width: min(380px, calc(100vw - 32px)); padding: 7px 12px 8px 8px;
+  border-radius: 16px; border: 2px solid color-mix(in srgb, var(--boss-edge) 70%, transparent);
+  background: linear-gradient(180deg, rgba(43, 32, 52, 0.94), rgba(25, 17, 33, 0.94));
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35), 0 0 14px color-mix(in srgb, var(--boss-edge) 30%, transparent);
+  animation: boss-in 0.55s cubic-bezier(0.2, 1.4, 0.4, 1) both;
+}
+.boss-bar.is-enraged { --boss-edge: #ff5a7a; --boss-light: #ffe0e7; --boss-mid: #ff5a7a; --boss-dark: #b3173e; animation: boss-in 0.55s cubic-bezier(0.2, 1.4, 0.4, 1) both, boss-rage 0.9s ease-in-out infinite; }
+.boss-bar.is-down { --boss-edge: #ffe066; animation: boss-down 0.6s ease both; }
+@keyframes boss-in { from { opacity: 0; transform: translateY(-14px) scale(0.85); } to { opacity: 1; transform: none; } }
+@keyframes boss-rage { 0%, 100% { box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35), 0 0 10px rgba(255, 90, 122, 0.35); } 50% { box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35), 0 0 22px rgba(255, 90, 122, 0.75); } }
+@keyframes boss-down { 30% { transform: scale(1.06); } to { transform: none; } }
+
+/* Monitor en miniatura: carcasa crema, pantalla oscura y dos ojos de fosforo que parpadean. */
+.boss-face {
+  position: relative; flex: none; width: 34px; height: 30px; border-radius: 7px;
+  background: linear-gradient(160deg, #fff7e2, #c9b48a); border: 2px solid #5a4528;
+}
+.boss-face::before {
+  content: ''; position: absolute; inset: 3px 4px 5px; border-radius: 4px;
+  background: radial-gradient(circle at 35% 30%, #123a24, #071a10);
+}
+.boss-face::after {
+  content: ''; position: absolute; top: 9px; left: 9px; width: 4px; height: 6px; border-radius: 2px; background: var(--boss-mid);
+  box-shadow: 8px -1px 0 var(--boss-mid), 0 0 6px var(--boss-mid);
+  animation: boss-blink 3.2s steps(1) infinite;
+}
+.boss-bar.is-enraged .boss-face::before { background: radial-gradient(circle at 35% 30%, #40101e, #1c050b); }
+@keyframes boss-blink { 0%, 92% { transform: none; } 93%, 97% { transform: scaleY(0.2); } }
+
+.boss-body { flex: 1; display: grid; gap: 4px; min-width: 0; }
+.boss-label { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.boss-label strong { font-size: 1.02rem; font-weight: 900; color: #f6eaff; text-shadow: 0 2px 0 #1b0f24; letter-spacing: 0.03em; }
+.boss-phase {
+  font-family: ui-monospace, 'Cascadia Mono', 'Courier New', monospace; font-size: 0.78rem; font-weight: 900;
+  color: var(--boss-mid); text-shadow: 0 0 6px color-mix(in srgb, var(--boss-mid) 60%, transparent); white-space: nowrap;
+  animation: cost-pop 0.4s cubic-bezier(0.2, 1.6, 0.4, 1);
+}
+.boss-track {
+  position: relative; height: 14px; border-radius: 999px; overflow: hidden;
+  background: #120a19; border: 2px solid #0b0610; box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.6);
+}
+.boss-fill, .boss-trail { position: absolute; inset: 0 auto 0 0; width: var(--boss-hp); border-radius: inherit; }
+/* Lo que pierde se queda un momento en claro y luego se va. */
+.boss-trail { background: #fff3c4; transition: width 0.5s 0.25s ease-in; }
+.boss-fill {
+  background: linear-gradient(180deg, var(--boss-light), var(--boss-mid) 45%, var(--boss-dark));
+  box-shadow: 0 0 10px color-mix(in srgb, var(--boss-mid) 70%, transparent);
+  transition: width 0.15s ease-out;
+}
+/* Una marca por umbral de salto; las gastadas se apagan. */
+.boss-tick { position: absolute; top: 1px; bottom: 1px; width: 2px; margin-left: -1px; background: rgba(255, 255, 255, 0.85); box-shadow: 0 0 0 1px rgba(11, 6, 16, 0.6); }
+.boss-tick.is-spent { background: rgba(255, 255, 255, 0.25); }
+
 /* ---------- Carga ---------- */
 .loading {
   position: absolute; inset: 0; z-index: 3; display: grid; place-content: center; justify-items: center; gap: 18px;
@@ -452,6 +514,7 @@ body {
 @media (max-width: 1250px) {
   .hud { grid-template-columns: auto 1fr auto; grid-template-areas: 'tray . right' 'round round round'; }
   .round-info { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 8px; }
+  .boss-bar { flex-basis: 100%; max-width: min(380px, calc(100vw - 32px)); }
 }
 
 /* HUD compacto: con tres cartas (T-005), en un movil en horizontal no cabian bandeja, vidas, saldo y pausa. */

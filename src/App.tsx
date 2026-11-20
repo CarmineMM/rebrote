@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { CardId } from './game/core/match';
-import { EventBus, GameEvents, type CardPreview, type PlantPanel, type RoundInfo } from './game/EventBus';
+import { EventBus, GameEvents, type BossInfo, type CardPreview, type LossInfo, type PlantPanel, type RoundInfo } from './game/EventBus';
 import { Balance } from './ui/Balance';
 import { Card } from './ui/Card';
 import { DefeatScreen } from './ui/DefeatScreen';
@@ -22,7 +22,7 @@ const CARDS: ReadonlyArray<{ id: CardId; label: string }> = [
 
 /**
  * Pantalla completa con el HUD flotando encima del juego, menu de pausa con los ajustes (ADR-0007), ronda en curso
- * (T-007) y pantallas de derrota y de victoria. Con la partida acabada no se abre el menu de pausa: solo se puede
+ * (T-007) con la barra del jefe (T-008) y pantallas de derrota y de victoria. Con la partida acabada no se abre el menu de pausa: solo se puede
  * jugar otra vez.
  */
 export function App() {
@@ -33,6 +33,8 @@ export function App() {
   const [preview, setPreview] = useState<CardPreview | null>(null);
   const [plantPanel, setPlantPanel] = useState<PlantPanel | null>(null);
   const [round, setRound] = useState<RoundInfo | null>(null);
+  const [boss, setBoss] = useState<BossInfo | null>(null);
+  const [loss, setLoss] = useState<LossInfo | null>(null);
   const hudRef = useRef<HTMLElement>(null);
   const [paused, setPaused] = useState(false);
   const [lost, setLost] = useState(false);
@@ -49,7 +51,8 @@ export function App() {
 
   useEffect(() => {
     const onReady = () => setReady(true);
-    const onLost = () => {
+    const onLost = (info?: LossInfo) => {
+      setLoss(info ?? null);
       setLost(true);
       setPaused(false);
     };
@@ -66,6 +69,7 @@ export function App() {
     EventBus.on(GameEvents.matchLost, onLost);
     EventBus.on(GameEvents.matchWon, onWon);
     EventBus.on(GameEvents.roundChanged, setRound);
+    EventBus.on(GameEvents.bossChanged, setBoss);
     // Si la escena arranco antes que el HUD, que reenvie el estado.
     EventBus.emit(GameEvents.stateRequested);
     return () => {
@@ -78,6 +82,7 @@ export function App() {
       EventBus.off(GameEvents.matchLost, onLost);
       EventBus.off(GameEvents.matchWon, onWon);
       EventBus.off(GameEvents.roundChanged, setRound);
+      EventBus.off(GameEvents.bossChanged, setBoss);
     };
   }, []);
 
@@ -93,6 +98,7 @@ export function App() {
   /** Partida nueva desde cero (sin continuar la anterior). */
   const restart = useCallback(() => {
     setLost(false);
+    setLoss(null);
     setWon(false);
     setPaused(false);
     EventBus.emit(GameEvents.restartRequested);
@@ -148,7 +154,7 @@ export function App() {
             </span>
           ))}
         </div>
-        {round && <RoundHud round={round} />}
+        {round && <RoundHud round={round} boss={boss} />}
         <div className="hud-right">
           <Lives lives={lives} />
           <Balance balance={balance} />
@@ -176,7 +182,7 @@ export function App() {
         </div>
       )}
 
-      {lost && <DefeatScreen round={round} onRestart={restart} />}
+      {lost && <DefeatScreen round={round} loss={loss} onRestart={restart} />}
 
       {won && !lost && <VictoryScreen rounds={round?.total ?? 0} onRestart={restart} />}
 

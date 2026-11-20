@@ -22,13 +22,15 @@ export const GameEvents = {
    * infundir, lo que costaria (D-04: la carta muestra "x3 = 225" y se pone en rojo si no alcanza). Null al salir.
    */
   cardPreview: 'card-preview',
-  /** Phaser -> React. Sin payload: la partida se perdio; React muestra la pantalla de derrota. */
+  /** Phaser -> React. Payload: LossInfo. La partida se perdio; React muestra la pantalla de derrota. */
   matchLost: 'match-lost',
-  /**
-   * Phaser -> React. Sin payload: superada la ultima ronda (T-007); React muestra la victoria, provisional hasta que
-   * exista el jefe (T-008).
-   */
+  /** Phaser -> React. Sin payload: superada la ultima ronda, la del jefe (T-008); React muestra la victoria. */
   matchWon: 'match-won',
+  /**
+   * Phaser -> React. Payload: BossInfo | null. Vida y fase del Creeper (T-008) para su barra. Solo se manda si cambia.
+   * Al derrotarlo llega con la vida a 0; null cuando no hay jefe.
+   */
+  bossChanged: 'boss-changed',
   /**
    * Phaser -> React. Payload: RoundInfo. Ronda en curso (T-007): numero, fase, cuenta atras de la preparacion, cartas
    * de la bandeja y aviso. Solo se manda si algo cambia (en la preparacion, cada segundo).
@@ -89,11 +91,30 @@ export interface PlantPanel {
   below: PagePoint;
 }
 
+/** Como se perdio la partida. */
+export interface LossInfo {
+  /** El Creeper cruzo el jardin (T-008): se pierde aunque queden vidas. */
+  byBoss: boolean;
+}
+
+/** Barra del jefe (T-008). Sale del Creeper del estado y de `CREEPER` en balance. */
+export interface BossInfo {
+  name: string;
+  hp: number;
+  maxHp: number;
+  /** Fase 2: con la mitad de la vida o menos. */
+  enraged: boolean;
+  /** Umbrales de vida (fracciones) en los que salta de carril: la barra los marca. */
+  jumpAt: number[];
+}
+
 /** Ronda en curso (T-007). Sale de `round` en el estado y de `rounds.ts` en core. */
 export interface RoundInfo {
-  /** Ronda en curso, desde 1 ("Ronda 3 de 7"). */
+  /** Ronda en curso, desde 1 ("Ronda 3 de 10"). */
   number: number;
   total: number;
+  /** Ronda del combate contra el jefe (T-008), desde 1, o null si el mundo no tiene. */
+  bossRound: number | null;
   phase: RoundPhase;
   /** En la preparacion, segundos que faltan para el ataque (redondeados hacia arriba); null en otra fase. */
   prepSeconds: number | null;

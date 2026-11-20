@@ -1,7 +1,7 @@
 import * as Phaser from 'phaser';
-import { BOARD, ECONOMY, ENEMIES, LIMITS, MINE } from '../config/balance';
+import { BOARD, CREEPER, ECONOMY, ENEMIES, LIMITS, MINE } from '../config/balance';
 import { cellAt, cellCenter, type BoardPoint, type Cell } from '../core/board';
-import { isDefeated, spawnEnemy, stepCombat, type CombatEvent, type Enemy } from '../core/combat';
+import { isDefeated, isEnraged, spawnEnemy, stepCombat, type CombatEvent, type Enemy } from '../core/combat';
 import { rollKillReward } from '../core/economy';
 import {
   cardCost,
@@ -29,9 +29,12 @@ import { plantMaxHp } from '../core/plants';
 import {
   ROUND_COUNT,
   availableCards,
+  bossRoundIndex,
   createRound,
   infusableElements,
   infuseFeature,
+  isBossPreparing,
+  isBossRound,
   isUnlocked,
   isWon,
   roundScript,
@@ -40,10 +43,11 @@ import {
   unlockRound,
   type RoundEvent,
 } from '../core/rounds';
-import { EventBus, GameEvents, type CardPreview, type PagePoint, type PlantPanel, type RoundInfo } from '../EventBus';
+import { EventBus, GameEvents, type BossInfo, type CardPreview, type LossInfo, type PagePoint, type PlantPanel, type RoundInfo } from '../EventBus';
 import { createAmbience, type Ambience } from '../view/ambience';
 import { BoardLabel, drawArea, drawCell, type LabelLine } from '../view/boardMarks';
 import { BulletView } from '../view/bulletView';
+import { CreeperOmen, CreeperView, OMEN_LEAP_MS, bossLoadProgress } from '../view/creeperView';
 import { Effects } from '../view/effects';
 import { DRAG_LOOK, FusionDragView, dragGround } from '../view/fusionDragView';
 import { DEPTH, SCENERY, entityDepth, perspective, viewFor } from '../view/layout';
@@ -53,7 +57,7 @@ import { PlantView, plantPlacement } from '../view/plantView';
 import { QUALITY_PROFILES, type QualityLevel, type QualityProfile } from '../view/quality';
 import { SpitView } from '../view/spitView';
 import { MINE_SIZE, SHOOTER_SIZE, TEX, registerTextures, shooterTexture, mineTexture } from '../view/textures';
-import { WormView } from '../view/wormView';
+import { WormView, type EnemyView } from '../view/wormView';
 
 /** Solo aspecto y ritmo de las animaciones. Los numeros de juego viven en balance.ts. */
 const LOOK = {
@@ -86,6 +90,11 @@ const LOOK = {
   clearedText: { color: '#fff6c0', stroke: '#24561c', fontSize: 48 },
   /** Partida ganada (T-007): tiempo de celebracion antes de que React muestre la victoria. */
   victoryDelayMs: 1600,
+  /** Creeper (T-008): se escapa (en el camino) o lo derrotan (en el centro del cesped). */
+  bossEscapedText: { color: '#ffd6df', stroke: '#5a0d1a', fontSize: 40 },
+  bossDownText: '¡Creeper atrapado!',
+  /** Copia que deja el Creeper al saltar: destello verde de "copiarse" sobre ella. */
+  copyGlow: 0x39ff88,
 } as const;
 
 /** Atajos de desarrollo para probar las rondas. */
@@ -161,7 +170,15 @@ export class BoardScene extends Phaser.Scene {
   private quality: QualityProfile = QUALITY_PROFILES.medium;
   private resume: MatchState | undefined;
   private plantViews = new Map<string, PlantView>();
-  private wormViews = new Map<number, WormView>();
+  /** Vistas de los enemigos por id: gusanos (`WormView`) y el Creeper (`CreeperView`, T-008). */
+  private wormViews = new Map<number, EnemyView>();
+  /** Creeper preparandose a la derecha (T-008), mientras toca verlo. */
+  private omen: CreeperOmen | null = null;
+  /** La partida se perdio porque el Creeper cruzo el jardin (T-008). */
+  private lostToBoss = false;
+  /** Ultima barra del jefe enviada al HUD, para avisar solo cuando cambia. */
+  private bossKey = '';
+  private lastBoss: BossInfo | null = null;
   private bulletViews = new Map<number, BulletView>();
   private mineViews = new Map<string, MineView>();
   private spitViews = new Map<number, SpitView>();
@@ -222,6 +239,10 @@ export class BoardScene extends Phaser.Scene {
     this.mineViews = new Map();
     this.spitViews = new Map();
     this.previewKey = '';
+    this.omen = null;
+    this.lostToBoss = false;
+    this.bossKey = '';
+    this.lastBoss = null;
 
     registerTextures(this, this.quality.renderScale);
     this.fitView();
@@ -233,6 +254,7 @@ export class BoardScene extends Phaser.Scene {
     this.fx = new Effects(this, this.quality);
     this.cardLabel = new BoardLabel(this, this.fx);
     this.restoreEntities();
+    this.syncOmen(false);
 
     this.bindPointer();
     this.bindHud();
@@ -553,7 +575,7 @@ export class BoardScene extends Phaser.Scene {
   private advance(delta: number): void {
     const round = stepRound(this.match, delta, SCENERY.holeX);
     this.match = round.state;
-    round.spawned.forEach((enemy) => this.addWormView(enemy, true));
+    this.showSpawned(round.spawned);
     round.events.forEach((event) => this.showRoundEvent(event));
 
     const livesBefore = this.match.lives;
@@ -569,8 +591,44 @@ export class BoardScene extends Phaser.Scene {
       if (mine) view.sync(mine);
     });
     if (this.match.lives !== livesBefore) this.emitLives();
+    this.syncOmen(true);
     this.emitRound();
+    this.emitBoss();
     if (isDefeated(this.match)) this.enterDefeat(LOOK.defeatDelayMs);
+  }
+
+  /**
+   * Enemigos que acaban de salir por su agujero. El Creeper (T-008) salta desde donde se preparaba y sale del suelo al
+   * caer; a los acelerados de las rondas 8 y 9 les llega un chispazo suyo.
+   */
+  private showSpawned(spawned: readonly Enemy[]): void {
+    for (const enemy of spawned) {
+      if (enemy.kind === 'creeper' && this.omen) {
+        this.omen.leapTo({ x: enemy.x, y: enemy.lane + 0.64 });
+        this.omen = null;
+        this.addWormView(enemy, true, OMEN_LEAP_MS);
+      } else {
+        this.addWormView(enemy, true);
+      }
+    }
+    if (this.omen) {
+      const lanes = new Set(spawned.filter((enemy) => enemy.haste > 1).map((enemy) => enemy.lane));
+      lanes.forEach((lane) => this.omen?.zap(lane));
+    }
+  }
+
+  /**
+   * Creeper preparandose (T-008): aparece cuando la ronda lo dice (con su entrada si `animate`), llena su barra y se va
+   * si deja de tocar sin combate (por ejemplo, con el atajo de saltar de ronda).
+   */
+  private syncOmen(animate: boolean): void {
+    const wanted = isBossPreparing(this.match);
+    if (wanted && !this.omen) this.omen = new CreeperOmen(this, this.fx, bossLoadProgress(this.match), animate);
+    if (!wanted && this.omen) {
+      this.omen.vanish();
+      this.omen = null;
+    }
+    this.omen?.setProgress(bossLoadProgress(this.match));
   }
 
   /** Lo que pasa con las rondas (T-007). El aviso del concepto nuevo y la cuenta atras los pinta React. */
@@ -582,12 +640,12 @@ export class BoardScene extends Phaser.Scene {
       case 'roundCleared':
         if (event.index + 1 < ROUND_COUNT) this.celebrate(`¡Ronda ${event.index + 1} superada!`);
         break;
+      case 'won':
+        this.enterVictory(LOOK.victoryDelayMs);
+        break;
       case 'roundStarted':
         // Lo recien desbloqueado puede cambiar lo que pasa al soltar la carta elegida (infundir).
         this.refreshHighlight();
-        break;
-      case 'won':
-        this.enterVictory(LOOK.victoryDelayMs);
         break;
     }
   }
@@ -683,17 +741,57 @@ export class BoardScene extends Phaser.Scene {
         this.refreshHighlight();
         break;
       }
-      case 'enemyKilled':
-        this.wormViews.get(event.enemyId)?.die();
+      case 'enemyKilled': {
+        const view = this.wormViews.get(event.enemyId);
+        view?.die();
         this.wormViews.delete(event.enemyId);
+        if (view instanceof CreeperView) this.cameras.main.shake(380, 0.008);
         this.rewardKill(event.at);
         break;
+      }
       case 'enemyEscaped':
         this.wormViews.get(event.enemyId)?.escape();
         this.wormViews.delete(event.enemyId);
-        this.showLifeLost(event.lane);
+        if (event.kind === 'creeper') this.showBossEscaped(event.lane);
+        else this.showLifeLost(event.lane);
+        break;
+      case 'jumpWarned':
+        this.creeperView(event.enemyId)?.warn();
+        break;
+      case 'jumped':
+        this.creeperView(event.enemyId)?.takeoff();
+        event.copies.forEach((copy) => this.showCopy(copy));
+        break;
+      case 'landed':
+        this.creeperView(event.enemyId)?.land();
+        if (event.cell) this.sownHurt(event.cell);
+        this.cameras.main.shake(200, 0.005);
         break;
     }
+  }
+
+  private creeperView(id: number): CreeperView | null {
+    const view = this.wormViews.get(id);
+    return view instanceof CreeperView ? view : null;
+  }
+
+  /** Copia que deja el Creeper al saltar (J-03): sale del suelo donde estaba el, con un destello verde de "copiarse". */
+  private showCopy(copy: Enemy): void {
+    this.addWormView(copy, true);
+    const foot = { x: copy.x, y: copy.lane + 0.64 };
+    const at = perspective.toScreen(foot);
+    const width = perspective.cellWidthAt(foot);
+    this.fx.glow(at.x, at.y - width * 0.3, width * 1.4, LOOK.copyGlow, entityDepth(at.y) + 1, 420);
+    this.fx.ring(at.x, at.y - width * 0.3, width * 1.1, LOOK.copyGlow, entityDepth(at.y) + 1, 320);
+    this.fx.bits(at.x, at.y - width * 0.3, 8);
+  }
+
+  /** El Creeper cruzo el jardin (T-008): la partida se pierde en el acto, con un temblor fuerte. */
+  private showBossEscaped(lane: number): void {
+    this.lostToBoss = true;
+    const at = perspective.toScreen({ x: LOOK.lifeLostX, y: lane + 0.5 });
+    this.fx.floatText('¡Se escapó!', at.x + 40, at.y - perspective.cellWidthAt({ x: LOOK.lifeLostX, y: lane + 0.5 }) * 0.8, LOOK.bossEscapedText);
+    this.cameras.main.shake(420, 0.008);
   }
 
   /** Una planta o una mina pierde vida (mordisco o escupitajo): se encoge y destella; la planta amarillea. */
@@ -703,8 +801,12 @@ export class BoardScene extends Phaser.Scene {
     this.mineViews.get(cellKey(cell))?.bitten();
   }
 
-  private addWormView(enemy: Enemy, emerge: boolean): void {
-    this.wormViews.set(enemy.id, new WormView(this, this.fx, enemy, emerge));
+  private addWormView(enemy: Enemy, emerge: boolean, emergeDelayMs = 0): void {
+    const view =
+      enemy.kind === 'creeper'
+        ? new CreeperView(this, this.fx, enemy, emerge, emergeDelayMs)
+        : new WormView(this, this.fx, enemy, emerge, emergeDelayMs);
+    this.wormViews.set(enemy.id, view);
   }
 
   private addPlantView(cell: Cell, plant: Plant, sprout: boolean): void {
@@ -738,7 +840,8 @@ export class BoardScene extends Phaser.Scene {
     this.passiveIncome?.remove();
     this.clearProjectiles();
     this.wormViews.forEach((worm) => worm.cheer());
-    this.time.delayedCall(delayMs, () => EventBus.emit(GameEvents.matchLost));
+    const loss: LossInfo = { byBoss: this.lostToBoss };
+    this.time.delayedCall(delayMs, () => EventBus.emit(GameEvents.matchLost, loss));
   }
 
   /**
@@ -755,9 +858,12 @@ export class BoardScene extends Phaser.Scene {
     this.pickPlant(null);
     this.passiveIncome?.remove();
     this.clearProjectiles();
+    this.omen?.vanish();
+    this.omen = null;
     this.emitRound();
+    this.emitBoss();
     if (delayMs > 0) {
-      this.celebrate('¡Jardín a salvo!');
+      this.celebrate(isBossRound(this.match.round.index) ? LOOK.bossDownText : '¡Jardín a salvo!');
       for (let i = 0; i < 6; i++) {
         this.time.delayedCall(180 + i * 190, () => {
           const at = perspective.toScreen({ x: Phaser.Math.FloatBetween(1, BOARD.columns - 1), y: Phaser.Math.FloatBetween(0.5, BOARD.lanes - 0.5) });
@@ -1345,9 +1451,11 @@ export class BoardScene extends Phaser.Scene {
   /** Avisa al HUD de la ronda en curso (T-007), solo si cambia: en la preparacion, la cuenta atras cambia cada segundo. */
   private emitRound(): void {
     const { round } = this.match;
+    const bossRound = bossRoundIndex();
     const info: RoundInfo = {
       number: round.index + 1,
       total: ROUND_COUNT,
+      bossRound: bossRound === null ? null : bossRound + 1,
       phase: round.phase,
       prepSeconds: round.phase === 'prep' ? Math.ceil(round.prepMs / 1000) : null,
       cards: availableCards(this.match),
@@ -1360,11 +1468,38 @@ export class BoardScene extends Phaser.Scene {
     EventBus.emit(GameEvents.roundChanged, info);
   }
 
+  /**
+   * Avisa al HUD de la vida y la fase del Creeper (T-008), solo si cambian. Derrotado, la barra se queda a 0 hasta la
+   * victoria; si se escapo, se queda como estaba.
+   */
+  private emitBoss(): void {
+    const boss = this.match.enemies.find((enemy) => enemy.kind === 'creeper');
+    let info: BossInfo | null = this.lastBoss;
+    if (boss) {
+      info = {
+        name: 'Creeper',
+        hp: Math.max(0, Math.ceil(boss.hp)),
+        maxHp: ENEMIES.creeper.hp,
+        enraged: isEnraged(boss),
+        jumpAt: [...CREEPER.jumpAt],
+      };
+    } else if (this.lastBoss && !this.lostToBoss) {
+      info = { ...this.lastBoss, hp: 0 };
+    }
+    this.lastBoss = info;
+    const key = JSON.stringify(info);
+    if (key === this.bossKey) return;
+    this.bossKey = key;
+    EventBus.emit(GameEvents.bossChanged, info);
+  }
+
   private emitState(): void {
     this.emitBalance();
     this.emitLives();
     this.roundKey = '';
     this.emitRound();
+    this.bossKey = '';
+    this.emitBoss();
     EventBus.emit(GameEvents.selectionChanged, this.selected);
     // El precio de infusion que tuviera el HUD era de la escena anterior (por ejemplo, al cambiar la calidad).
     this.previewKey = '';

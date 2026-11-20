@@ -78,6 +78,20 @@ export const TEX = {
   armorPlate: 'unit-armor-plate',
   /** Escupitajo del escupidor (T-007). */
   spit: 'unit-spit',
+  /**
+   * Creeper (T-008): cabeza de monitor antiguo con la cara en la pantalla (tranquila, mordiendo y dolorida; en la
+   * fase 2, en rojo y enfadada), la de "cargando" mientras se prepara, y su anillo de carcasa con rejilla y luz.
+   */
+  creeperHead: 'unit-creeper-head',
+  creeperHeadBite: 'unit-creeper-head-bite',
+  creeperHeadHurt: 'unit-creeper-head-hurt',
+  creeperHeadAngry: 'unit-creeper-head-angry',
+  creeperHeadAngryBite: 'unit-creeper-head-angry-bite',
+  creeperHeadAngryHurt: 'unit-creeper-head-angry-hurt',
+  creeperHeadLoading: 'unit-creeper-head-loading',
+  creeperSegment: 'unit-creeper-segment',
+  /** Rayas de velocidad del gusano acelerado por Creeper (T-008), detras de la cola. */
+  hasteStreak: 'fx-haste-streak',
 } as const;
 
 // La forma de la disparadora (pies, canones, puntos del tallo y cabeza) vive en shooterShape.ts, sin Phaser.
@@ -125,6 +139,21 @@ export const WORM_SIZE = {
   head: { width: 104, height: 104, cx: 52, cy: 62, r: 34 },
   segment: { size: 64, r: 27 },
 } as const;
+/**
+ * Pantalla de la cabeza del Creeper (T-008), en pixeles de su textura (la misma medida que la cabeza del gusano).
+ * `bar` es la barra de "cargando" que se llena mientras se prepara: la vista pinta encima lo que lleva.
+ */
+export const CREEPER_SCREEN = {
+  x: 23,
+  y: 37,
+  width: 52,
+  height: 46,
+  bar: { x: 31, y: 74, width: 36, height: 5 },
+  /** Punta de la antena, donde parpadea su luz. */
+  antenna: { x: 67, y: 9 },
+} as const;
+/** Rayas de velocidad del gusano acelerado (T-008): salen de la izquierda, junto a la cola. */
+export const HASTE_STREAK_SIZE = { width: 64, height: 28 } as const;
 /** Bala de la disparadora: una semilla con estela. `cx` es el centro de la semilla (la estela queda detras). */
 export const SEED_SIZE = { width: 48, height: 28, cx: 32 } as const;
 /** Escupitajo (T-007): una gota de moco verde que vuela a la izquierda. `cx` es el centro de la gota (la estela va detras). */
@@ -236,6 +265,20 @@ export function registerTextures(scene: Phaser.Scene, scale = 1): void {
   paint(TEX.armorHelmet, head.width, head.height, paintArmorHelmet);
   paint(TEX.armorPlate, segment.size, segment.size, paintArmorPlate);
   paint(TEX.spit, SPIT_SIZE.width, SPIT_SIZE.height, paintSpit);
+  const creeperHeads: Array<[string, CreeperMood, CreeperScreenPalette]> = [
+    [TEX.creeperHead, 'idle', CREEPER_SCREENS.calm],
+    [TEX.creeperHeadBite, 'bite', CREEPER_SCREENS.calm],
+    [TEX.creeperHeadHurt, 'hurt', CREEPER_SCREENS.calm],
+    [TEX.creeperHeadAngry, 'idle', CREEPER_SCREENS.angry],
+    [TEX.creeperHeadAngryBite, 'bite', CREEPER_SCREENS.angry],
+    [TEX.creeperHeadAngryHurt, 'hurt', CREEPER_SCREENS.angry],
+    [TEX.creeperHeadLoading, 'loading', CREEPER_SCREENS.calm],
+  ];
+  for (const [key, mood, screen] of creeperHeads) {
+    paint(key, head.width, head.height, (ctx, _w, _h, scale) => paintCreeperHead(ctx, mood, screen, scale));
+  }
+  paint(TEX.creeperSegment, segment.size, segment.size, (ctx, w) => paintCreeperSegment(ctx, w));
+  paint(TEX.hasteStreak, HASTE_STREAK_SIZE.width, HASTE_STREAK_SIZE.height, paintHasteStreak);
 }
 
 // ---------------------------------------------------------------------------
@@ -2445,4 +2488,279 @@ function paintSpit(ctx: Ctx, _w: number, h: number): void {
   // Un pixel de la corrupcion dentro de la gota.
   ctx.fillStyle = 'rgba(180, 140, 255, 0.9)';
   ctx.fillRect(cx + 2, cy + 1, 3.5, 3.5);
+}
+
+// ---------------------------------------------------------------------------
+// Creeper (T-008)
+
+/** Carcasa del Creeper: plastico crema de ordenador antiguo, con contorno marron. */
+const CASING = { light: '#fff7e2', mid: '#efe0bc', dark: '#c9b48a', back: '#b9a479', outline: '#5a4528' } as const;
+
+interface CreeperScreenPalette {
+  /** Fosforo de la cara (y su brillo) sobre el fondo oscuro de la pantalla. */
+  phosphor: string;
+  glow: string;
+  bg: readonly [string, string];
+  /** Cejas de enfado (fase 2). */
+  angry: boolean;
+}
+
+const CREEPER_SCREENS = {
+  calm: { phosphor: '#39ff88', glow: 'rgba(57, 255, 136, 0.9)', bg: ['#123a24', '#071a10'], angry: false },
+  angry: { phosphor: '#ff5a7a', glow: 'rgba(255, 70, 110, 0.95)', bg: ['#40101e', '#1c050b'], angry: true },
+} as const satisfies Record<string, CreeperScreenPalette>;
+
+type CreeperMood = 'idle' | 'bite' | 'hurt' | 'loading';
+
+function roundRect(ctx: Ctx, x: number, y: number, w: number, h: number, r: number): void {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
+/**
+ * Cabeza del Creeper: un monitor antiguo de carcasa crema, visto un poco de lado, con una antena de luz roja en lo
+ * alto (se movia por ARPANET). La cara va en la pantalla, en fosforo verde (rojo en la fase 2) con lineas de barrido.
+ * - idle: ojos grandes que miran adelante y sonrisa de pillo.
+ * - bite: boca abierta con dientes de pixel; en la fase 2, ademas, cejas de enfado (todas las caras de la fase 2).
+ * - hurt: ojos apretados y la imagen con un tiron de interferencia.
+ * - loading: ojos cerrados de concentracion, "CARGANDO" y el marco de la barra (la vista la va llenando).
+ */
+function paintCreeperHead(ctx: Ctx, mood: CreeperMood, screen: CreeperScreenPalette, scale: number): void {
+  const S = CREEPER_SCREEN;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+
+  // Antena con su luz.
+  ctx.strokeStyle = CASING.outline;
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(60, 30);
+  ctx.quadraticCurveTo(62, 18, S.antenna.x, S.antenna.y + 4);
+  ctx.stroke();
+  circle(ctx, S.antenna.x, S.antenna.y, 8, 'rgba(255, 90, 95, 0.3)');
+  const led = ctx.createRadialGradient(S.antenna.x - 1.5, S.antenna.y - 1.5, 0.5, S.antenna.x, S.antenna.y, 5.5);
+  led.addColorStop(0, '#fff0f0');
+  led.addColorStop(0.5, '#ff5a5f');
+  led.addColorStop(1, '#a3161c');
+  circle(ctx, S.antenna.x, S.antenna.y, 5, led);
+
+  // Fondo de la carcasa (asoma arriba y a la derecha: da volumen) con su rejilla.
+  roundRect(ctx, 26, 24, 66, 62, 12);
+  ctx.fillStyle = CASING.back;
+  ctx.fill();
+  ctx.strokeStyle = CASING.outline;
+  ctx.lineWidth = 3.5;
+  ctx.stroke();
+  ctx.strokeStyle = 'rgba(90, 69, 40, 0.55)';
+  ctx.lineWidth = 2;
+  for (let i = 0; i < 4; i++) {
+    ctx.beginPath();
+    ctx.moveTo(85, 38 + i * 8);
+    ctx.lineTo(89, 36 + i * 8);
+    ctx.stroke();
+  }
+
+  // Frente de la carcasa.
+  const front = ctx.createRadialGradient(26, 36, 4, 48, 60, 50);
+  front.addColorStop(0, CASING.light);
+  front.addColorStop(0.5, CASING.mid);
+  front.addColorStop(1, CASING.dark);
+  roundRect(ctx, 15, 30, 68, 62, 13);
+  ctx.fillStyle = front;
+  ctx.fill();
+  ctx.strokeStyle = CASING.outline;
+  ctx.lineWidth = 3.5;
+  ctx.stroke();
+  // Lucecita de encendido y un par de botones.
+  circle(ctx, 74, 87, 2.4, screen.phosphor);
+  ctx.fillStyle = 'rgba(90, 69, 40, 0.5)';
+  ctx.fillRect(58, 85.5, 7, 3);
+  ctx.fillRect(48, 85.5, 7, 3);
+
+  // Pantalla.
+  ctx.save();
+  roundRect(ctx, S.x, S.y, S.width, S.height, 9);
+  const bg = ctx.createRadialGradient(S.x + 18, S.y + 14, 2, S.x + S.width / 2, S.y + S.height / 2, 36);
+  bg.addColorStop(0, screen.bg[0]);
+  bg.addColorStop(1, screen.bg[1]);
+  ctx.fillStyle = bg;
+  ctx.fill();
+  ctx.clip();
+
+  ctx.strokeStyle = screen.phosphor;
+  ctx.fillStyle = screen.phosphor;
+  ctx.shadowColor = screen.glow;
+  ctx.shadowBlur = 6 * scale;
+  const glitch = mood === 'hurt' ? 3 : 0;
+  // Ojos: el de delante (izquierda) mas grande, como los del gusano.
+  const eyes = [
+    { x: 37, y: 53, rx: 7.5, ry: 9.5 },
+    { x: 57, y: 52, rx: 6.5, ry: 8.5 },
+  ];
+  if (mood === 'hurt') {
+    ctx.lineWidth = 3;
+    eyes.forEach((eye, i) => {
+      const dir = i === 0 ? 1 : -1;
+      const ex = eye.x + (i === 0 ? glitch : -glitch);
+      ctx.beginPath();
+      ctx.moveTo(ex - dir * 5, eye.y - 6);
+      ctx.lineTo(ex + dir * 4, eye.y);
+      ctx.lineTo(ex - dir * 5, eye.y + 6);
+      ctx.stroke();
+    });
+  } else if (mood === 'loading') {
+    ctx.lineWidth = 3;
+    for (const eye of eyes) {
+      ctx.beginPath();
+      ctx.arc(eye.x, eye.y - 1, eye.rx * 0.8, 0.15 * Math.PI, 0.85 * Math.PI);
+      ctx.stroke();
+    }
+  } else {
+    for (const eye of eyes) {
+      ellipse(ctx, eye.x, eye.y, eye.rx, eye.ry, screen.phosphor);
+    }
+    ctx.shadowBlur = 0;
+    for (const eye of eyes) {
+      // Pupila de pixel mirando adelante, con su brillo.
+      ctx.fillStyle = screen.bg[1];
+      ctx.fillRect(eye.x - eye.rx * 0.75, eye.y - 2, eye.rx * 0.95, eye.ry * 0.9);
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+      ctx.fillRect(eye.x - eye.rx * 0.55, eye.y - 1, 2.2, 2.2);
+    }
+    ctx.fillStyle = screen.phosphor;
+    ctx.shadowBlur = 6 * scale;
+  }
+  if (screen.angry || mood === 'bite') {
+    // Cejas: decididas al morder; de enfado, mas marcadas, en la fase 2.
+    ctx.lineWidth = screen.angry ? 3.4 : 2.6;
+    const tilt = screen.angry ? 7 : 4;
+    for (const eye of eyes) {
+      ctx.beginPath();
+      ctx.moveTo(eye.x - eye.rx - 1, eye.y - eye.ry - 4);
+      ctx.lineTo(eye.x + eye.rx, eye.y - eye.ry - 4 + tilt);
+      ctx.stroke();
+    }
+  }
+
+  // Boca.
+  ctx.lineWidth = 2.6;
+  if (mood === 'bite') {
+    roundRect(ctx, 33, 65, 22, 12, 4);
+    ctx.stroke();
+    ctx.fillRect(36, 65.5, 4, 3.5);
+    ctx.fillRect(47, 65.5, 4, 3.5);
+    ctx.fillRect(41, 73.5, 4, 3);
+  } else if (mood === 'hurt') {
+    ctx.beginPath();
+    ctx.moveTo(37 + glitch, 72);
+    ctx.lineTo(41 + glitch, 69);
+    ctx.lineTo(45 + glitch, 72);
+    ctx.lineTo(49 + glitch, 69);
+    ctx.lineTo(53 + glitch, 72);
+    ctx.stroke();
+  } else if (mood === 'loading') {
+    ctx.shadowBlur = 3 * scale;
+    ctx.font = '900 8px ui-monospace, "Courier New", monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('CARGANDO', S.bar.x + S.bar.width / 2, S.bar.y - 3);
+    ctx.lineWidth = 1.4;
+    ctx.strokeRect(S.bar.x - 1.5, S.bar.y - 1.5, S.bar.width + 3, S.bar.height + 3);
+  } else {
+    ctx.beginPath();
+    ctx.arc(44, 63, 9, 0.18 * Math.PI, 0.82 * Math.PI);
+    ctx.stroke();
+    ctx.fillRect(40, 70.5, 3.5, 3.5);
+  }
+  ctx.shadowBlur = 0;
+
+  // Lineas de barrido y, dolorido, una franja de interferencia.
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.22)';
+  for (let y = S.y + 1; y < S.y + S.height; y += 3) ctx.fillRect(S.x, y, S.width, 1);
+  if (mood === 'hurt') {
+    ctx.fillStyle = screen.glow.replace(/[\d.]+\)$/, '0.35)');
+    ctx.fillRect(S.x, 58, S.width, 4);
+    ctx.fillRect(S.x, 66, S.width, 2);
+  }
+  // Brillo del cristal abombado.
+  ellipse(ctx, S.x + 13, S.y + 9, 13, 5, 'rgba(255, 255, 255, 0.16)', -0.45);
+  ctx.restore();
+
+  // Marco de la pantalla.
+  roundRect(ctx, S.x, S.y, S.width, S.height, 9);
+  ctx.strokeStyle = CASING.outline;
+  ctx.lineWidth = 3;
+  ctx.stroke();
+  // Reflejo de la carcasa.
+  ellipse(ctx, 24, 35, 7, 3, 'rgba(255, 255, 255, 0.55)', -0.5);
+}
+
+/** Anillo del Creeper: un modulo de carcasa crema con rejilla y una luz de fosforo que asoma por el lado derecho. */
+function paintCreeperSegment(ctx: Ctx, w: number): void {
+  const c = w / 2;
+  const { r } = WORM_SIZE.segment;
+  const g = ctx.createRadialGradient(c - 9, c - 10, 3, c, c, r);
+  g.addColorStop(0, CASING.light);
+  g.addColorStop(0.55, CASING.mid);
+  g.addColorStop(1, CASING.dark);
+  circle(ctx, c, c, r, g);
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(c, c, r, 0, Math.PI * 2);
+  ctx.clip();
+  // Rejilla en el lado derecho (el izquierdo lo tapa el anillo de delante).
+  ctx.strokeStyle = 'rgba(90, 69, 40, 0.55)';
+  ctx.lineWidth = 2.4;
+  for (let i = -1; i <= 1; i++) {
+    ctx.beginPath();
+    ctx.moveTo(c + 6, c - 4 + i * 8);
+    ctx.lineTo(c + 18, c - 6 + i * 8);
+    ctx.stroke();
+  }
+  ctx.restore();
+  circle(ctx, c + 12, c + 13, 3.2, '#39ff88');
+  circle(ctx, c + 12, c + 13, 1.4, '#eafff3');
+  ctx.strokeStyle = CASING.outline;
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.arc(c, c, r, 0, Math.PI * 2);
+  ctx.stroke();
+  ellipse(ctx, c - 9, c - 12, 8, 5, 'rgba(255, 255, 255, 0.5)', -0.5);
+}
+
+/** Rayas de velocidad: tres trazos verde neon con borde oscuro, que se apagan hacia la derecha. */
+function paintHasteStreak(ctx: Ctx, w: number, h: number): void {
+  ctx.lineCap = 'round';
+  const lines: Array<[number, number]> = [
+    [h * 0.24, 0.62],
+    [h * 0.52, 0.9],
+    [h * 0.8, 0.5],
+  ];
+  for (const [y, length] of lines) {
+    const x0 = 6;
+    const x1 = x0 + (w - 12) * length;
+    const fade = ctx.createLinearGradient(x0, 0, x1, 0);
+    fade.addColorStop(0, 'rgba(19, 96, 58, 0.95)');
+    fade.addColorStop(1, 'rgba(19, 96, 58, 0)');
+    ctx.strokeStyle = fade;
+    ctx.lineWidth = 7;
+    ctx.beginPath();
+    ctx.moveTo(x0, y);
+    ctx.lineTo(x1, y);
+    ctx.stroke();
+    const neon = ctx.createLinearGradient(x0, 0, x1, 0);
+    neon.addColorStop(0, 'rgba(234, 255, 243, 1)');
+    neon.addColorStop(0.3, 'rgba(57, 255, 136, 0.95)');
+    neon.addColorStop(1, 'rgba(57, 255, 136, 0)');
+    ctx.strokeStyle = neon;
+    ctx.lineWidth = 3.5;
+    ctx.beginPath();
+    ctx.moveTo(x0, y);
+    ctx.lineTo(x1, y);
+    ctx.stroke();
+  }
 }

@@ -106,6 +106,49 @@ export const ENEMIES = {
     spitSpeed: 4,
     halfLength: 0.4,
   },
+  /**
+   * Creeper (T-008), jefe del mundo 1 y unico enemigo de la ronda 10: muerde como el gusano, con mucha mas vida, y
+   * salta de carril al perder vida (`CREEPER`). Mas grande que el gusano: le dan antes y se para mas lejos a morder.
+   */
+  creeper: {
+    hp: 4000, // PROVISIONAL: con una defensa repartida, el combate dura cerca de un minuto
+    /** Casillas por segundo. PROVISIONAL. */
+    speed: 0.2,
+    attack: 'bite',
+    biteDamage: 120, // PROVISIONAL
+    biteIntervalMs: 1000, // PROVISIONAL
+    firstBiteMs: 500,
+    reach: 0.85,
+    halfLength: 0.62,
+  },
+} as const;
+
+/**
+ * Lo propio del Creeper (T-008; J-01 a J-05 cerradas el 20 nov 2026). Salta de carril al perder vida: cada umbral
+ * de `jumpAt` (fraccion de su vida maxima) que cruza provoca un salto. Avisa del carril de destino (`warnMs`), vuela
+ * (`airMs`) y al aterrizar golpea lo primero sembrado que tiene delante (`slamDamage`). Al despegar deja copias suyas
+ * (gusanos normales, acelerados) en el carril que abandona. Por debajo de `enragedBelow` entra en su fase 2: salta
+ * cada 10 % en vez de cada 20 %, avisa menos y deja dos copias en vez de una. Si cruza el borde izquierdo, se pierde
+ * la partida. Al derrotarlo se desconectan sus copias.
+ */
+export const CREEPER = {
+  /** Umbrales de vida que lo hacen saltar: cada 20 % en la fase 1 y cada 10 % en la 2 (que empieza saltando en el 50 %). */
+  jumpAt: [0.8, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1],
+  /** Fase 2: con esta fraccion de vida o menos. */
+  enragedBelow: 0.5,
+  /** Aviso antes de despegar: se agacha y marca el carril de destino (J-01). PROVISIONAL. */
+  warnMs: { calm: 1000, enraged: 600 },
+  /** Lo que tarda en el aire: no le dan las balas ni las minas, y no muerde ni avanza. PROVISIONAL. */
+  airMs: 600,
+  /** Golpe al aterrizar a lo primero sembrado que tiene delante en su carril nuevo (J-05). PROVISIONAL. */
+  slamDamage: 150,
+  /** Copias que deja en el carril que abandona al despegar (J-03). */
+  copies: { calm: 1, enraged: 2 },
+  copyKind: 'worm',
+  /** Distancia entre copias, hacia atras (a la derecha) desde donde estaba. */
+  copyGap: 0.8,
+  /** Velocidad de sus copias respecto a la normal, como los gusanos que acelera en las rondas 8 y 9. PROVISIONAL. */
+  copyHaste: 1.35,
 } as const;
 
 /**
@@ -117,11 +160,12 @@ export const ROUND_PREP = {
 } as const;
 
 /**
- * Las rondas del mundo 1 (T-007), en orden. Cada una desbloquea lo suyo al empezar su preparacion (`unlocks`),
- * avisa con una linea (`notice`) y saca sus grupos de enemigos: cada grupo, un enemigo por carril de `lanes`
- * a la vez, `atMs` milisegundos despues de que empiece el ataque (en orden). La ronda acaba cuando no quedan
- * enemigos por salir ni vivos. Los carriles van de 0 (el del fondo) a 4 (el de delante). PROVISIONAL: se ajusta
- * jugando; las 7 deberian durar entre 10 y 15 minutos.
+ * Las rondas del mundo 1 (T-007; de 7 a 10 en T-008), en orden. Cada una desbloquea lo suyo al empezar su preparacion
+ * (`unlocks`), avisa con una linea (`notice`) y saca sus grupos de enemigos: cada grupo, un enemigo por carril de
+ * `lanes` a la vez, `atMs` milisegundos despues de que empiece el ataque (en orden). La ronda acaba cuando no quedan
+ * enemigos por salir ni vivos. Los carriles van de 0 (el del fondo) a 4 (el de delante).
+ * En las rondas 8 y 9 Creeper se prepara (`bossPreparing`, se le ve a la derecha) y acelera a sus enemigos (`haste`:
+ * velocidad respecto a la normal). La 10 es el combate contra Creeper. PROVISIONAL: se ajusta jugando.
  */
 export const ROUNDS: readonly RoundScript[] = [
   {
@@ -228,7 +272,7 @@ export const ROUNDS: readonly RoundScript[] = [
   },
   {
     unlocks: [],
-    notice: 'Última ronda: todo junto. ¡Aguanta!',
+    notice: 'Todo junto, sin novedades. ¡Aguanta!',
     groups: [
       { atMs: 3_000, kind: 'worm', lanes: [0, 2, 4] },
       { atMs: 10_000, kind: 'armored', lanes: [1, 3] },
@@ -246,6 +290,63 @@ export const ROUNDS: readonly RoundScript[] = [
       { atMs: 84_000, kind: 'worm', lanes: [0, 1, 2, 3, 4] },
       { atMs: 87_000, kind: 'worm', lanes: [0, 1, 2, 3, 4] },
     ],
+  },
+  {
+    unlocks: [],
+    notice: '¡Creeper se prepara! Sus gusanos llegan más rápido',
+    haste: 1.2,
+    bossPreparing: true,
+    groups: [
+      { atMs: 3_000, kind: 'worm', lanes: [0, 1, 3, 4] },
+      { atMs: 9_000, kind: 'armored', lanes: [2] },
+      { atMs: 14_000, kind: 'spitter', lanes: [1, 3] },
+      { atMs: 20_000, kind: 'worm', lanes: [0, 2, 4] },
+      { atMs: 22_000, kind: 'worm', lanes: [0, 2, 4] },
+      { atMs: 30_000, kind: 'armored', lanes: [0, 4] },
+      { atMs: 34_000, kind: 'spitter', lanes: [2] },
+      { atMs: 40_000, kind: 'worm', lanes: [1, 2, 3] },
+      { atMs: 42_000, kind: 'worm', lanes: [1, 2, 3] },
+      { atMs: 52_000, kind: 'armored', lanes: [1, 3] },
+      { atMs: 56_000, kind: 'spitter', lanes: [0, 4] },
+      { atMs: 62_000, kind: 'worm', lanes: [0, 1, 2, 3, 4] },
+      { atMs: 72_000, kind: 'armored', lanes: [0, 2, 4] },
+      { atMs: 76_000, kind: 'spitter', lanes: [1, 2, 3] },
+      { atMs: 82_000, kind: 'worm', lanes: [0, 1, 2, 3, 4] },
+      { atMs: 85_000, kind: 'worm', lanes: [0, 1, 2, 3, 4] },
+      { atMs: 88_000, kind: 'worm', lanes: [1, 3] },
+    ],
+  },
+  {
+    unlocks: [],
+    notice: 'Creeper casi está listo: más gusanos y aún más rápidos',
+    haste: 1.35,
+    bossPreparing: true,
+    groups: [
+      { atMs: 3_000, kind: 'worm', lanes: [0, 1, 2, 3, 4] },
+      { atMs: 8_000, kind: 'spitter', lanes: [0, 4] },
+      { atMs: 12_000, kind: 'armored', lanes: [1, 3] },
+      { atMs: 18_000, kind: 'worm', lanes: [0, 1, 2, 3, 4] },
+      { atMs: 20_000, kind: 'worm', lanes: [1, 2, 3] },
+      { atMs: 28_000, kind: 'armored', lanes: [0, 2, 4] },
+      { atMs: 32_000, kind: 'spitter', lanes: [1, 3] },
+      { atMs: 38_000, kind: 'worm', lanes: [0, 2, 4] },
+      { atMs: 40_000, kind: 'worm', lanes: [0, 2, 4] },
+      { atMs: 48_000, kind: 'spitter', lanes: [2] },
+      { atMs: 50_000, kind: 'armored', lanes: [1, 3] },
+      { atMs: 56_000, kind: 'worm', lanes: [0, 1, 2, 3, 4] },
+      { atMs: 66_000, kind: 'armored', lanes: [0, 2, 4] },
+      { atMs: 68_000, kind: 'spitter', lanes: [0, 1, 3, 4] },
+      { atMs: 76_000, kind: 'worm', lanes: [0, 1, 2, 3, 4] },
+      { atMs: 79_000, kind: 'worm', lanes: [0, 1, 2, 3, 4] },
+      { atMs: 82_000, kind: 'spitter', lanes: [2] },
+      { atMs: 88_000, kind: 'worm', lanes: [0, 1, 2, 3, 4] },
+      { atMs: 91_000, kind: 'armored', lanes: [1, 2, 3] },
+    ],
+  },
+  {
+    unlocks: [],
+    notice: '¡Llega Creeper! Salta de carril: reparte tus defensas',
+    groups: [{ atMs: 2_000, kind: 'creeper', lanes: [2] }],
   },
 ];
 
@@ -331,9 +432,4 @@ export const ICE = {
   bulletSlowMs: 2500,
   /** Si el enemigo ralentizado tambien muerde y escupe mas despacio (en la misma proporcion que avanza). */
   slowsAttacks: true,
-} as const;
-
-/** Jefe del mundo 1 (T-008), al acabar sus rondas (`ROUNDS`). */
-export const WORLD_1 = {
-  boss: 'creeper',
 } as const;

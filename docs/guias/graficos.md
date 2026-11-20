@@ -26,11 +26,12 @@ Cómo se pinta y se anima Rebrote, para que todo lo nuevo (enemigos, mundos, efe
 | `src/game/view/levelMedal.ts` | Medallita de nivel (T-003), sin Phaser y con test: dónde va (`MEDAL`, `medalCenter`), color de cada tramo (`MEDAL_TIERS`, `medalTier`) y cuáles la llevan (`showsMedal`) |
 | `src/game/view/mineView.ts` | Mina de fuego (T-004) y de hielo (T-005): se entierra, duerme, se arma con cuenta atrás visible, la muerden, explota (o estalla en escarcha) o se apaga si la destruyen |
 | `src/game/view/fusionDragView.ts` | Arrastre para fusionar (T-006): planta en la mano con su sombra, casillas de destino y rótulo (`DRAG_LOOK`, `dragGround`) |
-| `src/game/view/wormView.ts` | Gusano, acorazado y escupidor (`KIND_LOOK`): sale del agujero, ondula, muerde o escupe, recibe golpes y explosiones, arde, tirita frenado, muere, se cuela y celebra. Al acorazado se le caen las placas con la vida |
+| `src/game/view/wormView.ts` | Gusano, acorazado y escupidor (`KIND_LOOK`): sale del agujero, ondula, muerde o escupe, recibe golpes y explosiones, arde, tirita frenado, muere, se cuela y celebra. Al acorazado se le caen las placas con la vida. Acelerado (T-008), lleva rayas de velocidad. Pinta también el cuerpo del Creeper y su salto de carril (`jumpPose`). Interfaz común de las vistas de enemigos (`EnemyView`) |
+| `src/game/view/creeperView.ts` | Creeper (T-008): `CreeperView` envuelve un `WormView` grande y añade el aviso del salto (diana, curva de puntos y "!"), sus frases en un bocadillo de terminal, la luz de la antena, la fase 2, el aterrizaje y la derrota. `CreeperOmen`: Creeper preparándose a la derecha (`OMEN_SPOT`) con su barra de "CARGANDO" (`bossLoadProgress`), chispazos a los agujeros y el salto al combate |
 | `src/game/view/bulletView.ts` | Semilla en vuelo (normal, de fuego o de hielo), impacto y salida del tablero |
 | `src/game/view/spitView.ts` | Escupitajo del escupidor en vuelo (T-007), impacto y salida del tablero |
 | `src/game/scenes/BoardScene.ts` | Cartas (sembrar e infundir), monedas, rondas y combate (avanza la partida y anima sus eventos), fusionar por arrastre, seleccionar y subir de nivel, resaltado, filtros de Ultra, ajuste de la vista, pausa, derrota y victoria |
-| `src/ui/` | HUD flotante (cartas con su precio, ronda con su cuenta atrás y su aviso en `RoundHud`, vidas, saldo), panel de nivel de la planta seleccionada (`LevelPanel`), menú de pausa, ajustes y pantallas de derrota y de victoria (React) |
+| `src/ui/` | HUD flotante (cartas con su precio, ronda con su cuenta atrás y su aviso en `RoundHud`, barra del jefe en `BossBar`, vidas, saldo), panel de nivel de la planta seleccionada (`LevelPanel`), menú de pausa, ajustes y pantallas de derrota y de victoria (React) |
 
 ## 3. Coordenadas y perspectiva
 
@@ -85,7 +86,13 @@ Cómo se pinta y se anima Rebrote, para que todo lo nuevo (enemigos, mundos, efe
 | `attackStarted` (T-007) | Los agujeros brillan y sueltan píxeles, y salta "¡Ahí vienen!" junto a ellos, en los colores de la corrupción |
 | `roundCleared` (T-007) | Las plantas dan un saltito en oleada, de izquierda a derecha, con destellos y "¡Ronda N superada!" en el centro del césped. Tras la última no sale: le sigue la victoria |
 | Derrota | Las balas y los escupitajos se apagan y los gusanos saltan de contentos. A los 1,1 s React muestra la pantalla de derrota |
-| Victoria (`won`, T-007) | Las balas y los escupitajos se apagan, las plantas saltan en oleada con "¡Jardín a salvo!", y caen hojas y destellos por el césped. A los 1,6 s React muestra la pantalla de victoria |
+| Victoria (`won`, T-007) | Las balas y los escupitajos se apagan, las plantas saltan en oleada con "¡Creeper atrapado!" (T-008; antes de existir el jefe, "¡Jardín a salvo!"), y caen hojas y destellos por el césped. A los 1,6 s React muestra la pantalla de victoria |
+| Enemigos acelerados (T-008) | Al salir en las rondas 8 y 9, Creeper (que se prepara a la derecha) parpadea y manda un chispazo de píxeles verdes y morados al agujero de cada carril, que brilla al llegar |
+| `jumpWarned` (T-008) | El Creeper se agacha y tiembla (sale del estado, sección 7). Sale tierra a sus pies y un "!" sobre la diana del carril de destino. Una de cada dos veces suelta una frase ("¡HOP!", "¡POR AQUÍ!"…) |
+| `jumped` (T-008) | Tierra, píxeles y una onda verde donde estaba. Sus copias salen del suelo ahí, con un destello y un anillo verdes de "copiarse" |
+| `landed` (T-008) | Se aplasta contra el suelo y rebota, onda roja en el suelo (más encendida en la fase 2), tierra y un temblor de cámara. Lo golpeado reacciona como a un mordisco; si lo rompe, como `plantDestroyed` |
+| `enemyKilled` del Creeper (T-008) | Se deshace como un gusano, con una explosión de píxeles mucho mayor, dos anillos y un temblor fuerte. Sus copias caen a la vez |
+| `enemyEscaped` del Creeper (T-008) | Dice "¡NO ME ATRAPASTE!", se mete bajo tierra y sale "¡Se escapó!" en el camino, con un temblor fuerte. La derrota dice "¡Creeper se escapó!" |
 
 - **Lo que dura, sale del estado, no de un evento.** La quemadura (`enemy.burn`), la ralentización (`enemy.slow`) y la cuenta atrás de la mina (`mine.fuseMs`) se leen en `sync`. Así una partida que se continúa (cambio de calidad) se pinta igual sin repetir eventos.
 
@@ -133,6 +140,14 @@ Cómo se pinta y se anima Rebrote, para que todo lo nuevo (enemigos, mundos, efe
 - **Escupidor (T-007).** El mismo cuerpo en rosa chicle (`WORM_PALETTES.spitter`), con la boca de piñón y una gotita de moco colgando.
   - Mientras carga (los últimos 650 ms antes de escupir, `WORM_LOOK.spitChargeMs`) se yergue más que al morder e hincha los mofletes como globos (`TEX.spitterHeadCharge`).
   - El escupitajo (`SpitView`) sale de la boca aunque la lógica lo saque del centro, vuela bombeado a lo largo de su alcance y gira un poco. Moco con mezcla normal y contorno oscuro: sobre el césped, lo aditivo se quedaría blanco.
+- **Creeper (T-008).** El cuerpo de un gusano 1,7 veces mayor, hecho de ordenador antiguo: cabeza de monitor de carcasa crema, visto un poco de lado, con la cara en la pantalla en fósforo verde (ojos con pupila de píxel y líneas de barrido) y una antena con luz roja; anillos de carcasa con rejilla y una lucecita verde.
+  - Caras (`TEX.creeperHead*`): tranquila, mordiendo (y agachado o en el aire) y dolorida (ojos apretados y una franja de interferencia). En la fase 2, las mismas en rojo con cejas de enfado (`angryHead` en `KIND_LOOK`). Al pasar a la fase 2 echa humo, sale un anillo rojo, tiembla la cámara y dice "¡GRRR! ¡AHORA VAS A VER!".
+  - **El salto sale del estado** (`jumpPose` en `wormView.ts`, con `Enemy.jump`): agachado, se aplasta y tiembla; en el aire, sube en curva entre los dos carriles (más alto cuanto más lejos salta), cambia de tamaño y profundidad con el carril y su sombra se encoge en el suelo.
+  - **Aviso (J-01):** mientras se agacha, una diana roja late en el suelo del carril de destino, una curva de puntos avanza hacia ella por encima de las plantas y un "!" da saltitos sobre la diana. Mientras vuela, la diana se cierra donde va a caer.
+  - **Bocadillo de terminal:** fondo de pantalla, borde y letras de fósforo (rojo en la fase 2), con un cursor que parpadea. Sigue a la cabeza; si a la derecha no cabe en la pantalla, se abre a la izquierda.
+  - **Luz de la antena:** un brillo que parpadea, más deprisa en la fase 2. Solo con `quality.glows`.
+- **Creeper preparándose (T-008, `CreeperOmen`).** En las rondas 8 y 9 y en la preparación de la 10, enroscado en `OMEN_SPOT` (suelo corrupto, detrás de los agujeros, dentro del diseño de 1600 × 900). Respira, cabecea, suelta píxeles (`ambientDelay`) y tiene un halo verde que late (solo con `quality.glows`). En su pantalla, "CARGANDO" y una barra que se llena con las rondas (`bossLoadProgress`). Al aparecer brota del suelo y dice "CARGANDO… ¡YA CASI ESTOY!". Al empezar el combate salta en curva al agujero del carril del centro y el Creeper de verdad sale del suelo al caer.
+- **Gusano acelerado (T-008).** Mientras `enemy.haste` es mayor que 1: rayas de velocidad verde neón con borde oscuro detrás de la cola (`TEX.hasteStreak`), que titilan mientras avanza y se apagan si se para. Ondula más deprisa sin código extra, porque ondula según lo que avanza.
 - **Gusano frenado (T-005).** Mientras `enemy.slow` existe: cristales de escarcha en la nuca y la cola, el cuerpo tira a azul frío (tinte multiplicado `WORM_LOOK.chillTint`) y cada 0,9 s tirita y suelta un copo. Ondula más despacio sin código extra, porque ondula según lo que avanza. Si muere frenado (y no ardía), queda congelado y se rompe en esquirlas.
   - Quemado y frenado a la vez: se ven las llamas y la escarcha (no se tapan: llamas en la coronilla y el lomo, escarcha en la nuca y la cola), con el cuerpo azul.
 - **Colores de efecto por variante.** El fogonazo del cañón y los destellos de fusionar o infundir salen de `VARIANT_FX` (`plantView.ts`): lima la normal, naranja la de fuego, azul claro la de hielo.
@@ -168,11 +183,13 @@ Orden de dibujo, de atrás hacia delante (`DEPTH` en `layout.ts`):
 | `canopy` | Copa del árbol |
 | `groundFx` | Efectos pegados al suelo: viento, sombras de nubes, brillos del suelo corrupto, rocío, haces de luz, chamuscado de una explosión, escarcha de la mina de hielo |
 | `highlight - 1` | Alcance de una mina armada |
-| `highlight` | Resaltado de casilla (y alcance de la mina que se va a sembrar), casilla de la planta seleccionada (T-003). Justo encima, la onda de una explosión |
+| `highlight` | Resaltado de casilla (y alcance de la mina que se va a sembrar), casilla de la planta seleccionada (T-003). Justo encima, la onda de una explosión y la diana del salto del Creeper (T-008) |
 | `entities + y` | Plantas, enemigos, balas (`+0,5`, delante de su planta), monedas, flores y cristales de la mina de hielo, ordenados por su `y` en pantalla |
+| `pollen - 2`, `pollen - 1` | Chispazos de Creeper preparándose y curva de puntos del salto (T-008): pasan por encima de las plantas |
 | `pollen`, `butterflies` | Partículas y bichos que flotan por encima |
 | `foreground` | Matas del primer plano |
 | `floatText - 10` | La planta que se arrastra para fusionar |
+| `floatText - 4`, `floatText - 3` | "!" del aviso del salto y bocadillo del Creeper (T-008) |
 | `floatText - 5` | Cuenta atrás de las minas: no la tapa una planta del carril de delante |
 | `floatText` | Textos flotantes (+25), rótulos del arrastre y de las cartas, y monedas volando al marcador |
 
@@ -196,6 +213,7 @@ Orden de dibujo, de atrás hacia delante (`DEPTH` en `layout.ts`):
   | Gusano | cabeza `#ead6ff` a `#b48cff` a `#7a4cc8`, contorno `#4a2a7a`, luces verde neón `#39ff88` |
   | Escupidor (T-007) | cabeza `#ffe6f3` a `#ff8cc6` a `#d8458f`, contorno `#7a1d4c`, labios `#ff5c9a`, luces verde neón. Moco `#f0fff6` a `#6dffad` a `#1cc066`, contorno `#0e6a3a` |
   | Armadura (T-007) | acero `#f5f9fd` a `#b4c5d6` a `#6d8399`, contorno `#2f4155`, remaches `#e8f0f8` |
+  | Creeper (T-008) | carcasa `#fff7e2` a `#efe0bc` a `#c9b48a`, fondo `#b9a479`, contorno `#5a4528`. Pantalla `#123a24` a `#071a10` con fósforo `#39ff88`; en la fase 2, `#40101e` a `#1c050b` con fósforo `#ff5a7a`. Luz de la antena y diana del salto `#ff5a5f` (fase 2 `#ff2e63`) |
 
 - Se ve un cañón por cada cañón de la planta, y el nivel se muestra con una medallita con número.
   - **Cañones:** la disparadora tiene una textura por número de cañones (`shooterTexture(1 | 2 | 3)`). Los tubos van apilados y sus medidas están en `SHOOTER_BARRELS`, de donde sale también la boca de cada uno. Al fusionarse crece un poco: cabeza algo mayor y una hoja más en la base y en el brote. La de 3 cañones lleva además una flor en la coronilla.
@@ -237,6 +255,7 @@ Orden de dibujo, de atrás hacia delante (`DEPTH` en `layout.ts`):
   - El aviso de la ronda entra con un salto, se queda 7 s y se va. Lo lleva una animación CSS que se congela con la pausa (`.app.is-paused`). Con `prefers-reduced-motion` lo quita un temporizador.
   - Una carta recién desbloqueada entra en la bandeja con un salto y brilla tres veces. La animación va en un envoltorio (`.card-slot`) y no en la carta, que ya anima su `transform` al estar elegida.
   - La pantalla de victoria entra como la de derrota, con una copa con un brote que salta y destellos que titilan.
+  - **Jefe (T-008):** en la ronda del jefe la ronda dice "Combate final" y su semillita es una pantallita de monitor. La barra del Creeper (`BossBar`) entra con un salto bajo la ronda: monitor en miniatura que parpadea, nombre, fase y vida con una marca por umbral de salto (las gastadas, apagadas). Lo que pierde se queda un momento en claro y luego se va. En la fase 2 se pone roja y su halo late; derrotado, dice "¡Atrapado!".
   - El menú de pausa entra con un pequeño rebote.
   - La pantalla de carga muestra un brote que crece.
   - Con `prefers-reduced-motion` las animaciones CSS se apagan.
