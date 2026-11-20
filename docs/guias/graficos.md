@@ -1,6 +1,6 @@
 # Guía de gráficos y animación
 
-Cómo se pinta y se anima Rebrote, para que todo lo nuevo (enemigos, mundos, efectos, plantas) encaje con lo que ya hay. Las decisiones de fondo están en los ADR-0004 (arte bonito y animado), ADR-0005 (cámara inclinada), ADR-0006 (ajustes gráficos), ADR-0007 (pantalla completa y pausa), ADR-0008 (combate como simulación pura), ADR-0010 (menú de inicio y portada) y ADR-0011 (en móvil, solo en horizontal). Los textos que se pintan siguen la guía de idiomas (`docs/guias/idiomas.md`, ADR-0009).
+Cómo se pinta y se anima Rebrote, para que todo lo nuevo (enemigos, mundos, efectos, plantas) encaje con lo que ya hay. Las decisiones de fondo están en los ADR-0004 (arte bonito y animado), ADR-0005 (cámara inclinada), ADR-0006 (ajustes gráficos), ADR-0007 (pantalla completa y pausa), ADR-0008 (combate como simulación pura), ADR-0010 (menú de inicio y portada), ADR-0011 (en móvil, solo en horizontal) y ADR-0012 (tours de ayuda). Los textos que se pintan siguen la guía de idiomas (`docs/guias/idiomas.md`, ADR-0009).
 
 ## 1. Principios
 
@@ -31,11 +31,13 @@ Cómo se pinta y se anima Rebrote, para que todo lo nuevo (enemigos, mundos, efe
 | `src/game/view/bulletView.ts` | Semilla en vuelo (normal, de fuego o de hielo), impacto y salida del tablero |
 | `src/game/view/spitView.ts` | Escupitajo del escupidor en vuelo (T-007), impacto y salida del tablero |
 | `src/game/view/entityInfo.ts` | Ficha de información (T-010), sin Phaser y con test: nombre, nivel, vida, datos, estados y cómo funciona de una disparadora (`shooterInfo`), una mina (`mineInfo`) o un enemigo (`enemyInfo`), con los números de las reglas. Números en español (`formatNumber`) |
-| `src/game/view/portrait.ts` | Foto de la ficha (T-010): compone con las texturas ya pintadas la planta, la mina o el enemigo en reposo sobre un fondo de jardín (`portraitUrl`). Las texturas de cada enemigo, en `ENEMY_ART` |
+| `src/game/view/portrait.ts` | Foto de la ficha (T-010): compone con las texturas ya pintadas la planta, la mina o el enemigo en reposo sobre un fondo de jardín (`portraitUrl`). Las texturas de cada enemigo, en `ENEMY_ART`. Sin fondo (`backdrop: false`), los dibujos recortados de los bocadillos de los tours (T-013) |
+| `src/game/view/tourSpots.ts` | Qué señala un tour de ayuda en el tablero (T-013), sin Phaser y con test: casilla libre para sembrar o para una mina, una disparadora, una que se pueda infundir, una mina y su destino, dos que se puedan fusionar (`tourCells`) |
 | `src/game/scenes/BoardScene.ts` | Cartas (sembrar e infundir), monedas, rondas y combate (avanza la partida y anima sus eventos), fusionar por arrastre, seleccionar y subir de nivel, doble clic para la ficha (T-010), resaltado, pausa, derrota y victoria, partida guardada y salida al menú (T-011) |
 | `src/game/scenes/TitleScene.ts` | Portada del menú de inicio (T-011): el jardín animado con la cámara corrida para dejar sitio al menú, y `TitleCover` encima. Deja paso al tablero al pedir una partida |
 | `src/game/view/titleCover.ts` | Batalla de la portada (T-011): reparto fijo, combate de verdad con todos fijos en su sitio e inmortales, y respuesta al clic (`COVER_LOOK`) |
 | `src/game/scenes/sceneKit.ts` | Lo que comparten las dos escenas: cámara a pantalla completa (`fitCamera`, con desplazamiento opcional), filtros de Ultra (`applyPostFx`) y fps (`FpsMeter`) |
+| `src/ui/tour/` | Tours de ayuda (T-013, ADR-0012): qué tours hay y sus pasos (`tours.ts`), tours vistos (`tourProgress.ts`), dónde va el bocadillo (`placeBubble.ts`), velo, aros y bocadillo (`TourOverlay`), la mano (`TourHand`), los dibujos animados y Brotito (`TourPicture`), la pista de la moneda (`CoinHint`) y quién los pone en marcha (`useTours`) |
 | `src/ui/` | HUD flotante (cartas con su precio, ronda con su cuenta atrás y su aviso en `RoundHud`, barra del jefe en `BossBar`, vidas, saldo), panel de nivel de la planta seleccionada (`LevelPanel`), ficha de información (`InfoPanel`, T-010), menú de pausa, ajustes (`SettingsPanel`, con el idioma), pantallas de derrota y de victoria, menú de inicio con su título, créditos y logo de Claude (`TitleScreen`, `Credits`, `ClaudeLogo`, T-011), y aviso de girar la pantalla en un móvil en vertical (`RotateNotice`, `useLandscapeOnly`, ADR-0011) (React) |
 
 ## 3. Coordenadas y perspectiva
@@ -328,7 +330,21 @@ Todo efecto nuevo se engancha a un ajuste del perfil (`QualityProfile`):
 - **Créditos.** Una fila por crédito que entra una tras otra; la de Claude, en su terracota, con su logo (`ClaudeLogo`, la chispa dibujada con código) que respira.
 - **Pantallas pequeñas:** con menos de 860 px de ancho o 560 de alto, el título y el panel encogen; con menos de 700 px de ancho, el lema se parte para no meterse bajo el panel; con menos de 420 de alto, se quitan el subtítulo del panel y la fecha de la guardada. En una ventana de escritorio en vertical, el panel baja y ocupa el ancho (en un móvil o una tableta en vertical sale el aviso de girar la pantalla, ADR-0011).
 
-## 15. Listas de comprobación
+## 15. Tours de ayuda (T-013)
+
+Detalle y porqué en el ADR-0012. Los pinta React encima del juego vivo; la escena dice qué señalar y qué hizo el jugador.
+
+- **Cuándo salen.** Al empezar la preparación de una ronda que desbloquea algo (tras aceptar "¡YA LO TIENES!"), si la ayuda está encendida y ese tour no se vio en este navegador. En la ronda 1, lo básico. Esperan debajo de la pausa, la ficha, los avisos y el aviso de girar.
+- **La preparación se para.** Mientras hay tour, `tourHold` hace que la escena no descuente la preparación (`advance`); el resto del juego sigue vivo para que el jugador pueda hacer el gesto. "¡Que vengan!" sigue funcionando y cierra el tour.
+- **Velo y aros.** Un SVG a pantalla completa oscurece todo menos lo que se enseña (huecos con máscara). Alrededor de cada hueco, un aro dorado que late; los contornos (un carril, el borde del jardín) van con raya que avanza. Al hacer el gesto, los aros se ponen verdes y salta "¡Bien!". Nada de esto recoge clics.
+- **Qué se señala.** Piezas del HUD con `data-tour` (cartas, saldo, vidas, "¡Que vengan!", el botón "Subir" del panel de nivel), medidas en cada fotograma. Lo del tablero lo elige `tourCells` y la escena lo manda ya en la página (`tourBoard`: elipses de casillas, plantas, minas y alcance de la explosión, y contornos). Si falta algo, el paso sale sin iluminarlo y sin mano: queda el bocadillo con su dibujo.
+- **La mano.** SVG hecho con código (guante blanco, puño verde), con la punta del dedo justo en el punto. Toca (onda en la punta), toca dos veces o arrastra en curva, con un camino de puntos que avanza hasta una punta de flecha; al arrastrar una carta lleva su dibujo. Se aparta mientras el jugador tiene una carta elegida. En pantallas bajas mide 46 px en vez de 60.
+- **Bocadillo.** La tarjeta de los menús con borde dorado y Brotito (una semillita con hojas que se mecen y ojos que parpadean) asomado por la esquina. A la izquierda, el dibujo animado del paso; a la derecha, "Ayuda · tour", los puntos de los pasos, una frase corta, "Saltar" y "Siguiente" (o "¡Entendido!" en el último). Lo coloca `placeBubble` (con test): junto a lo iluminado sin taparlo y, si puede, sin taparse con la mano, su camino, el HUD ni el panel de nivel.
+- **Dibujos (`TourPicture`).** Un trocito de jardín de 128 × 92 donde el paso pasa en bucle de 2,8 s, sin palabras: la carta vuela y brota la planta, las semillas recorren su carril, el gusano suelta su moneda, cruza la raya y se rompe un corazón, sale la foto de la ficha, la mina cuenta y explota... Plantas, minas y el gusano son imágenes que compone la escena con sus texturas (`tourArt`, `portraitUrl` sin fondo); cartas, monedas, corazones y ondas son HUD. En pantallas bajas, al 70 %.
+- **Pista de la moneda.** Sin velo ni pausa: un aro dorado alrededor de la moneda del suelo, la mano que la toca y un bocadillo pequeño encima (sobre el "+18" de la escena). La escena avisa con `coinDropped` (también si cambia la ventana) y `coinGone`.
+- **Capa.** `z-index` 3: encima del HUD y del panel de nivel, debajo de la pausa, los avisos y el aviso de girar.
+
+## 16. Listas de comprobación
 
 ### Enemigo nuevo
 Ejemplos: el acorazado y el escupidor de T-007, en `wormView.ts` (`KIND_LOOK`).
@@ -377,8 +393,18 @@ Ejemplos: el acorazado y el escupidor de T-007, en `wormView.ts` (`KIND_LOOK`).
 - [ ] Respeta `artInv()` y su ajuste de calidad.
 - [ ] No bloquea ni retrasa la regla que acompaña.
 
+### Mecánica nueva (T-013, regla 9 de `CLAUDE.md`)
+- [ ] Su `Feature` en `rounds.ts` tiene su tour en `TOUR_OF_FEATURE` (sin él no compila). Si es un gesto sin ronda propia, una pista como la de la moneda.
+- [ ] Pasos en `TOURS` (`src/ui/tour/tours.ts`): qué se ilumina, el gesto de la mano y qué cuenta como hecho. Pocos pasos (uno a tres) y una frase corta por paso.
+- [ ] Lo que hace el jugador llega como `playerAction` desde la escena (con su `TourCue` en `cueOf`), para que hacerlo de verdad complete el paso.
+- [ ] Lo que haya que señalar en el tablero, en `tourCells` (`view/tourSpots.ts`, con test) y en `emitTourBoard`; en el HUD, con `data-tour`.
+- [ ] Su dibujo animado en `TourPicture`, con el arte de la escena (`tourArt`), no pintado en React.
+- [ ] Frases en `tour.steps` de `es.ts` y `en.ts` (el test lo comprueba) y nombre en `tour.names`.
+- [ ] Probado a 1600 × 900, 812 × 375 y 568 × 320: el bocadillo no tapa lo que señala, y si falta lo que señalar el paso sale igual.
+
 ### HUD o menú nuevo (React)
 - [ ] Probado en un móvil en horizontal (812 × 375 y 568 × 320): no se sale de la pantalla y no tapa lo que se juega.
+- [ ] Si un tour lo puede señalar, lleva `data-tour` con su nombre en `HudTarget`.
 - [ ] En un móvil en vertical no hace falta: sale el aviso de girar la pantalla (ADR-0011). Si va por encima de todo, va por debajo de ese aviso (`z-index` menor que 10).
 - [ ] Si flota junto a algo del tablero (como el panel de nivel), se coloca con una función pura con test que lo mantenga dentro de la pantalla y fuera del HUD.
 

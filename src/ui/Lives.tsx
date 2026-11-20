@@ -29,7 +29,7 @@ export function Lives({ lives }: LivesProps) {
   const stateOf = (index: number): HeartState => (index < current ? 'full' : index === breaking ? 'breaking' : 'lost');
 
   return (
-    <div className="hud-lives" role="img" aria-label={t.hud.lives(current, max)}>
+    <div className="hud-lives" data-tour="lives" role="img" aria-label={t.hud.lives(current, max)}>
       {Array.from({ length: max }, (_, index) => (
         <svg key={index} className={`heart is-${stateOf(index)}`} viewBox="0 0 24 24" aria-hidden="true">
           <path d={HEART_PATH} />

@@ -32,6 +32,9 @@ import { useNeedsLandscape } from './ui/useLandscapeOnly';
 import { useSettings } from './ui/useSettings';
 import { useText } from './ui/useText';
 import { VictoryScreen } from './ui/VictoryScreen';
+import { CoinHint } from './ui/tour/CoinHint';
+import { TourOverlay } from './ui/tour/TourOverlay';
+import { useTours } from './ui/tour/useTours';
 
 /** Cartas de la bandeja, en orden. Solo se ven las que la ronda ya desbloqueo (T-007). */
 const CARDS: readonly CardId[] = ['shooter', 'fire', 'ice'];
@@ -46,7 +49,8 @@ const SCENE_OF: Record<GameScreen, string> = { title: SCENES.title, board: SCENE
  * puede jugar otra vez o volver al menu. Mientras el aviso de lo desbloqueado o una ficha estan abiertos el juego espera
  * en pausa. La partida se guarda sola (T-011): la escena guarda al empezar cada ronda y aqui se le pide al ocultar o
  * cerrar la pestana y al salir al menu. En un movil o una tableta en vertical se tapa todo con el aviso de girar la
- * pantalla (ADR-0011): el juego duerme y la partida queda en pausa para cuando se gire.
+ * pantalla (ADR-0011): el juego duerme y la partida queda en pausa para cuando se gire. Los tours de ayuda (T-013,
+ * ADR-0012) ensenan lo nuevo de cada ronda encima del juego vivo, y esperan debajo de todo lo demas.
  */
 export function App() {
   const t = useText();
@@ -88,6 +92,8 @@ export function App() {
   }, []);
   const fullscreen = useFullscreen(settings.fullscreen, pause);
   const needsLandscape = useNeedsLandscape();
+  // Tours de ayuda (T-013): esperan debajo de cualquier cosa que tape el juego.
+  const tours = useTours({ onBoard, round, help: settings.help, covered: halted || needsLandscape, over });
 
   // Al ponerse en vertical, la partida se pausa: al girar de nuevo el jugador la encuentra en el menu de pausa.
   useEffect(() => {
@@ -293,7 +299,7 @@ export function App() {
           <div className="seed-tray" aria-label={t.hud.cards}>
             {CARDS.filter((id) => (round?.cards ?? ['shooter']).includes(id)).map((id) => (
               // Cada carta nueva entra en la bandeja con un salto al desbloquearse.
-              <span key={id} className="card-slot">
+              <span key={id} className="card-slot" data-tour={`card-${id}`}>
                 <Card
                   card={id}
                   label={t.hud.cardNames[id]}
@@ -324,6 +330,23 @@ export function App() {
       )}
 
       {onBoard && plantPanel && !halted && !over && <LevelPanel key={plantPanel.id} panel={plantPanel} avoid={hudRef} />}
+
+      {tours.tour && tours.step && (
+        <TourOverlay
+          tour={tours.tour}
+          step={tours.step}
+          index={tours.stepIndex}
+          count={tours.stepCount}
+          board={tours.board}
+          art={tours.art}
+          cheer={tours.cheer}
+          hideHand={selected !== null}
+          onNext={tours.next}
+          onSkip={tours.skip}
+        />
+      )}
+
+      {tours.hintCoin && <CoinHint key={tours.hintCoin.id} coin={tours.hintCoin} />}
 
       {settings.showFps && fps !== null && <div className="fps">{fps} FPS</div>}
 

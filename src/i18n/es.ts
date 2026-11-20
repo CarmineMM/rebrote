@@ -88,6 +88,9 @@ export const es = {
     performance: 'Rendimiento',
     showFps: 'Mostrar FPS',
     showFpsHelp: 'Fotogramas por segundo en una esquina.',
+    help: 'Ayuda',
+    tours: 'Tours de ayuda',
+    toursHelp: 'Una mano te enseña cada cosa nueva la primera vez que sale.',
   },
 
   hud: {
@@ -175,6 +178,58 @@ export const es = {
       text: 'Suelta fuego o hielo sobre una disparadora, o arrastra hasta ella una mina sembrada: sus semillas queman o frenan.',
     },
     fuse: { title: 'Fusionar', text: 'Arrastra una disparadora sobre otra igual: suman cañones y pegan más fuerte.' },
+  },
+
+  /**
+   * Tours de ayuda (T-013): frases cortas, una por paso. Lo importante lo ensenan la mano y el dibujo del bocadillo. Cada
+   * paso de `TOURS` (`src/ui/tour/tours.ts`) tiene aqui su frase, con la misma clave.
+   */
+  tour: {
+    label: 'Ayuda',
+    names: {
+      basics: 'Lo básico',
+      levelUp: 'Subir de nivel',
+      fireMine: 'Mina de fuego',
+      iceMine: 'Mina de hielo',
+      infuse: 'Infundir',
+      fuse: 'Fusionar',
+    },
+    next: 'Siguiente',
+    done: '¡Entendido!',
+    skip: 'Saltar',
+    nice: '¡Bien!',
+    stepOf: (step: number, total: number) => `Paso ${step} de ${total}`,
+    steps: {
+      basics: {
+        sow: 'Arrastra la disparadora al césped',
+        lane: 'Solo dispara en su carril: ¡cubre los cinco!',
+        coins: 'Sembrar cuesta monedas; cazar gusanos te da más',
+        lives: 'Si un gusano cruza el jardín, pierdes un corazón',
+        info: 'Toca dos veces una planta para ver su ficha',
+        go: '¿Listo? ¡Que vengan!',
+      },
+      levelUp: {
+        pick: 'Toca una disparadora',
+        up: 'Pulsa «Subir»: pega más fuerte y más rápido',
+      },
+      fireMine: {
+        sow: 'Siembra el fuego en el césped',
+        boom: (countdown: string) => `Si un gusano se acerca, cuenta ${countdown} y ¡pum!`,
+      },
+      iceMine: {
+        sow: 'Siembra el hielo en el césped',
+        freeze: 'Al explotar, frena mucho a los de alrededor',
+      },
+      infuse: {
+        card: 'Suelta fuego o hielo sobre una disparadora',
+        mine: 'O arrastra hasta ella una mina sembrada',
+      },
+      fuse: {
+        drag: 'Arrastra una disparadora sobre otra igual',
+      },
+    },
+    /** Pista de la moneda en el suelo (G-08). */
+    coin: '¡Tócala! Vale más',
   },
 
   defeat: {

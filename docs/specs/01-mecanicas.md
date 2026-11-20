@@ -183,10 +183,20 @@ Decisiones I-01 a I-12 cerradas el 20 nov 2026.
   - en el momento exacto al salir al menú ("Salir al menú" en la pausa) y al ocultar o cerrar la pestaña.
 - **Cargar partida** la sigue donde estaba: ronda y fase, saldo, vidas, plantas, minas, enemigos, balas y escupitajos, y el aviso sin aceptar. El botón dice la ronda, las vidas, las monedas y cuándo se guardó; sin partida guardada está desactivado. Las monedas soltadas en el suelo no se guardan.
 - **Al perder o al ganar la partida guardada se borra** (I-04): perder sigue obligando a empezar desde la ronda 1, también si se cierra la pestaña antes de perder (se guardó el momento exacto). Las pantallas de derrota y de victoria ofrecen "Jugar otra vez" y "Menú principal".
-- **Opciones:** idioma, pantalla completa, calidad gráfica y FPS, las mismas en el menú de inicio ("Opciones") y en la pausa ("Ajustes").
+- **Opciones:** idioma, pantalla completa, calidad gráfica, tours de ayuda (T-013) y FPS, las mismas en el menú de inicio ("Opciones") y en la pausa ("Ajustes").
 - **Idiomas:** español e inglés en todo el juego. Por defecto, el del navegador si es uno de los dos; si no, inglés. Cambiarlo recarga el escenario y la partida sigue. "Rebrote" no se traduce.
 - **Créditos:** autor (Carmine Maggio), desarrollo (Claude, con su logo), estética inspirada en Plants vs. Zombies, arte hecho con código, enemigos basados en virus reales y tecnología, con el aviso de marca de Plants vs. Zombies.
 - Una partida guardada con otra versión del juego, o en una ronda que ya no existe, no se carga.
+
+### Tours de ayuda (T-013)
+Decisiones G-01 a G-10 cerradas el 20 nov 2026. Cómo se hace: ADR-0012.
+- **Cada cosa nueva se enseña la primera vez:** al empezar la preparación de la ronda que la desbloquea, tras aceptar "¡YA LO TIENES!", sale su tour. En la ronda 1, lo básico: sembrar, el carril, monedas, vidas, la ficha y "¡Que vengan!". En la 2, subir de nivel; en la 3 y la 4, las minas; en la 5, infundir (con la carta o con una mina); en la 6, fusionar.
+- **Mira y prueba:** se oscurece todo menos lo importante y una mano hace el gesto sobre el tablero de verdad. Si el jugador lo hace, el paso se celebra ("¡Bien!") y pasa al siguiente; si no, "Siguiente". "Saltar" cierra el tour. Si no hay lo que señalar (sin planta, sin dos iguales para fusionar...), el paso sale solo con su dibujo.
+- **La cuenta atrás de la preparación no corre mientras dura el tour.** "¡Que vengan!" sigue funcionando y lo cierra.
+- **Un tour visto no vuelve a salir** en este navegador, tampoco en una partida nueva. Cuenta como visto al acabarlo, al saltarlo o si empieza el ataque a medias.
+- **Pista de la moneda:** la primera moneda que cae al suelo lleva una mano que la toca y "¡Tócala! Vale más", sin parar el juego. Deja de salir al recoger una así, o tras salir tres veces.
+- **Ayuda:** opción en Opciones y en Ajustes, encendida por defecto. Apagada, no sale ningún tour ni la pista. Apagarla a mitad de un tour lo cierra sin darlo por visto.
+- **Una mecánica nueva llega con su tour** (regla 9 de `CLAUDE.md`).
 
 ## Decisiones pendientes
 
@@ -214,5 +224,7 @@ Las rondas (T-007), en `src/game/core/rounds.ts`: preparación y ataque (`stepRo
 T-010: la fuerza de los enemigos está en `combat.ts` (`enemyTierBonus`, `enemyPower`, y la usan `enemyMaxHp`, `enemyDamage` y `slamDamage`), con sus valores en `ENEMY_POWER` de `balance.ts`. El goteo, en `economy.ts` (`stepIncome`, con su reloj en `MatchState.incomeMs`). La ronda que no avisa lleva `quiet` en `ROUNDS` y `roundUnlocks` la respeta. La ficha de información no es una regla: sus textos y números salen de las reglas en `src/game/view/entityInfo.ts`.
 
 T-011: la partida guardada (formato con versión, comprobación al cargar, guardar, leer y borrar) está en `src/game/save.ts`, con tests en `save.test.ts`; la escena guarda (`saveGame`) y borra al perder o ganar. Los textos de las reglas que se enseñan al jugador ya no están en `balance.ts`: el aviso de cada ronda está en `round.notices` y el grito de Creeper es una clave (`RoundGroup.shout`, `CreeperShout`) con su texto en `creeper.shouts`, en `src/i18n/` (ADR-0009).
+
+T-013: los tours de ayuda no son reglas. Qué señalar en el tablero lo elige `src/game/view/tourSpots.ts` (`tourCells`, con test) con las reglas de core; los tours, sus pasos y los vistos están en `src/ui/tour/` (`tours.ts`, `tourProgress.ts`, con test). La escena para la preparación con `tourHold` (en `advance`) y avisa de lo que hace el jugador con `playerAction`.
 
 T-009: el nivel de los enemigos está en `combat.ts` (`Enemy.level`, `enemyLevelFactor`, `enemyMaxHp`, `enemyDamage`, `rollEnemyLevel`) y las copias del Creeper, en `rollCopyKind`; `enemyKilled` lleva el tipo para pagar lo suyo (`ENEMIES[kind].reward`). En `rounds.ts`, el tope de nivel (`levelCapAt`, `levelCap`, `levelCapRaisedAfter`), lo nuevo de cada ronda para el aviso (`roundUnlocks`), los grupos con nivel y paso propios (`RoundGroup.level`, `haste`) y el grito (`shout`, evento `shout`). Infundir con una mina, en `match.ts` (`mineDragBlocker`, `mineInfusion`, `mineInfusionTargets`, `infuseWithMine`), y el tope en `levelUpOffer` (`cap`, `capRaisedAt`). Los valores están en `ENEMY_LEVELS`, `CREEPER`, `ENEMIES` y `ROUNDS` de `balance.ts`.

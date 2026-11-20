@@ -23,8 +23,8 @@ interface SettingsPanelProps {
 }
 
 /**
- * Ajustes del jugador (ADR-0006, ADR-0007 y T-011): idioma, pantalla completa, calidad grafica y FPS. Los mismos en el menu
- * de inicio ("Opciones") y en el de pausa ("Ajustes").
+ * Ajustes del jugador (ADR-0006, ADR-0007, T-011 y T-013): idioma, pantalla completa, calidad grafica, tours de ayuda y
+ * FPS. Los mismos en el menu de inicio ("Opciones") y en el de pausa ("Ajustes").
  */
 export function SettingsPanel({ titleId, firstButton, title, backLabel, settings, autoLevel, fullscreenSupported, onChange, onBack, footer }: SettingsPanelProps) {
   const t = useText();
@@ -89,6 +89,18 @@ export function SettingsPanel({ titleId, firstButton, title, backLabel, settings
           ))}
         </fieldset>
         <p className="settings-note">{t.settings.qualityNote}</p>
+      </section>
+
+      <section className="settings-section">
+        <h3>{t.settings.help}</h3>
+        <label className="switch">
+          <input type="checkbox" checked={settings.help} onChange={(e) => onChange({ help: e.target.checked })} />
+          <span className="switch-track" aria-hidden="true" />
+          <span className="switch-text">
+            <strong>{t.settings.tours}</strong>
+            <small>{t.settings.toursHelp}</small>
+          </span>
+        </label>
       </section>
 
       <section className="settings-section">

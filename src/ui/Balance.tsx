@@ -21,7 +21,7 @@ export function Balance({ balance }: BalanceProps) {
   }, [balance]);
 
   return (
-    <div className="hud-balance" aria-label={t.hud.coins} aria-live="polite">
+    <div className="hud-balance" data-tour="balance" aria-label={t.hud.coins} aria-live="polite">
       <span key={`coin-${bump?.id ?? 0}`} className={`coin ${bump?.kind === 'gain' ? 'coin-spin' : ''}`} aria-hidden="true" />
       <span key={`value-${bump?.id ?? 0}`} className={`hud-balance-value ${bump ? `bump-${bump.kind}` : ''}`}>
         {balance ?? '...'}

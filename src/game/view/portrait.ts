@@ -59,9 +59,12 @@ interface Piece {
 
 const cache = new Map<string, string>();
 
-/** Foto de `subject` como data URL (PNG). Se guarda: la misma foto no se compone dos veces. */
-export function portraitUrl(scene: Phaser.Scene, subject: PortraitSubject): string {
-  const key = JSON.stringify(subject);
+/**
+ * Foto de `subject` como data URL (PNG). Se guarda: la misma foto no se compone dos veces. Sin fondo (`backdrop: false`)
+ * sale recortada sobre transparente, con su sombra: es el dibujo de los bocadillos de los tours de ayuda (T-013).
+ */
+export function portraitUrl(scene: Phaser.Scene, subject: PortraitSubject, { backdrop = true }: { backdrop?: boolean } = {}): string {
+  const key = `${backdrop ? 'photo' : 'cutout'}:${JSON.stringify(subject)}`;
   const cached = cache.get(key);
   if (cached) return cached;
   const canvas = document.createElement('canvas');
@@ -70,7 +73,7 @@ export function portraitUrl(scene: Phaser.Scene, subject: PortraitSubject): stri
   const ctx = canvas.getContext('2d');
   if (!ctx) return '';
   ctx.scale(DENSITY, DENSITY);
-  paintBackdrop(ctx, subject);
+  if (backdrop) paintBackdrop(ctx, subject);
   const pieces = piecesFor(subject);
   placeInFrame(pieces);
   paintGroundShadow(ctx, pieces);

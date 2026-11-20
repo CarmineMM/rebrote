@@ -56,7 +56,11 @@ import {
   type LossInfo,
   type PagePoint,
   type PlantPanel,
+  type PlayerAction,
   type RoundInfo,
+  type TourArt,
+  type TourBoard,
+  type TourSpot,
   type UnlockInfo,
   type UnlockItem,
 } from '../EventBus';
@@ -75,6 +79,7 @@ import { portraitUrl, type PortraitSubject } from '../view/portrait';
 import { QUALITY_PROFILES, type QualityLevel, type QualityProfile } from '../view/quality';
 import { SpitView } from '../view/spitView';
 import { MINE_SIZE, SHOOTER_SIZE, TEX, registerTextures, shooterTexture, mineTexture } from '../view/textures';
+import { tourCells } from '../view/tourSpots';
 import { WormView, type EnemyView } from '../view/wormView';
 import { text } from '../../i18n';
 import { clearSave, writeSave } from '../save';
@@ -120,6 +125,17 @@ const LOOK = {
   copyGlow: 0x39ff88,
   /** Doble clic (o doble toque) para abrir una ficha (T-010): tiempo maximo entre los dos y lo que se puede mover el puntero. */
   doubleTap: { ms: 450, distance: 30 },
+  /**
+   * Lo que ilumina un tour de ayuda (T-013), en anchos de casilla: una casilla (algo mayor que ella), el cuerpo de una
+   * disparadora (centro sobre los pies y radios) y el de una mina. El borde por donde se cuelan los gusanos va del camino
+   * (`fromX`) al borde del cesped.
+   */
+  tourSpot: {
+    cell: 1.12,
+    plant: { up: 0.42, rx: 0.58, ry: 0.66 },
+    mine: { up: 0.22, rx: 0.5, ry: 0.44 },
+    exitFromX: -0.85,
+  },
 } as const;
 
 /** Atajos de desarrollo para probar las rondas. */
@@ -251,6 +267,16 @@ export class BoardScene extends Phaser.Scene {
   private pendingUnlock: UnlockInfo | null = null;
   /** Pausa pedida por el HUD. Phaser marca la escena como activa al terminar create(): se aplica despues. */
   private wantPaused = false;
+  /**
+   * Hay un tour de ayuda en pantalla (T-013, ADR-0012): la preparacion no descuenta y se le manda a React lo que puede
+   * senalar. Lo dice React con `tourHold`, tambien al arrancar la escena (responde a `sceneReady`).
+   */
+  private tourHold = false;
+  /** Ultimo `tourBoard` enviado, para avisar solo cuando cambia. */
+  private tourBoardKey = '';
+  /** Monedas del suelo que ya se pueden recoger (T-013, pista de la moneda), por id: donde estan en el mundo y su tamano. */
+  private coinSpots = new Map<number, { x: number; y: number; size: number }>();
+  private coinSeq = 0;
   private created = false;
 
   constructor() {
@@ -291,6 +317,9 @@ export class BoardScene extends Phaser.Scene {
     this.bossKey = '';
     this.lastBoss = null;
     this.pendingUnlock = null;
+    this.tourHold = false;
+    this.tourBoardKey = '';
+    this.coinSpots = new Map();
 
     registerTextures(this, this.quality.renderScale);
     this.fitView();
@@ -327,9 +356,10 @@ export class BoardScene extends Phaser.Scene {
     else this.saveGame();
   }
 
-  /** Lienzo y camara a la medida de la pantalla (ADR-0007, `fitCamera`). */
+  /** Lienzo y camara a la medida de la pantalla (ADR-0007, `fitCamera`). Las monedas del suelo cambian de sitio en la pagina. */
   private fitView(): void {
     fitCamera(this, this.quality.renderScale);
+    this.coinSpots.forEach((_spot, id) => this.emitCoin(id));
   }
 
   /**
@@ -372,6 +402,8 @@ export class BoardScene extends Phaser.Scene {
     if (!this.defeated && !this.won) this.advance(delta);
     // El panel sigue a la planta aunque cambie la ventana (pantalla completa, giro del movil...).
     if (this.picked) this.emitPlantPanel();
+    // Lo que senala un tour sigue a lo sembrado y a la ventana (T-013).
+    if (this.tourHold) this.emitTourBoard();
     this.fps.tick();
   }
 
@@ -530,6 +562,7 @@ export class BoardScene extends Phaser.Scene {
       if (this.pendingUnlock?.round === round) this.pendingUnlock = null;
     };
     const onPause = (paused: boolean) => this.applyPause(paused);
+    const onTourHold = (hold: boolean) => this.setTourHold(hold);
     // Partida nueva desde cero: no continua la anterior (sin `resume`) y arranca sin pausa.
     const onRestart = () => this.scene.restart({ quality: this.level } satisfies BoardSceneData);
     // T-011: se guarda al ocultar o cerrar la pestana, y al salir al menu de inicio, que pasa a la portada.
@@ -548,6 +581,7 @@ export class BoardScene extends Phaser.Scene {
     EventBus.on(GameEvents.stateRequested, onStateRequested);
     EventBus.on(GameEvents.unlockAccepted, onUnlockAccepted);
     EventBus.on(GameEvents.pauseChanged, onPause);
+    EventBus.on(GameEvents.tourHold, onTourHold);
     EventBus.on(GameEvents.restartRequested, onRestart);
     EventBus.on(GameEvents.saveRequested, onSave);
     EventBus.on(GameEvents.exitRequested, onExit);
@@ -562,6 +596,7 @@ export class BoardScene extends Phaser.Scene {
       EventBus.off(GameEvents.stateRequested, onStateRequested);
       EventBus.off(GameEvents.unlockAccepted, onUnlockAccepted);
       EventBus.off(GameEvents.pauseChanged, onPause);
+      EventBus.off(GameEvents.tourHold, onTourHold);
       EventBus.off(GameEvents.restartRequested, onRestart);
       EventBus.off(GameEvents.saveRequested, onSave);
       EventBus.off(GameEvents.exitRequested, onExit);
@@ -620,7 +655,10 @@ export class BoardScene extends Phaser.Scene {
    * ataque, T-010), se mueve el combate, se animan los eventos y se recolocan las vistas.
    */
   private advance(delta: number): void {
-    const round = stepRound(this.match, delta, SCENERY.holeX);
+    // Con un tour de ayuda en pantalla (T-013) la preparacion no descuenta: en ella no hay enemigos, asi que no hay nada
+    // mas que parar. "¡Que vengan!" sigue adelantando el ataque.
+    const holding = this.tourHold && this.match.round.phase === 'prep';
+    const round = stepRound(this.match, holding ? 0 : delta, SCENERY.holeX);
     this.match = round.state;
     this.showSpawned(round.spawned);
     round.events.forEach((event) => this.showRoundEvent(event));
@@ -1115,6 +1153,7 @@ export class BoardScene extends Phaser.Scene {
     }
     this.select(null);
     this.emitBalance();
+    this.emitAction(action === 'infuse' && element ? { type: 'infuse', element, withMine: false } : { type: 'sow', card });
   }
 
   // -------------------------------------------------------------------------
@@ -1345,6 +1384,7 @@ export class BoardScene extends Phaser.Scene {
     toView.fuse(fused.shooter.cannons, fused.hp / plantMaxHp(fused.shooter), fused.shooter.level);
     this.fx.floatText(text().board.fused, foot.x, foot.y - cellWidth * 1.05, LOOK.fusedText);
     this.refreshHighlight();
+    this.emitAction({ type: 'fuse' });
   }
 
   /**
@@ -1370,6 +1410,7 @@ export class BoardScene extends Phaser.Scene {
     }
     this.emitBalance();
     this.refreshHighlight();
+    this.emitAction({ type: 'infuse', element: mine.element, withMine: true });
   }
 
   /** Corta el arrastre sin fusionar: la planta vuelve a su casilla. */
@@ -1527,6 +1568,7 @@ export class BoardScene extends Phaser.Scene {
       this.plantViews.get(cellKey(cell))?.beckon();
     }
     this.emitPlantPanel();
+    if (cell) this.emitAction({ type: 'pick' });
   }
 
   /** Sube un nivel la planta seleccionada si se puede: cobra en el acto y la planta lo celebra. */
@@ -1539,6 +1581,7 @@ export class BoardScene extends Phaser.Scene {
     const plant = plantAt(this.match, cell) as Plant;
     this.plantViews.get(cellKey(cell))?.levelUp(plant.shooter.level);
     this.emitBalance();
+    this.emitAction({ type: 'levelUp' });
   }
 
   /** Avisa al HUD de como esta el panel de la planta seleccionada (o de que se cerro), solo si cambia. */
@@ -1582,6 +1625,149 @@ export class BoardScene extends Phaser.Scene {
   }
 
   // -------------------------------------------------------------------------
+  // Tours de ayuda (T-013, ADR-0012). Los pinta React; aqui se para la preparacion mientras se ven, se le dice que
+  // senalar (lo elige `tourCells` con las reglas) y se le cuenta lo que hace el jugador.
+
+  /** Empieza o acaba un tour: con el, React recibe los dibujos de los bocadillos y lo que puede senalar. */
+  private setTourHold(hold: boolean): void {
+    this.tourHold = hold;
+    if (!hold) return;
+    this.emitTourArt();
+    this.tourBoardKey = '';
+    this.emitTourBoard();
+  }
+
+  /** El jugador acaba de hacer algo que un tour puede estar ensenando. */
+  private emitAction(action: PlayerAction): void {
+    EventBus.emit(GameEvents.playerAction, action);
+  }
+
+  /** Dibujos de los bocadillos: las mismas texturas del tablero, recortadas (como la foto de la ficha, sin fondo). */
+  private emitTourArt(): void {
+    const cutout = (subject: PortraitSubject) => portraitUrl(this, subject, { backdrop: false });
+    const shooter = (cannons: 1 | 2, element: 'fire' | 'ice' | null) => cutout({ kind: 'shooter', cannons, element, level: 1 });
+    const mine = (element: 'fire' | 'ice', armed: boolean) => cutout({ kind: 'mine', element, armed });
+    const art: TourArt = {
+      shooter: shooter(1, null),
+      shooter2: shooter(2, null),
+      shooterFire: shooter(1, 'fire'),
+      shooterIce: shooter(1, 'ice'),
+      fireMine: mine('fire', false),
+      fireMineArmed: mine('fire', true),
+      iceMine: mine('ice', false),
+      iceMineArmed: mine('ice', true),
+      worm: cutout({ kind: 'enemy', enemy: 'worm', level: 1, enraged: false, hasted: false }),
+    };
+    EventBus.emit(GameEvents.tourArt, art);
+  }
+
+  /** Lo que el tour puede senalar ahora mismo, en la pagina. Solo avisa si cambia. */
+  private emitTourBoard(): void {
+    const cells = tourCells(this.match);
+    const spots: TourBoard['spots'] = {};
+    const areas: TourBoard['areas'] = {};
+    if (cells.sowCell) spots.sowCell = this.cellSpot(cells.sowCell);
+    if (cells.mineCell) spots.mineCell = this.cellSpot(cells.mineCell);
+    if (cells.shooter) {
+      spots.shooter = this.plantSpot(cells.shooter);
+      areas.shooterLane = this.boardArea(cells.shooter.col, BOARD.columns, cells.shooter.lane, cells.shooter.lane + 1);
+    }
+    if (cells.infusable) spots.infusable = this.plantSpot(cells.infusable);
+    if (cells.mineInfusion) {
+      spots.mine = this.mineSpot(cells.mineInfusion.mine);
+      spots.mineTarget = this.plantSpot(cells.mineInfusion.target);
+    }
+    if (cells.fusion) {
+      spots.fuseFrom = this.plantSpot(cells.fusion.from);
+      spots.fuseTo = this.plantSpot(cells.fusion.to);
+    }
+    const { fire, ice } = cells.mines;
+    if (fire) {
+      spots.fireMine = this.mineSpot(fire);
+      spots.fireBlast = this.blastSpot(fire);
+    }
+    if (ice) {
+      spots.iceMine = this.mineSpot(ice);
+      spots.iceBlast = this.blastSpot(ice);
+    }
+    areas.exit = this.boardArea(LOOK.tourSpot.exitFromX, 0, 0, BOARD.lanes);
+    const board: TourBoard = { spots, areas };
+    const key = JSON.stringify(board);
+    if (key === this.tourBoardKey) return;
+    this.tourBoardKey = key;
+    EventBus.emit(GameEvents.tourBoard, board);
+  }
+
+  /** Elipse de la pagina con centro en un punto del mundo y radios en unidades del mundo. */
+  private pageSpot(x: number, y: number, rx: number, ry: number): TourSpot {
+    const center = this.worldToPage(x, y);
+    const edge = this.worldToPage(x + rx, y + ry);
+    return { x: center.pageX, y: center.pageY, rx: Math.abs(edge.pageX - center.pageX), ry: Math.abs(edge.pageY - center.pageY) };
+  }
+
+  /** Una casilla del suelo, algo mayor que ella. */
+  private cellSpot(cell: Cell): TourSpot {
+    const center = cellCenter(cell);
+    const at = perspective.toScreen(center);
+    const top = perspective.toScreen({ x: center.x, y: cell.lane }).y;
+    const bottom = perspective.toScreen({ x: center.x, y: cell.lane + 1 }).y;
+    const grow = LOOK.tourSpot.cell;
+    return this.pageSpot(at.x, at.y, (perspective.cellWidthAt(center) / 2) * grow, ((bottom - top) / 2) * grow);
+  }
+
+  /** El cuerpo de la disparadora de una casilla. */
+  private plantSpot(cell: Cell): TourSpot {
+    const { screen, cellWidth } = plantPlacement(cell);
+    const { up, rx, ry } = LOOK.tourSpot.plant;
+    return this.pageSpot(screen.x, screen.y - cellWidth * up, cellWidth * rx, cellWidth * ry);
+  }
+
+  /** El cuerpo de la mina de una casilla. */
+  private mineSpot(cell: Cell): TourSpot {
+    const { screen, cellWidth } = plantPlacement(cell);
+    const foot = this.mineViews.get(cellKey(cell))?.foot() ?? screen;
+    const { up, rx, ry } = LOOK.tourSpot.mine;
+    return this.pageSpot(foot.x, foot.y - cellWidth * up, cellWidth * rx, cellWidth * ry);
+  }
+
+  /** Hasta donde llega la explosion de la mina de una casilla (`MINE.blastRadius`, en casillas), aplastado por la camara. */
+  private blastSpot(cell: Cell): TourSpot {
+    const center = cellCenter(cell);
+    const at = perspective.toScreen(center);
+    const radius = MINE.blastRadius;
+    const top = perspective.toScreen({ x: center.x, y: center.y - radius }).y;
+    const bottom = perspective.toScreen({ x: center.x, y: center.y + radius }).y;
+    return this.pageSpot(at.x, at.y, perspective.cellWidthAt(center) * radius, (bottom - top) / 2);
+  }
+
+  /** Contorno en la pagina de un trozo del tablero (de `x0` a `x1` en columnas y de `y0` a `y1` en carriles). */
+  private boardArea(x0: number, x1: number, y0: number, y1: number): PagePoint[] {
+    return [
+      { x: x0, y: y0 },
+      { x: x1, y: y0 },
+      { x: x1, y: y1 },
+      { x: x0, y: y1 },
+    ].map((corner) => {
+      const at = perspective.toScreen(corner);
+      return this.worldToPage(at.x, at.y);
+    });
+  }
+
+  /** Avisa a React de donde esta una moneda del suelo que ya se puede recoger (T-013). */
+  private emitCoin(id: number): void {
+    const spot = this.coinSpots.get(id);
+    if (!spot) return;
+    const at = this.worldToPage(spot.x, spot.y);
+    const edge = this.worldToPage(spot.x + spot.size, spot.y);
+    EventBus.emit(GameEvents.coinDropped, { id, at, size: Math.abs(edge.pageX - at.pageX) });
+  }
+
+  /** La moneda del suelo se recogio o se perdio. */
+  private coinGone(id: number, collected: boolean): void {
+    if (this.coinSpots.delete(id)) EventBus.emit(GameEvents.coinGone, { id, collected });
+  }
+
+  // -------------------------------------------------------------------------
   // Monedas
 
   /**
@@ -1622,11 +1808,15 @@ export class BoardScene extends Phaser.Scene {
     const hit = this.add.zone(landX, restY, size * 1.6, size * 1.6).setDepth(depth + 0.002);
     const parts = [shadow, glow, coin, label, hit];
     const coinScale = coin.scaleX;
+    const id = ++this.coinSeq;
 
     let collected = false;
     const startIdle = () => {
       if (collected) return;
       hit.setInteractive({ useHandCursor: true });
+      // Ya se puede recoger: React la senala si toca la pista de la moneda (T-013).
+      this.coinSpots.set(id, { x: landX, y: restY, size });
+      this.emitCoin(id);
       this.tweens.add({ targets: [shadow, label], alpha: 1, duration: 200 });
       this.tweens.add({ targets: glow, alpha: { from: 0.25, to: 0.7 }, duration: 700, yoyo: true, repeat: -1, ease: 'Sine.InOut' });
       this.tweens.add({ targets: [coin, glow, hit], y: restY - cellWidth * 0.06, duration: 900, yoyo: true, repeat: -1, ease: 'Sine.InOut' });
@@ -1649,6 +1839,7 @@ export class BoardScene extends Phaser.Scene {
     });
     const expire = this.time.delayedCall(ECONOMY.dropLifetimeMs, () => {
       collected = true;
+      this.coinGone(id, false);
       hit.disableInteractive();
       this.tweens.killTweensOf(parts);
       this.tweens.add({
@@ -1664,6 +1855,7 @@ export class BoardScene extends Phaser.Scene {
     hit.once(Phaser.Input.Events.GAMEOBJECT_POINTER_DOWN, () => {
       if (collected) return;
       collected = true;
+      this.coinGone(id, true);
       blink.remove();
       expire.remove();
       this.tweens.killTweensOf(parts);

@@ -17,6 +17,8 @@ export interface Settings {
   fullscreen: boolean;
   /** Idioma del juego (T-011). Por defecto, el del navegador si es espanol o ingles; si no, ingles. */
   language: Language;
+  /** Tours de ayuda (T-013): ensenan cada cosa nueva la primera vez. Por defecto si. */
+  help: boolean;
 }
 
 /** Idiomas preferidos del navegador, del mas al menos preferido. */
@@ -25,7 +27,7 @@ function browserLanguages(): readonly string[] {
   return navigator.languages?.length ? navigator.languages : [navigator.language ?? ''];
 }
 
-const defaults = (): Settings => ({ quality: 'auto', showFps: false, fullscreen: true, language: detectLanguage(browserLanguages()) });
+const defaults = (): Settings => ({ quality: 'auto', showFps: false, fullscreen: true, language: detectLanguage(browserLanguages()), help: true });
 const STORAGE_KEY = 'rebrote.ajustes';
 /** Segundos que se ignoran tras crear el juego (carga de texturas) y segundos que se miden despues. */
 const WARMUP_SAMPLES = 3;
@@ -40,6 +42,7 @@ function load(): Settings {
       showFps: data.showFps === true,
       fullscreen: data.fullscreen !== false,
       language: parseLanguage(data.language) ?? detectLanguage(browserLanguages()),
+      help: data.help !== false,
     };
   } catch {
     return defaults();

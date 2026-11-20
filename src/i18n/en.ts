@@ -84,6 +84,9 @@ export const en: Dictionary = {
     performance: 'Performance',
     showFps: 'Show FPS',
     showFpsHelp: 'Frames per second in a corner.',
+    help: 'Help',
+    tours: 'Help tours',
+    toursHelp: 'A hand shows you each new thing the first time it comes up.',
   },
 
   hud: {
@@ -169,6 +172,53 @@ export const en: Dictionary = {
       text: 'Drop fire or ice on a shooter, or drag a planted mine onto it: its seeds burn or slow.',
     },
     fuse: { title: 'Fuse', text: 'Drag a shooter onto a matching one: their barrels add up and they hit harder.' },
+  },
+
+  tour: {
+    label: 'Help',
+    names: {
+      basics: 'The basics',
+      levelUp: 'Level up',
+      fireMine: 'Fire mine',
+      iceMine: 'Ice mine',
+      infuse: 'Infuse',
+      fuse: 'Fuse',
+    },
+    next: 'Next',
+    done: 'Got it!',
+    skip: 'Skip',
+    nice: 'Nice!',
+    stepOf: (step, total) => `Step ${step} of ${total}`,
+    steps: {
+      basics: {
+        sow: 'Drag the shooter onto the lawn',
+        lane: 'It only shoots down its lane: cover all five!',
+        coins: 'Planting costs coins; catching worms earns more',
+        lives: 'If a worm crosses the garden, you lose a heart',
+        info: 'Tap a plant twice to see its info card',
+        go: 'Ready? Bring them on!',
+      },
+      levelUp: {
+        pick: 'Tap a shooter',
+        up: 'Press “Level up”: it hits harder and faster',
+      },
+      fireMine: {
+        sow: 'Plant the fire on the lawn',
+        boom: (countdown) => `When a worm gets close, it counts ${countdown} and goes boom!`,
+      },
+      iceMine: {
+        sow: 'Plant the ice on the lawn',
+        freeze: 'When it blows, it badly slows everything around it',
+      },
+      infuse: {
+        card: 'Drop fire or ice onto a shooter',
+        mine: 'Or drag a planted mine onto it',
+      },
+      fuse: {
+        drag: 'Drag a shooter onto a matching one',
+      },
+    },
+    coin: 'Tap it! It is worth more',
   },
 
   defeat: {

@@ -8,6 +8,7 @@ Juego de defensa por carriles. Stack: Phaser 4 + React 19 + Vite + TypeScript. S
 - Lo que aparece en "Decisiones pendientes" no se implementa por intuición: se pregunta.
 - Si la task pinta o anima algo (enemigos, plantas, efectos, escenarios, HUD), lee `docs/guias/graficos.md` y sigue sus listas de comprobación.
 - Si la task añade o cambia algún texto que ve el jugador, lee `docs/guias/idiomas.md`.
+- Si la task añade una mecánica o un gesto nuevo, lleva su tour de ayuda (regla 9).
 - Al empezar una task, pon su estado en "En curso". Al cerrarla, marca sus criterios de aceptación y pon "Completada (fecha)". El estado se cambia en la cabecera de la task y en la tabla de `docs/tasks/README.md`, en el mismo commit.
 
 ## Reglas del proyecto
@@ -20,6 +21,7 @@ Juego de defensa por carriles. Stack: Phaser 4 + React 19 + Vite + TypeScript. S
 6. Código e identificadores en inglés; docs en español. Los textos del juego van en español (el de referencia) y en inglés en `src/i18n/` (ADR-0009), nunca escritos a mano en componentes, escenas o vistas.
 7. Una decisión técnica nueva que cambie el rumbo lleva su ADR en `docs/adr/`.
 8. La partida guardada es el `MatchState` entero (ADR-0010): si cambia su forma, se sube `SAVE_VERSION` y se ajusta la comprobación en `src/game/save.ts`.
+9. Una mecánica nueva llega con su tour de ayuda (ADR-0012): la mano enseña el gesto sobre el tablero de verdad la primera vez que sale. Cada `Feature` de `rounds.ts` tiene su tour en `TOUR_OF_FEATURE` (`src/ui/tour/tours.ts`; si falta, no compila), con sus pasos en `TOURS`, una frase corta por paso en `tour.steps` de `src/i18n/` y un dibujo animado en `TourPicture`. Lista en `docs/guias/graficos.md` ("Mecánica nueva").
 
 ## Comandos
 

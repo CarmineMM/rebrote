@@ -66,6 +66,10 @@ Cómo se escriben los textos de Rebrote para que salgan en español y en inglés
 ### Ronda nueva
 - [ ] Su aviso de una línea está en `round.notices`, en su posición, en los dos idiomas (el test comprueba que hay uno por ronda).
 
+### Paso de un tour de ayuda (T-013)
+- [ ] Su frase está en `tour.steps.<tour>.<paso>` en los dos idiomas, con la misma clave que el paso de `TOURS` (el test lo comprueba), y el tour tiene su nombre en `tour.names`.
+- [ ] Es corta (unas seis u ocho palabras): lo importante lo enseñan la mano y el dibujo. Cabe en el bocadillo a 568 × 320.
+
 ### Idioma nuevo
 - [ ] `src/i18n/xx.ts` declarado como `Dictionary`, con su `locale` y `decimalComma`.
 - [ ] Añadido a `LANGUAGES`, `LANGUAGE_NAMES` y al tipo `Language`.

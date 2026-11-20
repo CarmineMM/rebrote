@@ -81,6 +81,27 @@ export const GameEvents = {
   saveRequested: 'save-requested',
   /** React -> Phaser. Sin payload: volver al menu de inicio (T-011). El tablero guarda la partida y deja paso a la portada. */
   exitRequested: 'exit-requested',
+  /**
+   * React -> Phaser. Payload: boolean. Hay un tour de ayuda en pantalla (T-013, ADR-0012): la preparacion no descuenta,
+   * pero el juego sigue vivo para que el jugador pueda hacer el gesto que se le ensena.
+   */
+  tourHold: 'tour-hold',
+  /**
+   * Phaser -> React. Payload: TourBoard. Mientras dura un tour: lo que se puede senalar en el tablero, ya en coordenadas
+   * de la pagina. Solo se manda si cambia (tambien si cambia la ventana).
+   */
+  tourBoard: 'tour-board',
+  /** Phaser -> React. Payload: TourArt. Dibujos de los bocadillos del tour, compuestos con las texturas del tablero. */
+  tourArt: 'tour-art',
+  /** Phaser -> React. Payload: PlayerAction. El jugador acaba de hacer algo que un tour puede estar ensenando (T-013). */
+  playerAction: 'player-action',
+  /**
+   * Phaser -> React. Payload: DroppedCoin. Una moneda en el suelo ya se puede recoger (T-013: la pista de la moneda). Se
+   * repite con la misma `id` si cambia la ventana.
+   */
+  coinDropped: 'coin-dropped',
+  /** Phaser -> React. Payload: CoinGone. La moneda del suelo se recogio o se perdio. */
+  coinGone: 'coin-gone',
 } as const;
 
 /** Partida que se pide desde el menu de inicio (T-011): nueva (sin `resume`) o la guardada, con su aviso sin aceptar. */
@@ -222,4 +243,66 @@ export interface EntityInfo {
 export interface PagePoint {
   pageX: number;
   pageY: number;
+}
+
+/** Lo que un tour puede iluminar en el tablero (T-013), con forma de elipse: casillas, plantas, minas y su alcance. */
+export type TourSpotId =
+  | 'sowCell'
+  | 'mineCell'
+  | 'shooter'
+  | 'infusable'
+  | 'mine'
+  | 'mineTarget'
+  | 'fuseFrom'
+  | 'fuseTo'
+  | 'fireMine'
+  | 'fireBlast'
+  | 'iceMine'
+  | 'iceBlast';
+
+/** Zonas del tablero que un tour ilumina con su contorno (T-013): el carril de una disparadora y el borde por donde se cuelan. */
+export type TourAreaId = 'shooterLane' | 'exit';
+
+/** Elipse en coordenadas de la pagina: centro y radios. */
+export interface TourSpot {
+  x: number;
+  y: number;
+  rx: number;
+  ry: number;
+}
+
+/**
+ * Lo que se puede senalar ahora mismo en el tablero (T-013). Lo elige `tourCells` (`view/tourSpots.ts`) con las reglas;
+ * la escena solo lo pasa a la pagina. Lo que no hay (sin planta, sin par para fusionar...) no viene.
+ */
+export interface TourBoard {
+  spots: Partial<Record<TourSpotId, TourSpot>>;
+  /** Contornos (las esquinas, en orden). */
+  areas: Partial<Record<TourAreaId, PagePoint[]>>;
+}
+
+/** Dibujos de los bocadillos del tour (T-013): plantas, minas y el gusano, recortados (data URL de una imagen PNG). */
+export type TourArtKey = 'shooter' | 'shooter2' | 'shooterFire' | 'shooterIce' | 'fireMine' | 'fireMineArmed' | 'iceMine' | 'iceMineArmed' | 'worm';
+export type TourArt = Record<TourArtKey, string>;
+
+/** Algo que acaba de hacer el jugador y que un tour puede estar ensenando (T-013). */
+export type PlayerAction =
+  | { type: 'sow'; card: CardId }
+  | { type: 'infuse'; element: ElementType; withMine: boolean }
+  | { type: 'pick' }
+  | { type: 'levelUp' }
+  | { type: 'fuse' };
+
+/** Moneda en el suelo que ya se puede recoger (T-013): donde esta en la pagina y cuanto mide. */
+export interface DroppedCoin {
+  id: number;
+  at: PagePoint;
+  /** Diametro en pixeles de la pagina. */
+  size: number;
+}
+
+export interface CoinGone {
+  id: number;
+  /** Se recogio (si no, se perdio en el suelo). */
+  collected: boolean;
 }

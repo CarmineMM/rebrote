@@ -57,7 +57,7 @@ export function RoundHud({ round, boss }: RoundHudProps) {
             </strong>{' '}
             {t.round.seconds}
           </span>
-          <button type="button" className="round-go" onClick={() => EventBus.emit(GameEvents.attackRequested)}>
+          <button type="button" className="round-go" data-tour="round-go" onClick={() => EventBus.emit(GameEvents.attackRequested)}>
             {isBoss ? t.round.goBoss : t.round.go}
           </button>
         </div>
