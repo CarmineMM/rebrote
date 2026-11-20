@@ -1,14 +1,16 @@
 import { describe, expect, it } from 'vitest';
-import { BOARD, CREEPER, ENEMIES, FIRE, ICE, SHOOTER } from '../config/balance';
+import { BOARD, CREEPER, ENEMIES, ENEMY_POWER, FIRE, ICE, SHOOTER } from '../config/balance';
 import type { Cell } from './board';
 import {
   enemyDamage,
   enemyMaxHp,
+  enemyPower,
   isAirborne,
   isDefeated,
   isEnraged,
   jumpsCrossed,
   rollCopyKind,
+  slamDamage,
   spawnEnemy,
   stepCombat,
   type CombatEvent,
@@ -20,6 +22,8 @@ import { createShooter, type Shooter } from './plants';
 /** Reglas del Creeper (T-008): salto de carril, copias, golpe al aterrizar, fases, derrota y victoria. */
 
 const boss = ENEMIES.creeper;
+/** Su vida llena, con la fuerza de T-010. */
+const bossHp = enemyMaxHp('creeper');
 const HOLE_X = BOARD.columns + 0.75;
 /** Siempre el primer carril de los que le quedan (el de mas al fondo que no es el suyo). */
 const first = () => 0;
@@ -38,7 +42,7 @@ function withMine(state: MatchState, cell: Cell): MatchState {
 
 /** Partida con un Creeper en `x` del carril `lane`, con `hpFraction` de su vida, en la ronda 10. */
 function withCreeper(lane = 2, x = 6, hpFraction = 1, over: Partial<Enemy> = {}): MatchState {
-  const state = spawnEnemy(createMatch(1000, 9), 'creeper', lane, x, boss.hp * hpFraction);
+  const state = spawnEnemy(createMatch(1000, 9), 'creeper', lane, x, bossHp * hpFraction);
   const [creeper] = state.enemies;
   return { ...state, enemies: [{ ...creeper, ...over }] };
 }
@@ -112,7 +116,7 @@ describe('salto de carril', () => {
     const jumps: number[] = [];
     for (const fraction of [0.85, 0.79, 0.7, 0.59, 0.49, 0.39, 0.29, 0.19, 0.09, 0.05]) {
       const [creeper] = state.enemies;
-      state = { ...state, enemies: [{ ...creeper, hp: boss.hp * fraction, x: 8.5 }] };
+      state = { ...state, enemies: [{ ...creeper, hp: bossHp * fraction, x: 8.5 }] };
       const { state: after, events } = run(state, 2000);
       jumps.push(ofType(events, 'jumpWarned').length);
       state = after;
@@ -130,7 +134,7 @@ describe('salto de carril', () => {
   it('lo que pierde mientras salta no encadena otro salto al aterrizar', () => {
     let state = stepCombat(withCreeper(2, 8.5, 0.79), 16, first).state;
     const [creeper] = state.enemies;
-    state = { ...state, enemies: [{ ...creeper, hp: boss.hp * 0.58 }] };
+    state = { ...state, enemies: [{ ...creeper, hp: bossHp * 0.58 }] };
     const { events } = run(state, 3000);
     expect(ofType(events, 'jumpWarned')).toHaveLength(0);
     expect(ofType(events, 'landed')).toHaveLength(1);
@@ -188,22 +192,25 @@ describe('fase 2 (J-04): con la mitad de la vida o menos', () => {
   });
 });
 
-describe('mas duro (T-009)', () => {
-  it('no tiene nivel y muerde como un gusano de nivel 10', () => {
+describe('mas duro (T-009 y T-010)', () => {
+  it('no tiene nivel: solo lleva la fuerza de todos (+10 %) en la vida, el mordisco y el golpe', () => {
     const creeper = creeperOf(withCreeper());
     expect(creeper.level).toBe(1);
-    expect(creeper.hp).toBe(boss.hp);
-    expect(enemyDamage(creeper)).toBeCloseTo(enemyDamage({ kind: 'worm', level: CREEPER.biteAsWormLevel }), 9);
-    expect(enemyDamage(creeper)).toBeCloseTo(117.5, 9);
+    expect(enemyPower(1)).toBe(ENEMY_POWER.base);
+    expect(bossHp).toBeCloseTo(4400, 9);
+    expect(creeper.hp).toBe(bossHp);
+    // Los 117,5 de T-009 (lo que mordia un gusano de nivel 10) con el 10 %.
+    expect(enemyDamage(creeper)).toBeCloseTo(117.5 * 1.1, 9);
+    expect(slamDamage()).toBeCloseTo(CREEPER.slamDamage * 1.1, 9);
     // Aunque le pongan otro nivel al sacarlo.
-    expect(spawnEnemy(createMatch(), 'creeper', 2, 6, undefined, 1, 7).enemies[0]).toMatchObject({ level: 1, hp: boss.hp });
+    expect(spawnEnemy(createMatch(), 'creeper', 2, 6, undefined, 1, 7).enemies[0]).toMatchObject({ level: 1, hp: bossHp });
   });
 
-  it('su mordisco quita lo de un gusano de nivel 10', () => {
+  it('su mordisco quita 129,25', () => {
     let state = withPlant(withCreeper(2, 4), { lane: 2, col: 2 });
     state = { ...state, enemies: [{ ...state.enemies[0], x: 2.5 + boss.reach - 0.01 }] };
     const { state: after } = run(state, boss.firstBiteMs + 20);
-    expect(sownAt(after, { lane: 2, col: 2 })?.hp).toBeCloseTo(SHOOTER.hp - 117.5, 6);
+    expect(sownAt(after, { lane: 2, col: 2 })?.hp).toBeCloseTo(SHOOTER.hp - 129.25, 6);
   });
 
   it('en la fase 1 la copia siempre es un gusano; en la 2, mitad gusanos y el resto acorazados o escupidores', () => {
@@ -245,7 +252,7 @@ describe('en el aire', () => {
     const step = stepCombat(state, 200, first);
     expect(ofType(step.events, 'hit')).toEqual([]);
     expect(ofType(step.events, 'shot')).toEqual([]);
-    expect(creeperOf(step.state).hp).toBe(boss.hp * 0.79);
+    expect(creeperOf(step.state).hp).toBe(bossHp * 0.79);
   });
 
   /** Agachado a punto de despegar, con una bala por su carril que le llega justo despues. */
@@ -291,7 +298,7 @@ describe('en el aire', () => {
     expect(creeper.lane).toBe(0);
     expect(creeper.burn).not.toBeNull();
     expect(creeper.slow).not.toBeNull();
-    expect(creeper.hp).toBeLessThan(boss.hp * 0.79);
+    expect(creeper.hp).toBeLessThan(bossHp * 0.79);
   });
 });
 
@@ -303,7 +310,7 @@ describe('aterrizaje (J-05)', () => {
     state = withPlant(state, { lane: 0, col: 1 });
     const { state: after, events } = jumpTo0(state);
     expect(ofType(events, 'landed')).toEqual([{ type: 'landed', enemyId: 1, lane: 0, cell: { lane: 0, col: 3 } }]);
-    expect(sownAt(after, { lane: 0, col: 3 })?.hp).toBe(createPlant().hp - CREEPER.slamDamage);
+    expect(sownAt(after, { lane: 0, col: 3 })?.hp).toBe(createPlant().hp - slamDamage());
     expect(sownAt(after, { lane: 0, col: 1 })?.hp).toBe(createPlant().hp);
   });
 
@@ -351,17 +358,23 @@ describe('fin del combate', () => {
   });
 
   it('con defensas repartidas por los cinco carriles se le gana', () => {
-    // Cuatro columnas de disparadoras de nivel 8, la primera de fuego y la segunda de hielo.
+    // Con el tope del mundo 1 (nivel 5, T-010): cuatro columnas de disparadoras fusionadas de dos canones, la primera de
+    // fuego y la segunda de hielo. Azar con semilla para que la prueba no dependa de la suerte.
+    let seed = 7;
+    const random = () => {
+      seed = (seed * 1664525 + 1013904223) >>> 0;
+      return seed / 2 ** 32;
+    };
     let state = withCreeper(2, HOLE_X);
     for (let lane = 0; lane < BOARD.lanes; lane++) {
       for (let col = 0; col < 4; col++) {
         const element = col === 0 ? 'fire' : col === 1 ? 'ice' : null;
-        state = withPlant(state, { lane, col }, { ...createShooter(), level: 8, element });
+        state = withPlant(state, { lane, col }, { ...createShooter(), level: 5, cannons: 2, element });
       }
     }
     let won = false;
     for (let t = 0; t < 5 * 60_000 && !won && !isDefeated(state); t += 50) {
-      const step = stepCombat(state, 50, Math.random);
+      const step = stepCombat(state, 50, random);
       state = step.state;
       won = ofType(step.events, 'enemyKilled').some((e) => e.enemyId === 1);
     }

@@ -59,6 +59,11 @@ export interface MatchState {
   readonly spits: readonly Spit[];
   /** Ronda en curso: preparacion o ataque, y que grupos del guion ya salieron (T-007). */
   readonly round: RoundState;
+  /**
+   * Tiempo de ataque contado hacia el siguiente goteo de moneda (T-010): en la preparacion no corre y en el siguiente
+   * ataque sigue donde iba (ver `stepIncome`).
+   */
+  readonly incomeMs: number;
   /** Siguiente id libre para enemigos y balas: la vista sigue a cada uno por su id. */
   readonly nextId: number;
 }
@@ -78,6 +83,7 @@ export function createMatch(balance: number = ECONOMY.startingBalance, roundInde
     bullets: [],
     spits: [],
     round: createRound(roundIndex),
+    incomeMs: 0,
     nextId: 1,
   };
 }

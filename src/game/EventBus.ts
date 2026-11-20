@@ -47,6 +47,11 @@ export const GameEvents = {
    * se acepte.
    */
   unlocked: 'unlocked',
+  /**
+   * Phaser -> React. Payload: EntityInfo. Doble clic (o doble toque) sobre una planta, una mina o un enemigo (T-010):
+   * React muestra su ficha y deja el juego en pausa hasta que el jugador la cierra.
+   */
+  entityInfo: 'entity-info',
   /** React -> Phaser. Payload: carta que el jugador toma del HUD (CardId). */
   cardPicked: 'card-picked',
   /** React -> Phaser. Payload: posicion del puntero mientras arrastra la carta (PagePoint). */
@@ -151,6 +156,46 @@ export interface UnlockInfo {
   /** Ronda, desde 1. */
   round: number;
   items: UnlockItem[];
+}
+
+/** Color de la ficha de informacion (T-010): el de la planta, su elemento o el enemigo. */
+export type InfoTone = 'plant' | 'fire' | 'ice' | 'worm' | 'armored' | 'spitter' | 'creeper';
+
+/** Una fila de datos de la ficha: "Mordisco 57,5 (cada 1 s)". */
+export interface InfoStat {
+  label: string;
+  value: string;
+  /** Aclaracion en pequeno, o nada. */
+  note?: string;
+}
+
+/** Estado del momento en la ficha (quemado, frenado, acelerado, contando...). */
+export interface InfoTag {
+  text: string;
+  tone: 'fire' | 'ice' | 'haste' | 'alert' | 'calm';
+}
+
+/**
+ * Ficha de informacion de una planta, una mina o un enemigo (T-010). La arma la escena con los datos del estado
+ * (`view/entityInfo.ts`) y la foto sale de sus texturas (`view/portrait.ts`); React solo la pinta.
+ */
+export interface EntityInfo {
+  /** Quien es ("planta:2:3", "enemigo:17"): cambia al abrir otra. */
+  id: string;
+  tone: InfoTone;
+  title: string;
+  /** Bajo el nombre: "2 cañones fusionados", "Jefe del mundo 1"... */
+  subtitle: string;
+  /** Nivel, con el tramo de su medallita (null en nivel 1) y una nota ("Tope 5"); null si no tiene (minas y Creeper). */
+  level: { value: number; medalTier: number | null; note: string | null } | null;
+  /** Vida que le queda y la llena, en enteros. */
+  hp: { current: number; max: number };
+  stats: InfoStat[];
+  tags: InfoTag[];
+  /** Como funciona, en una o dos frases. */
+  about: string;
+  /** Foto (data URL de una imagen PNG). */
+  portrait: string;
 }
 
 /** Coordenadas DOM de pagina; la escena las traduce a coordenadas del juego. */

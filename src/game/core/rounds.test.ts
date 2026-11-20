@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { BOARD, COSTS, ENEMIES, ENEMY_LEVELS, LIMITS, LIVES, ROUND_PREP, ROUNDS } from '../config/balance';
 import type { Cell } from './board';
-import { spawnEnemy, stepCombat } from './combat';
+import { enemyMaxHp, spawnEnemy, stepCombat } from './combat';
 import { cardPlay, createMatch, createPlant, fusionBlocker, fusionTargets, levelUpOffer, playCard, type MatchState } from './match';
 import {
   ROUND_COUNT,
@@ -56,8 +56,8 @@ describe('guion de las rondas (datos)', () => {
     const [escort, boss] = ROUNDS[9].groups;
     expect(ROUNDS[9].groups).toHaveLength(2);
     expect(boss).toEqual({ atMs: expect.any(Number), kind: 'creeper', lanes: [2] });
-    // Un acorazado de nivel 5 por carril, antes que el y a su paso, con su grito.
-    expect(escort).toMatchObject({ kind: 'armored', lanes: [0, 1, 2, 3, 4], level: 5, shout: expect.stringContaining('ADELANTE') });
+    // Un acorazado de nivel 10 (T-010) por carril, antes que el y a su paso, con su grito.
+    expect(escort).toMatchObject({ kind: 'armored', lanes: [0, 1, 2, 3, 4], level: 10, shout: expect.stringContaining('ADELANTE') });
     expect(escort.atMs).toBeLessThan(boss.atMs);
     expect(ENEMIES.armored.speed * (escort.haste ?? 1)).toBeCloseTo(ENEMIES.creeper.speed, 9);
     const others = ROUNDS.slice(0, 9).flatMap((round) => round.groups.map((group) => group.kind));
@@ -200,16 +200,17 @@ describe('desbloqueo', () => {
     expect(levelUpOffer(withPlantAt(atRound(1), cell), cell)?.blocker).toBeNull();
   });
 
-  it('el tope de nivel es 5 desde la ronda 2 y 10 desde la 7 (T-009)', () => {
-    expect(ROUNDS.map((_, i) => levelCapAt(i))).toEqual([LIMITS.maxLevel, 5, 5, 5, 5, 5, 10, 10, 10, 10]);
-    expect(levelCapRaisedAfter(1, 5)).toBe(6);
-    expect(levelCapRaisedAfter(6, 10)).toBeNull();
+  it('el tope de nivel es 5 desde la ronda 2 hasta el final del mundo 1 (T-010)', () => {
+    expect(ROUNDS.map((_, i) => levelCapAt(i))).toEqual([LIMITS.maxLevel, 5, 5, 5, 5, 5, 5, 5, 5, 5]);
+    expect(levelCapRaisedAfter(1, 5)).toBeNull();
+    expect(levelCapRaisedAfter(6, 5)).toBeNull();
     expect(levelCapRaisedAfter(1, 3)).toBe(2);
   });
 
-  it('lo nuevo de cada ronda para el aviso que hay que aceptar (T-009)', () => {
+  it('lo nuevo de cada ronda para el aviso que hay que aceptar (T-009); la ronda 1 y la 7 no avisan (T-010)', () => {
+    expect(ROUNDS[0].quiet).toBe(true);
     expect(ROUNDS.map((_, i) => roundUnlocks(i))).toEqual([
-      [{ kind: 'feature', feature: 'shooter' }],
+      [],
       [
         { kind: 'feature', feature: 'levelUp' },
         { kind: 'levelCap', level: 5 },
@@ -221,7 +222,7 @@ describe('desbloqueo', () => {
         { kind: 'feature', feature: 'iceInfuse' },
       ],
       [{ kind: 'feature', feature: 'fuse' }],
-      [{ kind: 'levelCap', level: 10 }],
+      [],
       [],
       [],
       [],
@@ -276,7 +277,7 @@ describe('ataque', () => {
     const before = stepRound(attacking(0), first.atMs - 1, HOLE_X);
     expect(before.spawned).toEqual([]);
     const out = stepRound(before.state, 1, HOLE_X);
-    expect(out.spawned.map((e) => [e.kind, e.lane, e.x, e.hp])).toEqual(first.lanes.map((lane) => [first.kind, lane, HOLE_X, ENEMIES[first.kind].hp]));
+    expect(out.spawned.map((e) => [e.kind, e.lane, e.x, e.hp])).toEqual(first.lanes.map((lane) => [first.kind, lane, HOLE_X, enemyMaxHp(first.kind)]));
     expect(out.spawned.every((e) => e.haste === 1)).toBe(true);
     expect(out.state.enemies).toEqual(out.spawned);
     expect(out.state.round.released).toBe(1);
@@ -286,16 +287,18 @@ describe('ataque', () => {
     const [first] = ROUNDS[2].groups;
     // 0,95 cae en el nivel mas alto de la tabla de las rondas 3 y 4.
     const { spawned } = stepRound(attacking(2), first.atMs, HOLE_X, () => 0.95);
-    expect(spawned.map((e) => [e.level, e.hp])).toEqual(first.lanes.map(() => [4, ENEMIES[first.kind].hp * 1.45]));
+    expect(spawned.map((e) => [e.level, e.hp])).toEqual(first.lanes.map(() => [4, enemyMaxHp(first.kind, 4)]));
     const low = stepRound(attacking(0), ROUNDS[0].groups[0].atMs, HOLE_X, () => 0.95).spawned;
     expect(low.every((e) => e.level === 1)).toBe(true);
   });
 
-  it('la escolta de Creeper sale de nivel 5 y a su paso, con su grito, y despues sale el (T-009)', () => {
+  it('la escolta de Creeper sale de nivel 10 (T-010) y a su paso, con su grito, y despues sale el (T-009)', () => {
     const [escort, boss] = ROUNDS[9].groups;
-    const out = stepRound(attacking(9), escort.atMs, HOLE_X, () => 0.99);
+    const out = stepRound(attacking(9), escort.atMs, HOLE_X, () => 0.01);
     expect(out.events).toEqual([{ type: 'shout', text: escort.shout }]);
-    expect(out.spawned.map((e) => [e.kind, e.lane, e.level, e.haste])).toEqual(escort.lanes.map((lane) => ['armored', lane, 5, escort.haste]));
+    expect(out.spawned.map((e) => [e.kind, e.lane, e.level, e.haste, e.hp])).toEqual(
+      escort.lanes.map((lane) => ['armored', lane, 10, escort.haste, enemyMaxHp('armored', 10)]),
+    );
     const later = stepRound(out.state, boss.atMs - escort.atMs, HOLE_X);
     expect(later.spawned.map((e) => e.kind)).toEqual(['creeper']);
   });
@@ -312,7 +315,7 @@ describe('ataque', () => {
   it('el Creeper sale con la vida llena, sin nivel y sin saltos gastados', () => {
     const group = ROUNDS[9].groups[1];
     const { spawned } = stepRound(attacking(9, group.atMs - 1, 1), 1, HOLE_X);
-    expect(spawned).toEqual([expect.objectContaining({ kind: 'creeper', lane: 2, x: HOLE_X, hp: ENEMIES.creeper.hp, haste: 1, level: 1, jump: null, jumpsUsed: 0 })]);
+    expect(spawned).toEqual([expect.objectContaining({ kind: 'creeper', lane: 2, x: HOLE_X, hp: enemyMaxHp('creeper'), haste: 1, level: 1, jump: null, jumpsUsed: 0 })]);
   });
 
   it('un paso largo saca todos los grupos que tocan', () => {

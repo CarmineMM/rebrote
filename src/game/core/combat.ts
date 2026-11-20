@@ -1,4 +1,4 @@
-import { BOARD, CREEPER, ENEMIES, ENEMY_LEVELS, FIRE, ICE, MINE, SHOOTER } from '../config/balance';
+import { BOARD, CREEPER, ENEMIES, ENEMY_LEVELS, ENEMY_POWER, FIRE, ICE, MINE, SHOOTER } from '../config/balance';
 import type { BoardPoint, Cell } from './board';
 import type { MatchState, Mine, Sown } from './match';
 import { damageMultiplier, fireRateMultiplier, type ElementType, type Shooter } from './plants';
@@ -59,8 +59,9 @@ export interface Enemy {
   /** Velocidad respecto a la de su tipo: mas de 1 si lo acelero Creeper (T-008, rondas 8 y 9 y sus copias). */
   readonly haste: number;
   /**
-   * Nivel (T-009): cada uno suma `ENEMY_LEVELS.perLevel` a su vida y a su dano de nivel 1. El Creeper no tiene nivel
-   * (siempre 1: su vida y su mordisco son los suyos).
+   * Nivel (T-009): cada uno suma `ENEMY_LEVELS.perLevel` a su vida y a su dano de nivel 1, y desde el 5 y el 10 lleva un
+   * extra por tramo (T-010, `enemyPower`). El Creeper no tiene nivel (siempre 1: su vida y su mordisco son los suyos, con
+   * la fuerza de todos).
    */
   readonly level: number;
   /** Salto de carril en curso (solo el Creeper, T-008), o null. */
@@ -213,26 +214,52 @@ function killed(e: Enemy): CombatEvent {
 
 /**
  * Lo que multiplica el nivel a la vida y al dano de nivel 1 (T-009): +`ENEMY_LEVELS.perLevel` por nivel.
- * Nivel 1, por 1; nivel 10, por 2,35.
+ * Nivel 1, por 1; nivel 10, por 2,35. Sin el tramo ni la fuerza (ver `enemyPower`).
  */
 export function enemyLevelFactor(level: number): number {
   return 1 + (level - 1) * ENEMY_LEVELS.perLevel;
 }
 
-/** Vida llena de un enemigo de `kind` y nivel `level`. El Creeper no tiene nivel: la suya. */
-export function enemyMaxHp(kind: EnemyKind, level = 1): number {
-  return ENEMIES[kind].hp * (kind === 'creeper' ? 1 : enemyLevelFactor(level));
+/**
+ * Extra del tramo de nivel (T-010, `ENEMY_POWER.levelTiers`): el del tramo mas alto alcanzado, o 0 por debajo del
+ * primero. Del 5 al 9, 0,2; desde el 10, 0,4. No se acumulan.
+ */
+export function enemyTierBonus(level: number): number {
+  let best: { from: number; bonus: number } | null = null;
+  for (const tier of ENEMY_POWER.levelTiers) {
+    if (level >= tier.from && (!best || tier.from > best.from)) best = tier;
+  }
+  return best?.bonus ?? 0;
 }
 
 /**
- * Dano de cada mordisco (los que muerden) o escupitajo (el escupidor), con su nivel. El Creeper muerde como un gusano
- * de nivel `CREEPER.biteAsWormLevel` (T-009).
+ * Lo que multiplica la vida y el dano de la base de su tipo un enemigo de nivel `level` (T-009 y T-010): lo que suma el
+ * nivel, el extra de su tramo y la fuerza de todos. Nivel 1, por 1,1; nivel 5, por 2,11; nivel 10, por 3,62.
  */
+export function enemyPower(level: number): number {
+  return enemyLevelFactor(level) * (1 + enemyTierBonus(level)) * ENEMY_POWER.base;
+}
+
+/** Nivel que cuenta para su fuerza: el suyo, o 1 el Creeper, que no tiene. */
+function powerLevel(kind: EnemyKind, level: number): number {
+  return kind === 'creeper' ? 1 : level;
+}
+
+/** Vida llena de un enemigo de `kind` y nivel `level`, con su fuerza. El Creeper no tiene nivel: la suya por la fuerza de todos. */
+export function enemyMaxHp(kind: EnemyKind, level = 1): number {
+  return ENEMIES[kind].hp * enemyPower(powerLevel(kind, level));
+}
+
+/** Dano de cada mordisco (los que muerden, tambien el Creeper) o escupitajo (el escupidor), con su fuerza. */
 export function enemyDamage(enemy: Pick<Enemy, 'kind' | 'level'>): number {
-  if (enemy.kind === 'creeper') return ENEMIES.worm.biteDamage * enemyLevelFactor(CREEPER.biteAsWormLevel);
   const stats = ENEMIES[enemy.kind];
   const base = stats.attack === 'spit' ? stats.spitDamage : stats.biteDamage;
-  return base * enemyLevelFactor(enemy.level);
+  return base * enemyPower(powerLevel(enemy.kind, enemy.level));
+}
+
+/** Golpe del Creeper al aterrizar de un salto (J-05), con la fuerza de todos (T-010). */
+export function slamDamage(): number {
+  return CREEPER.slamDamage * enemyPower(1);
 }
 
 /**
@@ -617,7 +644,7 @@ function stepJump(
   const col = slamColumn(plants[e.lane], e.x, ENEMIES.creeper.halfLength);
   const cell = col === null ? null : { lane: e.lane, col };
   events.push({ type: 'landed', enemyId: e.id, lane: e.lane, cell });
-  if (cell) damageSown(plants, cell, CREEPER.slamDamage, events);
+  if (cell) damageSown(plants, cell, slamDamage(), events);
 }
 
 /**

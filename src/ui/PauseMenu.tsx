@@ -39,7 +39,7 @@ export function PauseMenu({ settings, autoLevel, fullscreenSupported, onChange, 
                 <span aria-hidden="true">⚙</span> Ajustes
               </button>
             </div>
-            <p className="pause-hint">Esc o P pausa · Esc o clic derecho suelta la carta elegida</p>
+            <p className="pause-hint">Esc o P pausa · Esc o clic derecho suelta la carta elegida · Doble clic sobre una planta o un enemigo: su ficha</p>
           </>
         ) : (
           <SettingsView

@@ -382,7 +382,7 @@ describe('subir de nivel', () => {
     const match = withPlants(unlocked(1000), [at, { shooter: shooter({ level: 3 }) }]);
     expect(levelUpOffer(match, at)).toEqual({
       level: 3,
-      cap: 10,
+      cap: 5,
       capRaisedAt: null,
       cost: LEVELING.baseCost + 2 * LEVELING.costStep,
       multiplier: 1,
@@ -431,29 +431,29 @@ describe('subir de nivel', () => {
   });
 
   it('en el tope de la ronda aparece como maximo y no se puede subir', () => {
-    const top = withPlants(unlocked(100_000), [at, { shooter: shooter({ level: 10 }) }]);
-    expect(levelUpOffer(top, at)).toEqual({ level: 10, cap: 10, capRaisedAt: null, cost: null, multiplier: 1, blocker: 'max-level' });
+    const top = withPlants(unlocked(100_000), [at, { shooter: shooter({ level: 5 }) }]);
+    expect(levelUpOffer(top, at)).toEqual({ level: 5, cap: 5, capRaisedAt: null, cost: null, multiplier: 1, blocker: 'max-level' });
     expect(() => levelUpPlant(top, at)).toThrow();
     // Por encima del tope (por ejemplo, el absoluto), tampoco.
     const above = withPlants(unlocked(100_000), [at, { shooter: shooter({ level: LIMITS.maxLevel }) }]);
     expect(levelUpOffer(above, at)?.blocker).toBe('max-level');
   });
 
-  it('subiendo de uno en uno en la ultima ronda llega al 10 y no pasa (T-009)', () => {
+  it('subiendo de uno en uno en la ultima ronda llega al 5 y no pasa (T-010)', () => {
     let state = withPlants(unlocked(100_000), [at, {}]);
     while (levelUpOffer(state, at)?.blocker === null) state = levelUpPlant(state, at);
-    expect(plantAt(state, at)?.shooter.level).toBe(10);
-    // 75 + 100 + ... + 275: 9 niveles.
-    expect(100_000 - state.balance).toBe(9 * LEVELING.baseCost + LEVELING.costStep * ((8 * 9) / 2));
+    expect(plantAt(state, at)?.shooter.level).toBe(5);
+    // 75 + 100 + 125 + 150: 4 niveles.
+    expect(100_000 - state.balance).toBe(4 * LEVELING.baseCost + LEVELING.costStep * ((3 * 4) / 2));
   });
 
-  it('el tope es 5 de la ronda 2 a la 6 y avisa de que sube en la 7; desde la 7, 10 (T-009)', () => {
+  it('el tope es 5 de la ronda 2 al final del mundo 1 y no promete otra ronda (T-010)', () => {
     const inRound = (round: number, level: number) => withPlants(createMatch(100_000, round), [at, { shooter: shooter({ level }) }]);
     expect(levelUpOffer(inRound(1, 4), at)).toMatchObject({ cap: 5, blocker: null });
-    expect(levelUpOffer(inRound(1, 5), at)).toMatchObject({ cap: 5, capRaisedAt: 6, cost: null, blocker: 'max-level' });
-    expect(levelUpOffer(inRound(5, 5), at)).toMatchObject({ cap: 5, capRaisedAt: 6, blocker: 'max-level' });
-    expect(levelUpOffer(inRound(6, 5), at)).toMatchObject({ cap: 10, blocker: null });
-    expect(levelUpOffer(inRound(6, 10), at)).toMatchObject({ cap: 10, capRaisedAt: null, blocker: 'max-level' });
+    expect(levelUpOffer(inRound(1, 5), at)).toMatchObject({ cap: 5, capRaisedAt: null, cost: null, blocker: 'max-level' });
+    for (const round of [5, 6, 9]) {
+      expect(levelUpOffer(inRound(round, 5), at)).toMatchObject({ cap: 5, capRaisedAt: null, blocker: 'max-level' });
+    }
   });
 
   it('reproduce la tabla de la task', () => {
@@ -461,8 +461,8 @@ describe('subir de nivel', () => {
     const one = levelUpPlant(withPlants(unlocked(250), [at, {}]), at);
     expect(plantAt(one, at)?.shooter.level).toBe(2);
     expect(one.balance).toBe(250 - LEVELING.baseCost);
-    // En el tope (10 en la ultima ronda, T-009), subir: no disponible, "Maximo".
-    expect(levelUpOffer(withPlants(unlocked(250), [at, { shooter: shooter({ level: 10 }) }]), at)?.blocker).toBe('max-level');
+    // En el tope (5 en todo el mundo 1, T-010), subir: no disponible, "Maximo".
+    expect(levelUpOffer(withPlants(unlocked(250), [at, { shooter: shooter({ level: 5 }) }]), at)?.blocker).toBe('max-level');
     // Nivel 3 con saldo insuficiente: no disponible, saldo sin cambios.
     const poor = withPlants(unlocked(50), [at, { shooter: shooter({ level: 3 }) }]);
     expect(levelUpOffer(poor, at)?.blocker).toBe('insufficient-funds');

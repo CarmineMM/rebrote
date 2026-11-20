@@ -46,6 +46,11 @@ export interface RoundScript {
   /** Aviso de una linea con el concepto nuevo, al empezar la ronda. */
   readonly notice: string;
   /**
+   * Lo que desbloquea no sale en el aviso que hay que aceptar (T-010, A-01: la disparadora de la ronda 1 se da por
+   * sabida). El aviso de una linea sale igual.
+   */
+  readonly quiet?: boolean;
+  /**
    * Velocidad de los enemigos de la ronda respecto a la normal (T-008: Creeper los acelera en las rondas 8 y 9).
    * Sin ella, 1.
    */
@@ -143,12 +148,13 @@ export function levelCapRaisedAfter(index: number, level: number): number | null
 
 /**
  * Lo nuevo de la ronda `index` para el aviso que hay que aceptar (T-009, P-02): lo que desbloquea y, si sube, el tope de
- * nivel. En la ronda que desbloquea subir de nivel, el tope va con ello.
+ * nivel. En la ronda que desbloquea subir de nivel, el tope va con ello. Una ronda `quiet` (la 1, T-010) no avisa.
  */
 export type Unlock = { readonly kind: 'feature'; readonly feature: Feature } | { readonly kind: 'levelCap'; readonly level: number };
 
 export function roundUnlocks(index: number): Unlock[] {
   const script = roundScript(index);
+  if (script.quiet) return [];
   const unlocks: Unlock[] = script.unlocks.map((feature) => ({ kind: 'feature', feature }));
   if (script.levelCap !== undefined && (index === 0 || levelCapAt(index - 1) !== script.levelCap)) {
     unlocks.push({ kind: 'levelCap', level: script.levelCap });

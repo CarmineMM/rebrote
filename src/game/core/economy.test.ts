@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { ECONOMY, ENEMIES } from '../config/balance';
-import { droppedCoinValue, rollKillReward } from './economy';
+import { droppedCoinValue, rollKillReward, stepIncome } from './economy';
+import { createMatch, type MatchState } from './match';
+import { stepRound } from './rounds';
 
 describe('moneda recogida a mano', () => {
   it('suma un 15 % y redondea hacia arriba', () => {
@@ -55,5 +57,68 @@ describe('recompensa por enemigo eliminado', () => {
     expect(ENEMIES.armored.reward).toBe(25);
     expect(rollKillReward(ENEMIES.spitter.reward, () => 0.99)).toEqual({ kind: 'auto', amount: 20 });
     expect(rollKillReward(ENEMIES.armored.reward, () => 0)).toEqual({ kind: 'drop', amount: 29 });
+  });
+});
+
+describe('goteo pasivo (T-010): solo durante el ataque', () => {
+  const { passiveIncome, passiveIntervalMs } = ECONOMY;
+  /** Partida en el ataque de la ronda 1, sin enemigos fuera. */
+  const attacking = (over: Partial<MatchState> = {}): MatchState => ({
+    ...createMatch(100),
+    round: { index: 0, phase: 'attack', prepMs: 0, elapsedMs: 0, released: 0 },
+    ...over,
+  });
+
+  it('en la preparacion no se gana nada ni avanza el reloj', () => {
+    const prep = createMatch(100);
+    const step = stepIncome(prep, passiveIntervalMs * 3);
+    expect(step.earned).toBe(0);
+    expect(step.state).toBe(prep);
+  });
+
+  it('en el ataque cae la moneda cada intervalo y lo que sobra cuenta para el siguiente', () => {
+    const almost = stepIncome(attacking(), passiveIntervalMs - 1);
+    expect(almost.earned).toBe(0);
+    expect(almost.state.balance).toBe(100);
+    expect(almost.state.incomeMs).toBe(passiveIntervalMs - 1);
+    const drip = stepIncome(almost.state, 5);
+    expect(drip.earned).toBe(passiveIncome);
+    expect(drip.state.balance).toBe(100 + passiveIncome);
+    expect(drip.state.incomeMs).toBe(4);
+  });
+
+  it('un paso largo da todos los goteos que tocan', () => {
+    const step = stepIncome(attacking(), passiveIntervalMs * 2.5);
+    expect(step.earned).toBe(2 * passiveIncome);
+    expect(step.state.incomeMs).toBe(passiveIntervalMs / 2);
+  });
+
+  it('el reloj se para en la preparacion y sigue donde iba en el siguiente ataque', () => {
+    // 7 s de ataque en la ronda 1, luego la preparacion entera de la 2 y 3 s de su ataque: un goteo justo al final.
+    let state = stepIncome(attacking(), 7000).state;
+    state = { ...state, round: { index: 1, phase: 'prep', prepMs: 20_000, elapsedMs: 0, released: 0 } };
+    expect(stepIncome(state, 20_000).earned).toBe(0);
+    state = { ...state, round: { ...state.round, phase: 'attack', prepMs: 0 } };
+    expect(stepIncome(state, passiveIntervalMs - 7000 - 1).earned).toBe(0);
+    expect(stepIncome(state, passiveIntervalMs - 7000).earned).toBe(passiveIncome);
+  });
+
+  it('una partida nueva empieza con el reloj a cero y su preparacion no da moneda', () => {
+    const start = createMatch();
+    expect(start.incomeMs).toBe(0);
+    const waited = stepRound(start, 15_000, 9.75).state;
+    expect(stepIncome(waited, 15_000).state.balance).toBe(start.balance);
+  });
+
+  it('sin vidas o con la partida ganada no corre', () => {
+    expect(stepIncome(attacking({ lives: 0 }), passiveIntervalMs * 2).earned).toBe(0);
+    const won = attacking({ round: { index: 9, phase: 'won', prepMs: 0, elapsedMs: 0, released: 2 } });
+    expect(stepIncome(won, passiveIntervalMs * 2).earned).toBe(0);
+  });
+
+  it('no modifica el estado recibido', () => {
+    const before = attacking({ incomeMs: passiveIntervalMs - 1 });
+    stepIncome(before, 10);
+    expect(before).toMatchObject({ balance: 100, incomeMs: passiveIntervalMs - 1 });
   });
 });

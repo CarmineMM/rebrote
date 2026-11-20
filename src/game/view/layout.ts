@@ -87,6 +87,11 @@ export const DEPTH = {
   pollen: 1050,
   butterflies: 1060,
   foreground: 1100,
+  /**
+   * Monedas soltadas que esperan a que el jugador las recoja (T-010): por encima de enemigos y matas para que siempre se
+   * vean y se puedan pulsar, aunque se queden donde cayeron. Entre ellas, la de delante tapa a la de atras.
+   */
+  droppedCoins: 1110,
   floatText: 1200,
 } as const;
 

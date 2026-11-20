@@ -23,15 +23,16 @@ export const COSTS = {
 } as const;
 
 /**
- * Economia (D-01 cerrada): moneda por enemigo eliminado (`reward` de cada uno en `ENEMIES`, T-009) mas goteo pasivo.
- * Al eliminar un enemigo, la moneda se cobra sola salvo en `dropChance` de los casos:
+ * Economia (D-01 cerrada): moneda por enemigo eliminado (`reward` de cada uno en `ENEMIES`, T-009) mas goteo pasivo, que
+ * solo corre durante el ataque (T-010: en la preparacion no se gana moneda esperando). Al eliminar un enemigo, la moneda se cobra sola salvo en `dropChance` de los casos:
  * entonces queda en el suelo y solo se cobra si el jugador la recoge con un clic,
  * con un `dropBonusPercent` extra redondeado hacia arriba. Siempre en enteros.
  */
 export const ECONOMY = {
   startingBalance: 250,
   passiveIncome: 25, // PROVISIONAL
-  passiveIntervalMs: 10_000, // PROVISIONAL
+  /** Cada cuanto tiempo de ataque cae el goteo. En la preparacion el reloj se para y sigue donde iba. PROVISIONAL. */
+  passiveIntervalMs: 10_000,
   dropChance: 0.1,
   dropBonusPercent: 15,
   /** Tiempo que la moneda soltada sigue en el suelo antes de perderse. PROVISIONAL. */
@@ -55,8 +56,9 @@ export const SHOOTER = {
 /**
  * Enemigos. Posiciones y velocidades en casillas (ADR-0005): la logica no sabe de pixeles.
  * `attack` dice como ataca: `bite` muerde lo que toca; `spit` se para a distancia y escupe (T-007).
- * `hp` y el dano son los de nivel 1: cada nivel suma `ENEMY_LEVELS.perLevel` (T-009). `reward` es la moneda que da al
- * caer (T-009, P-03): fija por tipo, sea cual sea su nivel.
+ * `hp` y el dano son la base de nivel 1: cada nivel suma `ENEMY_LEVELS.perLevel` (T-009) y despues los multiplica la
+ * fuerza de `ENEMY_POWER` (T-010). `reward` es la moneda que da al caer (T-009, P-03): fija por tipo, sea cual sea su
+ * nivel.
  */
 export const ENEMIES = {
   worm: {
@@ -114,8 +116,7 @@ export const ENEMIES = {
   /**
    * Creeper (T-008), jefe del mundo 1 y unico enemigo de la ronda 10: muerde como el gusano, con mucha mas vida, y
    * salta de carril al perder vida (`CREEPER`). Mas grande que el gusano: le dan antes y se para mas lejos a morder.
-   * No tiene nivel. Muerde como un gusano de nivel `CREEPER.biteAsWormLevel` (T-009). Al caer se gana la partida: no da
-   * moneda.
+   * No tiene nivel: de `ENEMY_POWER` solo le toca la fuerza de todos (T-010). Al caer se gana la partida: no da moneda.
    */
   creeper: {
     reward: 0,
@@ -123,6 +124,8 @@ export const ENEMIES = {
     /** Casillas por segundo. PROVISIONAL. */
     speed: 0.2,
     attack: 'bite',
+    /** Lo que mordia en T-009 un gusano de nivel 10 (P-07). Con la fuerza de T-010, 129,25. PROVISIONAL. */
+    biteDamage: 117.5,
     biteIntervalMs: 1000, // PROVISIONAL
     firstBiteMs: 500,
     reach: 0.85,
@@ -132,8 +135,9 @@ export const ENEMIES = {
 
 /**
  * Niveles de los enemigos (T-009, P-04 y P-05, decididos el 20 nov 2026). Cada nivel suma `perLevel` a la vida y al dano
- * (mordisco o escupitajo) de nivel 1; la velocidad no cambia. Cada ronda dice con que pesos sale cada nivel (`levels` en
- * `ROUNDS`); sin tabla, todos de nivel 1. Las copias del Creeper y su escolta tienen nivel fijo. PROVISIONAL.
+ * (mordisco o escupitajo) de nivel 1; la velocidad no cambia. Encima va la fuerza de `ENEMY_POWER` (T-010). Cada ronda
+ * dice con que pesos sale cada nivel (`levels` en `ROUNDS`); sin tabla, todos de nivel 1. Las copias del Creeper y su
+ * escolta tienen nivel fijo. PROVISIONAL.
  */
 export const ENEMY_LEVELS = {
   /** Un 5 % mas que lo que suma al dano cada nivel de una disparadora (`LEVELING.damagePerLevel`). */
@@ -150,14 +154,34 @@ export const ENEMY_LEVELS = {
 } as const;
 
 /**
+ * Fuerza de los enemigos (T-010, A-07, decidida el 20 nov 2026). Multiplica su vida y su dano (mordisco, escupitajo y el
+ * golpe del Creeper al aterrizar), encima de lo que suma su nivel (`ENEMY_LEVELS.perLevel`). Vale para todos los
+ * enemigos, tambien Creeper (que no tiene nivel: solo `base`) y los que vengan. La velocidad no cambia. PROVISIONAL.
+ * Un gusano de nivel 10 tiene 2,35 (nivel) x 1,40 (tramo) x 1,10 (fuerza) = 3,62 veces la vida y el dano de su base.
+ * Ajustada a la baja el mismo dia (de 15, 25 y 40 % a 10, 20 y 40 %).
+ */
+export const ENEMY_POWER = {
+  /** Todos los enemigos: un 10 % mas. */
+  base: 1.1,
+  /**
+   * Extra por tramo de nivel, encima de lo que ya da el nivel: del 5 al 9, +20 %; desde el 10, +40 % (en vez del 20:
+   * solo cuenta el tramo mas alto alcanzado). Son los niveles en los que la medallita cambia de color (plata y oro).
+   */
+  levelTiers: [
+    { from: 5, bonus: 0.2 },
+    { from: 10, bonus: 0.4 },
+  ],
+} as const;
+
+/**
  * Lo propio del Creeper (T-008; J-01 a J-05 cerradas el 20 nov 2026). Salta de carril al perder vida: cada umbral
  * de `jumpAt` (fraccion de su vida maxima) que cruza provoca un salto. Avisa del carril de destino (`warnMs`), vuela
  * (`airMs`) y al aterrizar golpea lo primero sembrado que tiene delante (`slamDamage`). Al despegar deja copias suyas
  * (gusanos normales, acelerados) en el carril que abandona. Por debajo de `enragedBelow` entra en su fase 2: salta
  * cada 10 % en vez de cada 20 %, avisa menos y deja dos copias en vez de una. Si cruza el borde izquierdo, se pierde
  * la partida. Al derrotarlo se desconectan sus copias.
- * T-009 (P-07 y P-08): muerde como un gusano de nivel 10, sus copias son de nivel 10 y en la fase 2 cada copia puede
- * ser un acorazado o un escupidor.
+ * T-009 (P-07 y P-08): sus copias son de nivel 10 y en la fase 2 cada copia puede ser un acorazado o un escupidor.
+ * T-010: su mordisco (`ENEMIES.creeper.biteDamage`) y su golpe llevan la fuerza de todos (`ENEMY_POWER.base`).
  */
 export const CREEPER = {
   /** Umbrales de vida que lo hacen saltar: cada 20 % en la fase 1 y cada 10 % en la 2 (que empieza saltando en el 50 %). */
@@ -168,7 +192,7 @@ export const CREEPER = {
   warnMs: { calm: 1000, enraged: 600 },
   /** Lo que tarda en el aire: no le dan las balas ni las minas, y no muerde ni avanza. PROVISIONAL. */
   airMs: 600,
-  /** Golpe al aterrizar a lo primero sembrado que tiene delante en su carril nuevo (J-05). PROVISIONAL. */
+  /** Golpe al aterrizar a lo primero sembrado que tiene delante en su carril nuevo (J-05), sin la fuerza. PROVISIONAL. */
   slamDamage: 150,
   /** Copias que deja en el carril que abandona al despegar (J-03). */
   copies: { calm: 1, enraged: 2 },
@@ -176,8 +200,6 @@ export const CREEPER = {
   copyKinds: { calm: { worm: 1 }, enraged: { worm: 50, armored: 25, spitter: 25 } },
   /** Nivel de sus copias (no salen al azar como el resto). */
   copyLevel: 10,
-  /** Muerde como un gusano de este nivel. */
-  biteAsWormLevel: 10,
   /** Distancia entre copias, hacia atras (a la derecha) desde donde estaba. */
   copyGap: 0.8,
   /** Velocidad de sus copias respecto a la normal, como los gusanos que acelera en las rondas 8 y 9. PROVISIONAL. */
@@ -193,9 +215,9 @@ export const ROUND_PREP = {
 } as const;
 
 /**
- * Las rondas del mundo 1 (T-007; de 7 a 10 en T-008; progresion de T-009), en orden. Cada una desbloquea lo suyo al
- * empezar su preparacion (`unlocks`, y el tope de nivel de las disparadoras en `levelCap`), avisa con una linea
- * (`notice`) y saca sus grupos de enemigos: cada grupo, un enemigo por carril de `lanes` a la vez, `atMs` milisegundos
+ * Las rondas del mundo 1 (T-007; de 7 a 10 en T-008; progresion de T-009 y T-010), en orden. Cada una desbloquea lo suyo
+ * al empezar su preparacion (`unlocks`, y el tope de nivel de las disparadoras en `levelCap`), avisa con una linea
+ * (`notice`) y, si trae algo nuevo, con el aviso que hay que aceptar (salvo `quiet`: la ronda 1, T-010). Saca sus grupos de enemigos: cada grupo, un enemigo por carril de `lanes` a la vez, `atMs` milisegundos
  * despues de que empiece el ataque (en orden). La ronda acaba cuando no quedan enemigos por salir ni vivos. Los
  * carriles van de 0 (el del fondo) a 4 (el de delante).
  * Los enemigos salen con un nivel al azar segun `levels` (tablas de `ENEMY_LEVELS`; sin ella, nivel 1), salvo los
@@ -207,6 +229,8 @@ export const ROUND_PREP = {
 export const ROUNDS: readonly RoundScript[] = [
   {
     unlocks: ['shooter'],
+    // T-010 (A-01): la disparadora se da por sabida; basta el aviso de una linea.
+    quiet: true,
     notice: 'Siembra disparadoras: cada una defiende su carril',
     groups: [
       { atMs: 3_000, kind: 'worm', lanes: [2] },
@@ -221,6 +245,7 @@ export const ROUNDS: readonly RoundScript[] = [
   },
   {
     unlocks: ['levelUp'],
+    // T-010 (A-05): el tope se queda en 5 todo el mundo 1.
     levelCap: 5,
     notice: 'Toca una disparadora para subirla de nivel (hasta el 5)',
     groups: [
@@ -317,8 +342,7 @@ export const ROUNDS: readonly RoundScript[] = [
   },
   {
     unlocks: [],
-    levelCap: 10,
-    notice: 'Ya puedes subir tus disparadoras hasta el nivel 10. ¡Aguanta!',
+    notice: 'Llegan todos a la vez: gusanos, acorazados y escupidores. ¡Aguanta!',
     levels: ENEMY_LEVELS.tables.mid,
     groups: [
       { atMs: 3_000, kind: 'worm', lanes: [0, 2, 4] },
@@ -426,12 +450,12 @@ export const ROUNDS: readonly RoundScript[] = [
     notice: '¡Llega Creeper con su escolta! Salta de carril: reparte tus defensas',
     levels: ENEMY_LEVELS.tables.late,
     groups: [
-      // T-009 (P-10): su escolta, un acorazado de nivel 5 por carril, va a su paso para no dejarse adelantar.
+      // T-009 (P-10): su escolta, un acorazado por carril, va a su paso para no dejarse adelantar. De nivel 10 (T-010).
       {
         atMs: 2_000,
         kind: 'armored',
         lanes: [0, 1, 2, 3, 4],
-        level: 5,
+        level: 10,
         haste: ENEMIES.creeper.speed / ENEMIES.armored.speed,
         shout: '¡ADELANTE, MIS ACORAZADOS!',
       },

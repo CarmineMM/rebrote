@@ -25,7 +25,8 @@ export function Card({ card, label, balance, selected, preview = null, canInfuse
   const cost = cardCost(card);
   const disabled = balance === null || !canAfford(balance, cost);
   const multiplied = preview !== null && preview.multiplier > 1;
-  const shownCost = multiplied ? `×${preview.multiplier} = ${preview.cost}` : String(cost);
+  // Espacio duro tras el "=": si en el HUD compacto no cabe en una linea, parte en "×3" y "= 225" (T-010).
+  const shownCost = multiplied ? `×${preview.multiplier} =\u00a0${preview.cost}` : String(cost);
   const short = preview !== null && !preview.affordable;
 
   function onPointerDown(event: ReactPointerEvent<HTMLButtonElement>) {

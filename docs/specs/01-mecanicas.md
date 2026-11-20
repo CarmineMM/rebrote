@@ -27,6 +27,7 @@ El elemento solo siempre tiene un efecto mayor que su versión infundida, a camb
 ### Moneda
 - Hay una sola moneda. Sembrar, infundir y subir de nivel compiten por ella.
 - Se gana por enemigo eliminado y por goteo pasivo. No hay planta generadora en el mundo 1 (D-01, cerrada el 19 nov 2026).
+- **El goteo solo corre durante el ataque (T-010, A-02):** 25 por cada 10 s de ataque. En la preparación no se gana moneda esperando: su reloj se para y en el siguiente ataque sigue donde iba.
 - **Cuánto da cada enemigo (T-009, P-03):** gusano 15, escupidor 20 y acorazado 25, sea cual sea su nivel. Creeper no da moneda: al caer se gana la partida.
 - Al eliminar un enemigo, el 90 % de las veces la moneda se cobra sola. El otro 10 % el enemigo la suelta en el suelo y solo se cobra si el jugador le hace clic; recogida así vale un 15 % más, redondeado hacia arriba (25 pasa a 29, 15 a 18).
 - La moneda soltada que no se recoge se pierde al cabo de unos segundos.
@@ -40,11 +41,12 @@ El elemento solo siempre tiene un efecto mayor que su versión infundida, a camb
 
 ### Rondas (T-007, ampliadas en T-008 y T-009)
 - El mundo 1 tiene 10 rondas con guion: cada una dice qué enemigos salen, cuándo y por qué carril. El guion está en `ROUNDS` de `balance.ts` (resumen en `02-mundo-1-gusanos.md`).
-- **Preparación:** cada ronda, también la 1, empieza con una cuenta atrás de 20 s en la que se puede sembrar, infundir, fusionar y subir de nivel. El goteo sigue. El botón "¡Que vengan!" la adelanta.
+- **Preparación:** cada ronda, también la 1, empieza con una cuenta atrás de 20 s en la que se puede sembrar, infundir, fusionar y subir de nivel. El goteo se para (T-010). El botón "¡Que vengan!" la adelanta.
 - **Ataque:** los enemigos salen a su hora por el agujero de su carril. La ronda termina cuando no quedan enemigos por salir ni vivos; empieza entonces la preparación de la siguiente.
 - Plantas, saldo y vidas se conservan de una ronda a la siguiente.
-- **Un concepto por ronda (T-009, P-01):** lo nuevo se desbloquea al empezar la preparación de su ronda y sigue desbloqueado después. Ronda 1: disparadora. 2: subir de nivel, hasta el 5. 3: mina de fuego. 4: mina de hielo. 5: infundir (fuego y hielo, con la carta o arrastrando una mina sembrada). 6: fusionar. 7: subir de nivel hasta el 10. 8 a 10: nada nuevo.
-- **Aviso que hay que aceptar (T-009, P-02):** al empezar una ronda con algo nuevo, también la 1, sale "¡YA LO TIENES!" con lo desbloqueado. El juego espera en pausa (la cuenta atrás no corre) hasta que el jugador pulsa "¡A jugar!" (o Enter o Esc). Además, cada ronda sigue sacando su aviso de una línea.
+- **Un concepto por ronda (T-009, P-01):** lo nuevo se desbloquea al empezar la preparación de su ronda y sigue desbloqueado después. Ronda 1: disparadora. 2: subir de nivel, hasta el 5. 3: mina de fuego. 4: mina de hielo. 5: infundir (fuego y hielo, con la carta o arrastrando una mina sembrada). 6: fusionar. 7 a 10: nada nuevo (desde T-010 la 7 ya no sube el tope de nivel).
+- **Aviso que hay que aceptar (T-009, P-02):** al empezar una ronda con algo nuevo sale "¡YA LO TIENES!" con lo desbloqueado. El juego espera en pausa (la cuenta atrás no corre) hasta que el jugador pulsa "¡A jugar!" (o Enter o Esc). Además, cada ronda sigue sacando su aviso de una línea.
+  - **La ronda 1 no lo saca (T-010, A-01):** la disparadora se da por sabida y basta su aviso de una línea. En el guion, la ronda lleva `quiet`.
 - **Creeper se prepara (rondas 8 y 9, T-008 y T-009):** los enemigos de la ronda salen acelerados (+25 % en la 8 y +35 % en la 9) y en mayor número: un 50 % más de cada tipo que en T-008. Solo cambia lo que avanzan: muerden y escupen igual. Se ve a Creeper a la derecha preparándose, también en la preparación de la 10.
 - **Combate final (ronda 10, T-008):** sale Creeper con su escolta (ver "Jefe: Creeper").
 - Lo bloqueado no se ve ni responde: la carta no está en la bandeja, la planta no abre su panel o no se arrastra. Una carta de fuego en las rondas 3 y 4 sobre una disparadora avisa de en qué ronda se podrá infundir.
@@ -62,22 +64,35 @@ El elemento solo siempre tiene un efecto mayor que su versión infundida, a camb
 
 ### Nivel de los enemigos (T-009)
 Decidido el 20 nov 2026 (P-04 y P-05).
-- Cada enemigo sale con un nivel. El nivel 1 es el de siempre; cada nivel más suma un 15 % a su vida y a su daño (mordisco o escupitajo) de nivel 1: un 5 % más que lo que suma al daño cada nivel de una disparadora. La velocidad no cambia. Un nivel 10 tiene 2,35 veces la vida y el daño del nivel 1.
+- Cada enemigo sale con un nivel. Cada nivel más suma un 15 % a su vida y a su daño (mordisco o escupitajo) de nivel 1: un 5 % más que lo que suma al daño cada nivel de una disparadora. La velocidad no cambia. Por el nivel, un nivel 10 tiene 2,35 veces la vida y el daño del nivel 1 (encima va la fuerza de T-010, abajo).
 - El nivel sale al azar con los pesos de su ronda:
   - Rondas 1 y 2: siempre nivel 1.
   - Rondas 3 y 4: del 1 al 4, más probable cuanto más bajo (40, 30, 20 y 10 %).
   - Rondas 5 a 7: del 1 al 7, con el pico en el 4 (24 %); menos el 1 (8 %) y aún menos el 7 (6 %).
   - Rondas 8 a 10: del 3 al 10, con el pico en el 7 (22 %); menos el 3 (6 %) y aún menos el 10 (4 %).
-- No cuentan para estas tablas Creeper (no tiene nivel), sus copias (nivel 10) ni su escolta (nivel 5).
+- No cuentan para estas tablas Creeper (no tiene nivel), sus copias (nivel 10) ni su escolta (nivel 10 desde T-010).
 - Lo que da cada enemigo no cambia con el nivel.
 - Desde el nivel 2 llevan en la nuca la misma medallita que las disparadoras y son un poco más grandes.
 - Los valores están como PROVISIONAL en `ENEMY_LEVELS` de `balance.ts`; cada ronda dice su tabla en `levels` de `ROUNDS`.
 
+### Fuerza de los enemigos (T-010)
+Decidida el 20 nov 2026 (A-07) y bajada ese mismo día (de 15, 25 y 40 % a 10, 20 y 40 %). Vale para todos los enemigos, también Creeper y los que vengan en otros mundos.
+- **Todos:** un 10 % más de vida y de daño (mordisco, escupitajo y el golpe de Creeper al aterrizar). La velocidad no cambia.
+- **Por tramo de nivel**, encima de lo que ya suma el nivel: del 5 al 9, un 20 % más; desde el 10, un 40 % más (en vez del 20: no se acumulan). Son los niveles en los que la medallita cambia de color (plata y oro).
+- Se multiplica todo: vida o daño = base de su tipo × nivel × tramo × 1,10. Un nivel 5 tiene 1,6 × 1,20 × 1,10 = 2,11 veces la base; un nivel 10, 2,35 × 1,40 × 1,10 = 3,62. Ningún nivel es más débil que el anterior.
+
+  | Nivel | 1 | 4 | 5 | 7 | 9 | 10 |
+  |---|---|---|---|---|---|---|
+  | Vida de un gusano (antes de T-010) | 100 | 145 | 160 | 190 | 220 | 235 |
+  | Vida de un gusano (T-010) | 110 | 160 | 211 | 251 | 290 | 362 |
+
+- Los valores están como PROVISIONAL en `ENEMY_POWER` de `balance.ts`.
+
 ### Jefe: Creeper (T-008)
 Decisiones J-01 a J-05 cerradas el 20 nov 2026.
 - Muerde como el gusano, con mucha más vida. Es más grande: le dan antes y se para más lejos a morder.
-- **No tiene nivel (T-009, P-07):** muerde como un gusano de nivel 10 (117,5).
-- **Escolta (T-009, P-10):** al empezar el ataque de la ronda 10, Creeper grita "¡ADELANTE, MIS ACORAZADOS!" y sale un acorazado de nivel 5 por cada carril, acelerado a su paso. Él sale 3,5 s después por el carril del centro, detrás de ellos.
+- **No tiene nivel (T-009, P-07):** muerde 117,5 (lo que mordía en T-009 un gusano de nivel 10). De la fuerza de T-010 solo le toca el 10 % de todos (A-08): 4400 de vida, mordisco de 129,25 y golpe al aterrizar de 165.
+- **Escolta (T-009, P-10):** al empezar el ataque de la ronda 10, Creeper grita "¡ADELANTE, MIS ACORAZADOS!" y sale un acorazado de nivel 10 (T-010, A-10) por cada carril, acelerado a su paso. Él sale 3,5 s después por el carril del centro, detrás de ellos.
 - **Salto de carril:** cada vez que su vida baja de un umbral (80 % y 60 % en la fase 1; 50, 40, 30, 20 y 10 % en la fase 2) salta a un carril al azar que no es el suyo.
   - **Aviso (J-01):** primero se agacha en su carril durante 1 s (0,6 s en la fase 2) con el destino marcado. Mientras avisa no avanza ni muerde, pero le siguen dando.
   - **Vuelo:** luego vuela al carril de destino, a la misma altura del césped. En el aire no le dan las balas ni las minas y las plantas no le apuntan; no avanza ni muerde.
@@ -86,7 +101,7 @@ Decisiones J-01 a J-05 cerradas el 20 nov 2026.
   - Un golpe que cruza dos umbrales da un solo salto, y los umbrales que cruza mientras salta se gastan: no encadena saltos.
 - **Copias (J-03):** al despegar deja en el carril que abandona, donde estaba, un gusano acelerado (+35 %); en la fase 2, dos, uno detrás del otro.
   - **T-009 (P-08):** sus copias son siempre de nivel 10. En la fase 2 cada una de las dos sale al azar: 50 % gusano, 25 % acorazado y 25 % escupidor. Todas van aceleradas igual.
-- **Aterrizaje (J-05):** golpea a lo primero sembrado que tiene delante en su carril nuevo, contando lo que queda bajo su cuerpo. Una mina rota así no explota.
+- **Aterrizaje (J-05):** golpea a lo primero sembrado que tiene delante en su carril nuevo, contando lo que queda bajo su cuerpo, con la fuerza de todos (`slamDamage`, T-010). Una mina rota así no explota.
 - **Fases (J-04):** la fase 2 empieza con la mitad de la vida o menos: salta más a menudo, avisa menos y deja dos copias.
 - **Si cruza el borde izquierdo** se pierde la partida, queden las vidas que queden.
 - **Al derrotarlo** sus copias (y cualquier otro enemigo) caen con él: la ronda 10 queda despejada y la partida, ganada.
@@ -137,7 +152,7 @@ Decisiones J-01 a J-05 cerradas el 20 nov 2026.
 - No se puede deshacer una fusión ni mover una planta a una casilla vacía.
 
 ### Nivel (T-003)
-- **Tope por ronda (T-009, P-01):** 5 de la ronda 2 a la 6 y 10 desde la 7. En el tope, el panel dice "Máximo" y, si el tope va a subir, en qué ronda ("Tope 5: sube en la ronda 7"). El tope absoluto del juego es 20 (`LIMITS.maxLevel`), por encima del de cualquier ronda del mundo 1.
+- **Tope por ronda (T-009, P-01; T-010, A-05):** 5 desde la ronda 2 hasta el final del mundo 1 (hasta T-010 subía a 10 en la 7). En el tope, el panel dice "Máximo" y, si el tope fuera a subir en otra ronda, en cuál ("Tope 5: sube en la ronda 7"). El tope absoluto del juego es 20 (`LIMITS.maxLevel`), por encima del de cualquier ronda del mundo 1.
 - **Por partida (D-03, cerrada el 19 nov 2026 con la recomendación):** los niveles se pierden al acabar la partida. No hay guardado.
 - Se sube seleccionando la disparadora con un clic (sin arrastrarla) y pulsando "Subir" en su panel. Se cobra en el acto.
 - **Cuánto mejora:** cada nivel suma un 10 % de daño y un 3 % de cadencia sobre los de nivel 1 (decidido el 19 nov 2026). El daño es el del disparo entero: en una fusionada se multiplica con el de los cañones, y la quemadura de una de fuego crece igual.
@@ -148,6 +163,15 @@ Decisiones J-01 a J-05 cerradas el 20 nov 2026.
 - **Medallita:** sin cambio visual grande en la planta, solo una medallita con el número en la nuca. Cambia de color cada 5 niveles: bronce, plata (desde el 5), oro (10), rubí (15) y cristal irisado en el 20. Las de nivel 1 no llevan. Se ve también en las fusionadas y no tapa los puntos del tallo.
 - Al fusionar, la planta se queda con el nivel más bajo de las dos (ver "Fusionar").
 - Los valores están como PROVISIONAL en `LEVELING` de `balance.ts`.
+
+### Ficha de información (T-010)
+- Doble clic (o doble toque) sobre una disparadora, una mina o un enemigo, sin carta elegida: el juego queda en pausa y sale su ficha. Se cierra con su botón, con Esc o haciendo clic fuera, y el juego sigue.
+- A la izquierda, su foto (la misma figura del tablero). A la derecha:
+  - **Disparadora:** variante y cañones, nivel con el tope de la ronda (si ya se puede subir de nivel), vida, daño por disparo (y por semilla si es fusionada), cadencia, daño por segundo, quemadura o lo que frena, y alcance.
+  - **Mina:** elemento, vida, a qué distancia detecta, cuándo explota y hasta dónde, daño o lo que frena, y si espera o cuánto le falta para explotar.
+  - **Enemigo:** tipo, nivel con su tramo de fuerza, vida, mordisco o escupitajo (y cada cuánto), velocidad (y cuánto tarda en cruzar el jardín), lo que da al caer y cómo está: quemado, frenado, acelerado, mordiendo o escupiendo. Creeper, además, su golpe, su próximo salto y su fase.
+- El primer clic hace lo de siempre: sobre una disparadora la selecciona, así que al cerrar la ficha su panel de nivel sigue ahí. Con una carta elegida, el clic la juega y no abre fichas.
+- La ficha enseña los números de las reglas: no hay números propios.
 
 ## Decisiones pendientes
 
@@ -171,5 +195,7 @@ El combate (disparo, balas, mordisco, escupitajos, minas, quemadura, ralentizaci
 El Creeper (T-008) también está en `combat.ts`: el salto (`Enemy.jump`, `startJump`, `stepJump`), las copias, el golpe al aterrizar, las fases (`isEnraged`, `jumpsCrossed`), quién está en el aire (`isAirborne`) y la victoria al derrotarlo, con tests en `creeper.test.ts`. Los enemigos acelerados llevan `Enemy.haste`. Sus valores están en `ENEMIES.creeper` y `CREEPER` de `balance.ts`.
 
 Las rondas (T-007), en `src/game/core/rounds.ts`: preparación y ataque (`stepRound`, `startAttack`), fin de ronda y victoria, y qué desbloquea cada una (`unlockedAt`, `isUnlocked`, `availableCards`). Desde T-008, lo que acelera cada ronda (`roundHaste`), cuál es la del jefe (`isBossRound`, `bossRoundIndex`) y cuándo se ve a Creeper prepararse (`isBossPreparing`). `cardPlay`, `fusionBlocker` y `levelUpOffer` responden `locked` a lo que aún no toca. El guion y la preparación están en `ROUNDS` y `ROUND_PREP` de `balance.ts`.
+
+T-010: la fuerza de los enemigos está en `combat.ts` (`enemyTierBonus`, `enemyPower`, y la usan `enemyMaxHp`, `enemyDamage` y `slamDamage`), con sus valores en `ENEMY_POWER` de `balance.ts`. El goteo, en `economy.ts` (`stepIncome`, con su reloj en `MatchState.incomeMs`). La ronda que no avisa lleva `quiet` en `ROUNDS` y `roundUnlocks` la respeta. La ficha de información no es una regla: sus textos y números salen de las reglas en `src/game/view/entityInfo.ts`.
 
 T-009: el nivel de los enemigos está en `combat.ts` (`Enemy.level`, `enemyLevelFactor`, `enemyMaxHp`, `enemyDamage`, `rollEnemyLevel`) y las copias del Creeper, en `rollCopyKind`; `enemyKilled` lleva el tipo para pagar lo suyo (`ENEMIES[kind].reward`). En `rounds.ts`, el tope de nivel (`levelCapAt`, `levelCap`, `levelCapRaisedAfter`), lo nuevo de cada ronda para el aviso (`roundUnlocks`), los grupos con nivel y paso propios (`RoundGroup.level`, `haste`) y el grito (`shout`, evento `shout`). Infundir con una mina, en `match.ts` (`mineDragBlocker`, `mineInfusion`, `mineInfusionTargets`, `infuseWithMine`), y el tope en `levelUpOffer` (`cap`, `capRaisedAt`). Los valores están en `ENEMY_LEVELS`, `CREEPER`, `ENEMIES` y `ROUNDS` de `balance.ts`.

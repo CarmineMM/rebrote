@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BOARD, ENEMIES, ENEMY_LEVELS, FIRE, ICE, LEVELING, LIVES, MINE, SHOOTER } from '../config/balance';
+import { BOARD, ENEMIES, ENEMY_LEVELS, ENEMY_POWER, FIRE, ICE, LEVELING, LIVES, MINE, SHOOTER } from '../config/balance';
 import type { Cell } from './board';
 import {
   MAX_STEP_MS,
@@ -9,6 +9,9 @@ import {
   enemyDamage,
   enemyFront,
   enemyLevelFactor,
+  enemyMaxHp,
+  enemyPower,
+  enemyTierBonus,
   fireIntervalMs,
   hasTarget,
   hpFraction,
@@ -27,6 +30,9 @@ import { createMatch, createMine, createPlant, mineAt, type MatchState, type Min
 import { createShooter, damageMultiplier, plantMaxHp, type ElementType, type Shooter } from './plants';
 
 const worm = ENEMIES.worm;
+/** Vida y mordisco de un gusano de nivel 1, con la fuerza de T-010. */
+const wormHp = enemyMaxHp('worm');
+const wormBite = enemyDamage({ kind: 'worm', level: 1 });
 /** Donde salen los gusanos en el juego (el agujero de su carril). */
 const HOLE_X = BOARD.columns + 0.75;
 /** Vida de un gusano que no muere durante la prueba. */
@@ -85,8 +91,8 @@ describe('gusano', () => {
     const one = spawnEnemy(createMatch(), 'worm', 2, HOLE_X);
     const two = spawnEnemy(one, 'worm', 4, HOLE_X);
     expect(two.enemies).toEqual([
-      { id: 1, kind: 'worm', lane: 2, x: HOLE_X, hp: worm.hp, attackMs: null, burn: null, slow: null, haste: 1, level: 1, jump: null, jumpsUsed: 0 },
-      { id: 2, kind: 'worm', lane: 4, x: HOLE_X, hp: worm.hp, attackMs: null, burn: null, slow: null, haste: 1, level: 1, jump: null, jumpsUsed: 0 },
+      { id: 1, kind: 'worm', lane: 2, x: HOLE_X, hp: wormHp, attackMs: null, burn: null, slow: null, haste: 1, level: 1, jump: null, jumpsUsed: 0 },
+      { id: 2, kind: 'worm', lane: 4, x: HOLE_X, hp: wormHp, attackMs: null, burn: null, slow: null, haste: 1, level: 1, jump: null, jumpsUsed: 0 },
     ]);
     expect(() => spawnEnemy(createMatch(), 'worm', BOARD.lanes, HOLE_X)).toThrow();
   });
@@ -95,14 +101,32 @@ describe('gusano', () => {
     expect(enemyLevelFactor(1)).toBe(1);
     expect(enemyLevelFactor(10)).toBeCloseTo(1 + 9 * ENEMY_LEVELS.perLevel, 9);
     expect(ENEMY_LEVELS.perLevel).toBeCloseTo(LEVELING.damagePerLevel + 0.05, 9);
-    const strong = spawnEnemy(createMatch(), 'armored', 2, HOLE_X, undefined, 1, 5).enemies[0];
-    expect(strong).toMatchObject({ level: 5, hp: ENEMIES.armored.hp * 1.6 });
+    const strong = spawnEnemy(createMatch(), 'armored', 2, HOLE_X, undefined, 1, 4).enemies[0];
+    expect(strong.level).toBe(4);
+    expect(strong.hp).toBeCloseTo(ENEMIES.armored.hp * 1.45 * ENEMY_POWER.base, 9);
     expect(hpFraction(strong)).toBe(1);
-    expect(enemyDamage(strong)).toBeCloseTo(ENEMIES.armored.biteDamage * 1.6, 9);
-    expect(enemyDamage({ kind: 'spitter', level: 3 })).toBeCloseTo(ENEMIES.spitter.spitDamage * 1.3, 9);
+    expect(enemyDamage(strong)).toBeCloseTo(ENEMIES.armored.biteDamage * 1.45 * ENEMY_POWER.base, 9);
+    expect(enemyDamage({ kind: 'spitter', level: 3 })).toBeCloseTo(ENEMIES.spitter.spitDamage * 1.3 * ENEMY_POWER.base, 9);
     const walked = (level: number) => HOLE_X - stepCombat(spawnEnemy(createMatch(), 'worm', 2, HOLE_X, undefined, 1, level), 1000).state.enemies[0].x;
     expect(walked(7)).toBeCloseTo(walked(1), 9);
     expect(() => spawnEnemy(createMatch(), 'worm', 2, HOLE_X, undefined, 1, 0)).toThrow();
+  });
+
+  it('fuerza (T-010): todos +10 %; del nivel 5 al 9, +20 % mas, y desde el 10, +40 % (en vez del 20)', () => {
+    expect(ENEMY_POWER.base).toBe(1.1);
+    expect([1, 4, 5, 9, 10, 14, 20].map(enemyTierBonus)).toEqual([0, 0, 0.2, 0.2, 0.4, 0.4, 0.4]);
+    // Lo que multiplica la base de su tipo: nivel x tramo x fuerza.
+    expect(enemyPower(1)).toBeCloseTo(1.1, 9);
+    expect(enemyPower(4)).toBeCloseTo(1.45 * 1.1, 9);
+    expect(enemyPower(5)).toBeCloseTo(1.6 * 1.2 * 1.1, 9);
+    expect(enemyPower(10)).toBeCloseTo(2.35 * 1.4 * 1.1, 9);
+    // Vida de un gusano por nivel, como en la spec.
+    expect([1, 4, 5, 7, 9, 10].map((level) => Math.round(enemyMaxHp('worm', level)))).toEqual([110, 160, 211, 251, 290, 362]);
+    // Un nivel 5 nunca es mas debil que un nivel 4, ni un 10 que un 9.
+    for (let level = 2; level <= 20; level++) expect(enemyPower(level)).toBeGreaterThan(enemyPower(level - 1));
+    // Vale igual para el dano y para cualquier tipo.
+    expect(enemyDamage({ kind: 'spitter', level: 10 })).toBeCloseTo(ENEMIES.spitter.spitDamage * enemyPower(10), 9);
+    expect(enemyMaxHp('armored', 7)).toBeCloseTo(ENEMIES.armored.hp * enemyPower(7), 9);
   });
 
   it('el nivel al azar sigue los pesos de la tabla; sin tabla, nivel 1', () => {
@@ -118,7 +142,7 @@ describe('gusano', () => {
     let state = spawnEnemy(createMatch(), 'worm', 2, 3.5 + worm.reach - 0.01, undefined, 1, 3);
     state = { ...state, plants: state.plants.map((lane, l) => lane.map((p, c) => (l === 2 && c === 3 ? createPlant() : p))) };
     const after = stepCombat(state, worm.firstBiteMs + 10).state;
-    expect(after.plants[2][3]?.hp).toBeCloseTo(SHOOTER.hp - worm.biteDamage * 1.3, 9);
+    expect(after.plants[2][3]?.hp).toBeCloseTo(SHOOTER.hp - worm.biteDamage * 1.3 * ENEMY_POWER.base, 9);
   });
 
   it('avanza a velocidad constante por su carril', () => {
@@ -139,7 +163,7 @@ describe('gusano', () => {
     expect(count(before.events, 'bite')).toBe(0);
     expect(before.state.enemies[0].x).toBe(x);
 
-    const bites = Math.ceil(plantMaxHp(createShooter()) / worm.biteDamage);
+    const bites = Math.ceil(plantMaxHp(createShooter()) / wormBite);
     const eating = runUntil(start, 'plantDestroyed', 60_000, 50);
     const all = run(start, eating.t, 50);
     const biteTimes = all.events.filter((e) => e.type === 'bite').map((e) => e.t);
@@ -469,7 +493,7 @@ describe('mina de fuego (T-004)', () => {
   });
 
   it('los gusanos la muerden como a una planta; destruida antes de terminar el conteo, no explota', () => {
-    let state = withMine(createMatch(), cell, { hp: worm.biteDamage });
+    let state = withMine(createMatch(), cell, { hp: wormBite });
     state = spawnEnemy(state, 'worm', 2, center + worm.reach, TOUGH);
     const { state: after, events } = run(state, MINE.countdownMs + 2000, 50);
     expect(events.map((e) => e.type).slice(0, 3)).toEqual(['mineArmed', 'bite', 'plantDestroyed']);
@@ -601,7 +625,7 @@ describe('mina de hielo (T-005)', () => {
     expect(after.plants[cell.lane][cell.col]).toBeNull();
     after.enemies.forEach((e) => {
       const original = state.enemies.find((o) => o.id === e.id) as Enemy;
-      expect(e.hp).toBe(worm.hp);
+      expect(e.hp).toBe(wormHp);
       expect(e.slow).toEqual(distanceToCell(original, cell) <= MINE.blastRadius ? blastSlow : null);
     });
     expect(mineBlast('ice')).toEqual({ damage: 0, slow: blastSlow });
@@ -741,12 +765,13 @@ describe('balas de hielo (T-005)', () => {
 
 describe('gusano acorazado (T-007)', () => {
   const armored = ENEMIES.armored;
+  const armoredBite = enemyDamage({ kind: 'armored', level: 1 });
 
   it('tiene varias veces la vida del gusano y avanza mas lento', () => {
     expect(armored.hp).toBeGreaterThanOrEqual(3 * worm.hp);
     expect(armored.speed).toBeLessThan(worm.speed);
     const start = spawnEnemy(createMatch(), 'armored', 1, HOLE_X);
-    expect(start.enemies[0]).toMatchObject({ kind: 'armored', hp: armored.hp });
+    expect(start.enemies[0]).toMatchObject({ kind: 'armored', hp: enemyMaxHp('armored') });
     const after = stepCombat(start, 2000).state.enemies[0];
     expect(HOLE_X - after.x).toBeCloseTo((armored.speed * 2000) / 1000);
   });
@@ -758,7 +783,7 @@ describe('gusano acorazado (T-007)', () => {
     const { state, event, t } = runUntil(start, 'bite', 10_000, 10);
     expect(t).toBe(armored.firstBiteMs);
     expect(event).toEqual({ type: 'bite', enemyId: 1, cell: plantCell });
-    expect(state.plants[1][4]?.hp).toBe(SHOOTER.hp - armored.biteDamage);
+    expect(state.plants[1][4]?.hp).toBe(SHOOTER.hp - armoredBite);
   });
 
   it('una disparadora tarda varias veces mas en eliminarlo que a un gusano', () => {
@@ -770,6 +795,7 @@ describe('gusano acorazado (T-007)', () => {
 
 describe('gusano escupidor (T-007)', () => {
   const spitter = ENEMIES.spitter;
+  const spitDamage = enemyDamage({ kind: 'spitter', level: 1 });
   const lane = 3;
   /** Escupidor en `x` del carril 3, que no muere durante la prueba. */
   const withSpitter = (state: MatchState, x: number) => spawnEnemy(state, 'spitter', lane, x, TOUGH);
@@ -786,7 +812,7 @@ describe('gusano escupidor (T-007)', () => {
     expect(stopped.x).toBeGreaterThanOrEqual(stopX - 0.01);
     expect(stopped.x).toBeLessThanOrEqual(stopX + 0.01);
     expect(stopped.attackMs).not.toBeNull();
-    expect(event).toMatchObject({ type: 'spat', enemyId: 1, spit: { lane, x: stopped.x, damage: spitter.spitDamage } });
+    expect(event).toMatchObject({ type: 'spat', enemyId: 1, spit: { lane, x: stopped.x, damage: spitDamage } });
     // Quieto mientras escupe.
     expect(run(state, 3000).state.enemies[0].x).toBe(stopped.x);
   });
@@ -800,7 +826,7 @@ describe('gusano escupidor (T-007)', () => {
     expect(event).toEqual({ type: 'spitHit', spitId: spat.state.spits[0].id, cell: plantCell });
     expect(t).toBeCloseTo((spitter.range / spitter.spitSpeed) * 1000, -2);
     expect(state.spits).toHaveLength(0);
-    expect(state.plants[lane][3]?.hp).toBe(SHOOTER.hp - spitter.spitDamage);
+    expect(state.plants[lane][3]?.hp).toBe(SHOOTER.hp - spitDamage);
   });
 
   it('escupe cada cierto tiempo hasta destruir la planta, y luego sigue hasta la siguiente', () => {
@@ -809,7 +835,7 @@ describe('gusano escupidor (T-007)', () => {
     const start = withSpitter(withPlant(withPlant(createMatch(), back), front), front.col + 0.5 + spitter.range);
     const destroyed = runUntil(start, 'plantDestroyed', 120_000, 20);
     expect(destroyed.event).toEqual({ type: 'plantDestroyed', cell: front });
-    const spits = Math.ceil(SHOOTER.hp / spitter.spitDamage);
+    const spits = Math.ceil(SHOOTER.hp / spitDamage);
     expect(destroyed.t).toBeGreaterThanOrEqual(spitter.firstSpitMs + (spits - 1) * spitter.spitIntervalMs);
     const next = runUntil(destroyed.state, 'spat', 60_000, 20);
     expect(next.state.enemies[0].x).toBeCloseTo(back.col + 0.5 + spitter.range, 1);
@@ -843,7 +869,7 @@ describe('gusano escupidor (T-007)', () => {
     const before = run(start, t).events;
     expect(count(before, 'mineArmed')).toBe(0);
     expect(count(before, 'mineExploded')).toBe(0);
-    expect(count(before, 'spitHit')).toBe(Math.ceil(MINE.hp / spitter.spitDamage));
+    expect(count(before, 'spitHit')).toBe(Math.ceil(MINE.hp / spitDamage));
   });
 
   it('un escupitajo cuya planta ya no esta sigue hasta lo siguiente o sale del tablero', () => {

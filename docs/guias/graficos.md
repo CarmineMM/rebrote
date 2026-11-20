@@ -30,8 +30,10 @@ Cómo se pinta y se anima Rebrote, para que todo lo nuevo (enemigos, mundos, efe
 | `src/game/view/creeperView.ts` | Creeper (T-008): `CreeperView` envuelve un `WormView` grande y añade el aviso del salto (diana, curva de puntos y "!"), sus frases en un bocadillo de terminal, la luz de la antena, la fase 2, el aterrizaje y la derrota. `CreeperOmen`: Creeper preparándose a la derecha (`OMEN_SPOT`) con su barra de "CARGANDO" (`bossLoadProgress`), chispazos a los agujeros y el salto al combate |
 | `src/game/view/bulletView.ts` | Semilla en vuelo (normal, de fuego o de hielo), impacto y salida del tablero |
 | `src/game/view/spitView.ts` | Escupitajo del escupidor en vuelo (T-007), impacto y salida del tablero |
-| `src/game/scenes/BoardScene.ts` | Cartas (sembrar e infundir), monedas, rondas y combate (avanza la partida y anima sus eventos), fusionar por arrastre, seleccionar y subir de nivel, resaltado, filtros de Ultra, ajuste de la vista, pausa, derrota y victoria |
-| `src/ui/` | HUD flotante (cartas con su precio, ronda con su cuenta atrás y su aviso en `RoundHud`, barra del jefe en `BossBar`, vidas, saldo), panel de nivel de la planta seleccionada (`LevelPanel`), menú de pausa, ajustes y pantallas de derrota y de victoria (React) |
+| `src/game/view/entityInfo.ts` | Ficha de información (T-010), sin Phaser y con test: nombre, nivel, vida, datos, estados y cómo funciona de una disparadora (`shooterInfo`), una mina (`mineInfo`) o un enemigo (`enemyInfo`), con los números de las reglas. Números en español (`formatNumber`) |
+| `src/game/view/portrait.ts` | Foto de la ficha (T-010): compone con las texturas ya pintadas la planta, la mina o el enemigo en reposo sobre un fondo de jardín (`portraitUrl`). Las texturas de cada enemigo, en `ENEMY_ART` |
+| `src/game/scenes/BoardScene.ts` | Cartas (sembrar e infundir), monedas, rondas y combate (avanza la partida y anima sus eventos), fusionar por arrastre, seleccionar y subir de nivel, doble clic para la ficha (T-010), resaltado, filtros de Ultra, ajuste de la vista, pausa, derrota y victoria |
+| `src/ui/` | HUD flotante (cartas con su precio, ronda con su cuenta atrás y su aviso en `RoundHud`, barra del jefe en `BossBar`, vidas, saldo), panel de nivel de la planta seleccionada (`LevelPanel`), ficha de información (`InfoPanel`, T-010), menú de pausa, ajustes y pantallas de derrota y de victoria (React) |
 
 ## 3. Coordenadas y perspectiva
 
@@ -161,7 +163,7 @@ Cómo se pinta y se anima Rebrote, para que todo lo nuevo (enemigos, mundos, efe
 - **Llamas con mezcla normal.** Las llamas de partículas no son aditivas: sobre el césped claro se quedarían blancas. Las brasas sí, solo con `quality.glows`.
 - **Hielo sin blancos.** Copos, esquirlas y vaho van con mezcla normal, y el copo (`TEX.snowflake`) lleva borde azul: un copo blanco liso no se leería sobre el césped claro.
 
-## 8. Subir de nivel (T-003)
+## 8. Subir de nivel (T-003) y ficha de información (T-010)
 
 - **Las reglas son de core.** Lo que cuesta y si se puede (`levelUpOffer`) y la subida (`levelUpPlant`) están en `src/game/core/match.ts`; el costo y lo que suma cada nivel, en `plants.ts` (`levelUpCost`, `levelBonus`). La escena selecciona, cobra en el acto y anima.
 - **Seleccionar:**
@@ -178,6 +180,13 @@ Cómo se pinta y se anima Rebrote, para que todo lo nuevo (enemigos, mundos, efe
   - Si la medallita cambia de color, un anillo y un brillo mayores de su color.
   - Sin texto flotante: subiría por detrás del panel, que hace saltar la medallita y el nivel nuevos.
 - **Medallita:** cómo se pinta, en la sección 10. Va dentro de la figura que respira (`PlantView`: contenedor de reacciones > figura > cuerpo y medallita), así no se despega de la cabeza al respirar, brotar ni rebotar. Al fusionarse se recoloca en la cabeza nueva y toma el nivel resultante.
+- **Ficha de información (T-010).** Doble clic (o doble toque) sobre una disparadora, una mina o un enemigo, sin carta elegida: el juego queda en pausa y React muestra su ficha (`InfoPanel`). Se cierra con su botón, con Esc o haciendo clic fuera.
+  - **Doble clic:** lo reconoce la escena (`checkDoubleTap`): dos pulsaciones sobre lo mismo en menos de `LOOK.doubleTap.ms` y sin moverse más de `LOOK.doubleTap.distance`. El primer toque hace lo de siempre (seleccionar una planta, por ejemplo), así que al cerrar la ficha su panel de nivel sigue ahí. Con una carta elegida el clic la juega y no abre fichas.
+  - **Qué hay bajo el puntero** (`infoTargetAt`): lo que se ve ahí, y lo de delante tapa a lo de atrás, sea planta, mina o enemigo. Las vistas lo dicen con `contains`: la planta y la mina con su caja, el gusano con `WORM_LOOK.hitBox`, que sigue su postura y su tamaño (también en el aire). Si no hay nada, lo sembrado en la casilla.
+  - **Datos:** los arma `entityInfo.ts` con las reglas de core (nunca números propios) y la escena los manda con `entityInfo`. React no calcula nada.
+  - **Foto:** la escena la compone con las texturas ya pintadas (`portrait.ts`) y la manda como imagen; React solo la muestra. No se pinta arte nuevo para la foto: sale igual que en el tablero, con sus cañones, su elemento, su armadura, sus rayas de velocidad y su medallita. Cielo y loma de césped de fondo (de suelo corrupto con lucecitas para los enemigos) y un halo del color de lo fotografiado. Se guarda: la misma foto no se compone dos veces.
+  - **Aspecto:** tarjeta del color de lo inspeccionado (`tone-*`: verde la planta, naranja el fuego, azul el hielo, morado el gusano, acero el acorazado, rosa el escupidor y fósforo Creeper). La foto es una polaroid algo torcida con un trozo de cinta, que cae girando. A la derecha, nombre y subtítulo, nivel con la medallita del panel de nivel (y su tope o su tramo de fuerza), corazón con la barra de vida que se llena al abrir, estados del momento en pastillas de color que saltan una tras otra (quemado, frenado, acelerado, mordiendo, contando...), los datos en dos columnas con la aclaración en pequeño debajo y cómo funciona.
+  - En pantallas bajas (un móvil en horizontal) la foto encoge y la ficha se aprieta para caber sin desplazarse.
 
 ## 9. Capas
 
@@ -191,10 +200,11 @@ Orden de dibujo, de atrás hacia delante (`DEPTH` en `layout.ts`):
 | `groundFx` | Efectos pegados al suelo: viento, sombras de nubes, brillos del suelo corrupto, rocío, haces de luz, chamuscado de una explosión, escarcha de la mina de hielo |
 | `highlight - 1` | Alcance de una mina armada |
 | `highlight` | Resaltado de casilla (y alcance de la mina que se va a sembrar), casilla de la planta seleccionada (T-003). Justo encima, la onda de una explosión y la diana del salto del Creeper (T-008) |
-| `entities + y` | Plantas, enemigos, balas (`+0,5`, delante de su planta), monedas, flores y cristales de la mina de hielo, ordenados por su `y` en pantalla |
+| `entities + y` | Plantas, enemigos, balas (`+0,5`, delante de su planta), sombras de las monedas soltadas, flores y cristales de la mina de hielo, ordenados por su `y` en pantalla |
 | `pollen - 2`, `pollen - 1` | Chispazos de Creeper preparándose y curva de puntos del salto (T-008): pasan por encima de las plantas |
 | `pollen`, `butterflies` | Partículas y bichos que flotan por encima |
 | `foreground` | Matas del primer plano |
+| `droppedCoins` | Monedas soltadas que esperan a que las recojan (T-010): siempre por encima de enemigos y matas, en el sitio donde cayeron, para que se vean y se puedan pulsar. Entre ellas, la de delante tapa a la de atrás (`+ y / 900`). Su sombra sigue en el suelo, con las entidades |
 | `floatText - 10` | La planta que se arrastra para fusionar |
 | `floatText - 4`, `floatText - 3` | "!" del aviso del salto y bocadillo del Creeper (T-008) |
 | `floatText - 5` | Cuenta atrás de las minas: no la tapa una planta del carril de delante |
@@ -252,6 +262,7 @@ Orden de dibujo, de atrás hacia delante (`DEPTH` en `layout.ts`):
 - **Avisos:** lo que va a desaparecer avisa antes. La moneda soltada parpadea durante el último 30 % de su vida.
 - **HUD y menús (React):** transiciones y animaciones CSS.
   - La bandeja y el saldo caen al empezar.
+  - **Cartas de tamaño fijo (T-010):** todas miden lo mismo (`--card-w` × `--card-h` en `.seed-tray`: 148 × 46 px, o 86 × 44 en el HUD compacto), para poder cambiar en el futuro las que se llevan sin que la bandeja baile. El nombre se corta con puntos suspensivos si no cabe; el precio siempre cabe, también el de infundir ("×3 = 225"), que en el HUD compacto baja de tamaño y parte en dos líneas. Las ranuras vacías no se pintan: la bandeja solo enseña las cartas que hay.
   - Con menos de 860 px de ancho, las cartas pierden el nombre y el HUD se aprieta para que quepan tres cartas, vidas, saldo y pausa (probado hasta 568 px).
   - La carta elegida flota.
   - El saldo da un salto dorado al subir y rojo al bajar.
@@ -262,7 +273,8 @@ Orden de dibujo, de atrás hacia delante (`DEPTH` en `layout.ts`):
   - El aviso de la ronda entra con un salto, se queda 7 s y se va. Lo lleva una animación CSS que se congela con la pausa (`.app.is-paused`). Con `prefers-reduced-motion` lo quita un temporizador.
   - Una carta recién desbloqueada entra en la bandeja con un salto y brilla tres veces. La animación va en un envoltorio (`.card-slot`) y no en la carta, que ya anima su `transform` al estar elegida.
   - **Aviso de desbloqueo (T-009, `UnlockModal`).** Velo dorado con rayos que giran despacio detrás de la tarjeta, que tiene el borde dorado y un halo que late. "¡YA LO TIENES!" entra de un salto y un brillo le cruza las letras cada poco. Debajo, una fila por cosa nueva con su dibujo (los iconos de las cartas, `CardIcon`, que se balancean; una flecha dorada para subir de nivel y la medallita del tope) que entran una tras otra. Destellos como los de la victoria. El juego queda en pausa detrás (también se congela el aviso de una línea de la ronda).
-  - En el tope de nivel de la ronda (T-009), el panel de nivel dice en dorado "Tope 5: sube en la ronda 7".
+  - En el tope de nivel de la ronda (T-009), el panel de nivel dice "Máximo" y, si el tope fuera a subir en otra ronda, lo dice en dorado ("Tope 5: sube en la ronda 7"). En el mundo 1 el tope ya no sube (T-010).
+  - **Ficha de información (T-010):** entra con un salto, la foto cae girando a su sitio, la barra de vida se llena y los estados saltan uno tras otro. El juego queda en pausa detrás. Detalle en la sección 8.
   - La pantalla de victoria entra como la de derrota, con una copa con un brote que salta y destellos que titilan.
   - **Jefe (T-008):** en la ronda del jefe la ronda dice "Combate final" y su semillita es una pantallita de monitor. La barra del Creeper (`BossBar`) entra con un salto bajo la ronda: monitor en miniatura que parpadea, nombre, fase y vida con una marca por umbral de salto (las gastadas, apagadas). Lo que pierde se queda un momento en claro y luego se va. En la fase 2 se pone roja y su halo late; derrotado, dice "¡Atrapado!".
   - El menú de pausa entra con un pequeño rebote.
@@ -308,6 +320,8 @@ Ejemplos: el acorazado y el escupidor de T-007, en `wormView.ts` (`KIND_LOOK`).
 - [ ] Se mueve en coordenadas de tablero y se pinta con `toScreen`, `cellWidthAt` y `entityDepth`.
 - [ ] Tiene su `reward` en `ENEMIES`, y al morir la escena llama a `rewardKill(punto, tipo)`.
 - [ ] Con nivel (T-009): de nivel 2 en adelante lleva la medallita en la nuca y no le tapa la cara.
+- [ ] Su vida y su daño salen de `enemyMaxHp` y `enemyDamage`, que ya llevan la fuerza de todos y los tramos de nivel (T-010): nada de usar `ENEMIES[tipo].hp` como vida real.
+- [ ] Tiene ficha (T-010): nombre, subtítulo y cómo funciona en `entityInfo.ts`, sus texturas en `ENEMY_ART` de `portrait.ts` para la foto, y su caja de doble clic (`contains`) le cubre cabeza y cuerpo.
 - [ ] Partículas según el nivel gráfico; probado en Bajo y en Ultra.
 - [ ] Se mueve con el reloj y los tweens de la escena: con el menú de pausa abierto se queda quieto.
 
@@ -317,6 +331,7 @@ Ejemplos: el acorazado y el escupidor de T-007, en `wormView.ts` (`KIND_LOOK`).
 - [ ] Al fusionarse, `PlantView.fuse` pasa a la textura de su variante con los cañones nuevos.
 - [ ] Se sigue leyendo marchita, oscurecida (mientras se arrastra otra planta) y medio transparente (mientras se arrastra ella).
 - [ ] La medallita de nivel (T-003) no tapa los puntos del tallo (`levelMedal.test.ts`) y se lee sobre su cabeza.
+- [ ] Su ficha (T-010) dice su nombre y lo que hace su elemento, y su foto sale con su textura (`entityInfo.ts`, `portrait.ts`).
 
 ### Elemento nuevo (mina e infusión, como el fuego de T-004)
 - [ ] Paleta en `SHOOTER_PALETTES` y colores de efecto en `VARIANT_FX`; `shooterVariant` y `mineTexture` dejan de caer en la normal.
@@ -325,7 +340,12 @@ Ejemplos: el acorazado y el escupidor de T-007, en `wormView.ts` (`KIND_LOOK`).
 - [ ] Su efecto en el enemigo se ve a simple vista y sale del estado en `sync` (como `burn` en `WormView`).
 - [ ] Su explosión en `MineView` y su infusión en `PlantView.infuse` (partículas y `INFUSED_TEXT`).
 - [ ] Carta en el HUD con su icono en CSS.
+- [ ] Ficha de su mina y de su disparadora infundida (T-010), con su foto.
 - [ ] Probado en Bajo y en Ultra: sus partículas no se quedan blancas sobre el césped.
+
+### Carta nueva (T-010)
+- [ ] Cabe en el tamaño fijo de las cartas (`--card-w` × `--card-h`) con su nombre, su icono y su precio, también con el de infundir ("×3 = 225") y en el HUD compacto (860 y 568 px de ancho).
+- [ ] No cambia el tamaño de las demás ni deja huecos: la bandeja solo pinta las cartas que hay.
 
 ### Mundo o escenario nuevo
 - [ ] Pintores propios de cielo y terreno (o variantes), respetando `SKY_HEIGHT` y `LAND_TOP`, y cubriendo `WORLD` entero.

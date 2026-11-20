@@ -211,6 +211,14 @@ export class CreeperView implements EnemyView {
     this.worm.chomp();
   }
 
+  ground(): { x: number; y: number; cellWidth: number } {
+    return this.worm.ground();
+  }
+
+  contains(x: number, y: number): boolean {
+    return !this.gone && this.worm.contains(x, y);
+  }
+
   spat(): void {
     this.worm.spat();
   }

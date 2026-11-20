@@ -1,8 +1,8 @@
 import * as Phaser from 'phaser';
 import { BOARD, CREEPER, ECONOMY, ENEMIES, LIMITS, MINE } from '../config/balance';
 import { cellAt, cellCenter, type BoardPoint, type Cell } from '../core/board';
-import { isDefeated, isEnraged, spawnEnemy, stepCombat, type CombatEvent, type Enemy, type EnemyKind } from '../core/combat';
-import { rollKillReward } from '../core/economy';
+import { enemyMaxHp, isDefeated, isEnraged, spawnEnemy, stepCombat, type CombatEvent, type Enemy, type EnemyKind } from '../core/combat';
+import { rollKillReward, stepIncome } from '../core/economy';
 import {
   cardCost,
   cardElement,
@@ -41,6 +41,7 @@ import {
   isBossRound,
   isUnlocked,
   isWon,
+  levelCap,
   roundScript,
   roundUnlocks,
   startAttack,
@@ -65,11 +66,13 @@ import { BoardLabel, drawArea, drawCell, type LabelLine } from '../view/boardMar
 import { BulletView } from '../view/bulletView';
 import { CreeperOmen, CreeperView, OMEN_LEAP_MS, bossLoadProgress } from '../view/creeperView';
 import { Effects } from '../view/effects';
+import { enemyInfo, mineInfo, shooterInfo, type EntityInfoData } from '../view/entityInfo';
 import { DRAG_LOOK, FusionDragView, carriedMine, carriedShooter, dragGround } from '../view/fusionDragView';
-import { DEPTH, SCENERY, entityDepth, perspective, viewFor } from '../view/layout';
+import { DEPTH, SCENERY, VIEW, entityDepth, perspective, viewFor } from '../view/layout';
 import { medalTier, showsMedal } from '../view/levelMedal';
 import { MineView, mineAreaColor, mineScale } from '../view/mineView';
 import { PlantView, plantPlacement } from '../view/plantView';
+import { portraitUrl, type PortraitSubject } from '../view/portrait';
 import { QUALITY_PROFILES, type QualityLevel, type QualityProfile } from '../view/quality';
 import { SpitView } from '../view/spitView';
 import { MINE_SIZE, SHOOTER_SIZE, TEX, registerTextures, shooterTexture, mineTexture } from '../view/textures';
@@ -111,6 +114,8 @@ const LOOK = {
   bossDownText: '¡Creeper atrapado!',
   /** Copia que deja el Creeper al saltar: destello verde de "copiarse" sobre ella. */
   copyGlow: 0x39ff88,
+  /** Doble clic (o doble toque) para abrir una ficha (T-010): tiempo maximo entre los dos y lo que se puede mover el puntero. */
+  doubleTap: { ms: 450, distance: 30 },
 } as const;
 
 /** Atajos de desarrollo para probar las rondas. */
@@ -169,6 +174,11 @@ interface PlantDrag {
   cellWidth: number;
 }
 
+/** Lo que se puede inspeccionar con doble clic (T-010): lo sembrado en una casilla o un enemigo. */
+type InfoTarget = { kind: 'plant' | 'mine'; cell: Cell } | { kind: 'enemy'; id: number };
+
+const infoKey = (target: InfoTarget) => (target.kind === 'enemy' ? `enemy:${target.id}` : `${target.kind}:${cellKey(target.cell)}`);
+
 /** Datos con los que arranca la escena (ver createGame). */
 export interface BoardSceneData {
   quality: QualityLevel;
@@ -211,9 +221,10 @@ export class BoardScene extends Phaser.Scene {
   private cardLabel!: BoardLabel;
   /** Ultimo precio de infusion enviado al HUD, para avisar solo cuando cambia. */
   private previewKey = '';
-  private passiveIncome?: Phaser.Time.TimerEvent;
   private press: PlantPress | null = null;
   private drag: PlantDrag | null = null;
+  /** Ultimo toque sobre algo con ficha, para reconocer el doble clic (T-010). */
+  private lastTap: { key: string; time: number; x: number; y: number } | null = null;
   /** Disparadora seleccionada con un clic para subirla de nivel (T-003), y su marca en el suelo. */
   private picked: Cell | null = null;
   private pickedMark!: Phaser.GameObjects.Graphics;
@@ -256,6 +267,7 @@ export class BoardScene extends Phaser.Scene {
     this.roundKey = '';
     this.press = null;
     this.drag = null;
+    this.lastTap = null;
     this.picked = null;
     this.panelKey = '';
     this.cursor = 'default';
@@ -286,11 +298,6 @@ export class BoardScene extends Phaser.Scene {
 
     this.bindPointer();
     this.bindHud();
-    this.passiveIncome = this.time.addEvent({
-      delay: ECONOMY.passiveIntervalMs,
-      loop: true,
-      callback: () => this.credit(ECONOMY.passiveIncome),
-    });
     if (import.meta.env.DEV) this.bindDebugKeys();
     this.fpsWindowStart = performance.now();
     this.fpsFrames = 0;
@@ -474,6 +481,8 @@ export class BoardScene extends Phaser.Scene {
         }
         // Un clic sobre una moneda la recoge; no debe sembrar en la casilla de debajo.
         if (over.length > 0 || this.drag) return;
+        // Doble clic sobre una planta, una mina o un enemigo: su ficha (T-010). Con una carta elegida el clic la juega.
+        if (this.checkDoubleTap(pointer)) return;
         // Sin carta elegida, pulsar una planta la prepara para arrastrarla (T-006) o, si se suelta sin moverla,
         // para seleccionarla (T-003). Pulsar una mina que espera la prepara para arrastrarla e infundir (T-009). Cada
         // gesto, solo si su ronda ya lo desbloqueo (T-007).
@@ -619,14 +628,18 @@ export class BoardScene extends Phaser.Scene {
   // Combate
 
   /**
-   * Avanza la partida: la ronda cuenta su preparacion y saca sus enemigos (T-007), se mueve el combate, se animan
-   * los eventos y se recolocan las vistas.
+   * Avanza la partida: la ronda cuenta su preparacion y saca sus enemigos (T-007), cae el goteo de moneda (solo durante el
+   * ataque, T-010), se mueve el combate, se animan los eventos y se recolocan las vistas.
    */
   private advance(delta: number): void {
     const round = stepRound(this.match, delta, SCENERY.holeX);
     this.match = round.state;
     this.showSpawned(round.spawned);
     round.events.forEach((event) => this.showRoundEvent(event));
+
+    const income = stepIncome(this.match, delta);
+    this.match = income.state;
+    if (income.earned > 0) this.balanceGained();
 
     const livesBefore = this.match.lives;
     const { state, events } = stepCombat(this.match, delta);
@@ -919,7 +932,6 @@ export class BoardScene extends Phaser.Scene {
     this.setCursor('default');
     this.select(null);
     this.pickPlant(null);
-    this.passiveIncome?.remove();
     this.clearProjectiles();
     this.wormViews.forEach((worm) => worm.cheer());
     const loss: LossInfo = { byBoss: this.lostToBoss };
@@ -938,7 +950,6 @@ export class BoardScene extends Phaser.Scene {
     this.setCursor('default');
     this.select(null);
     this.pickPlant(null);
-    this.passiveIncome?.remove();
     this.clearProjectiles();
     this.omen?.vanish();
     this.omen = null;
@@ -1421,6 +1432,93 @@ export class BoardScene extends Phaser.Scene {
   }
 
   // -------------------------------------------------------------------------
+  // Ficha de informacion (T-010). Los datos salen de las reglas (`view/entityInfo.ts`) y la foto, de las texturas
+  // (`view/portrait.ts`); la pinta React, que deja el juego en pausa mientras se ve.
+
+  /**
+   * ¿Es este toque el segundo de un doble clic sobre lo mismo? Si lo es, abre su ficha. Solo sin carta elegida y con
+   * la partida en juego. El primer toque hace lo de siempre (seleccionar una planta, por ejemplo).
+   */
+  private checkDoubleTap(pointer: Phaser.Input.Pointer): boolean {
+    if (this.selected || this.defeated || this.won) {
+      this.lastTap = null;
+      return false;
+    }
+    const target = this.infoTargetAt(pointer.worldX, pointer.worldY);
+    const key = target ? infoKey(target) : null;
+    const last = this.lastTap;
+    const double =
+      target !== null &&
+      last !== null &&
+      last.key === key &&
+      pointer.downTime - last.time <= LOOK.doubleTap.ms &&
+      Phaser.Math.Distance.Between(last.x, last.y, pointer.worldX, pointer.worldY) <= LOOK.doubleTap.distance;
+    this.lastTap = double || key === null ? null : { key, time: pointer.downTime, x: pointer.worldX, y: pointer.worldY };
+    if (double) this.openInfo(target);
+    return double;
+  }
+
+  /**
+   * Lo que tiene ficha bajo un punto de pantalla: lo que se ve ahi (lo de delante tapa a lo de atras, sea planta, mina o
+   * enemigo); si no hay nada, lo sembrado en la casilla bajo el punto.
+   */
+  private infoTargetAt(x: number, y: number): InfoTarget | null {
+    let best: InfoTarget | null = null;
+    let bestFootY = -Infinity;
+    for (const [key, view] of this.plantViews) {
+      const footY = view.foot().y;
+      if (footY > bestFootY && view.contains(x, y)) {
+        best = { kind: 'plant', cell: keyCell(key) };
+        bestFootY = footY;
+      }
+    }
+    for (const [key, view] of this.mineViews) {
+      const footY = view.foot().y;
+      if (footY > bestFootY && view.contains(x, y)) {
+        best = { kind: 'mine', cell: keyCell(key) };
+        bestFootY = footY;
+      }
+    }
+    for (const [id, view] of this.wormViews) {
+      const footY = view.ground().y;
+      if (footY > bestFootY && view.contains(x, y)) {
+        best = { kind: 'enemy', id };
+        bestFootY = footY;
+      }
+    }
+    if (best) return best;
+    const cell = this.cellAtScreen(x, y);
+    const sown = cell ? sownAt(this.match, cell) : null;
+    if (!cell || !sown) return null;
+    return { kind: sown.kind === 'shooter' ? 'plant' : 'mine', cell };
+  }
+
+  /** Arma la ficha de lo inspeccionado con el estado de ahora y se la manda a React, que pausa el juego. */
+  private openInfo(target: InfoTarget): void {
+    let data: EntityInfoData;
+    let subject: PortraitSubject;
+    if (target.kind === 'enemy') {
+      const enemy = this.match.enemies.find((e) => e.id === target.id);
+      if (!enemy) return;
+      data = enemyInfo(enemy);
+      subject = { kind: 'enemy', enemy: enemy.kind, level: enemy.level, enraged: isEnraged(enemy), hasted: enemy.haste > 1 };
+    } else if (target.kind === 'plant') {
+      const plant = plantAt(this.match, target.cell);
+      if (!plant) return;
+      data = shooterInfo(plant, target.cell, isUnlocked(this.match, 'levelUp') ? levelCap(this.match) : null);
+      subject = { kind: 'shooter', cannons: plant.shooter.cannons, element: plant.shooter.element, level: plant.shooter.level };
+    } else {
+      const mine = mineAt(this.match, target.cell);
+      if (!mine) return;
+      data = mineInfo(mine, target.cell);
+      subject = { kind: 'mine', element: mine.element, armed: mine.fuseMs !== null };
+    }
+    // Un arrastre a medias no sobrevive a la pausa de la ficha.
+    this.cancelDrag();
+    EventBus.emit(GameEvents.entityInfo, { ...data, portrait: portraitUrl(this, subject) });
+  }
+
+  // -------------------------------------------------------------------------
   // Subir de nivel (T-003). Las reglas son de core (levelUpOffer, levelUpPlant); aqui se selecciona y se anima.
   // El panel (nivel, costo y boton) lo pinta React junto a la planta.
 
@@ -1489,7 +1587,11 @@ export class BoardScene extends Phaser.Scene {
   // -------------------------------------------------------------------------
   // Monedas
 
-  /** Moneda en el suelo: se cobra (con el extra ya incluido en `amount`) solo si el jugador hace clic. */
+  /**
+   * Moneda en el suelo: se cobra (con el extra ya incluido en `amount`) solo si el jugador hace clic. Se queda donde
+   * cae, pero se pinta por encima de enemigos y matas (T-010, `DEPTH.droppedCoins`) para que siempre se vea; su sombra
+   * sigue en el suelo, tapada por lo que pase por encima.
+   */
   private spawnDroppedCoin(at: BoardPoint, amount: number): void {
     const cellWidth = perspective.cellWidthAt(at);
     const ground = perspective.toScreen(at);
@@ -1497,13 +1599,14 @@ export class BoardScene extends Phaser.Scene {
     const hover = cellWidth * LOOK.coinHover;
     const landX = ground.x + Phaser.Math.FloatBetween(-0.25, 0.25) * cellWidth;
     const restY = ground.y - hover;
-    const depth = entityDepth(ground.y) + 0.6;
+    // Entre monedas, la de delante (mas abajo en pantalla) tapa a la de atras.
+    const depth = DEPTH.droppedCoins + ground.y / VIEW.height;
 
     const shadow = this.add
       .image(landX, ground.y, TEX.shadow)
       .setDisplaySize(size * 1.2, size * 0.38)
       .setAlpha(0)
-      .setDepth(depth - 0.5);
+      .setDepth(entityDepth(ground.y) - 0.5);
     const glow = this.add
       .image(landX, restY, TEX.glow)
       .setDisplaySize(size * 2.4, size * 2.4)
@@ -1511,15 +1614,15 @@ export class BoardScene extends Phaser.Scene {
       .setBlendMode(Phaser.BlendModes.ADD)
       .setAlpha(0)
       .setVisible(this.quality.glows)
-      .setDepth(depth - 0.2);
+      .setDepth(depth - 0.002);
     const coin = this.add.image(ground.x, restY, TEX.coin).setDisplaySize(size, size).setDepth(depth);
     const label = this.add
       .text(landX, restY - size * 0.95, `+${amount}`, this.fx.textStyle({ fontSize: Math.round(size * 0.5) }))
       .setOrigin(0.5)
       .setAlpha(0)
-      .setDepth(depth + 0.1);
+      .setDepth(depth + 0.001);
     // La moneda gira estrechandose; el clic lo recibe una zona fija y algo mas grande para que sea facil acertar.
-    const hit = this.add.zone(landX, restY, size * 1.6, size * 1.6).setDepth(depth + 0.2);
+    const hit = this.add.zone(landX, restY, size * 1.6, size * 1.6).setDepth(depth + 0.002);
     const parts = [shadow, glow, coin, label, hit];
     const coinScale = coin.scaleX;
 
@@ -1614,16 +1717,21 @@ export class BoardScene extends Phaser.Scene {
 
   private credit(amount: number, at?: BoardPoint): void {
     this.match = earn(this.match, amount);
-    this.emitBalance();
-    // Si hay una carta elegida, el saldo nuevo puede cambiar el color del resaltado.
-    this.refreshHighlight();
-    // Con una mina en la mano, el saldo nuevo puede alcanzar para infundir una fusionada (T-009).
-    if (this.drag?.kind === 'mine') this.refreshDragTargets();
+    this.balanceGained();
     if (at) {
       const ground = perspective.toScreen(at);
       this.fx.floatText(`+${amount}`, ground.x, ground.y - perspective.cellWidthAt(at) * 0.8);
       this.spawnAutoCoin(at);
     }
+  }
+
+  /** El saldo subio (una moneda o el goteo): el HUD y lo que depende del saldo se ponen al dia. */
+  private balanceGained(): void {
+    this.emitBalance();
+    // Si hay una carta elegida, el saldo nuevo puede cambiar el color del resaltado.
+    this.refreshHighlight();
+    // Con una mina en la mano, el saldo nuevo puede alcanzar para infundir una fusionada (T-009).
+    if (this.drag?.kind === 'mine') this.refreshDragTargets();
   }
 
   private emitBalance(): void {
@@ -1667,7 +1775,7 @@ export class BoardScene extends Phaser.Scene {
       info = {
         name: 'Creeper',
         hp: Math.max(0, Math.ceil(boss.hp)),
-        maxHp: ENEMIES.creeper.hp,
+        maxHp: enemyMaxHp('creeper'),
         enraged: isEnraged(boss),
         jumpAt: [...CREEPER.jumpAt],
       };

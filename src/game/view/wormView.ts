@@ -67,6 +67,11 @@ export const WORM_LOOK = {
    */
   medal: { x: 25, y: -27, scale: 0.92 },
   growthPerLevel: 0.018,
+  /**
+   * Caja holgada alrededor de cabeza, cuerpo y cola en reposo, en sus medidas locales (pies en 0, 0): ahi se le puede
+   * hacer doble clic para ver su ficha (T-010).
+   */
+  hitBox: { left: -94, right: 86, top: -142, bottom: 10 },
 } as const;
 
 interface HeadSet {
@@ -112,6 +117,10 @@ export interface EnemyView {
   die(): void;
   escape(): void;
   cheer(): void;
+  /** Pies en pantalla (en el suelo, aunque este en el aire) y ancho de casilla ahi. */
+  ground(): { x: number; y: number; cellWidth: number };
+  /** ¿Cae el punto de pantalla sobre el? Para abrir su ficha con doble clic (T-010). */
+  contains(x: number, y: number): boolean;
 }
 
 /**
@@ -356,6 +365,16 @@ export class WormView implements EnemyView {
   /** Pies en pantalla (en el suelo, aunque este en el aire) y ancho de casilla ahi. */
   ground(): { x: number; y: number; cellWidth: number } {
     return { x: this.shadow.x, y: this.shadow.y, cellWidth: this.cellWidth };
+  }
+
+  /** ¿Cae el punto de pantalla sobre el cuerpo? Una caja holgada (`WORM_LOOK.hitBox`) que sigue su postura y su tamano. */
+  contains(x: number, y: number): boolean {
+    const { holder } = this;
+    if (!holder.active || !holder.visible || holder.scaleX === 0 || holder.scaleY === 0) return false;
+    const lx = (x - holder.x) / holder.scaleX;
+    const ly = (y - holder.y) / holder.scaleY;
+    const box = WORM_LOOK.hitBox;
+    return lx >= box.left && lx <= box.right && ly >= box.top && ly <= box.bottom;
   }
 
   /** Profundidad del cuerpo, para poner encima lo que lo acompana. */
