@@ -16,6 +16,9 @@ import type { ElementType } from './plants';
  */
 export type Feature = 'shooter' | 'levelUp' | 'fireMine' | 'fireInfuse' | 'iceMine' | 'iceInfuse' | 'fuse';
 
+/** Gritos de Creeper (T-009). El texto de cada uno, en cada idioma, esta en `creeper.shouts` de `src/i18n/` (T-011). */
+export type CreeperShout = 'escort';
+
 /** Grupo del guion: un enemigo de `kind` por cada carril de `lanes`, todos a la vez. */
 export interface RoundGroup {
   /** Milisegundos desde que empieza el ataque. Los grupos de una ronda van en orden. */
@@ -27,7 +30,7 @@ export interface RoundGroup {
   /** Velocidad de sus enemigos respecto a la normal, en vez de la de la ronda (T-009: la escolta va al paso de Creeper). */
   readonly haste?: number;
   /** Lo que grita Creeper al sacar el grupo (T-009: "¡ADELANTE!" al mandar a su escolta). */
-  readonly shout?: string;
+  readonly shout?: CreeperShout;
 }
 
 /** Pesos de cada nivel de enemigo (`ENEMY_LEVELS.tables`). */
@@ -43,8 +46,6 @@ export interface RoundScript {
   readonly levelCap?: number;
   /** Con que pesos sale cada nivel de enemigo (T-009). Sin tabla, todos de nivel 1. */
   readonly levels?: LevelTable;
-  /** Aviso de una linea con el concepto nuevo, al empezar la ronda. */
-  readonly notice: string;
   /**
    * Lo que desbloquea no sale en el aviso que hay que aceptar (T-010, A-01: la disparadora de la ronda 1 se da por
    * sabida). El aviso de una linea sale igual.
@@ -86,7 +87,7 @@ export type RoundEvent =
   /** Superada la ultima ronda: partida ganada. */
   | { readonly type: 'won' }
   /** Creeper grita al sacar un grupo (T-009: manda a su escolta). Lo pinta la vista. */
-  | { readonly type: 'shout'; readonly text: string };
+  | { readonly type: 'shout'; readonly shout: CreeperShout };
 
 export interface RoundStep {
   readonly state: MatchState;
@@ -258,7 +259,7 @@ export function stepRound(state: MatchState, dtMs: number, spawnX: number, rando
   const spawned: Enemy[] = [];
   while (released < groups.length && groups[released].atMs <= elapsedMs) {
     const group = groups[released];
-    if (group.shout) events.push({ type: 'shout', text: group.shout });
+    if (group.shout) events.push({ type: 'shout', shout: group.shout });
     for (const lane of group.lanes) {
       const level = group.level ?? rollEnemyLevel(levels, random);
       current = spawnEnemy(current, group.kind, lane, spawnX, undefined, group.haste ?? roundHaste(round.index), level);

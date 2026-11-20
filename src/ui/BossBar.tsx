@@ -1,5 +1,6 @@
 import type { CSSProperties } from 'react';
 import type { BossInfo } from '../game/EventBus';
+import { useText } from './useText';
 
 interface BossBarProps {
   boss: BossInfo;
@@ -15,7 +16,8 @@ export function BossBar({ boss }: BossBarProps) {
   const fraction = Math.max(0, Math.min(1, hp / maxHp));
   const down = hp <= 0;
   const state = down ? ' is-down' : enraged ? ' is-enraged' : '';
-  const phase = down ? '¡Atrapado!' : enraged ? 'Fase 2: ¡enfadado!' : 'Fase 1';
+  const t = useText();
+  const phase = down ? t.boss.caught : enraged ? t.boss.phase2 : t.boss.phase1;
   const width = { '--boss-hp': `${fraction * 100}%` } as CSSProperties;
 
   return (
@@ -33,7 +35,7 @@ export function BossBar({ boss }: BossBarProps) {
           className="boss-track"
           style={width}
           role="progressbar"
-          aria-label={`Vida de ${name}`}
+          aria-label={t.boss.health(name)}
           aria-valuemin={0}
           aria-valuemax={maxHp}
           aria-valuenow={hp}

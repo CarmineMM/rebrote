@@ -1,5 +1,5 @@
 import * as Phaser from 'phaser';
-import type { CardId } from './core/match';
+import type { CardId, MatchState } from './core/match';
 import type { ElementType } from './core/plants';
 import type { RoundPhase } from './core/rounds';
 
@@ -7,7 +7,7 @@ import type { RoundPhase } from './core/rounds';
 export const EventBus = new Phaser.Events.EventEmitter();
 
 export const GameEvents = {
-  /** Phaser -> React. Payload: clave de la escena (string). */
+  /** Phaser -> React. Payload: clave de la escena lista (`SCENES`: la portada del menu de inicio o el tablero, T-011). */
   sceneReady: 'scene-ready',
   /** Phaser -> React. Payload: saldo actual (number). */
   balanceChanged: 'balance-changed',
@@ -72,7 +72,22 @@ export const GameEvents = {
   stateRequested: 'state-requested',
   /** React -> Phaser. Sin payload: empezar una partida nueva desde cero (pantalla de derrota). */
   restartRequested: 'restart-requested',
+  /**
+   * React -> Phaser. Payload: MatchRequest. Desde el menu de inicio (T-011): la portada deja paso al tablero con una
+   * partida nueva o con la guardada.
+   */
+  matchRequested: 'match-requested',
+  /** React -> Phaser. Sin payload: guardar la partida ya (la pestana se oculta o se cierra, T-011). */
+  saveRequested: 'save-requested',
+  /** React -> Phaser. Sin payload: volver al menu de inicio (T-011). El tablero guarda la partida y deja paso a la portada. */
+  exitRequested: 'exit-requested',
 } as const;
+
+/** Partida que se pide desde el menu de inicio (T-011): nueva (sin `resume`) o la guardada, con su aviso sin aceptar. */
+export interface MatchRequest {
+  resume?: MatchState;
+  pendingUnlock?: UnlockInfo | null;
+}
 
 /** Precio de infundir la disparadora bajo la carta elegida (ver `cardPreview`). Sale de `cardPlay` en core. */
 export interface CardPreview {

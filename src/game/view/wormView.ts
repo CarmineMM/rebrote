@@ -108,7 +108,8 @@ export const CREEPER_SIZE = KIND_LOOK.creeper.size;
 
 /** Lo que la escena le pide a la vista de cualquier enemigo. `CreeperView` (T-008) envuelve a un `WormView`. */
 export interface EnemyView {
-  sync(enemy: Enemy): void;
+  /** `stride`: casillas que lleva andadas sin moverse de su sitio (portada del menu, T-011); en el tablero, 0. */
+  sync(enemy: Enemy, stride?: number): void;
   chomp(): void;
   spat(): void;
   hit(): void;
@@ -273,8 +274,11 @@ export class WormView implements EnemyView {
     this.sync(enemy);
   }
 
-  /** Coloca y pone en postura al gusano segun el estado. Se llama en cada fotograma mientras vive. */
-  sync(enemy: Enemy): void {
+  /**
+   * Coloca y pone en postura al gusano segun el estado. Se llama en cada fotograma mientras vive. El cuerpo ondula segun
+   * lo que avanza; `stride` suma lo que "anda" sin moverse de su sitio, como en una cinta (portada del menu, T-011).
+   */
+  sync(enemy: Enemy, stride = 0): void {
     const stats = ENEMIES[enemy.kind];
     // El carril solo cambia al saltar (Creeper): entonces cambian tambien el tamano, la profundidad y el suelo.
     const pose = jumpPose(enemy);
@@ -287,7 +291,7 @@ export class WormView implements EnemyView {
     this.shadow.setDepth(entityDepth(ground.y) - 0.5);
     const walking = enemy.attackMs === null && enemy.jump === null;
     this.walk += ((walking ? 1 : 0) - this.walk) * 0.25;
-    if (walking) this.phase = this.phaseOffset - enemy.x * WORM_LOOK.wavesPerCell * Math.PI * 2;
+    if (walking) this.phase = this.phaseOffset - (enemy.x - stride) * WORM_LOOK.wavesPerCell * Math.PI * 2;
     // Se echa atras mientras espera el mordisco (o carga el escupitajo) y se lanza al atacar (ver chomp y spat).
     const chargeMs = stats.attack === 'spit' ? WORM_LOOK.spitChargeMs : stats.firstBiteMs;
     const windup = walking ? 0 : Phaser.Math.Clamp(1 - (enemy.attackMs ?? 0) / chargeMs, 0, 1);

@@ -1,6 +1,6 @@
 # Guía de gráficos y animación
 
-Cómo se pinta y se anima Rebrote, para que todo lo nuevo (enemigos, mundos, efectos, plantas) encaje con lo que ya hay. Las decisiones de fondo están en los ADR-0004 (arte bonito y animado), ADR-0005 (cámara inclinada), ADR-0006 (ajustes gráficos), ADR-0007 (pantalla completa y pausa) y ADR-0008 (combate como simulación pura).
+Cómo se pinta y se anima Rebrote, para que todo lo nuevo (enemigos, mundos, efectos, plantas) encaje con lo que ya hay. Las decisiones de fondo están en los ADR-0004 (arte bonito y animado), ADR-0005 (cámara inclinada), ADR-0006 (ajustes gráficos), ADR-0007 (pantalla completa y pausa), ADR-0008 (combate como simulación pura) y ADR-0010 (menú de inicio y portada). Los textos que se pintan siguen la guía de idiomas (`docs/guias/idiomas.md`, ADR-0009).
 
 ## 1. Principios
 
@@ -32,8 +32,11 @@ Cómo se pinta y se anima Rebrote, para que todo lo nuevo (enemigos, mundos, efe
 | `src/game/view/spitView.ts` | Escupitajo del escupidor en vuelo (T-007), impacto y salida del tablero |
 | `src/game/view/entityInfo.ts` | Ficha de información (T-010), sin Phaser y con test: nombre, nivel, vida, datos, estados y cómo funciona de una disparadora (`shooterInfo`), una mina (`mineInfo`) o un enemigo (`enemyInfo`), con los números de las reglas. Números en español (`formatNumber`) |
 | `src/game/view/portrait.ts` | Foto de la ficha (T-010): compone con las texturas ya pintadas la planta, la mina o el enemigo en reposo sobre un fondo de jardín (`portraitUrl`). Las texturas de cada enemigo, en `ENEMY_ART` |
-| `src/game/scenes/BoardScene.ts` | Cartas (sembrar e infundir), monedas, rondas y combate (avanza la partida y anima sus eventos), fusionar por arrastre, seleccionar y subir de nivel, doble clic para la ficha (T-010), resaltado, filtros de Ultra, ajuste de la vista, pausa, derrota y victoria |
-| `src/ui/` | HUD flotante (cartas con su precio, ronda con su cuenta atrás y su aviso en `RoundHud`, barra del jefe en `BossBar`, vidas, saldo), panel de nivel de la planta seleccionada (`LevelPanel`), ficha de información (`InfoPanel`, T-010), menú de pausa, ajustes y pantallas de derrota y de victoria (React) |
+| `src/game/scenes/BoardScene.ts` | Cartas (sembrar e infundir), monedas, rondas y combate (avanza la partida y anima sus eventos), fusionar por arrastre, seleccionar y subir de nivel, doble clic para la ficha (T-010), resaltado, pausa, derrota y victoria, partida guardada y salida al menú (T-011) |
+| `src/game/scenes/TitleScene.ts` | Portada del menú de inicio (T-011): el jardín animado con la cámara corrida para dejar sitio al menú, y `TitleCover` encima. Deja paso al tablero al pedir una partida |
+| `src/game/view/titleCover.ts` | Batalla de la portada (T-011): reparto fijo, combate de verdad con todos fijos en su sitio e inmortales, y respuesta al clic (`COVER_LOOK`) |
+| `src/game/scenes/sceneKit.ts` | Lo que comparten las dos escenas: cámara a pantalla completa (`fitCamera`, con desplazamiento opcional), filtros de Ultra (`applyPostFx`) y fps (`FpsMeter`) |
+| `src/ui/` | HUD flotante (cartas con su precio, ronda con su cuenta atrás y su aviso en `RoundHud`, barra del jefe en `BossBar`, vidas, saldo), panel de nivel de la planta seleccionada (`LevelPanel`), ficha de información (`InfoPanel`, T-010), menú de pausa, ajustes (`SettingsPanel`, con el idioma), pantallas de derrota y de victoria, y menú de inicio con su título, créditos y logo de Claude (`TitleScreen`, `Credits`, `ClaudeLogo`, T-011) (React) |
 
 ## 3. Coordenadas y perspectiva
 
@@ -309,7 +312,21 @@ Todo efecto nuevo se engancha a un ajuste del perfil (`QualityProfile`):
 - Los enemigos y las balas, si son muchos, conviene que sean imágenes de una textura compartida, no `Graphics`.
 - Nada de `setInterval` ni `setTimeout` en escenas: usar `this.time` y los tweens, que se pausan y se limpian con la escena. La excepción es la medición de fps, que necesita tiempo real.
 
-## 14. Listas de comprobación
+## 14. Menú de inicio y portada (T-011)
+
+- **Dos escenas, un juego.** `TitleScene` (portada) y `BoardScene` (tablero) viven en el mismo juego de Phaser y pasan de una a otra con `scene.start`, sin volver a pintar texturas (ADR-0010). React pinta encima el título y el menú (`TitleScreen`).
+- **La portada es el jardín de siempre**, a toda pantalla, con `createAmbience` y los filtros de Ultra. La cámara se corre `shiftX` unidades a la derecha (`fitCamera`) para que el césped quede bajo el título y el menú tape sobre todo el suelo corrupto; nunca se sale del mundo pintado.
+- **La batalla de la portada es el combate de verdad** (`TitleCover`): un reparto fijo (`CAST`) que avanza con `stepCombat`. Tras cada paso, cada enemigo vuelve a su sitio con la vida llena y lo sembrado recupera la suya. Los eventos se animan como en el tablero (sección 5), sin monedas ni vidas.
+  - **Andar sin moverse:** el que no ataca ondula como si avanzara. `WormView.sync(enemy, stride)` suma a la onda lo que "anda" (`stride`, en casillas), sin cambiar dónde se pinta.
+  - **Quién ataca:** el que muerde se coloca a su alcance de la planta y el escupidor a su distancia (`engagedX`); las minas, lejos de los enemigos para que no se armen solas.
+  - **Al clic:** la disparadora dispara en el acto y da un saltito (`beckon`); el gusano se queja ("¡Ay!", jugo y destello); Creeper suelta una frase (`CreeperView.taunt`, `cover.creeperLines`); la mina se arma, explota con su regla y vuelve a brotar (`COVER_LOOK.mineRegrowMs`). Con el puntero encima, la mano.
+  - Creeper dice su frase de entrada al salir y otra cada `COVER_LOOK.tauntEveryMs`.
+- **Título (React).** "REBROTE" en letras gordas de hoja verde con contorno oscuro (texto con degradado recortado y `-webkit-text-stroke`), cada letra algo torcida (`--tilt`). Caen una tras otra con rebote y luego se mecen por turnos. De la "O" sale un brote en SVG que brota y se balancea. Debajo, el lema en un cartel de madera como la bandeja de cartas.
+- **Menú (React).** Panel a la derecha con la tarjeta del menú de pausa, que entra deslizándose. Las opciones, los créditos y la confirmación de partida nueva salen en el mismo panel; si no caben, se desplaza con una barra fina. "Cargar partida" lleva debajo la ronda, las vidas, las monedas y cuándo se guardó. "Jefes" va desactivado con un candado y "Próximamente". En el pie, el selector de idioma corto y la versión.
+- **Créditos.** Una fila por crédito que entra una tras otra; la de Claude, en su terracota, con su logo (`ClaudeLogo`, la chispa dibujada con código) que respira.
+- **Pantallas pequeñas:** con menos de 860 px de ancho o 560 de alto, el título y el panel encogen; con menos de 700 px de ancho, el lema se parte para no meterse bajo el panel; con menos de 420 de alto, se quitan el subtítulo del panel y la fecha de la guardada. En vertical, el panel baja y ocupa el ancho.
+
+## 15. Listas de comprobación
 
 ### Enemigo nuevo
 Ejemplos: el acorazado y el escupidor de T-007, en `wormView.ts` (`KIND_LOOK`).
@@ -357,3 +374,10 @@ Ejemplos: el acorazado y el escupidor de T-007, en `wormView.ts` (`KIND_LOOK`).
 - [ ] Aparece y desaparece con animación.
 - [ ] Respeta `artInv()` y su ajuste de calidad.
 - [ ] No bloquea ni retrasa la regla que acompaña.
+
+### Texto nuevo en pantalla (T-011)
+- [ ] Sigue la lista de `docs/guias/idiomas.md`: en `es.ts` y en `en.ts`, leído con `text()` o `useText()`, y cabe en los dos idiomas.
+
+### Enemigo o planta nuevos en la portada (T-011)
+- [ ] Si se quiere en la portada, se añade a `CAST` de `titleCover.ts`: el que ataca, a su distancia (`engagedX`); las minas, lejos de los enemigos.
+- [ ] Probado en la portada a 1600 × 900 y a 568 × 320: se ve a la izquierda del menú y no lo tapa nada importante.

@@ -1,6 +1,8 @@
 import type { PointerEvent as ReactPointerEvent } from 'react';
 import { canAfford, cardCost, type CardId } from '../game/core/match';
 import { EventBus, GameEvents, type CardPreview, type PagePoint } from '../game/EventBus';
+import type { Dictionary } from '../i18n';
+import { useText } from './useText';
 
 interface CardProps {
   card: CardId;
@@ -28,6 +30,7 @@ export function Card({ card, label, balance, selected, preview = null, canInfuse
   // Espacio duro tras el "=": si en el HUD compacto no cabe en una linea, parte en "×3" y "= 225" (T-010).
   const shownCost = multiplied ? `×${preview.multiplier} =\u00a0${preview.cost}` : String(cost);
   const short = preview !== null && !preview.affordable;
+  const t = useText();
 
   function onPointerDown(event: ReactPointerEvent<HTMLButtonElement>) {
     if (disabled || event.button !== 0) return;
@@ -63,7 +66,7 @@ export function Card({ card, label, balance, selected, preview = null, canInfuse
       className={`card card-${card}`}
       aria-pressed={selected}
       aria-disabled={disabled}
-      title={disabled ? 'Saldo insuficiente' : cardTitle(card, canInfuse)}
+      title={disabled ? t.hud.noFunds : cardTitle(t, card, canInfuse)}
       onPointerDown={onPointerDown}
     >
       <CardIcon card={card} />
@@ -77,16 +80,11 @@ export function Card({ card, label, balance, selected, preview = null, canInfuse
 }
 
 /** Lo que hace la carta. Antes de poder infundir (T-007), el elemento solo se siembra como mina. */
-function cardTitle(card: CardId, canInfuse: boolean): string {
-  if (card === 'shooter') return 'Sembrar disparadora';
-  if (card === 'fire') {
-    return canInfuse
-      ? 'Fuego: en una casilla vacía, mina; sobre una disparadora, la infunde (un fuego por cañón)'
-      : 'Fuego: en una casilla vacía, mina que explota';
-  }
-  return canInfuse
-    ? 'Hielo: en una casilla vacía, mina que frena; sobre una disparadora, la infunde (un hielo por cañón)'
-    : 'Hielo: en una casilla vacía, mina que frena';
+function cardTitle(t: Dictionary, card: CardId, canInfuse: boolean): string {
+  const help = t.hud.cardHelp;
+  if (card === 'shooter') return help.shooter;
+  if (card === 'fire') return canInfuse ? help.fireInfuse : help.fire;
+  return canInfuse ? help.iceInfuse : help.ice;
 }
 
 /** Dibujo de la carta, en CSS: la disparadora, o una llama o un copo sobre un montoncito de tierra. Tambien en el aviso de desbloqueo (T-009). */

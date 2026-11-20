@@ -1,8 +1,9 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { CREEPER, ENEMIES, MINE } from '../config/balance';
 import { enemyMaxHp, spawnEnemy, type Enemy } from '../core/combat';
 import { createMatch, createMine, createPlant } from '../core/match';
 import { createShooter, type Shooter } from '../core/plants';
+import { setLanguage } from '../../i18n';
 import { enemyInfo, formatNumber, mineInfo, shooterInfo } from './entityInfo';
 
 const cell = { lane: 2, col: 3 };
@@ -110,5 +111,23 @@ describe('ficha de un enemigo', () => {
     expect(angry.subtitle).toBe('Jefe del mundo 1 · fase 2');
     expect(angry.tags[0]).toEqual({ text: '¡Enfadado!', tone: 'alert' });
     expect(stat(angry, 'Próximo salto')?.value).toBe('Ya no salta más');
+  });
+});
+
+describe('ficha en ingles (T-011)', () => {
+  afterEach(() => setLanguage('es'));
+
+  it('mismos numeros, con punto decimal, "%" pegado y sus textos', () => {
+    setLanguage('en');
+    const fire = shooterInfo(createPlant(shooter({ element: 'fire', cannons: 3, level: 5 })), cell, 5);
+    expect(fire).toMatchObject({ title: 'Fire shooter', subtitle: '3 fused barrels', level: { note: 'Cap 5' } });
+    expect(stat(fire, 'Damage')).toMatchObject({ value: '98 per shot', note: '3 seeds of 32.7' });
+    expect(stat(fire, 'Burn')).toMatchObject({ value: '39.2 per second', note: 'for 3 s' });
+    const ice = shooterInfo(createPlant(shooter({ element: 'ice', cannons: 2 })), cell, 5);
+    expect(stat(ice, 'Slows')).toMatchObject({ value: 'By 40%', note: 'for 2.5 s' });
+    const mine = mineInfo({ ...createMine('fire'), fuseMs: 1240 }, cell);
+    expect(mine.tags).toEqual([{ text: 'Explodes in 1.24 s!', tone: 'alert' }]);
+    const armored = enemyInfo(enemy('armored', 10));
+    expect(armored).toMatchObject({ title: 'Armored worm', level: { note: '+40% strength from its tier' } });
   });
 });

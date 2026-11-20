@@ -55,6 +55,8 @@ El jefe (T-008) no necesitó una fase propia: el Creeper es un grupo más del gu
 ## Consecuencias
 
 - **Reglas nuevas:** toda regla de combate (mina, quemadura, ralentizar, escupidor) se añade a `stepCombat` con su evento y su test. La escena solo añade cómo se anima.
-- **Cambiar la calidad en mitad de un combate:** la pelea continúa. Gusanos, balas, escupitajos, vidas y ronda siguen donde estaban.
+- **Cambiar la calidad (o el idioma, ADR-0009) en mitad de un combate:** la pelea continúa. Gusanos, balas, escupitajos, vidas y ronda siguen donde estaban.
+- **Partida guardada (T-011, ADR-0010):** el `MatchState` entero es lo que se guarda en el navegador. Si cambia su forma, se sube `SAVE_VERSION` y se ajusta la comprobación de `src/game/save.ts`.
+- **Portada del menú (T-011):** la batalla de la portada usa el mismo `stepCombat`, con los enemigos fijos en su sitio y todos inmortales.
 - **Reiniciar:** es `scene.restart()` sin `resume`. La escena se crea de cero y Phaser limpia objetos, tweens y temporizadores.
 - **Equipos muy lentos:** la simulación usa el `delta` de Phaser, que recorta los fotogramas de más de 200 ms. En un equipo muy lento el juego va a cámara lenta en vez de dar saltos.

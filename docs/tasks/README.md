@@ -14,6 +14,7 @@ Una task por archivo. El tamaño es orientativo.
 | T-008 | [Jefe] Creeper y rondas 8 a 10 | Completada (20 nov 2026) | M | T-007 | Ninguna (J-01 a J-05 cerradas) |
 | T-009 | [Rondas] Progresión y dificultad del mundo 1 | Completada (20 nov 2026) | L | T-008 | Ninguna (P-01 a P-12 cerradas) |
 | T-010 | [Dificultad] Enemigos más fuertes, ficha de información y bandeja fija | Completada (20 nov 2026) | M | T-009 | Ninguna (A-01 a A-10 cerradas) |
+| T-011 | [Interfaz] Menú de inicio, partida guardada, créditos e idiomas | Completada (20 nov 2026) | L | T-010 | Ninguna (I-01 a I-12 cerradas) |
 
 ## Estados
 
@@ -27,7 +28,7 @@ El estado se escribe en dos sitios: en esta tabla y en la cabecera de la task (`
 
 ## Orden recomendado
 
-T-001, T-002, T-006, T-004, T-005, T-003, T-007, T-008, T-009, T-010.
+T-001, T-002, T-006, T-004, T-005, T-003, T-007, T-008, T-009, T-010, T-011.
 
 T-006 va antes que los elementos a propósito: fusionar es la mecánica que diferencia al juego. Si arrastrar una planta sobre otra no se siente bien, conviene saberlo cuanto antes.
 

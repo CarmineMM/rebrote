@@ -30,7 +30,7 @@ Hay dos problemas técnicos:
 - Al redimensionar la ventana la escena reajusta lienzo y cámara (`fitView`). La lógica no cambia: sigue en coordenadas de tablero.
 
 ### HUD flotante
-React pinta el HUD encima del juego:
+Durante la partida React pinta el HUD encima del juego (en el menú de inicio, el título y el menú, ADR-0010):
 - Arriba a la izquierda, la bandeja de cartas.
 - Arriba a la derecha, el saldo y el botón de pausa.
 - Abajo a la izquierda, los FPS si se activan.
@@ -46,9 +46,11 @@ React pinta el HUD encima del juego:
 - **Pausar** congela la escena entera: temporizadores, tweens, partículas, el goteo pasivo y la vida de las monedas soltadas. El juego se sigue viendo, desenfocado, detrás del menú.
   - Se aplica en el acto con `this.sys.pause()` y `this.sys.resume()`, no con `this.scene.pause()`, que espera en cola al siguiente fotograma. Con la cola, quitar la pausa y volver a ponerla enseguida (aceptar un aviso de desbloqueo y que salga el siguiente, T-009) dejaba la escena en pausa sin nada abierto.
   - El aviso de desbloqueo de T-009 y la ficha de información de T-010 también pausan el juego mientras están abiertos, igual que el menú. En `App`, todo lo que pausa se junta en `halted`.
-- Desde el menú se llega a **Ajustes**: pantalla completa, calidad gráfica (ADR-0006) y mostrar FPS.
+- Desde el menú se llega a **Ajustes**: idioma (ADR-0009), pantalla completa, calidad gráfica (ADR-0006) y mostrar FPS.
+- **Salir al menú** (T-011) vuelve al menú de inicio; la partida se guarda en ese momento (ADR-0010).
 - Si se cambia la calidad con el menú abierto, el juego nuevo arranca ya en pausa y con la misma partida.
 - Las preferencias se guardan en `localStorage` (`rebrote.ajustes`).
+- En el menú de inicio no hay pausa: Esc y P no hacen nada (Esc vuelve del panel de opciones o de créditos). Un clic en la portada también activa la pantalla completa, y "Nueva partida" y "Cargar partida" son gestos válidos para entrar en ella.
 
 ## Consecuencias
 

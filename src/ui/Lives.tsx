@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { LIVES } from '../game/config/balance';
+import { useText } from './useText';
 
 /** Contorno de corazon (24 x 24), compartido con la pantalla de derrota. */
 export const HEART_PATH =
@@ -14,6 +15,7 @@ type HeartState = 'full' | 'breaking' | 'lost';
 /** Vidas de la partida (D-07, provisional): un corazon por vida. El que se pierde se rompe y se apaga. */
 export function Lives({ lives }: LivesProps) {
   const max = LIVES.start;
+  const t = useText();
   const current = lives ?? max;
   const previous = useRef(current);
   const [breaking, setBreaking] = useState<number | null>(null);
@@ -27,7 +29,7 @@ export function Lives({ lives }: LivesProps) {
   const stateOf = (index: number): HeartState => (index < current ? 'full' : index === breaking ? 'breaking' : 'lost');
 
   return (
-    <div className="hud-lives" role="img" aria-label={`Vidas: ${current} de ${max}`}>
+    <div className="hud-lives" role="img" aria-label={t.hud.lives(current, max)}>
       {Array.from({ length: max }, (_, index) => (
         <svg key={index} className={`heart is-${stateOf(index)}`} viewBox="0 0 24 24" aria-hidden="true">
           <path d={HEART_PATH} />

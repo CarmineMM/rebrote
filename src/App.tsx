@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { CardId } from './game/core/match';
+import type { GameScreen } from './game/createGame';
 import {
   EventBus,
   GameEvents,
@@ -7,10 +8,13 @@ import {
   type CardPreview,
   type EntityInfo,
   type LossInfo,
+  type MatchRequest,
   type PlantPanel,
   type RoundInfo,
   type UnlockInfo,
 } from './game/EventBus';
+import { readSave, type SavedGame } from './game/save';
+import { SCENES } from './game/scenes/keys';
 import { Balance } from './ui/Balance';
 import { Card } from './ui/Card';
 import { DefeatScreen } from './ui/DefeatScreen';
@@ -20,26 +24,35 @@ import { LevelPanel } from './ui/LevelPanel';
 import { Lives } from './ui/Lives';
 import { PauseMenu } from './ui/PauseMenu';
 import { RoundHud } from './ui/RoundHud';
+import { TitleScreen } from './ui/TitleScreen';
 import { UnlockModal } from './ui/UnlockModal';
 import { NO_AUTO_FULLSCREEN, useFullscreen } from './ui/useFullscreen';
 import { useSettings } from './ui/useSettings';
+import { useText } from './ui/useText';
 import { VictoryScreen } from './ui/VictoryScreen';
 
 /** Cartas de la bandeja, en orden. Solo se ven las que la ronda ya desbloqueo (T-007). */
-const CARDS: ReadonlyArray<{ id: CardId; label: string }> = [
-  { id: 'shooter', label: 'Disparadora' },
-  { id: 'fire', label: 'Fuego' },
-  { id: 'ice', label: 'Hielo' },
-];
+const CARDS: readonly CardId[] = ['shooter', 'fire', 'ice'];
+
+/** Escena que tiene que estar lista para cada pantalla. */
+const SCENE_OF: Record<GameScreen, string> = { title: SCENES.title, board: SCENES.board };
 
 /**
- * Pantalla completa con el HUD flotando encima del juego, menu de pausa con los ajustes (ADR-0007), ronda en curso
- * (T-007) con la barra del jefe (T-008), aviso de lo desbloqueado (T-009), ficha de informacion (T-010) y pantallas de
- * derrota y de victoria. Con la partida acabada no se abre el menu de pausa: solo se puede jugar otra vez. Mientras el
- * aviso de lo desbloqueado o una ficha estan abiertos el juego espera en pausa.
+ * Pantalla completa con el menu de inicio (T-011) o con la partida: HUD flotando encima del juego, menu de pausa con los
+ * ajustes (ADR-0007), ronda en curso (T-007) con la barra del jefe (T-008), aviso de lo desbloqueado (T-009), ficha de
+ * informacion (T-010) y pantallas de derrota y de victoria. Con la partida acabada no se abre el menu de pausa: solo se
+ * puede jugar otra vez o volver al menu. Mientras el aviso de lo desbloqueado o una ficha estan abiertos el juego espera
+ * en pausa. La partida se guarda sola (T-011): la escena guarda al empezar cada ronda y aqui se le pide al ocultar o
+ * cerrar la pestana y al salir al menu.
  */
 export function App() {
-  const [ready, setReady] = useState(false);
+  const t = useText();
+  const [screen, setScreen] = useState<GameScreen>('title');
+  /** Escena que aviso de que esta lista; mientras no sea la de la pantalla, se ve la carga. */
+  const [readyScene, setReadyScene] = useState<string | null>(null);
+  const ready = readyScene === SCENE_OF[screen];
+  /** Partida guardada, para "Cargar partida" en el menu de inicio. */
+  const [saved, setSaved] = useState<SavedGame | null>(() => readSave());
   const [balance, setBalance] = useState<number | null>(null);
   const [lives, setLives] = useState<number | null>(null);
   const [selected, setSelected] = useState<CardId | null>(null);
@@ -58,20 +71,27 @@ export function App() {
   const [paused, setPaused] = useState(false);
   const [lost, setLost] = useState(false);
   const [won, setWon] = useState(false);
-  /** Partida acabada (perdida o ganada): solo queda jugar otra vez. */
+  const onBoard = screen === 'board';
+  /** Partida acabada (perdida o ganada): solo queda jugar otra vez o volver al menu. */
   const over = lost || won;
   /** El juego espera: menu de pausa, aviso de lo desbloqueado o ficha abiertos. */
-  const halted = paused || unlock !== null || info !== null;
-  const overRef = useRef(over);
-  overRef.current = over;
+  const halted = onBoard && (paused || unlock !== null || info !== null);
+  /** Con la partida en marcha (ni en el menu ni acabada) se puede pausar. */
+  const pausable = useRef(false);
+  pausable.current = onBoard && !over;
   const { settings, update, level, autoLevel, fps } = useSettings();
   const pause = useCallback(() => {
-    if (!overRef.current) setPaused(true);
+    if (pausable.current) setPaused(true);
   }, []);
   const fullscreen = useFullscreen(settings.fullscreen, pause);
 
   useEffect(() => {
-    const onReady = () => setReady(true);
+    // La escena que arranca dice en que pantalla estamos: si el juego se recrea sin partida, vuelve la portada.
+    const onReady = (key: string) => {
+      setReadyScene(key);
+      if (key === SCENES.title) setScreen('title');
+      else if (key === SCENES.board) setScreen('board');
+    };
     const onLost = (info?: LossInfo) => {
       setLoss(info ?? null);
       setLost(true);
@@ -114,8 +134,61 @@ export function App() {
     };
   }, []);
 
-  // Cambiar la calidad recrea el juego: se vuelve a mostrar la carga hasta que este listo.
-  useEffect(() => setReady(false), [level]);
+  // Cambiar la calidad o el idioma recrea el juego: se vuelve a mostrar la carga hasta que este listo.
+  useEffect(() => setReadyScene(null), [level, settings.language]);
+
+  // Al volver al menu (o al abrirlo), "Cargar partida" mira lo que hay guardado.
+  useEffect(() => {
+    if (screen === 'title') setSaved(readSave());
+  }, [screen]);
+
+  /** Todo el HUD vuelve a estar como al empezar: nada de la partida anterior debe asomar en la siguiente. */
+  const resetHud = useCallback(() => {
+    acceptedRound.current = null;
+    setBalance(null);
+    setLives(null);
+    setSelected(null);
+    setPreview(null);
+    setPlantPanel(null);
+    setRound(null);
+    setBoss(null);
+    setLoss(null);
+    setUnlock(null);
+    setInfo(null);
+    setLost(false);
+    setWon(false);
+    setPaused(false);
+  }, []);
+
+  /** Desde el menu de inicio: partida nueva o la guardada. El clic es un gesto valido para la pantalla completa. */
+  const startMatch = useCallback(
+    (request: MatchRequest) => {
+      resetHud();
+      setScreen('board');
+      EventBus.emit(GameEvents.matchRequested, request);
+      if (settings.fullscreen) fullscreen.enter();
+    },
+    [resetHud, settings.fullscreen, fullscreen],
+  );
+
+  const newGame = useCallback(() => startMatch({}), [startMatch]);
+
+  const loadGame = useCallback(() => {
+    const save = readSave();
+    if (!save) {
+      setSaved(null);
+      return;
+    }
+    startMatch({ resume: save.match, pendingUnlock: save.pendingUnlock });
+  }, [startMatch]);
+
+  /** Vuelve al menu de inicio. La escena guarda la partida (si no esta acabada) y deja paso a la portada. */
+  const exitToMenu = useCallback(() => {
+    EventBus.emit(GameEvents.exitRequested);
+    resetHud();
+    setScreen('title');
+    setSaved(readSave());
+  }, [resetHud]);
 
   const resume = useCallback(() => {
     setPaused(false);
@@ -136,22 +209,16 @@ export function App() {
 
   /** Partida nueva desde cero (sin continuar la anterior). */
   const restart = useCallback(() => {
-    // La partida nueva vuelve a avisar de lo de la ronda 1 (si lo tiene).
-    acceptedRound.current = null;
-    setUnlock(null);
-    setInfo(null);
-    setLost(false);
-    setLoss(null);
-    setWon(false);
-    setPaused(false);
+    resetHud();
     EventBus.emit(GameEvents.restartRequested);
     if (settings.fullscreen) fullscreen.enter();
-  }, [settings.fullscreen, fullscreen]);
+  }, [resetHud, settings.fullscreen, fullscreen]);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      // Con la partida acabada solo cuenta el boton de jugar otra vez (Enter o espacio, que ya tiene el foco).
-      if (event.repeat || over) return;
+      // En el menu de inicio las teclas las atiende el propio menu.
+      // Con la partida acabada solo cuentan sus botones (Enter o espacio, que ya tienen el foco).
+      if (event.repeat || !onBoard || over) return;
       // Con el aviso de lo desbloqueado abierto, Esc lo acepta (Enter ya lo hace el boton, que tiene el foco).
       if (unlock && !paused) {
         if (event.key === 'Escape') acceptUnlock();
@@ -175,81 +242,104 @@ export function App() {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [paused, selected, plantPanel, over, resume, fullscreen, unlock, acceptUnlock, info, closeInfo]);
+  }, [onBoard, paused, selected, plantPanel, over, resume, fullscreen, unlock, acceptUnlock, info, closeInfo]);
 
-  // Si el jugador cambia de pestana o minimiza, al volver encuentra el juego en pausa.
+  // Si el jugador cambia de pestana, minimiza o cierra, la partida se guarda en ese momento (T-011) y al volver encuentra
+  // el juego en pausa.
   useEffect(() => {
     const onVisibility = () => {
-      if (document.hidden) pause();
+      if (!document.hidden) return;
+      EventBus.emit(GameEvents.saveRequested);
+      pause();
     };
+    const onPageHide = () => EventBus.emit(GameEvents.saveRequested);
     document.addEventListener('visibilitychange', onVisibility);
-    return () => document.removeEventListener('visibilitychange', onVisibility);
+    window.addEventListener('pagehide', onPageHide);
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibility);
+      window.removeEventListener('pagehide', onPageHide);
+    };
   }, [pause]);
 
   return (
     // Con la pausa (o el aviso de lo desbloqueado, o una ficha) se congelan tambien las animaciones CSS que cuentan tiempo (el aviso de la ronda).
     <main className={`app${halted ? ' is-paused' : ''}`}>
-      <GameCanvas quality={level} paused={halted} />
+      <GameCanvas quality={level} language={settings.language} screen={screen} paused={halted} />
 
-      <header ref={hudRef} className="hud" aria-hidden={halted || over}>
-        <div className="seed-tray" aria-label="Cartas">
-          {CARDS.filter(({ id }) => (round?.cards ?? ['shooter']).includes(id)).map(({ id, label }) => (
-            // Cada carta nueva entra en la bandeja con un salto al desbloquearse.
-            <span key={id} className="card-slot">
-              <Card
-                card={id}
-                label={label}
-                balance={balance}
-                selected={selected === id}
-                preview={id !== 'shooter' && preview?.card === id ? preview : null}
-                canInfuse={id !== 'shooter' && (round?.infusable.includes(id) ?? false)}
-              />
-            </span>
-          ))}
-        </div>
-        {round && <RoundHud round={round} boss={boss} />}
-        <div className="hud-right">
-          <Lives lives={lives} />
-          <Balance balance={balance} />
-          <button
-            type="button"
-            className="round-button"
-            aria-label="Pausa"
-            title="Pausa (Esc o P)"
-            onClick={() => setPaused(true)}
-            {...{ [NO_AUTO_FULLSCREEN]: '' }}
-          >
-            <span className="pause-icon" aria-hidden="true" />
-          </button>
-        </div>
-      </header>
+      {screen === 'title' && (
+        <TitleScreen
+          saved={saved}
+          settings={settings}
+          autoLevel={autoLevel}
+          fullscreenSupported={fullscreen.supported}
+          onChange={update}
+          onNewGame={newGame}
+          onLoadGame={loadGame}
+        />
+      )}
 
-      {plantPanel && !halted && !over && <LevelPanel key={plantPanel.id} panel={plantPanel} avoid={hudRef} />}
+      {onBoard && (
+        <header ref={hudRef} className="hud" aria-hidden={halted || over}>
+          <div className="seed-tray" aria-label={t.hud.cards}>
+            {CARDS.filter((id) => (round?.cards ?? ['shooter']).includes(id)).map((id) => (
+              // Cada carta nueva entra en la bandeja con un salto al desbloquearse.
+              <span key={id} className="card-slot">
+                <Card
+                  card={id}
+                  label={t.hud.cardNames[id]}
+                  balance={balance}
+                  selected={selected === id}
+                  preview={id !== 'shooter' && preview?.card === id ? preview : null}
+                  canInfuse={id !== 'shooter' && (round?.infusable.includes(id) ?? false)}
+                />
+              </span>
+            ))}
+          </div>
+          {round && <RoundHud round={round} boss={boss} />}
+          <div className="hud-right">
+            <Lives lives={lives} />
+            <Balance balance={balance} />
+            <button
+              type="button"
+              className="round-button"
+              aria-label={t.hud.pause}
+              title={t.hud.pauseTitle}
+              onClick={() => setPaused(true)}
+              {...{ [NO_AUTO_FULLSCREEN]: '' }}
+            >
+              <span className="pause-icon" aria-hidden="true" />
+            </button>
+          </div>
+        </header>
+      )}
+
+      {onBoard && plantPanel && !halted && !over && <LevelPanel key={plantPanel.id} panel={plantPanel} avoid={hudRef} />}
 
       {settings.showFps && fps !== null && <div className="fps">{fps} FPS</div>}
 
       {!ready && (
         <div className="loading" role="status">
           <span className="loading-sprout" aria-hidden="true" />
-          Cargando el jardín…
+          {t.common.loading}
         </div>
       )}
 
-      {lost && <DefeatScreen round={round} loss={loss} onRestart={restart} />}
+      {onBoard && lost && <DefeatScreen round={round} loss={loss} onRestart={restart} onMenu={exitToMenu} />}
 
-      {won && !lost && <VictoryScreen rounds={round?.total ?? 0} onRestart={restart} />}
+      {onBoard && won && !lost && <VictoryScreen rounds={round?.total ?? 0} onRestart={restart} onMenu={exitToMenu} />}
 
-      {unlock && !paused && !over && <UnlockModal unlock={unlock} onAccept={acceptUnlock} />}
+      {onBoard && unlock && !paused && !over && <UnlockModal unlock={unlock} onAccept={acceptUnlock} />}
 
-      {info && !paused && !over && !unlock && <InfoPanel info={info} onClose={closeInfo} />}
+      {onBoard && info && !paused && !over && !unlock && <InfoPanel info={info} onClose={closeInfo} />}
 
-      {paused && !over && (
+      {onBoard && paused && !over && (
         <PauseMenu
           settings={settings}
           autoLevel={autoLevel}
           fullscreenSupported={fullscreen.supported}
           onChange={update}
           onResume={resume}
+          onExit={exitToMenu}
         />
       )}
     </main>

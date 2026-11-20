@@ -1,8 +1,11 @@
 import { useEffect, useId, useRef, type ReactNode } from 'react';
+import { MINE } from '../game/config/balance';
 import type { UnlockInfo, UnlockItem } from '../game/EventBus';
+import { formatSeconds, type Dictionary } from '../i18n';
 import { medalTier } from '../game/view/levelMedal';
 import { CardIcon } from './Card';
 import { NO_AUTO_FULLSCREEN } from './useFullscreen';
+import { useText } from './useText';
 
 interface UnlockModalProps {
   unlock: UnlockInfo;
@@ -24,22 +27,22 @@ const Medal = ({ level }: { level: number }) => <span className={`medal medal-ti
  * Que se cuenta de cada cosa (T-009). Subir de nivel llega con su tope: se cuentan juntos. Infundir fuego y hielo
  * llegan juntos y ya vienen como uno.
  */
-function describe(items: readonly UnlockItem[]): Shown[] {
+function describe(t: Dictionary['unlock'], items: readonly UnlockItem[]): Shown[] {
   const capWithLevelUp = items.some((item) => item.id === 'levelUp');
   const shown: Shown[] = [];
   for (const item of items) {
     switch (item.id) {
       case 'shooter':
-        shown.push({ key: item.id, icon: <CardIcon card="shooter" />, title: 'Disparadora', text: 'Siémbrala en una casilla: dispara a los gusanos de su carril.' });
+        shown.push({ key: item.id, icon: <CardIcon card="shooter" />, title: t.shooter.title, text: t.shooter.text });
         break;
       case 'levelUp': {
         const cap = items.find((other) => other.id === 'levelCap');
-        const upTo = cap && cap.id === 'levelCap' ? ` (hasta el nivel ${cap.level})` : '';
+        const upTo = cap && cap.id === 'levelCap' ? cap.level : null;
         shown.push({
           key: item.id,
           icon: <span className="unlock-arrow" />,
-          title: 'Subir de nivel',
-          text: `Toca una disparadora y pulsa «Subir»: más daño y más cadencia${upTo}.`,
+          title: t.levelUp.title,
+          text: t.levelUp.text(upTo),
         });
         break;
       }
@@ -48,15 +51,15 @@ function describe(items: readonly UnlockItem[]): Shown[] {
         shown.push({
           key: item.id,
           icon: <Medal level={item.level} />,
-          title: `Nivel máximo: ${item.level}`,
-          text: `Tus disparadoras ya pueden subir hasta el nivel ${item.level}.`,
+          title: t.levelCap.title(item.level),
+          text: t.levelCap.text(item.level),
         });
         break;
       case 'fireMine':
-        shown.push({ key: item.id, icon: <CardIcon card="fire" />, title: 'Mina de fuego', text: 'Siémbrala sola: cuando un gusano se acerca, cuenta 2 s y explota.' });
+        shown.push({ key: item.id, icon: <CardIcon card="fire" />, title: t.fireMine.title, text: t.fireMine.text(formatSeconds(MINE.countdownMs)) });
         break;
       case 'iceMine':
-        shown.push({ key: item.id, icon: <CardIcon card="ice" />, title: 'Mina de hielo', text: 'Siémbrala sola: al explotar frena mucho a los gusanos de alrededor.' });
+        shown.push({ key: item.id, icon: <CardIcon card="ice" />, title: t.iceMine.title, text: t.iceMine.text });
         break;
       case 'infuse':
         shown.push({
@@ -67,8 +70,8 @@ function describe(items: readonly UnlockItem[]): Shown[] {
               <CardIcon card="ice" />
             </span>
           ),
-          title: 'Infundir',
-          text: 'Suelta fuego o hielo sobre una disparadora, o arrastra hasta ella una mina sembrada: sus semillas queman o frenan.',
+          title: t.infuse.title,
+          text: t.infuse.text,
         });
         break;
       case 'fuse':
@@ -80,8 +83,8 @@ function describe(items: readonly UnlockItem[]): Shown[] {
               <CardIcon card="shooter" />
             </span>
           ),
-          title: 'Fusionar',
-          text: 'Arrastra una disparadora sobre otra igual: suman cañones y pegan más fuerte.',
+          title: t.fuse.title,
+          text: t.fuse.text,
         });
         break;
     }
@@ -101,7 +104,8 @@ export function UnlockModal({ unlock, onAccept }: UnlockModalProps) {
     button.current?.focus();
   }, [unlock.round]);
 
-  const shown = describe(unlock.items);
+  const t = useText();
+  const shown = describe(t.unlock, unlock.items);
 
   return (
     <div className="pause-overlay is-unlock" role="dialog" aria-modal="true" aria-labelledby={titleId} {...{ [NO_AUTO_FULLSCREEN]: '' }}>
@@ -110,9 +114,9 @@ export function UnlockModal({ unlock, onAccept }: UnlockModalProps) {
         <span className="victory-star is-a" aria-hidden="true" />
         <span className="victory-star is-b" aria-hidden="true" />
         <span className="victory-star is-c" aria-hidden="true" />
-        <p className="pause-kicker">Ronda {unlock.round}</p>
+        <p className="pause-kicker">{t.unlock.round(unlock.round)}</p>
         <h2 id={titleId} className="unlock-title">
-          ¡YA LO TIENES!
+          {t.unlock.title}
         </h2>
         <ul className="unlock-list">
           {shown.map((item, i) => (
@@ -129,7 +133,7 @@ export function UnlockModal({ unlock, onAccept }: UnlockModalProps) {
         </ul>
         <div className="pause-actions">
           <button ref={button} type="button" className="btn btn-primary unlock-go" onClick={onAccept}>
-            ¡A jugar!
+            {t.unlock.go}
           </button>
         </div>
       </div>

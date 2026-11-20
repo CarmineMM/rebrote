@@ -9,6 +9,7 @@ import type { Effects } from './effects';
 import { DEPTH, SCENERY, entityDepth, perspective } from './layout';
 import { CREEPER_SCREEN, TEX, WORM_SIZE, artInv } from './textures';
 import { CREEPER_SIZE, WORM_LOOK, WormView, type EnemyView } from './wormView';
+import { text } from '../../i18n';
 
 /**
  * Creeper (T-008), jefe del mundo 1. Su cuerpo es un `WormView` grande con cabeza de monitor; aqui va lo suyo: el
@@ -28,15 +29,7 @@ const CREEPER_LOOK = {
     calm: { bg: 0x0b2417, edge: 0x39ff88, text: '#c8ffe0' },
     angry: { bg: 0x2a0a12, edge: 0xff5a7a, text: '#ffd6df' },
   },
-  /** El original de 1971 escribia "I'M THE CREEPER : CATCH ME IF YOU CAN". */
-  lines: {
-    entrance: 'SOY CREEPER: ¡ATRÁPAME SI PUEDES!',
-    angry: '¡GRRR! ¡AHORA VAS A VER!',
-    jump: ['¡HOP!', '¡POR AQUÍ!', '¡ATRÁPAME!', '¡CUCÚ!'],
-    escape: '¡NO ME ATRAPASTE!',
-    cheer: '¡JA, JA, JA!',
-    preparing: 'CARGANDO… ¡YA CASI ESTOY!',
-  },
+  // Sus frases (entrada, enfado, saltos, huida, risa y preparacion) estan en `creeper` de `src/i18n/` (T-011).
   /** Luz de la antena: parpadea (mas deprisa enfadado). */
   ledBlinkMs: { calm: 620, angry: 260 },
 } as const;
@@ -187,12 +180,12 @@ export class CreeperView implements EnemyView {
       this.led = scene.add.image(0, 0, TEX.glow).setTint(CREEPER_LOOK.warnColor).setBlendMode(Phaser.BlendModes.ADD).setAlpha(0.9);
       this.blinkLed();
     }
-    if (emerge) scene.time.delayedCall(emergeDelayMs + 450, () => !this.gone && this.say(CREEPER_LOOK.lines.entrance, 3400));
+    if (emerge) scene.time.delayedCall(emergeDelayMs + 450, () => !this.gone && this.say(text().creeper.entrance, 3400));
     this.sync(enemy);
   }
 
-  sync(enemy: Enemy): void {
-    this.worm.sync(enemy);
+  sync(enemy: Enemy, stride = 0): void {
+    this.worm.sync(enemy, stride);
     const angry = isEnraged(enemy);
     if (angry && !this.enraged) this.enrage();
     this.enraged = angry;
@@ -248,7 +241,7 @@ export class CreeperView implements EnemyView {
     this.scene.tweens.add({ targets: this.alert, scale: 1, duration: 240, ease: 'Back.Out' });
     // Una de cada dos veces suelta una frase.
     if (this.jumps++ % 2 === 1) {
-      const lines = CREEPER_LOOK.lines.jump;
+      const lines = text().creeper.jump;
       this.say(lines[Math.floor(this.jumps / 2) % lines.length], 1100);
     }
   }
@@ -288,7 +281,7 @@ export class CreeperView implements EnemyView {
 
   /** Cruzo el borde izquierdo: se mete bajo tierra riendose. */
   escape(): void {
-    this.say(CREEPER_LOOK.lines.escape, 2400);
+    this.say(text().creeper.escape, 2400);
     this.worm.escape();
     this.leave(false);
   }
@@ -296,7 +289,12 @@ export class CreeperView implements EnemyView {
   /** Derrota del jugador (si sigue en pantalla): salta de contento y se rie. */
   cheer(): void {
     this.worm.cheer();
-    this.say(CREEPER_LOOK.lines.cheer, 2400);
+    this.say(text().creeper.cheer, 2400);
+  }
+
+  /** Suelta una frase en su bocadillo de terminal (en la portada del menu, T-011, cuando le hacen clic o cada tanto). */
+  taunt(line: string, lifeMs = 2600): void {
+    if (!this.gone) this.say(line, lifeMs);
   }
 
   /** Dice una frase en su bocadillo de terminal. */
@@ -315,7 +313,7 @@ export class CreeperView implements EnemyView {
     this.fx.smoke(head.x, head.y, 8);
     this.fx.ring(head.x, head.y, cellWidth * 1.8, CREEPER_LOOK.angryColor, this.worm.depth() + 0.5, 420);
     this.scene.cameras.main.shake(200, 0.004);
-    this.say(CREEPER_LOOK.lines.angry, 2200);
+    this.say(text().creeper.angry, 2200);
     this.blinkLed();
   }
 
@@ -481,7 +479,7 @@ export class CreeperOmen {
       fx.dirt(this.ground.x, this.ground.y, 12);
       fx.bits(this.ground.x, this.ground.y - this.cellWidth * 0.3, 14);
       fx.glow(this.ground.x, this.ground.y - this.cellWidth * 0.3, this.cellWidth * 2, 0x39ff88, depth + 1, 600);
-      scene.time.delayedCall(600, () => this.say(CREEPER_LOOK.lines.preparing, 3400));
+      scene.time.delayedCall(600, () => this.say(text().creeper.preparing, 3400));
     }
   }
 

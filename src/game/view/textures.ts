@@ -5,6 +5,7 @@ import type { ElementType } from '../core/plants';
 import type { ScreenPoint } from './perspective';
 import { SCENERY, VIEW, WORLD, perspective } from './layout';
 import { MEDAL, MEDAL_TIERS, medalTier } from './levelMedal';
+import { text } from '../../i18n';
 import {
   SHOOTER_BARRELS,
   SHOOTER_DOTS,
@@ -2528,7 +2529,7 @@ function roundRect(ctx: Ctx, x: number, y: number, w: number, h: number, r: numb
  * - idle: ojos grandes que miran adelante y sonrisa de pillo.
  * - bite: boca abierta con dientes de pixel; en la fase 2, ademas, cejas de enfado (todas las caras de la fase 2).
  * - hurt: ojos apretados y la imagen con un tiron de interferencia.
- * - loading: ojos cerrados de concentracion, "CARGANDO" y el marco de la barra (la vista la va llenando).
+ * - loading: ojos cerrados de concentracion, "CARGANDO" (o "LOADING") y el marco de la barra (la vista la va llenando).
  */
 function paintCreeperHead(ctx: Ctx, mood: CreeperMood, screen: CreeperScreenPalette, scale: number): void {
   const S = CREEPER_SCREEN;
@@ -2667,7 +2668,8 @@ function paintCreeperHead(ctx: Ctx, mood: CreeperMood, screen: CreeperScreenPale
     ctx.shadowBlur = 3 * scale;
     ctx.font = '900 8px ui-monospace, "Courier New", monospace';
     ctx.textAlign = 'center';
-    ctx.fillText('CARGANDO', S.bar.x + S.bar.width / 2, S.bar.y - 3);
+    // En el idioma en curso (T-011): cambiar de idioma recrea el juego y vuelve a pintar las texturas.
+    ctx.fillText(text().creeper.loading, S.bar.x + S.bar.width / 2, S.bar.y - 3);
     ctx.lineWidth = 1.4;
     ctx.strokeRect(S.bar.x - 1.5, S.bar.y - 1.5, S.bar.width + 3, S.bar.height + 3);
   } else {

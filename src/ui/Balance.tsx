@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useText } from './useText';
 
 interface BalanceProps {
   balance: number | null;
@@ -10,6 +11,7 @@ type Bump = { id: number; kind: 'gain' | 'spend' };
 export function Balance({ balance }: BalanceProps) {
   const previous = useRef<number | null>(null);
   const [bump, setBump] = useState<Bump | null>(null);
+  const t = useText();
 
   useEffect(() => {
     const before = previous.current;
@@ -19,7 +21,7 @@ export function Balance({ balance }: BalanceProps) {
   }, [balance]);
 
   return (
-    <div className="hud-balance" aria-label="Monedas" aria-live="polite">
+    <div className="hud-balance" aria-label={t.hud.coins} aria-live="polite">
       <span key={`coin-${bump?.id ?? 0}`} className={`coin ${bump?.kind === 'gain' ? 'coin-spin' : ''}`} aria-hidden="true" />
       <span key={`value-${bump?.id ?? 0}`} className={`hud-balance-value ${bump ? `bump-${bump.kind}` : ''}`}>
         {balance ?? '...'}

@@ -35,9 +35,9 @@ Niveles **Bajo, Medio, Alto y Ultra**, más **Automático** (por defecto). Cada 
 
 - **Resolución:** cada unidad de diseño son `renderScale` píxeles del lienzo y la cámara amplía en la misma proporción. Todo el código sigue trabajando en coordenadas de diseño (1600 × 900). Las texturas se pintan a esa misma escala y las imágenes se muestran con `artInv()` para que midan lo mismo.
 - **Modo automático:** empieza según el equipo (`suggestQuality`: núcleos, memoria, pantalla táctil) y nunca propone Ultra. Tras unos segundos mide los fps reales. Si la mediana queda por debajo de 45, baja un nivel (`autoDowngrade`). Nunca sube solo.
-- **Cambiar de nivel:** recrea el juego con el perfil nuevo y continúa la misma partida (saldo, plantas y, desde T-002, el combate entero: ver ADR-0008; con `snapshotMatch`). Así cada efecto lee su nivel una sola vez, al crearse, y no hace falta reconfigurar nada en caliente.
+- **Cambiar de nivel:** (igual que cambiar de idioma, ADR-0009) recrea el juego con el perfil nuevo y continúa la misma partida (saldo, plantas y, desde T-002, el combate entero: ver ADR-0008; con `snapshotMatch`). Así cada efecto lee su nivel una sola vez, al crearse, y no hace falta reconfigurar nada en caliente.
 - **Dónde se guarda:** la preferencia vive en `localStorage` de cada navegador (`rebrote.ajustes`, sin backend, ADR-0001). Si el almacenamiento falla, se usa Automático.
-- **Dónde se cambia:** en Ajustes, dentro del menú de pausa (ADR-0007), junto con la pantalla completa y la opción de mostrar los FPS.
+- **Dónde se cambia:** en Ajustes, dentro del menú de pausa (ADR-0007), y en Opciones del menú de inicio (T-011, ADR-0010), junto con el idioma, la pantalla completa y la opción de mostrar los FPS.
 - **Resolución y proporción:** el lienzo mide (trozo de mundo visible) × `renderScale`; el trozo visible depende de la proporción de la pantalla (ADR-0007).
 - **Filtros de Ultra:** solo filtros de una lectura por píxel (matriz de color y viñeta). Se probó el tilt-shift y se descartó: hace 100 lecturas por píxel, unas 576 millones por fotograma a doble resolución.
 

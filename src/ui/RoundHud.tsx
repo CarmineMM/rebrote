@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { EventBus, GameEvents, type BossInfo, type RoundInfo } from '../game/EventBus';
 import { BossBar } from './BossBar';
+import { useText } from './useText';
 
 interface RoundHudProps {
   round: RoundInfo;
@@ -17,27 +18,28 @@ interface RoundHudProps {
 export function RoundHud({ round, boss }: RoundHudProps) {
   const { number, total, bossRound, phase, prepSeconds, notice } = round;
   const isBoss = number === bossRound;
+  const t = useText();
   const seedState = (i: number) =>
     [i + 1 === bossRound ? 'is-boss' : '', i + 1 < number || phase === 'won' ? 'is-done' : i + 1 === number ? 'is-current' : '']
       .filter(Boolean)
       .join(' ');
 
   return (
-    <section className="round-info" aria-label="Ronda">
+    <section className="round-info" aria-label={t.round.label}>
       <div className="round-badge">
         {isBoss ? (
           <span className="round-title is-boss">
             <strong key={number} className="round-number">
-              Combate final
+              {t.round.finalBattle}
             </strong>
           </span>
         ) : (
           <span className="round-title">
-            Ronda{' '}
+            {t.round.word}{' '}
             <strong key={number} className="round-number">
               {number}
             </strong>{' '}
-            de {total}
+            {t.round.of} {total}
           </span>
         )}
         <span className="round-progress" aria-hidden="true">
@@ -49,14 +51,14 @@ export function RoundHud({ round, boss }: RoundHudProps) {
       {phase === 'prep' && prepSeconds !== null && (
         <div className="round-prep">
           <span className={`round-countdown${prepSeconds <= 3 ? ' is-soon' : ''}`}>
-            {isBoss ? 'Creeper llega en' : 'Empieza en'}{' '}
+            {isBoss ? t.round.bossIn : t.round.startsIn}{' '}
             <strong key={prepSeconds} className="round-seconds">
               {prepSeconds}
             </strong>{' '}
-            s
+            {t.round.seconds}
           </span>
           <button type="button" className="round-go" onClick={() => EventBus.emit(GameEvents.attackRequested)}>
-            {isBoss ? '¡Que venga!' : '¡Que vengan!'}
+            {isBoss ? t.round.goBoss : t.round.go}
           </button>
         </div>
       )}

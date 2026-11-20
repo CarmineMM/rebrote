@@ -57,7 +57,7 @@ describe('guion de las rondas (datos)', () => {
     expect(ROUNDS[9].groups).toHaveLength(2);
     expect(boss).toEqual({ atMs: expect.any(Number), kind: 'creeper', lanes: [2] });
     // Un acorazado de nivel 10 (T-010) por carril, antes que el y a su paso, con su grito.
-    expect(escort).toMatchObject({ kind: 'armored', lanes: [0, 1, 2, 3, 4], level: 10, shout: expect.stringContaining('ADELANTE') });
+    expect(escort).toMatchObject({ kind: 'armored', lanes: [0, 1, 2, 3, 4], level: 10, shout: 'escort' });
     expect(escort.atMs).toBeLessThan(boss.atMs);
     expect(ENEMIES.armored.speed * (escort.haste ?? 1)).toBeCloseTo(ENEMIES.creeper.speed, 9);
     const others = ROUNDS.slice(0, 9).flatMap((round) => round.groups.map((group) => group.kind));
@@ -130,7 +130,6 @@ describe('guion de las rondas (datos)', () => {
   it('cada grupo saca enemigos validos por carriles del tablero, sin repetir carril, y los grupos van en orden', () => {
     for (const round of ROUNDS) {
       expect(round.groups.length).toBeGreaterThan(0);
-      expect(round.notice.length).toBeGreaterThan(0);
       round.groups.forEach((group, i) => {
         expect(Object.keys(ENEMIES)).toContain(group.kind);
         expect(group.lanes.length).toBeGreaterThan(0);
@@ -295,7 +294,7 @@ describe('ataque', () => {
   it('la escolta de Creeper sale de nivel 10 (T-010) y a su paso, con su grito, y despues sale el (T-009)', () => {
     const [escort, boss] = ROUNDS[9].groups;
     const out = stepRound(attacking(9), escort.atMs, HOLE_X, () => 0.01);
-    expect(out.events).toEqual([{ type: 'shout', text: escort.shout }]);
+    expect(out.events).toEqual([{ type: 'shout', shout: 'escort' }]);
     expect(out.spawned.map((e) => [e.kind, e.lane, e.level, e.haste, e.hp])).toEqual(
       escort.lanes.map((lane) => ['armored', lane, 10, escort.haste, enemyMaxHp('armored', 10)]),
     );

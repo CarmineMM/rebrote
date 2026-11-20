@@ -1,19 +1,23 @@
 import { useEffect, useId, useRef } from 'react';
 import { NO_AUTO_FULLSCREEN } from './useFullscreen';
+import { useText } from './useText';
 
 interface VictoryScreenProps {
   /** Rondas superadas: todas las del mundo. */
   rounds: number;
   onRestart: () => void;
+  /** Vuelve al menu de inicio (T-011). */
+  onMenu: () => void;
 }
 
 /**
  * Victoria del mundo 1 (T-008): se superaron sus rondas y se atrapo al Creeper en la ultima. Misma tarjeta que la
  * pausa y la derrota, con una copa que salta y destellos. "Jugar otra vez" empieza una partida nueva desde la ronda 1.
  */
-export function VictoryScreen({ rounds, onRestart }: VictoryScreenProps) {
+export function VictoryScreen({ rounds, onRestart, onMenu }: VictoryScreenProps) {
   const titleId = useId();
   const button = useRef<HTMLButtonElement>(null);
+  const t = useText();
 
   useEffect(() => {
     button.current?.focus();
@@ -43,17 +47,20 @@ export function VictoryScreen({ rounds, onRestart }: VictoryScreenProps) {
           <span className="victory-star is-b" />
           <span className="victory-star is-c" />
         </div>
-        <p className="pause-kicker">Mundo 1: Gusanos</p>
+        <p className="pause-kicker">{t.world1}</p>
         <h2 id={titleId} className="pause-title">
-          ¡Atrapaste a Creeper!
+          {t.victory.title}
         </h2>
-        <p className="victory-text">Superaste las {rounds} rondas y el jardín está a salvo.</p>
+        <p className="victory-text">{t.victory.text(rounds)}</p>
         <div className="pause-actions">
           <button ref={button} type="button" className="btn btn-primary" onClick={onRestart}>
-            <span aria-hidden="true">↻</span> Jugar otra vez
+            <span aria-hidden="true">↻</span> {t.victory.again}
+          </button>
+          <button type="button" className="btn" onClick={onMenu}>
+            <span aria-hidden="true">⌂</span> {t.victory.menu}
           </button>
         </div>
-        <p className="pause-hint">Creeper (1971) fue el primer gusano informático: saltaba de máquina en máquina.</p>
+        <p className="pause-hint">{t.victory.hint}</p>
       </div>
     </div>
   );

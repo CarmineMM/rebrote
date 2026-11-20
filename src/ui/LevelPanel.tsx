@@ -1,6 +1,8 @@
 import { useLayoutEffect, useRef, useState, type CSSProperties, type RefObject } from 'react';
 import { levelBonus } from '../game/core/plants';
 import { EventBus, GameEvents, type PlantPanel } from '../game/EventBus';
+import { formatPercent } from '../i18n';
+import { useText } from './useText';
 
 interface LevelPanelProps {
   panel: PlantPanel;
@@ -12,8 +14,6 @@ interface LevelPanelProps {
 const MARGIN = 8;
 /** Lo que asoma la flechita que apunta a la planta. */
 const ARROW = 9;
-
-const percent = (fraction: number) => Math.round(fraction * 100);
 
 /**
  * Panel de la disparadora seleccionada (T-003): su medallita y nivel, lo que suma ese nivel, y el boton para subir
@@ -27,6 +27,7 @@ export function LevelPanel({ panel, avoid }: LevelPanelProps) {
   const { level, cap, capRaisedAt, cost, multiplier, affordable } = panel;
   const atMax = cost === null;
   const can = !atMax && affordable;
+  const t = useText();
 
   // Se coloca antes de pintarse: encima de la cabeza si cabe, si no bajo los pies; siempre dentro de la pantalla.
   useLayoutEffect(() => {
@@ -67,7 +68,7 @@ export function LevelPanel({ panel, avoid }: LevelPanelProps) {
       className={`level-panel${place?.below ? ' is-below' : ''}`}
       style={style}
       role="group"
-      aria-label={`Disparadora de nivel ${level}`}
+      aria-label={t.level.aria(level)}
     >
       <div className="level-panel-title">
         {/* La clave cambia con el nivel: la medallita y el texto vuelven a saltar. */}
@@ -75,15 +76,15 @@ export function LevelPanel({ panel, avoid }: LevelPanelProps) {
           {level}
         </span>
         <span key={`level-${level}`} className="level-panel-level">
-          Nivel {level}
-          {atMax && <small> (máximo)</small>}
+          {t.level.level(level)}
+          {atMax && <small> {t.level.max}</small>}
         </span>
       </div>
       <p className="level-panel-stats">
-        {level > 1 ? `Daño +${percent(now.damage)} % · Cadencia +${percent(now.fireRate)} %` : 'Daño y cadencia de base'}
+        {level > 1 ? t.level.bonus(formatPercent(now.damage), formatPercent(now.fireRate)) : t.level.base}
       </p>
       {/* En el tope de la ronda (T-009): hasta cuando. */}
-      {atMax && capRaisedAt !== null && <p className="level-panel-cap">Tope {cap}: sube en la ronda {capRaisedAt}</p>}
+      {atMax && capRaisedAt !== null && <p className="level-panel-cap">{t.level.capUntil(cap, capRaisedAt)}</p>}
       <button
         type="button"
         className={`level-up${atMax ? ' is-max' : ''}${!atMax && !affordable ? ' is-short' : ''}`}
@@ -91,20 +92,20 @@ export function LevelPanel({ panel, avoid }: LevelPanelProps) {
         title={
           atMax
             ? capRaisedAt === null
-              ? `Ya está en el nivel máximo (${cap})`
-              : `Tope de nivel ${cap} hasta la ronda ${capRaisedAt}`
+              ? t.level.atMax(cap)
+              : t.level.capTitle(cap, capRaisedAt)
             : affordable
-              ? `Cada nivel: +${percent(step.damage)} % de daño y +${percent(step.fireRate)} % de cadencia`
-              : 'Saldo insuficiente'
+              ? t.level.perLevel(formatPercent(step.damage), formatPercent(step.fireRate))
+              : t.level.noFunds
         }
         onClick={onLevelUp}
       >
         {atMax ? (
-          'Máximo'
+          t.level.maxButton
         ) : (
           <>
             <span className="level-up-arrow" aria-hidden="true" />
-            Subir
+            {t.level.up}
             {/* La clave cambia con el precio o al pulsar sin saldo: el precio salta (y tiembla si no alcanza). */}
             <span key={`${shownCost}:${shake}`} className="level-up-cost">
               <span className="coin coin-small" aria-hidden="true" />

@@ -217,21 +217,20 @@ export const ROUND_PREP = {
 /**
  * Las rondas del mundo 1 (T-007; de 7 a 10 en T-008; progresion de T-009 y T-010), en orden. Cada una desbloquea lo suyo
  * al empezar su preparacion (`unlocks`, y el tope de nivel de las disparadoras en `levelCap`), avisa con una linea
- * (`notice`) y, si trae algo nuevo, con el aviso que hay que aceptar (salvo `quiet`: la ronda 1, T-010). Saca sus grupos de enemigos: cada grupo, un enemigo por carril de `lanes` a la vez, `atMs` milisegundos
+ * (su texto, en `round.notices` de `src/i18n/`, T-011) y, si trae algo nuevo, con el aviso que hay que aceptar (salvo `quiet`: la ronda 1, T-010). Saca sus grupos de enemigos: cada grupo, un enemigo por carril de `lanes` a la vez, `atMs` milisegundos
  * despues de que empiece el ataque (en orden). La ronda acaba cuando no quedan enemigos por salir ni vivos. Los
  * carriles van de 0 (el del fondo) a 4 (el de delante).
  * Los enemigos salen con un nivel al azar segun `levels` (tablas de `ENEMY_LEVELS`; sin ella, nivel 1), salvo los
  * grupos que fijan el suyo (`level`).
  * En las rondas 8 y 9 Creeper se prepara (`bossPreparing`, se le ve a la derecha) y acelera a sus enemigos (`haste`:
  * velocidad respecto a la normal). La 10 es el combate contra Creeper: primero manda a su escolta (un grupo con su
- * propio `level` y `haste`, y un grito, `shout`) y sale detras. PROVISIONAL: se ajusta jugando.
+ * propio `level` y `haste`, y un grito, `shout`, cuyo texto esta en `creeper.shouts` de `src/i18n/`) y sale detras. PROVISIONAL: se ajusta jugando.
  */
 export const ROUNDS: readonly RoundScript[] = [
   {
     unlocks: ['shooter'],
     // T-010 (A-01): la disparadora se da por sabida; basta el aviso de una linea.
     quiet: true,
-    notice: 'Siembra disparadoras: cada una defiende su carril',
     groups: [
       { atMs: 3_000, kind: 'worm', lanes: [2] },
       { atMs: 15_000, kind: 'worm', lanes: [1] },
@@ -247,7 +246,6 @@ export const ROUNDS: readonly RoundScript[] = [
     unlocks: ['levelUp'],
     // T-010 (A-05): el tope se queda en 5 todo el mundo 1.
     levelCap: 5,
-    notice: 'Toca una disparadora para subirla de nivel (hasta el 5)',
     groups: [
       { atMs: 3_000, kind: 'worm', lanes: [2] },
       { atMs: 8_000, kind: 'worm', lanes: [2] },
@@ -264,7 +262,6 @@ export const ROUNDS: readonly RoundScript[] = [
   },
   {
     unlocks: ['fireMine'],
-    notice: 'Siembra fuego solo y explota. ¡Llega el acorazado, y los gusanos ya tienen nivel!',
     levels: ENEMY_LEVELS.tables.early,
     groups: [
       { atMs: 3_000, kind: 'worm', lanes: [2] },
@@ -284,7 +281,6 @@ export const ROUNDS: readonly RoundScript[] = [
   },
   {
     unlocks: ['iceMine'],
-    notice: 'Siembra hielo solo y frena en área. ¡Llega el escupidor!',
     levels: ENEMY_LEVELS.tables.early,
     groups: [
       { atMs: 3_000, kind: 'armored', lanes: [2] },
@@ -304,7 +300,6 @@ export const ROUNDS: readonly RoundScript[] = [
   },
   {
     unlocks: ['fireInfuse', 'iceInfuse'],
-    notice: 'Suelta fuego o hielo sobre una disparadora (o arrastra una mina hasta ella) para infundirla',
     levels: ENEMY_LEVELS.tables.mid,
     groups: [
       { atMs: 3_000, kind: 'worm', lanes: [1, 3] },
@@ -323,7 +318,6 @@ export const ROUNDS: readonly RoundScript[] = [
   },
   {
     unlocks: ['fuse'],
-    notice: 'Arrastra una disparadora sobre otra igual para fusionarlas',
     levels: ENEMY_LEVELS.tables.mid,
     groups: [
       { atMs: 3_000, kind: 'spitter', lanes: [2] },
@@ -342,7 +336,6 @@ export const ROUNDS: readonly RoundScript[] = [
   },
   {
     unlocks: [],
-    notice: 'Llegan todos a la vez: gusanos, acorazados y escupidores. ¡Aguanta!',
     levels: ENEMY_LEVELS.tables.mid,
     groups: [
       { atMs: 3_000, kind: 'worm', lanes: [0, 2, 4] },
@@ -364,7 +357,6 @@ export const ROUNDS: readonly RoundScript[] = [
   },
   {
     unlocks: [],
-    notice: '¡Creeper se prepara! Sus tropas llegan más rápido y en mayor número',
     haste: 1.25,
     bossPreparing: true,
     levels: ENEMY_LEVELS.tables.late,
@@ -403,7 +395,6 @@ export const ROUNDS: readonly RoundScript[] = [
   },
   {
     unlocks: [],
-    notice: 'Creeper casi está listo: aún más tropas y más rápidas',
     haste: 1.35,
     bossPreparing: true,
     levels: ENEMY_LEVELS.tables.late,
@@ -447,7 +438,6 @@ export const ROUNDS: readonly RoundScript[] = [
   },
   {
     unlocks: [],
-    notice: '¡Llega Creeper con su escolta! Salta de carril: reparte tus defensas',
     levels: ENEMY_LEVELS.tables.late,
     groups: [
       // T-009 (P-10): su escolta, un acorazado por carril, va a su paso para no dejarse adelantar. De nivel 10 (T-010).
@@ -457,7 +447,7 @@ export const ROUNDS: readonly RoundScript[] = [
         lanes: [0, 1, 2, 3, 4],
         level: 10,
         haste: ENEMIES.creeper.speed / ENEMIES.armored.speed,
-        shout: '¡ADELANTE, MIS ACORAZADOS!',
+        shout: 'escort',
       },
       { atMs: 5_500, kind: 'creeper', lanes: [2] },
     ],

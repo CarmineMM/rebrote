@@ -1,6 +1,7 @@
 /**
  * Ajustes graficos (ADR-0006). Cada nivel decide cuanto se pinta y cuanto se anima.
- * Funciones puras, sin Phaser, para poder testearlas y usarlas desde React.
+ * Funciones puras, sin Phaser, para poder testearlas y usarlas desde React. El nombre y la descripcion de cada nivel, en
+ * cada idioma, estan en `settings.levels` de `src/i18n/` (T-011).
  */
 export type QualityLevel = 'low' | 'medium' | 'high' | 'ultra';
 export type QualitySetting = QualityLevel | 'auto';
@@ -8,8 +9,6 @@ export type QualitySetting = QualityLevel | 'auto';
 export const QUALITY_LEVELS: readonly QualityLevel[] = ['low', 'medium', 'high', 'ultra'];
 
 export interface QualityProfile {
-  label: string;
-  description: string;
   /** Resolucion interna respecto al lienzo de diseno (1 = 1600 x 900). */
   renderScale: number;
   /** Multiplicador de particulas: polen, hojas, bits del suelo corrupto, chispas. */
@@ -32,8 +31,6 @@ export interface QualityProfile {
 
 export const QUALITY_PROFILES: Record<QualityLevel, QualityProfile> = {
   low: {
-    label: 'Bajo',
-    description: 'Menos resolución y efectos. Para equipos modestos o batería.',
     renderScale: 0.75,
     particles: 0.25,
     life: 0.5,
@@ -45,8 +42,6 @@ export const QUALITY_PROFILES: Record<QualityLevel, QualityProfile> = {
     postFx: false,
   },
   medium: {
-    label: 'Medio',
-    description: 'Escenario animado con efectos moderados.',
     renderScale: 1,
     particles: 0.6,
     life: 0.8,
@@ -58,8 +53,6 @@ export const QUALITY_PROFILES: Record<QualityLevel, QualityProfile> = {
     postFx: false,
   },
   high: {
-    label: 'Alto',
-    description: 'Más nitidez, todas las animaciones, destellos y haces de luz.',
     renderScale: 1.25,
     particles: 1,
     life: 1,
@@ -71,8 +64,6 @@ export const QUALITY_PROFILES: Record<QualityLevel, QualityProfile> = {
     postFx: false,
   },
   ultra: {
-    label: 'Ultra',
-    description: 'Doble resolución, más vida y color más vivo. Pide una GPU potente.',
     renderScale: 2,
     particles: 1.6,
     life: 1.4,

@@ -6,6 +6,7 @@ import { type Effects, mixColor } from './effects';
 import { entityDepth, perspective } from './layout';
 import { MEDAL_TIERS, medalCenter, medalTier, showsMedal } from './levelMedal';
 import { shooterHead } from './shooterShape';
+import { text } from '../../i18n';
 import {
   SHOOTER_BARRELS,
   SHOOTER_DOTS,
@@ -47,10 +48,10 @@ const VARIANT_FX: Record<ShooterVariant, { muzzle: number; muzzleGlow: number; b
   ice: { muzzle: 0xc8f0ff, muzzleGlow: 0x8fd8ff, burst: 0x8fd8ff, burstGlow: 0xd8f6ff },
 };
 
-/** Texto que salta al infundir cada elemento. */
-const INFUSED_TEXT: Record<ElementType, { text: string; color: string; stroke: string }> = {
-  fire: { text: '¡Fuego!', color: '#ffe3a0', stroke: '#8a2410' },
-  ice: { text: '¡Hielo!', color: '#e6f7ff', stroke: '#1f5a8a' },
+/** Colores del texto que salta al infundir cada elemento. El texto ("¡Fuego!"), en `board.infused` de `src/i18n/`. */
+const INFUSED_TEXT: Record<ElementType, { color: string; stroke: string }> = {
+  fire: { color: '#ffe3a0', stroke: '#8a2410' },
+  ice: { color: '#e6f7ff', stroke: '#1f5a8a' },
 };
 
 /** Boca de un canon respecto a los pies, en anchos de casilla: hacia delante (`x`) y hacia arriba (`up`). */
@@ -299,7 +300,7 @@ export class PlantView {
     this.fx.ring(middle.x, middle.y, w * 1.3, colors.burst, depth, 460, 0.9);
     this.fx.glow(middle.x, middle.y, w * 1.5, colors.burstGlow, depth, 460);
     const label = INFUSED_TEXT[element];
-    this.fx.floatText(label.text, this.base.x, this.base.y - w * 1.05, label);
+    this.fx.floatText(text().board.infused[element], this.base.x, this.base.y - w * 1.05, label);
     this.startAura();
   }
 

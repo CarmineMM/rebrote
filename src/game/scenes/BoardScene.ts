@@ -42,7 +42,6 @@ import {
   isUnlocked,
   isWon,
   levelCap,
-  roundScript,
   roundUnlocks,
   startAttack,
   stepRound,
@@ -68,7 +67,7 @@ import { CreeperOmen, CreeperView, OMEN_LEAP_MS, bossLoadProgress } from '../vie
 import { Effects } from '../view/effects';
 import { enemyInfo, mineInfo, shooterInfo, type EntityInfoData } from '../view/entityInfo';
 import { DRAG_LOOK, FusionDragView, carriedMine, carriedShooter, dragGround } from '../view/fusionDragView';
-import { DEPTH, SCENERY, VIEW, entityDepth, perspective, viewFor } from '../view/layout';
+import { DEPTH, SCENERY, VIEW, entityDepth, perspective } from '../view/layout';
 import { medalTier, showsMedal } from '../view/levelMedal';
 import { MineView, mineAreaColor, mineScale } from '../view/mineView';
 import { PlantView, plantPlacement } from '../view/plantView';
@@ -77,6 +76,10 @@ import { QUALITY_PROFILES, type QualityLevel, type QualityProfile } from '../vie
 import { SpitView } from '../view/spitView';
 import { MINE_SIZE, SHOOTER_SIZE, TEX, registerTextures, shooterTexture, mineTexture } from '../view/textures';
 import { WormView, type EnemyView } from '../view/wormView';
+import { text } from '../../i18n';
+import { clearSave, writeSave } from '../save';
+import { SCENES } from './keys';
+import { FpsMeter, applyPostFx, fitCamera } from './sceneKit';
 
 /** Solo aspecto y ritmo de las animaciones. Los numeros de juego viven en balance.ts. */
 const LOOK = {
@@ -111,7 +114,6 @@ const LOOK = {
   victoryDelayMs: 1600,
   /** Creeper (T-008): se escapa (en el camino) o lo derrotan (en el centro del cesped). */
   bossEscapedText: { color: '#ffd6df', stroke: '#5a0d1a', fontSize: 40 },
-  bossDownText: '¡Creeper atrapado!',
   /** Copia que deja el Creeper al saltar: destello verde de "copiarse" sobre ella. */
   copyGlow: 0x39ff88,
   /** Doble clic (o doble toque) para abrir una ficha (T-010): tiempo maximo entre los dos y lo que se puede mover el puntero. */
@@ -182,8 +184,10 @@ const infoKey = (target: InfoTarget) => (target.kind === 'enemy' ? `enemy:${targ
 /** Datos con los que arranca la escena (ver createGame). */
 export interface BoardSceneData {
   quality: QualityLevel;
-  /** Partida a continuar: se usa al cambiar el nivel grafico, que recrea el juego. */
+  /** Partida a continuar: al cambiar el nivel grafico o el idioma, que recrean el juego, o al cargar la guardada (T-011). */
   resume?: MatchState;
+  /** Aviso de lo desbloqueado que el jugador no habia aceptado en la partida guardada (T-011): vuelve a salir. */
+  pendingUnlock?: UnlockInfo | null;
   /** Arrancar en pausa (por ejemplo, si se cambia la calidad desde el menu de pausa). */
   paused?: boolean;
 }
@@ -238,8 +242,9 @@ export class BoardScene extends Phaser.Scene {
   /** Ultima ronda enviada al HUD, para avisar solo cuando cambia. */
   private roundKey = '';
   /** Medicion de fps en tiempo real (el reloj del juego se frena cuando va lento, no sirve para esto). */
-  private fpsWindowStart = 0;
-  private fpsFrames = 0;
+  private readonly fps = new FpsMeter();
+  /** Aviso sin aceptar de la partida cargada (T-011), para volver a sacarlo al crear la escena. */
+  private restoredUnlock: UnlockInfo | null = null;
   /** Aviso de desbloqueo (T-009) que el jugador aun no acepto: se repite si el HUD pide el estado. */
   private pendingUnlock: UnlockInfo | null = null;
   /** Pausa pedida por el HUD. Phaser marca la escena como activa al terminar create(): se aplica despues. */
@@ -254,6 +259,7 @@ export class BoardScene extends Phaser.Scene {
     this.level = data.quality ?? 'medium';
     this.quality = QUALITY_PROFILES[this.level];
     this.resume = data.resume;
+    this.restoredUnlock = data.pendingUnlock ?? null;
     this.wantPaused = data.paused ?? false;
     this.created = false;
   }
@@ -289,7 +295,7 @@ export class BoardScene extends Phaser.Scene {
     this.scale.on(Phaser.Scale.Events.RESIZE, this.fitView, this);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.scale.off(Phaser.Scale.Events.RESIZE, this.fitView, this));
     this.ambience = createAmbience(this, this.quality);
-    this.applyPostFx();
+    applyPostFx(this, this.quality);
     this.createCursorFeedback();
     this.fx = new Effects(this, this.quality);
     this.cardLabel = new BoardLabel(this, this.fx);
@@ -299,8 +305,7 @@ export class BoardScene extends Phaser.Scene {
     this.bindPointer();
     this.bindHud();
     if (import.meta.env.DEV) this.bindDebugKeys();
-    this.fpsWindowStart = performance.now();
-    this.fpsFrames = 0;
+    this.fps.reset();
 
     this.events.once(Phaser.Scenes.Events.CREATE, () => {
       this.created = true;
@@ -308,33 +313,21 @@ export class BoardScene extends Phaser.Scene {
     });
 
     EventBus.emit(GameEvents.sceneReady, this.scene.key);
-    // Partida nueva: aviso de lo que trae la ronda 1 (T-009). Una partida que se continua ya lo dio.
+    // Partida nueva: aviso de lo que trae la ronda 1 (T-009). Una partida que se continua ya lo dio; una cargada (T-011)
+    // vuelve a sacar el que no se habia aceptado.
     if (!this.resume) this.announceUnlocks(this.match.round.index);
+    else this.pendingUnlock = this.restoredUnlock;
     this.emitState();
     // Una partida perdida (o ganada) que se recrea (por ejemplo, al cambiar la calidad) sigue igual.
     if (isDefeated(this.match)) this.enterDefeat(0);
     else if (isWon(this.match)) this.enterVictory(0);
+    // Se guarda al empezar (T-011): una partida nueva sustituye a la guardada.
+    else this.saveGame();
   }
 
-  /**
-   * Pantalla completa sin bandas (ADR-0007): el lienzo toma la proporcion de la pantalla y la camara
-   * muestra el diseno entero mas el decorado extra que haga falta. Todo sigue en coordenadas de diseno.
-   */
+  /** Lienzo y camara a la medida de la pantalla (ADR-0007, `fitCamera`). */
   private fitView(): void {
-    const { width: parentWidth, height: parentHeight } = this.scale.parentSize;
-    const view = viewFor(parentWidth / parentHeight);
-    const zoom = this.quality.renderScale;
-    const width = Math.max(1, Math.round(view.width * zoom));
-    const height = Math.max(1, Math.round(view.height * zoom));
-    if (Math.abs(this.scale.width - width) > 1 || Math.abs(this.scale.height - height) > 1) {
-      // Vuelve a emitir RESIZE; la segunda vez los tamanos ya coinciden y solo se recoloca la camara.
-      this.scale.setGameSize(width, height);
-      return;
-    }
-    this.cameras.main
-      .setSize(this.scale.width, this.scale.height)
-      .setZoom(zoom)
-      .centerOn(view.x + view.width / 2, view.y + view.height / 2);
+    fitCamera(this, this.quality.renderScale);
   }
 
   /**
@@ -353,14 +346,22 @@ export class BoardScene extends Phaser.Scene {
     } else if (!paused && this.sys.isPaused()) {
       this.sys.resume();
       // La pausa no cuenta como fotogramas lentos.
-      this.fpsWindowStart = performance.now();
-      this.fpsFrames = 0;
+      this.fps.reset();
     }
   }
 
-  /** Estado de la partida para continuarla en un juego nuevo (al cambiar el nivel grafico). */
+  /** Estado de la partida para continuarla en un juego nuevo (al cambiar el nivel grafico o el idioma). */
   snapshot(): MatchState {
     return this.match;
+  }
+
+  /**
+   * Guarda la partida tal como esta (T-011, I-02), con el aviso de lo desbloqueado si aun no se acepto. Una partida
+   * acabada no se guarda: al perder o ganar se borra (I-04).
+   */
+  private saveGame(): void {
+    if (this.defeated || this.won) return;
+    writeSave(this.match, this.pendingUnlock);
   }
 
   update(_time: number, delta: number): void {
@@ -369,18 +370,7 @@ export class BoardScene extends Phaser.Scene {
     if (!this.defeated && !this.won) this.advance(delta);
     // El panel sigue a la planta aunque cambie la ventana (pantalla completa, giro del movil...).
     if (this.picked) this.emitPlantPanel();
-    this.sampleFps();
-  }
-
-  /** Cada segundo real avisa al HUD de los fps (contador y modo automatico de ADR-0006). */
-  private sampleFps(): void {
-    this.fpsFrames++;
-    const now = performance.now();
-    const elapsed = now - this.fpsWindowStart;
-    if (elapsed < 1000) return;
-    EventBus.emit(GameEvents.fpsSampled, Math.round((this.fpsFrames * 1000) / elapsed));
-    this.fpsWindowStart = now;
-    this.fpsFrames = 0;
+    this.fps.tick();
   }
 
   /**
@@ -400,20 +390,6 @@ export class BoardScene extends Phaser.Scene {
 
   // -------------------------------------------------------------------------
   // Preparacion
-
-  /**
-   * Ultra: color algo mas vivo y una vineta muy suave que centra la mirada en el cesped.
-   * Ambos filtros leen un pixel por pixel. Se descarto el tilt-shift: 100 lecturas por pixel a doble resolucion.
-   */
-  private applyPostFx(): void {
-    if (!this.quality.postFx) return;
-    const filters = this.cameras.main.filters.external;
-    const grade = filters.addColorMatrix();
-    grade.colorMatrix.saturate(0.18);
-    grade.colorMatrix.brightness(1.03, true);
-    // En la vineta de Phaser el oscurecimiento crece casi en linea desde el centro: fuerza baja o apaga la escena.
-    filters.addVignette(0.5, 0.55, 0.75, 0.07, 0x10240f);
-  }
 
   /** Al continuar una partida, vuelve a pintar plantas, minas, gusanos y balas donde estaban. */
   private restoreEntities(): void {
@@ -554,6 +530,12 @@ export class BoardScene extends Phaser.Scene {
     const onPause = (paused: boolean) => this.applyPause(paused);
     // Partida nueva desde cero: no continua la anterior (sin `resume`) y arranca sin pausa.
     const onRestart = () => this.scene.restart({ quality: this.level } satisfies BoardSceneData);
+    // T-011: se guarda al ocultar o cerrar la pestana, y al salir al menu de inicio, que pasa a la portada.
+    const onSave = () => this.saveGame();
+    const onExit = () => {
+      this.saveGame();
+      this.scene.start(SCENES.title, { quality: this.level });
+    };
 
     EventBus.on(GameEvents.cardPicked, onPicked);
     EventBus.on(GameEvents.selectionCancelled, onCancelled);
@@ -565,6 +547,8 @@ export class BoardScene extends Phaser.Scene {
     EventBus.on(GameEvents.unlockAccepted, onUnlockAccepted);
     EventBus.on(GameEvents.pauseChanged, onPause);
     EventBus.on(GameEvents.restartRequested, onRestart);
+    EventBus.on(GameEvents.saveRequested, onSave);
+    EventBus.on(GameEvents.exitRequested, onExit);
 
     const unbind = () => {
       EventBus.off(GameEvents.cardPicked, onPicked);
@@ -577,6 +561,8 @@ export class BoardScene extends Phaser.Scene {
       EventBus.off(GameEvents.unlockAccepted, onUnlockAccepted);
       EventBus.off(GameEvents.pauseChanged, onPause);
       EventBus.off(GameEvents.restartRequested, onRestart);
+      EventBus.off(GameEvents.saveRequested, onSave);
+      EventBus.off(GameEvents.exitRequested, onExit);
     };
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, unbind);
     this.events.once(Phaser.Scenes.Events.DESTROY, unbind);
@@ -701,7 +687,7 @@ export class BoardScene extends Phaser.Scene {
         this.announceAttack();
         break;
       case 'roundCleared':
-        if (event.index + 1 < ROUND_COUNT) this.celebrate(`¡Ronda ${event.index + 1} superada!`);
+        if (event.index + 1 < ROUND_COUNT) this.celebrate(text().board.roundCleared(event.index + 1));
         break;
       case 'won':
         this.enterVictory(LOOK.victoryDelayMs);
@@ -710,10 +696,12 @@ export class BoardScene extends Phaser.Scene {
         // Lo recien desbloqueado puede cambiar lo que pasa al soltar la carta elegida (infundir).
         this.refreshHighlight();
         this.announceUnlocks(event.index);
+        // Cada ronda que empieza queda guardada (T-011), con su aviso sin aceptar.
+        this.saveGame();
         break;
       case 'shout':
         // Creeper manda a su escolta (T-009): lo grita desde donde se prepara y la acelera.
-        this.omen?.command(event.text);
+        this.omen?.command(text().creeper.shouts[event.shout]);
         break;
     }
   }
@@ -751,7 +739,7 @@ export class BoardScene extends Phaser.Scene {
       this.fx.bits(hole.x, hole.y - width * 0.1, 4);
     }
     const at = perspective.toScreen({ x: BOARD.columns - 1.6, y: BOARD.lanes / 2 });
-    this.fx.floatText('¡Ahí vienen!', at.x, at.y, LOOK.attackText);
+    this.fx.floatText(text().board.attack, at.x, at.y, LOOK.attackText);
   }
 
   /** Ronda superada: las plantas dan un saltito una tras otra, con destellos, y sale el texto en el centro. */
@@ -885,7 +873,7 @@ export class BoardScene extends Phaser.Scene {
   private showBossEscaped(lane: number): void {
     this.lostToBoss = true;
     const at = perspective.toScreen({ x: LOOK.lifeLostX, y: lane + 0.5 });
-    this.fx.floatText('¡Se escapó!', at.x + 40, at.y - perspective.cellWidthAt({ x: LOOK.lifeLostX, y: lane + 0.5 }) * 0.8, LOOK.bossEscapedText);
+    this.fx.floatText(text().board.bossEscaped, at.x + 40, at.y - perspective.cellWidthAt({ x: LOOK.lifeLostX, y: lane + 0.5 }) * 0.8, LOOK.bossEscapedText);
     this.cameras.main.shake(420, 0.008);
   }
 
@@ -916,7 +904,7 @@ export class BoardScene extends Phaser.Scene {
   /** Un gusano se colo: aviso en el camino y un temblor corto. React quita el corazon. */
   private showLifeLost(lane: number): void {
     const at = perspective.toScreen({ x: LOOK.lifeLostX, y: lane + 0.5 });
-    this.fx.floatText('−1 ♥', at.x, at.y - perspective.cellWidthAt({ x: LOOK.lifeLostX, y: lane + 0.5 }) * 0.6, LOOK.lifeLostText);
+    this.fx.floatText(text().board.lifeLost, at.x, at.y - perspective.cellWidthAt({ x: LOOK.lifeLostX, y: lane + 0.5 }) * 0.6, LOOK.lifeLostText);
     this.cameras.main.shake(220, 0.004);
   }
 
@@ -934,6 +922,8 @@ export class BoardScene extends Phaser.Scene {
     this.pickPlant(null);
     this.clearProjectiles();
     this.wormViews.forEach((worm) => worm.cheer());
+    // Perder obliga a empezar desde la ronda 1 (I-04): no queda partida que cargar.
+    clearSave();
     const loss: LossInfo = { byBoss: this.lostToBoss };
     this.time.delayedCall(delayMs, () => EventBus.emit(GameEvents.matchLost, loss));
   }
@@ -945,6 +935,8 @@ export class BoardScene extends Phaser.Scene {
   private enterVictory(delayMs: number): void {
     if (this.won) return;
     this.won = true;
+    // La partida acabo (I-04): no queda nada que cargar.
+    clearSave();
     this.cancelDrag();
     this.press = null;
     this.setCursor('default');
@@ -956,7 +948,7 @@ export class BoardScene extends Phaser.Scene {
     this.emitRound();
     this.emitBoss();
     if (delayMs > 0) {
-      this.celebrate(isBossRound(this.match.round.index) ? LOOK.bossDownText : '¡Jardín a salvo!');
+      this.celebrate(isBossRound(this.match.round.index) ? text().board.bossDown : text().board.gardenSafe);
       for (let i = 0; i < 6; i++) {
         this.time.delayedCall(180 + i * 190, () => {
           const at = perspective.toScreen({ x: Phaser.Math.FloatBetween(1, BOARD.columns - 1), y: Phaser.Math.FloatBetween(0.5, BOARD.lanes - 0.5) });
@@ -1061,17 +1053,18 @@ export class BoardScene extends Phaser.Scene {
     }
     const price = play.multiplier > 1 ? `×${play.multiplier} = ${play.cost}` : `${play.cost}`;
     const unlocksAt = element ? unlockRound(infuseFeature(element)) : null;
+    const labels = text().board;
     const lines: LabelLine[] =
       play.blocker === 'locked'
-        ? [{ text: unlocksAt === null ? 'No se puede infundir' : `Infundir: desde la ronda ${unlocksAt + 1}`, tone: 'blocked' }]
+        ? [{ text: unlocksAt === null ? labels.cannotInfuse : labels.infuseFrom(unlocksAt + 1), tone: 'blocked' }]
         : play.blocker === 'has-element'
-          ? [{ text: `Ya tiene ${plant.shooter.element === 'fire' ? 'fuego' : 'hielo'}`, tone: 'blocked' }]
+          ? [{ text: labels.hasElement[plant.shooter.element ?? 'fire'], tone: 'blocked' }]
           : play.blocker === 'insufficient-funds'
             ? [
-                { text: `Infundir: ${price}`, tone: 'blocked' },
-                { text: 'No alcanza la moneda', tone: 'blocked' },
+                { text: labels.infuse(price), tone: 'blocked' },
+                { text: labels.noFunds, tone: 'blocked' },
               ]
-            : [{ text: `Infundir: ${price}`, tone: 'ok' }];
+            : [{ text: labels.infuse(price), tone: 'ok' }];
     const foot = view.foot();
     const { cellWidth } = plantPlacement(cell);
     this.cardLabel.show(`${cellKey(cell)}:${lines.map((l) => l.text).join('|')}`, lines, foot.x, foot.y - cellWidth * 1.12, cellWidth);
@@ -1277,14 +1270,14 @@ export class BoardScene extends Phaser.Scene {
       const source = plantAt(this.match, drag.from) as Plant;
       const target = plantAt(this.match, to) as Plant;
       const result = fusedPlant(source, target).shooter;
-      const lines: LabelLine[] = [{ text: `Fusionar: ${result.cannons} cañones`, tone: 'ok' }];
+      const lines: LabelLine[] = [{ text: text().board.fuse(result.cannons), tone: 'ok' }];
       // Aviso de perdida de nivel: el resultado se queda con el nivel mas bajo de las dos.
-      if (source.shooter.level !== target.shooter.level) lines.push({ text: `Quedará en nivel ${result.level}`, tone: 'warn' });
+      if (source.shooter.level !== target.shooter.level) lines.push({ text: text().board.willBeLevel(result.level), tone: 'warn' });
       drag.view.hover(to, 'ok', lines, toView.foot());
     } else if (blocker === 'variant') {
-      drag.view.hover(to, 'blocked', [{ text: 'Otra variante', tone: 'blocked' }], toView.foot());
+      drag.view.hover(to, 'blocked', [{ text: text().board.otherVariant, tone: 'blocked' }], toView.foot());
     } else if (blocker === 'max-cannons') {
-      drag.view.hover(to, 'blocked', [{ text: `Máximo ${LIMITS.maxCannons} cañones`, tone: 'blocked' }], toView.foot());
+      drag.view.hover(to, 'blocked', [{ text: text().board.maxCannons(LIMITS.maxCannons), tone: 'blocked' }], toView.foot());
     } else {
       // Su propia casilla: soltar ahi no hace nada.
       drag.view.hover(null, null);
@@ -1299,19 +1292,19 @@ export class BoardScene extends Phaser.Scene {
     const play = mineInfusion(this.match, drag.from, to);
     const plant = plantAt(this.match, to);
     const extra = play.multiplier > 1 ? `×${play.multiplier} = ${play.cost}` : `${play.cost}`;
-    const pay = play.cost > 0 ? `Infundir: mina + ${extra}` : 'Infundir con la mina';
+    const labels = text().board;
+    const pay = play.cost > 0 ? labels.infuseMinePlus(extra) : labels.infuseWithMine;
     if (play.blocker === null) {
       drag.view.hover(to, 'ok', [{ text: pay, tone: 'ok' }], labelAt);
     } else if (play.blocker === 'has-element') {
-      const element = plant?.shooter.element === 'fire' ? 'fuego' : 'hielo';
-      drag.view.hover(to, 'blocked', [{ text: `Ya tiene ${element}`, tone: 'blocked' }], labelAt);
+      drag.view.hover(to, 'blocked', [{ text: labels.hasElement[plant?.shooter.element ?? 'fire'], tone: 'blocked' }], labelAt);
     } else if (play.blocker === 'insufficient-funds') {
       drag.view.hover(
         to,
         'blocked',
         [
           { text: pay, tone: 'blocked' },
-          { text: 'No alcanza la moneda', tone: 'blocked' },
+          { text: labels.noFunds, tone: 'blocked' },
         ],
         labelAt,
       );
@@ -1348,7 +1341,7 @@ export class BoardScene extends Phaser.Scene {
     const { cellWidth } = plantPlacement(to);
     drag.view.dropInto(foot, cellWidth);
     toView.fuse(fused.shooter.cannons, fused.hp / plantMaxHp(fused.shooter), fused.shooter.level);
-    this.fx.floatText('¡Fusión!', foot.x, foot.y - cellWidth * 1.05, LOOK.fusedText);
+    this.fx.floatText(text().board.fused, foot.x, foot.y - cellWidth * 1.05, LOOK.fusedText);
     this.refreshHighlight();
   }
 
@@ -1756,7 +1749,7 @@ export class BoardScene extends Phaser.Scene {
       prepSeconds: round.phase === 'prep' ? Math.ceil(round.prepMs / 1000) : null,
       cards: availableCards(this.match),
       infusable: infusableElements(this.match),
-      notice: roundScript(round.index).notice,
+      notice: text().round.notices[round.index] ?? '',
     };
     const key = JSON.stringify(info);
     if (key === this.roundKey) return;
@@ -1773,7 +1766,7 @@ export class BoardScene extends Phaser.Scene {
     let info: BossInfo | null = this.lastBoss;
     if (boss) {
       info = {
-        name: 'Creeper',
+        name: text().creeper.name,
         hp: Math.max(0, Math.ceil(boss.hp)),
         maxHp: enemyMaxHp('creeper'),
         enraged: isEnraged(boss),

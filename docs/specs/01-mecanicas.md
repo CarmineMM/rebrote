@@ -50,7 +50,7 @@ El elemento solo siempre tiene un efecto mayor que su versión infundida, a camb
 - **Creeper se prepara (rondas 8 y 9, T-008 y T-009):** los enemigos de la ronda salen acelerados (+25 % en la 8 y +35 % en la 9) y en mayor número: un 50 % más de cada tipo que en T-008. Solo cambia lo que avanzan: muerden y escupen igual. Se ve a Creeper a la derecha preparándose, también en la preparación de la 10.
 - **Combate final (ronda 10, T-008):** sale Creeper con su escolta (ver "Jefe: Creeper").
 - Lo bloqueado no se ve ni responde: la carta no está en la bandeja, la planta no abre su panel o no se arrastra. Una carta de fuego en las rondas 3 y 4 sobre una disparadora avisa de en qué ronda se podrá infundir.
-- Tras la ronda 10, es decir, al derrotar a Creeper, la partida está ganada. Perder en cualquier ronda, también contra Creeper, obliga a empezar desde la 1.
+- Tras la ronda 10, es decir, al derrotar a Creeper, la partida está ganada. Perder en cualquier ronda, también contra Creeper, obliga a empezar desde la 1: la partida guardada se borra (T-011, I-04).
 
 ### Enemigos (T-007)
 - **Gusano acorazado (desde la ronda 3, T-009):** muerde como el gusano, con cuatro veces su vida y más lento.
@@ -153,7 +153,7 @@ Decisiones J-01 a J-05 cerradas el 20 nov 2026.
 
 ### Nivel (T-003)
 - **Tope por ronda (T-009, P-01; T-010, A-05):** 5 desde la ronda 2 hasta el final del mundo 1 (hasta T-010 subía a 10 en la 7). En el tope, el panel dice "Máximo" y, si el tope fuera a subir en otra ronda, en cuál ("Tope 5: sube en la ronda 7"). El tope absoluto del juego es 20 (`LIMITS.maxLevel`), por encima del de cualquier ronda del mundo 1.
-- **Por partida (D-03, cerrada el 19 nov 2026 con la recomendación):** los niveles se pierden al acabar la partida. No hay guardado.
+- **Por partida (D-03, cerrada el 19 nov 2026 con la recomendación):** los niveles se pierden al acabar la partida. No hay progreso de una partida a otra. Lo que sí se guarda es la partida en curso, para seguirla otro día (T-011, ver "Menú de inicio y partida guardada").
 - Se sube seleccionando la disparadora con un clic (sin arrastrarla) y pulsando "Subir" en su panel. Se cobra en el acto.
 - **Cuánto mejora:** cada nivel suma un 10 % de daño y un 3 % de cadencia sobre los de nivel 1 (decidido el 19 nov 2026). El daño es el del disparo entero: en una fusionada se multiplica con el de los cañones, y la quemadura de una de fuego crece igual.
   - Lo que frena una de hielo no cambia con el nivel: depende de sus cañones.
@@ -172,6 +172,21 @@ Decisiones J-01 a J-05 cerradas el 20 nov 2026.
   - **Enemigo:** tipo, nivel con su tramo de fuerza, vida, mordisco o escupitajo (y cada cuánto), velocidad (y cuánto tarda en cruzar el jardín), lo que da al caer y cómo está: quemado, frenado, acelerado, mordiendo o escupiendo. Creeper, además, su golpe, su próximo salto y su fase.
 - El primer clic hace lo de siempre: sobre una disparadora la selecciona, así que al cerrar la ficha su panel de nivel sigue ahí. Con una carta elegida, el clic la juega y no abre fichas.
 - La ficha enseña los números de las reglas: no hay números propios.
+
+### Menú de inicio y partida guardada (T-011)
+Decisiones I-01 a I-12 cerradas el 20 nov 2026.
+- **Al abrir el juego sale el menú de inicio:** el título "Rebrote" con su lema arriba a la izquierda, debajo una portada en movimiento (Creeper, gusanos y plantas en plena batalla, sin desplazarse) y a la derecha el menú: nueva partida, cargar partida, opciones, jefes (desactivado, "Próximamente") y créditos.
+- **Portada:** la batalla responde al clic (la planta dispara, el gusano se queja, Creeper habla y la mina explota y vuelve a brotar). Es solo aspecto: no cuenta para nada.
+- **Nueva partida** empieza en la preparación de la ronda 1. Si hay una partida guardada, antes pide confirmar que se borrará.
+- **Partida guardada:** una sola, en este navegador. Se guarda sola, sin botón:
+  - al empezar la partida y al empezar cada ronda (con su aviso de lo desbloqueado, si aún no se aceptó);
+  - en el momento exacto al salir al menú ("Salir al menú" en la pausa) y al ocultar o cerrar la pestaña.
+- **Cargar partida** la sigue donde estaba: ronda y fase, saldo, vidas, plantas, minas, enemigos, balas y escupitajos, y el aviso sin aceptar. El botón dice la ronda, las vidas, las monedas y cuándo se guardó; sin partida guardada está desactivado. Las monedas soltadas en el suelo no se guardan.
+- **Al perder o al ganar la partida guardada se borra** (I-04): perder sigue obligando a empezar desde la ronda 1, también si se cierra la pestaña antes de perder (se guardó el momento exacto). Las pantallas de derrota y de victoria ofrecen "Jugar otra vez" y "Menú principal".
+- **Opciones:** idioma, pantalla completa, calidad gráfica y FPS, las mismas en el menú de inicio ("Opciones") y en la pausa ("Ajustes").
+- **Idiomas:** español e inglés en todo el juego. Por defecto, el del navegador si es uno de los dos; si no, inglés. Cambiarlo recarga el escenario y la partida sigue. "Rebrote" no se traduce.
+- **Créditos:** autor (Carmine Maggio), desarrollo (Claude, con su logo), estética inspirada en Plants vs. Zombies, arte hecho con código, enemigos basados en virus reales y tecnología, con el aviso de marca de Plants vs. Zombies.
+- Una partida guardada con otra versión del juego, o en una ronda que ya no existe, no se carga.
 
 ## Decisiones pendientes
 
@@ -197,5 +212,7 @@ El Creeper (T-008) también está en `combat.ts`: el salto (`Enemy.jump`, `start
 Las rondas (T-007), en `src/game/core/rounds.ts`: preparación y ataque (`stepRound`, `startAttack`), fin de ronda y victoria, y qué desbloquea cada una (`unlockedAt`, `isUnlocked`, `availableCards`). Desde T-008, lo que acelera cada ronda (`roundHaste`), cuál es la del jefe (`isBossRound`, `bossRoundIndex`) y cuándo se ve a Creeper prepararse (`isBossPreparing`). `cardPlay`, `fusionBlocker` y `levelUpOffer` responden `locked` a lo que aún no toca. El guion y la preparación están en `ROUNDS` y `ROUND_PREP` de `balance.ts`.
 
 T-010: la fuerza de los enemigos está en `combat.ts` (`enemyTierBonus`, `enemyPower`, y la usan `enemyMaxHp`, `enemyDamage` y `slamDamage`), con sus valores en `ENEMY_POWER` de `balance.ts`. El goteo, en `economy.ts` (`stepIncome`, con su reloj en `MatchState.incomeMs`). La ronda que no avisa lleva `quiet` en `ROUNDS` y `roundUnlocks` la respeta. La ficha de información no es una regla: sus textos y números salen de las reglas en `src/game/view/entityInfo.ts`.
+
+T-011: la partida guardada (formato con versión, comprobación al cargar, guardar, leer y borrar) está en `src/game/save.ts`, con tests en `save.test.ts`; la escena guarda (`saveGame`) y borra al perder o ganar. Los textos de las reglas que se enseñan al jugador ya no están en `balance.ts`: el aviso de cada ronda está en `round.notices` y el grito de Creeper es una clave (`RoundGroup.shout`, `CreeperShout`) con su texto en `creeper.shouts`, en `src/i18n/` (ADR-0009).
 
 T-009: el nivel de los enemigos está en `combat.ts` (`Enemy.level`, `enemyLevelFactor`, `enemyMaxHp`, `enemyDamage`, `rollEnemyLevel`) y las copias del Creeper, en `rollCopyKind`; `enemyKilled` lleva el tipo para pagar lo suyo (`ENEMIES[kind].reward`). En `rounds.ts`, el tope de nivel (`levelCapAt`, `levelCap`, `levelCapRaisedAfter`), lo nuevo de cada ronda para el aviso (`roundUnlocks`), los grupos con nivel y paso propios (`RoundGroup.level`, `haste`) y el grito (`shout`, evento `shout`). Infundir con una mina, en `match.ts` (`mineDragBlocker`, `mineInfusion`, `mineInfusionTargets`, `infuseWithMine`), y el tope en `levelUpOffer` (`cap`, `capRaisedAt`). Los valores están en `ENEMY_LEVELS`, `CREEPER`, `ENEMIES` y `ROUNDS` de `balance.ts`.

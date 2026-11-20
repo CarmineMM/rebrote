@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { EventBus, GameEvents } from '../game/EventBus';
+import { detectLanguage, parseLanguage, setLanguage, type Language } from '../i18n';
 import {
   autoDowngrade,
   parseQualitySetting,
@@ -14,9 +15,17 @@ export interface Settings {
   showFps: boolean;
   /** Preferencia de pantalla completa (ADR-0007). Por defecto si. */
   fullscreen: boolean;
+  /** Idioma del juego (T-011). Por defecto, el del navegador si es espanol o ingles; si no, ingles. */
+  language: Language;
 }
 
-const DEFAULTS: Settings = { quality: 'auto', showFps: false, fullscreen: true };
+/** Idiomas preferidos del navegador, del mas al menos preferido. */
+function browserLanguages(): readonly string[] {
+  if (typeof navigator === 'undefined') return [];
+  return navigator.languages?.length ? navigator.languages : [navigator.language ?? ''];
+}
+
+const defaults = (): Settings => ({ quality: 'auto', showFps: false, fullscreen: true, language: detectLanguage(browserLanguages()) });
 const STORAGE_KEY = 'rebrote.ajustes';
 /** Segundos que se ignoran tras crear el juego (carga de texturas) y segundos que se miden despues. */
 const WARMUP_SAMPLES = 3;
@@ -30,9 +39,10 @@ function load(): Settings {
       quality: parseQualitySetting(data.quality),
       showFps: data.showFps === true,
       fullscreen: data.fullscreen !== false,
+      language: parseLanguage(data.language) ?? detectLanguage(browserLanguages()),
     };
   } catch {
-    return DEFAULTS;
+    return defaults();
   }
 }
 
@@ -55,16 +65,26 @@ function readDevice(): DeviceInfo {
 
 /**
  * Ajustes del jugador. La calidad en modo automatico (ADR-0006) empieza segun el equipo y,
- * si tras la carga mide pocos fps, baja un nivel. Nunca sube sola.
+ * si tras la carga mide pocos fps, baja un nivel. Nunca sube sola. El idioma se aplica en el acto a todo el juego
+ * (`setLanguage`), antes de que React vuelva a pintar y de que se recree el juego con los textos nuevos.
  */
 export function useSettings() {
-  const [settings, setSettings] = useState<Settings>(load);
+  const [settings, setSettings] = useState<Settings>(() => {
+    const loaded = load();
+    setLanguage(loaded.language);
+    return loaded;
+  });
   const [autoLevel, setAutoLevel] = useState<QualityLevel>(() => suggestQuality(readDevice()));
   const [fps, setFps] = useState<number | null>(null);
   const samples = useRef<number[]>([]);
   const level: QualityLevel = settings.quality === 'auto' ? autoLevel : settings.quality;
 
   useEffect(() => save(settings), [settings]);
+
+  // Lectores de pantalla y traductores del navegador: la pagina dice en que idioma esta.
+  useEffect(() => {
+    document.documentElement.lang = settings.language;
+  }, [settings.language]);
 
   // Cada nivel nuevo recrea el juego: se vuelve a medir desde cero.
   useEffect(() => {
@@ -88,7 +108,10 @@ export function useSettings() {
     };
   }, [settings.quality]);
 
-  const update = useCallback((change: Partial<Settings>) => setSettings((current) => ({ ...current, ...change })), []);
+  const update = useCallback((change: Partial<Settings>) => {
+    if (change.language) setLanguage(change.language);
+    setSettings((current) => ({ ...current, ...change }));
+  }, []);
 
   return { settings, update, level, autoLevel, fps };
 }

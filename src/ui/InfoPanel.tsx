@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, type CSSProperties } from 'react';
 import type { EntityInfo } from '../game/EventBus';
 import { NO_AUTO_FULLSCREEN } from './useFullscreen';
+import { useText } from './useText';
 
 interface InfoPanelProps {
   info: EntityInfo;
@@ -17,6 +18,7 @@ export function InfoPanel({ info, onClose }: InfoPanelProps) {
   const closeRef = useRef<HTMLButtonElement>(null);
   const { level, hp } = info;
   const life = hp.max > 0 ? hp.current / hp.max : 0;
+  const t = useText();
 
   // El foco va al boton de cerrar: Enter tambien cierra.
   useEffect(() => closeRef.current?.focus(), [info.id]);
@@ -46,12 +48,12 @@ export function InfoPanel({ info, onClose }: InfoPanelProps) {
                 {level.value}
               </span>
               <span>
-                Nivel {level.value}
+                {t.info.level(level.value)}
                 {level.note && <small> · {level.note}</small>}
               </span>
             </p>
           )}
-          <div className="info-hp" role="meter" aria-label="Vida" aria-valuemin={0} aria-valuemax={hp.max} aria-valuenow={hp.current}>
+          <div className="info-hp" role="meter" aria-label={t.info.hp} aria-valuemin={0} aria-valuemax={hp.max} aria-valuenow={hp.current}>
             <span className="info-hp-heart" aria-hidden="true" />
             <span className="info-hp-bar">
               <span className={`info-hp-fill${life <= 0.3 ? ' is-low' : ''}`} style={{ '--life': life } as CSSProperties} />
@@ -82,7 +84,7 @@ export function InfoPanel({ info, onClose }: InfoPanelProps) {
           </dl>
           <p className="info-about">{info.about}</p>
         </div>
-        <button ref={closeRef} type="button" className="info-close" aria-label="Cerrar la ficha" title="Cerrar (Esc)" onClick={onClose}>
+        <button ref={closeRef} type="button" className="info-close" aria-label={t.info.close} title={t.info.closeTitle} onClick={onClose}>
           <span aria-hidden="true" />
         </button>
       </section>
