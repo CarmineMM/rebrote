@@ -321,7 +321,7 @@ function main(): void {
       '',
     ].join('\n'),
   );
-  writeFileSync(join(LAB_OUT, 'catalogo.json'), JSON.stringify({ generated: new Date().toISOString(), sounds: catalog }, null, 2));
+  writeFileSync(join(LAB_OUT, 'catalogo.json'), JSON.stringify({ sounds: catalog }, null, 2));
   // Todo salio bien: ahora si se sustituyen las carpetas de verdad.
   for (const [from, to] of [[PUBLIC_OUT, PUBLIC_DIR], [LAB_OUT, LAB_DIR]]) {
     rmSync(to, { recursive: true, force: true });
