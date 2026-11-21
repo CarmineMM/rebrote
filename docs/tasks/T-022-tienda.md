@@ -5,6 +5,8 @@
 ## Contexto
 Tras T-019 el Invernadero tiene un hueco de tienda con candado, tras T-020 el jugador acumula semillas y tras T-021 existen tres poderes que hoy solo reciben cargas por configuración. Falta el sitio donde gastar. Carmine decidió que la tienda se desbloquea al vencer al primer jefe.
 
+**Aviso de T-019 (21 nov 2026):** con R-01 b el Invernadero solo aparece tras vencer a Creeper, así que nadie ve la tienda cerrada "por no haber vencido a Creeper": hoy su botón dice "Próximamente". El criterio de "Acceso" que pide decir cómo se abre hay que replantearlo al ejecutar esta task (por ejemplo, quitarlo o enseñar el aviso de tienda abierta en la victoria).
+
 ## Objetivos
 1. **Gastar semillas en poderes.**
 2. **Elegir qué poderes se llevan** a la partida.

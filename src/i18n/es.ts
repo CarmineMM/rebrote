@@ -14,6 +14,8 @@ export const es = {
     back: 'Volver',
     close: 'Cerrar',
     loading: 'Cargando el jardín…',
+    /** Lo que aun no existe: la tienda y las plantas del Invernadero (T-019), el brote que viene. */
+    soon: 'Próximamente',
   },
 
   /** Aviso de girar la pantalla en un movil o tableta en vertical (ADR-0011). */
@@ -33,6 +35,8 @@ export const es = {
    */
   outbreak: {
     title: (number: number, boss: string) => `Brote ${number}: ${boss}`,
+    /** El brote sin su jefe, para uno que aun no esta en el juego (la ruta, T-019). */
+    number: (number: number) => `Brote ${number}`,
   },
 
   /** Menu de inicio (T-011). */
@@ -40,14 +44,16 @@ export const es = {
     tagline: 'Solo la naturaleza puede salvarnos',
     menu: 'Menú principal',
     newGame: 'Nueva partida',
-    loadGame: 'Cargar partida',
+    /** Sin Invernadero, reanuda la partida guardada; con el (T-019, R-02), lleva a el. */
+    continue: 'Continuar',
     noSave: 'No hay partida guardada',
+    toGreenhouse: 'Al Invernadero',
+    /** Debajo de "Continuar" con el Invernadero abierto: la partida a medias que espera alli. */
+    waiting: (outbreak: string, round: number) => `Partida a medias (${outbreak}, ronda ${round})`,
     saveSummary: (round: number, total: number, lives: number, coins: number) =>
       `Ronda ${round} de ${total} · ${lives === 1 ? '1 vida' : `${lives} vidas`} · ${coins} monedas`,
     savedAt: (when: string) => `Guardada ${when}`,
     options: 'Opciones',
-    bosses: 'Jefes',
-    comingSoon: 'Próximamente',
     credits: 'Créditos',
     language: 'Idioma',
     autosave: 'Tu partida se guarda sola.',
@@ -72,6 +78,46 @@ export const es = {
     confirmKept: 'Se conservan los ajustes, el idioma y los tours de ayuda vistos.',
     confirmYes: 'Sí, borrar',
     confirmNo: 'Mejor no',
+  },
+
+  /**
+   * Invernadero (T-019): el sitio entre brotes, con todo lo que se hace fuera de la partida. Se abre al vencer a Creeper
+   * (R-01). La tienda (T-022) y las plantas (T-023) esperan con candado.
+   */
+  greenhouse: {
+    title: 'Invernadero',
+    /** El titulo grande de arriba a la izquierda en el Invernadero, en lugar de "REBROTE". */
+    logo: 'INVERNADERO',
+    resume: 'Reanudar',
+    resumeDetail: (outbreak: string, round: number, total: number) => `${outbreak} · ronda ${round} de ${total}`,
+    next: 'Siguiente brote',
+    route: 'Ruta de brotes',
+    routeDetail: (defeated: number) => (defeated === 1 ? '1 jefe vencido' : `${defeated} jefes vencidos`),
+    shop: 'Tienda',
+    plants: 'Plantas',
+    back: 'Volver a la portada',
+    confirmTitle: (outbreak: string) => `¿Empezar ${outbreak}?`,
+    confirmText: (outbreak: string, round: number) => `Se borrará tu partida a medias (${outbreak}, ronda ${round}).`,
+    confirmYes: 'Sí, empezar',
+    confirmNo: 'Mejor no',
+  },
+
+  /** Ruta de brotes (T-019): un camino con un lugar por brote, hasta el destino final. */
+  route: {
+    title: 'Ruta de brotes',
+    defeated: 'Superado',
+    current: 'Siguiente',
+    locked: (boss: string) => `Bloqueado: se abre al vencer a ${boss}`,
+    final: '???',
+    finalHint: 'El final del camino',
+    boss: (name: string, rounds: number) => `Jefe: ${name} · ${rounds} rondas`,
+    saved: (round: number, total: number) => `Partida a medias: ronda ${round} de ${total}`,
+    play: 'Jugar',
+    replay: 'Volver a jugar',
+    resume: 'Reanudar',
+    restart: 'Empezar de cero',
+    hint: 'Toca un lugar del camino para verlo.',
+    keys: '← → para moverte por el camino · Esc para volver',
   },
 
   /** Lo que dice Creeper en la portada al hacerle clic (o cada tanto). */
@@ -278,7 +324,8 @@ export const es = {
     text: (rounds: number) => `Superaste las ${rounds} rondas y el jardín está a salvo.`,
     hint: 'Creeper (1971) fue el primer gusano informático: saltaba de máquina en máquina.',
     again: 'Jugar otra vez',
-    menu: 'Menú principal',
+    /** Tras vencer a un jefe se va al Invernadero (T-019). */
+    greenhouse: 'Al Invernadero',
   },
 
   /** Rotulos y textos que salen sobre el tablero. */

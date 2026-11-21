@@ -22,7 +22,7 @@ Una task por archivo. El tamaño es orientativo.
 | T-016 | [Arte] Rediseño de la disparadora | Completada (21 nov 2026) | M | Ninguna | Ninguna (X-01 a X-03 cerradas) |
 | T-017 | [Guardado] Progreso permanente separado de la partida en curso | Completada (21 nov 2026) | M | Ninguna | Ninguna (K-01 y K-02 cerradas) |
 | T-018 | [Brotes] Varios brotes y fin de "Mundo 1" | Completada (21 nov 2026) | L | T-017 | Ninguna (B-01 a B-04 cerradas) |
-| T-019 | [Interfaz] Invernadero y ruta de brotes | Pendiente | L | T-017, T-018 | R-01 a R-03 |
+| T-019 | [Interfaz] Invernadero y ruta de brotes | Completada (21 nov 2026) | L | T-017, T-018 | Ninguna (R-01 a R-04 cerradas) |
 | T-020 | [Progresión] Moneda secundaria: semillas | Pendiente | S | T-017, T-018 | C-01 a C-05 |
 | T-021 | [Poderes] Tres poderes en la partida y panel izquierdo | Pendiente | L | T-018 | O-01 a O-07 |
 | T-022 | [Tienda] Tienda de poderes | Pendiente | M | T-019, T-020, T-021 | O-01, T-01 a T-04 |

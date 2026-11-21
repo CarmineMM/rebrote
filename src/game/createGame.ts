@@ -1,8 +1,9 @@
 import * as Phaser from 'phaser';
 import type { MatchState } from './core/match';
+import type { MenuPlace } from './EventBus';
 import { BoardScene, type BoardSceneData } from './scenes/BoardScene';
 import { SCENES } from './scenes/keys';
-import { TitleScene } from './scenes/TitleScene';
+import { TitleScene, type TitleSceneData } from './scenes/TitleScene';
 import { viewFor } from './view/layout';
 import { QUALITY_PROFILES } from './view/quality';
 
@@ -11,6 +12,8 @@ export type GameScreen = 'title' | 'board';
 
 export interface GameData extends BoardSceneData {
   screen: GameScreen;
+  /** Con el menu de inicio en pantalla: la portada o el Invernadero (T-019). */
+  place?: MenuPlace;
 }
 
 /**
@@ -35,8 +38,8 @@ export function createGame(parent: HTMLElement, data: GameData): Phaser.Game {
     // su propio contexto de audio antes del primer gesto y el navegador avisaria en la consola.
     audio: { noAudio: true },
   });
-  const { screen, ...board } = data;
-  game.scene.add(SCENES.title, TitleScene, screen === 'title', { quality: data.quality });
+  const { screen, place, ...board } = data;
+  game.scene.add(SCENES.title, TitleScene, screen === 'title', { quality: data.quality, place } satisfies TitleSceneData);
   game.scene.add(SCENES.board, BoardScene, screen === 'board', board);
   return game;
 }

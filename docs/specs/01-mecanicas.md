@@ -43,7 +43,7 @@ El elemento solo siempre tiene un efecto mayor que su versión infundida, a camb
 Decisiones B-01 a B-04 cerradas el 21 nov 2026 con la recomendación. Cómo se hace: ADR-0015.
 - **Qué es un brote:** una campaña que termina en un jefe. Se llama por su número y su jefe: "Brote 1: Creeper" ("Outbreak 1: Creeper" en inglés). La palabra "mundo" no sale en el juego: queda reservada para el futuro (familias de virus, `00-vision.md`).
 - Cada brote tiene su guion de rondas, sus tropas, su jefe y su saldo inicial. El brote 1 es el de Creeper (`02-brote-1-creeper.md`); los jefes candidatos para los siguientes están en `03-ruta-de-brotes.md`.
-- **Una partida es de un brote** y lo conserva al guardarse y cargarse. El indicador de ronda ("Ronda 3 de 10") y el resumen de "Cargar partida" cuentan las rondas de su brote. Al vencer a su jefe, el brote queda vencido en el progreso permanente (T-017).
+- **Una partida es de un brote** y lo conserva al guardarse y cargarse. El indicador de ronda ("Ronda 3 de 10") y el resumen de la partida guardada ("Continuar" y "Reanudar", T-019) cuentan las rondas de su brote. Al vencer a su jefe, el brote queda vencido en el progreso permanente (T-017).
 - **Lo aprendido se queda (B-01):** al empezar un brote, todo lo que desbloquearon los anteriores llega desbloqueado desde la ronda 1, con el último tope de nivel que pusieron. Sus rondas solo desbloquean lo nuevo: lo ya sabido no saca "¡YA LO TIENES!" ni su tour.
 - **Cada brote empieza de cero (B-02):** tablero vacío, todas las vidas y el saldo inicial del brote. No pasan plantas ni monedas de un brote a otro.
 - **El jefe se nombra siempre (B-03):** "Brote 2: Blaster" desde el principio, también antes de llegar a él.
@@ -194,18 +194,28 @@ Decisiones J-01 a J-05 cerradas el 20 nov 2026.
 
 ### Menú de inicio y partida guardada (T-011)
 Decisiones I-01 a I-12 cerradas el 20 nov 2026.
-- **Al abrir el juego sale el menú de inicio:** el título "Rebrote" con su lema arriba a la izquierda, debajo una portada en movimiento (Creeper, gusanos y plantas en plena batalla, sin desplazarse) y a la derecha el menú: nueva partida, cargar partida, opciones, jefes (desactivado, "Próximamente") y créditos.
+- **Al abrir el juego sale el menú de inicio:** el título "Rebrote" con su lema arriba a la izquierda, debajo una portada en movimiento (Creeper, gusanos y plantas en plena batalla, sin desplazarse) y a la derecha el menú. Sin haber vencido a Creeper: nueva partida, continuar, opciones y créditos. Con Creeper vencido: continuar (lleva al Invernadero, T-019), opciones y créditos. "Jefes" ya no está: lo sustituye la ruta de brotes.
 - **Portada:** la batalla responde al clic (la planta dispara, el gusano se queja, Creeper habla y la mina explota y vuelve a brotar). Es solo aspecto: no cuenta para nada.
 - **Nueva partida** empieza en la preparación de la ronda 1. Si hay una partida guardada, antes pide confirmar que se borrará, y dice que el progreso permanente se conserva (T-017).
 - **Partida guardada:** una sola, en este navegador. Se guarda sola, sin botón:
   - al empezar la partida y al empezar cada ronda (con su aviso de lo desbloqueado, si aún no se aceptó);
   - en el momento exacto al salir al menú ("Salir al menú" en la pausa) y al ocultar o cerrar la pestaña.
-- **Cargar partida** la sigue donde estaba: ronda y fase, saldo, vidas, plantas, minas, enemigos, balas y escupitajos, y el aviso sin aceptar. El botón dice la ronda, las vidas, las monedas y cuándo se guardó; sin partida guardada está desactivado. Las monedas soltadas en el suelo no se guardan.
-- **Al perder o al ganar la partida guardada se borra** (I-04): perder sigue obligando a empezar desde la ronda 1, también si se cierra la pestaña antes de perder (se guardó el momento exacto). Las pantallas de derrota y de victoria ofrecen "Jugar otra vez" y "Menú principal".
+- **Continuar** (antes "Cargar partida"; desde T-019, "Reanudar" en el Invernadero) la sigue donde estaba: ronda y fase, saldo, vidas, plantas, minas, enemigos, balas y escupitajos, y el aviso sin aceptar. El botón dice la ronda, las vidas, las monedas y cuándo se guardó; sin partida guardada está desactivado. Las monedas soltadas en el suelo no se guardan.
+- **Al perder o al ganar la partida guardada se borra** (I-04): perder sigue obligando a empezar desde la ronda 1, también si se cierra la pestaña antes de perder (se guardó el momento exacto). La derrota ofrece "Jugar otra vez" y "Menú principal"; la victoria, "Al Invernadero" y "Jugar otra vez" (T-019).
 - **Opciones:** idioma, pantalla completa, calidad gráfica, tours de ayuda (T-013) y FPS, las mismas en el menú de inicio ("Opciones") y en la pausa ("Ajustes"). Las del menú de inicio llevan además "Borrar progreso" (T-017).
 - **Idiomas:** español e inglés en todo el juego. Por defecto, el del navegador si es uno de los dos; si no, inglés. Cambiarlo recarga el escenario y la partida sigue. "Rebrote" no se traduce.
 - **Créditos:** autor (Carmine Maggio), desarrollo (Claude, con su logo), estética inspirada en Plants vs. Zombies, arte hecho con código, enemigos basados en virus reales y tecnología, con el aviso de marca de Plants vs. Zombies.
 - Una partida guardada con otra versión del juego, o en una ronda que ya no existe en su brote, no se carga (tampoco las de antes de los brotes, T-018).
+
+### Invernadero y ruta de brotes (T-019)
+Decisiones R-01 a R-04 cerradas el 21 nov 2026 con la recomendación. Cómo se hace: ADR-0016.
+- **El Invernadero** es el sitio entre un brote y el siguiente. Aparece al vencer a Creeper (R-01): un jugador nuevo va directo a jugar y nunca ve un Invernadero vacío. Se llega desde "Continuar" en la portada (R-02) y desde la victoria.
+- **Se ve distinto de la portada:** el título grande dice "INVERNADERO" y, en vez de la batalla, el jardín tiene solo las plantas que el jugador ya tiene, sin enemigos, sembradas a mano sobre un césped liso: sin casillas y sin el suelo corrupto con los agujeros por donde salen los enemigos. "Ya tiene" es lo desbloqueado hasta el último brote vencido (con los de antes); lo de una partida a medias no cuenta.
+- **Tiene:** reanudar la partida a medias (con su brote, su ronda y cuándo se guardó), el siguiente brote (el primero abierto sin vencer; si no hay más brotes en el juego, con candado y "Próximamente"), la ruta de brotes, la tienda (T-022) y las plantas (T-023) con candado y "Próximamente", y volver a la portada.
+- **Empezar un brote con una partida a medias** pide confirmación y dice cuál se pierde. El progreso se conserva.
+- **La ruta** es un camino con un lugar por brote (R-03): los vencidos, superados, con un sello; el que toca, destacado con una flecha; el siguiente en sombra, con su jefe en silueta y un candado; y el destino final, pequeño y a lo lejos. Si el siguiente brote aún no existe, su lugar dice "Próximamente". El suelo está sano hasta donde llegó el jugador y corrupto después.
+- **Tocar un lugar** vencido o el que toca enseña abajo su nombre, su jefe, sus rondas y el botón para jugarlo ("Jugar" o "Volver a jugar"); si la partida a medias es de ese brote, "Reanudar" y "Empezar de cero". Los lugares en sombra no se pueden elegir.
+- **Teclado:** Tab o las flechas recorren los lugares, Enter elige y Esc vuelve (de la confirmación a la ficha, de la ruta al Invernadero y del Invernadero a la portada).
 
 ### Progreso permanente (T-017)
 Decisiones K-01 y K-02 cerradas el 21 nov 2026 con la recomendación. Cómo se hace: ADR-0014.

@@ -80,8 +80,16 @@ export const GameEvents = {
   matchRequested: 'match-requested',
   /** React -> Phaser. Sin payload: guardar la partida ya (la pestana se oculta o se cierra, T-011). */
   saveRequested: 'save-requested',
-  /** React -> Phaser. Sin payload: volver al menu de inicio (T-011). El tablero guarda la partida y deja paso a la portada. */
+  /**
+   * React -> Phaser. Payload: MenuPlace (sin el, la portada). Volver al menu de inicio (T-011): el tablero guarda la
+   * partida y deja paso a la escena de portada, que arranca ya en la portada o en el Invernadero (T-019).
+   */
   exitRequested: 'exit-requested',
+  /**
+   * React -> Phaser. Payload: MenuPlace. Fuera de la partida, el jugador pasa de la portada al Invernadero o al reves
+   * (T-019): la escena de portada cambia la batalla por el jardin de sus plantas, o al reves. Si ya esta ahi, no hace nada.
+   */
+  menuPlaceChanged: 'menu-place-changed',
   /**
    * React -> Phaser. Payload: boolean. Hay un tour de ayuda en pantalla (T-013, ADR-0012): la preparacion no descuenta,
    * pero el juego sigue vivo para que el jugador pueda hacer el gesto que se le ensena.
@@ -94,6 +102,11 @@ export const GameEvents = {
   tourBoard: 'tour-board',
   /** Phaser -> React. Payload: TourArt. Dibujos de los bocadillos del tour, compuestos con las texturas del tablero. */
   tourArt: 'tour-art',
+  /**
+   * Phaser -> React. Payload: RouteArt. El jefe de cada brote recortado sobre transparente, compuesto con sus texturas,
+   * para los lugares de la ruta de brotes (T-019). Lo manda la portada al arrancar y al pedirle el estado.
+   */
+  routeArt: 'route-art',
   /** Phaser -> React. Payload: PlayerAction. El jugador acaba de hacer algo que un tour puede estar ensenando (T-013). */
   playerAction: 'player-action',
   /**
@@ -104,6 +117,12 @@ export const GameEvents = {
   /** Phaser -> React. Payload: CoinGone. La moneda del suelo se recogio o se perdio. */
   coinGone: 'coin-gone',
 } as const;
+
+/**
+ * Donde se esta fuera de la partida (T-019): la portada, con la batalla de Creeper, o el Invernadero, con el jardin de
+ * las plantas que el jugador ya tiene y sin enemigos.
+ */
+export type MenuPlace = 'cover' | 'greenhouse';
 
 /** Partida que se pide desde el menu de inicio (T-011): nueva (sin `resume`) o la guardada, con su aviso sin aceptar. */
 export interface MatchRequest {
@@ -290,6 +309,9 @@ export interface TourBoard {
 /** Dibujos de los bocadillos del tour (T-013): plantas, minas y el gusano, recortados (data URL de una imagen PNG). */
 export type TourArtKey = 'shooter' | 'shooter2' | 'shooterFire' | 'shooterIce' | 'fireMine' | 'fireMineArmed' | 'iceMine' | 'iceMineArmed' | 'worm';
 export type TourArt = Record<TourArtKey, string>;
+
+/** Jefe de cada brote recortado (data URL), por el nombre del brote (ver `routeArt`). */
+export type RouteArt = Readonly<Record<OutbreakId, string>>;
 
 /** Algo que acaba de hacer el jugador y que un tour puede estar ensenando (T-013). */
 export type PlayerAction =

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { CardId } from './game/core/match';
-import { FIRST_OUTBREAK } from './game/core/outbreaks';
+import { FIRST_OUTBREAK, type OutbreakId } from './game/core/outbreaks';
+import { isGreenhouseOpen } from './game/core/route';
 import type { GameScreen } from './game/createGame';
 import {
   EventBus,
@@ -10,7 +11,9 @@ import {
   type EntityInfo,
   type LossInfo,
   type MatchRequest,
+  type MenuPlace,
   type PlantPanel,
+  type RouteArt,
   type RoundInfo,
   type UnlockInfo,
 } from './game/EventBus';
@@ -21,13 +24,14 @@ import { Balance } from './ui/Balance';
 import { Card } from './ui/Card';
 import { DefeatScreen } from './ui/DefeatScreen';
 import { GameCanvas } from './ui/GameCanvas';
+import { Greenhouse } from './ui/Greenhouse';
 import { InfoPanel } from './ui/InfoPanel';
 import { LevelPanel } from './ui/LevelPanel';
 import { Lives } from './ui/Lives';
 import { PauseMenu } from './ui/PauseMenu';
 import { RotateNotice } from './ui/RotateNotice';
 import { RoundHud } from './ui/RoundHud';
-import { TitleScreen } from './ui/TitleScreen';
+import { TitleMenu, TitleScreen } from './ui/TitleScreen';
 import { UnlockModal } from './ui/UnlockModal';
 import { NO_AUTO_FULLSCREEN, useFullscreen } from './ui/useFullscreen';
 import { useNeedsLandscape } from './ui/useLandscapeOnly';
@@ -54,7 +58,8 @@ const SCENE_OF: Record<GameScreen, string> = { title: SCENES.title, board: SCENE
  * en pausa. La partida se guarda sola (T-011): la escena guarda al empezar cada ronda y aqui se le pide al ocultar o
  * cerrar la pestana y al salir al menu. En un movil o una tableta en vertical se tapa todo con el aviso de girar la
  * pantalla (ADR-0011): el juego duerme y la partida queda en pausa para cuando se gire. Los tours de ayuda (T-013,
- * ADR-0012) ensenan lo nuevo de cada ronda encima del juego vivo, y esperan debajo de todo lo demas.
+ * ADR-0012) ensenan lo nuevo de cada ronda encima del juego vivo, y esperan debajo de todo lo demas. Fuera de la partida
+ * se esta en la portada o, si ya se vencio a Creeper, en el Invernadero (T-019, ADR-0016), al que lleva la victoria.
  */
 export function App() {
   const t = useText();
@@ -64,8 +69,15 @@ export function App() {
   const ready = readyScene === SCENE_OF[screen];
   /** Partida guardada, para "Cargar partida" en el menu de inicio. */
   const [saved, setSaved] = useState<SavedGame | null>(() => readSave());
-  /** Progreso permanente (T-017), para "Borrar progreso" en Opciones. */
+  /** Progreso permanente (T-017), para "Borrar progreso" en Opciones y para el Invernadero y su ruta (T-019). */
   const [progress, setProgress] = useState<Progress>(() => playerProgress.read());
+  /** Portada o Invernadero (T-019). El Invernadero solo se ve si esta abierto: sin progreso (o borrado), la portada. */
+  const [place, setPlace] = useState<MenuPlace>('cover');
+  const inGreenhouse = place === 'greenhouse' && isGreenhouseOpen(progress.defeated);
+  /** Lo que pinta la escena de portada: la batalla o, en el Invernadero, el jardin de las plantas del jugador. */
+  const scenePlace: MenuPlace = inGreenhouse ? 'greenhouse' : 'cover';
+  /** Jefes recortados por la portada para la ruta de brotes (T-019). */
+  const [routeArt, setRouteArt] = useState<RouteArt | null>(null);
   const [balance, setBalance] = useState<number | null>(null);
   const [lives, setLives] = useState<number | null>(null);
   const [selected, setSelected] = useState<CardId | null>(null);
@@ -124,6 +136,8 @@ export function App() {
     const onWon = () => {
       setWon(true);
       setPaused(false);
+      // La escena ya apunto al jefe como vencido: el Invernadero esta abierto cuando se va a el desde la victoria.
+      setProgress(playerProgress.read());
     };
     const onUnlocked = (info: UnlockInfo) => {
       if (info.round !== acceptedRound.current) setUnlock(info);
@@ -140,6 +154,7 @@ export function App() {
     EventBus.on(GameEvents.bossChanged, setBoss);
     EventBus.on(GameEvents.unlocked, onUnlocked);
     EventBus.on(GameEvents.entityInfo, setInfo);
+    EventBus.on(GameEvents.routeArt, setRouteArt);
     // Si la escena arranco antes que el HUD, que reenvie el estado.
     EventBus.emit(GameEvents.stateRequested);
     return () => {
@@ -155,6 +170,7 @@ export function App() {
       EventBus.off(GameEvents.bossChanged, setBoss);
       EventBus.off(GameEvents.unlocked, onUnlocked);
       EventBus.off(GameEvents.entityInfo, setInfo);
+      EventBus.off(GameEvents.routeArt, setRouteArt);
     };
   }, []);
 
@@ -207,6 +223,9 @@ export function App() {
 
   const newGame = useCallback(() => startMatch({}), [startMatch]);
 
+  /** Desde el Invernadero o su ruta (T-019): un brote desde la ronda 1. Si habia partida a medias, ya se confirmo pisarla. */
+  const playOutbreak = useCallback((outbreak: OutbreakId) => startMatch({ outbreak }), [startMatch]);
+
   const loadGame = useCallback(() => {
     const save = readSave();
     if (!save) {
@@ -216,13 +235,35 @@ export function App() {
     startMatch({ resume: save.match, pendingUnlock: save.pendingUnlock });
   }, [startMatch]);
 
-  /** Vuelve al menu de inicio. La escena guarda la partida (si no esta acabada) y deja paso a la portada. */
-  const exitToMenu = useCallback(() => {
-    EventBus.emit(GameEvents.exitRequested);
-    resetHud();
-    setScreen('title');
-    setSaved(readSave());
-  }, [resetHud]);
+  /**
+   * Vuelve al menu de inicio: a la portada o, desde la victoria, al Invernadero (T-019). La escena guarda la partida (si
+   * no esta acabada) y deja paso a la escena de portada.
+   */
+  const exitToMenu = useCallback(
+    (to: MenuPlace = 'cover') => {
+      EventBus.emit(GameEvents.exitRequested, to);
+      resetHud();
+      setScreen('title');
+      setPlace(to);
+      setSaved(readSave());
+      setProgress(playerProgress.read());
+    },
+    [resetHud],
+  );
+  const exitToCover = useCallback(() => exitToMenu('cover'), [exitToMenu]);
+  const exitToGreenhouse = useCallback(() => exitToMenu('greenhouse'), [exitToMenu]);
+
+  // La escena de portada pinta el sitio en el que se esta: al entrar o salir del Invernadero cambia la batalla por el
+  // jardin del jugador, o al reves (T-019). Si ya lo pinta (arranco asi), no hace nada.
+  useEffect(() => {
+    if (screen === 'title') EventBus.emit(GameEvents.menuPlaceChanged, scenePlace);
+  }, [screen, scenePlace]);
+
+  /** "Continuar" en la portada (T-019, R-02): con el Invernadero abierto lleva a el; sin el, reanuda la guardada. */
+  const continueFromCover = useCallback(() => {
+    if (isGreenhouseOpen(progress.defeated)) setPlace('greenhouse');
+    else loadGame();
+  }, [progress.defeated, loadGame]);
 
   const resume = useCallback(() => {
     setPaused(false);
@@ -299,20 +340,26 @@ export function App() {
   return (
     // Con la pausa (o el aviso de lo desbloqueado, o una ficha) se congelan tambien las animaciones CSS que cuentan tiempo (el aviso de la ronda).
     <main className={`app${halted ? ' is-paused' : ''}`}>
-      <GameCanvas quality={level} language={settings.language} screen={screen} paused={halted} asleep={needsLandscape} />
+      <GameCanvas quality={level} language={settings.language} screen={screen} place={scenePlace} paused={halted} asleep={needsLandscape} />
 
       {screen === 'title' && (
-        <TitleScreen
-          saved={saved}
-          progress={progress}
-          settings={settings}
-          autoLevel={autoLevel}
-          fullscreenSupported={fullscreen.supported}
-          onChange={update}
-          onNewGame={newGame}
-          onLoadGame={loadGame}
-          onEraseProgress={eraseProgress}
-        />
+        <TitleScreen greenhouse={inGreenhouse}>
+          {inGreenhouse ? (
+            <Greenhouse saved={saved} progress={progress} art={routeArt} onResume={loadGame} onPlay={playOutbreak} onBack={() => setPlace('cover')} />
+          ) : (
+            <TitleMenu
+              saved={saved}
+              progress={progress}
+              settings={settings}
+              autoLevel={autoLevel}
+              fullscreenSupported={fullscreen.supported}
+              onChange={update}
+              onNewGame={newGame}
+              onContinue={continueFromCover}
+              onEraseProgress={eraseProgress}
+            />
+          )}
+        </TitleScreen>
       )}
 
       {onBoard && (
@@ -378,10 +425,10 @@ export function App() {
         </div>
       )}
 
-      {onBoard && lost && <DefeatScreen round={round} loss={loss} onRestart={restart} onMenu={exitToMenu} />}
+      {onBoard && lost && <DefeatScreen round={round} loss={loss} onRestart={restart} onMenu={exitToCover} />}
 
       {onBoard && won && !lost && (
-        <VictoryScreen outbreak={round?.outbreak ?? FIRST_OUTBREAK} rounds={round?.total ?? 0} onRestart={restart} onMenu={exitToMenu} />
+        <VictoryScreen outbreak={round?.outbreak ?? FIRST_OUTBREAK} rounds={round?.total ?? 0} onRestart={restart} onGreenhouse={exitToGreenhouse} />
       )}
 
       {onBoard && unlock && !paused && !over && <UnlockModal unlock={unlock} onAccept={acceptUnlock} />}
@@ -396,7 +443,7 @@ export function App() {
           fullscreenSupported={fullscreen.supported}
           onChange={update}
           onResume={resume}
-          onExit={exitToMenu}
+          onExit={exitToCover}
         />
       )}
 

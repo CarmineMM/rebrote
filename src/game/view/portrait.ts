@@ -1,5 +1,7 @@
 import type * as Phaser from 'phaser';
+import { OUTBREAKS } from '../config/balance';
 import type { EnemyKind } from '../core/combat';
+import type { OutbreakId } from '../core/outbreaks';
 import type { CannonCount, ElementType } from '../core/plants';
 import { GARDEN, gardenSpots, gardenTier } from './gardenArt';
 import { MEDAL, showsMedal } from './levelMedal';
@@ -90,6 +92,18 @@ export function portraitUrl(scene: Phaser.Scene, subject: PortraitSubject, { bac
   const url = canvas.toDataURL('image/png');
   cache.set(key, url);
   return url;
+}
+
+/**
+ * El jefe de cada brote recortado, en reposo y sin enfadar, para los lugares de la ruta de brotes (T-019). La ruta lo
+ * ensena en color si se puede jugar y en silueta si el brote esta cerrado.
+ */
+export function bossCutouts(scene: Phaser.Scene): Record<OutbreakId, string> {
+  const art = {} as Record<OutbreakId, string>;
+  for (const { id, boss } of OUTBREAKS) {
+    art[id] = portraitUrl(scene, { kind: 'enemy', enemy: boss, level: 1, enraged: false, hasted: false }, { backdrop: false });
+  }
+  return art;
 }
 
 function paintBackdrop(ctx: CanvasRenderingContext2D, subject: PortraitSubject): void {

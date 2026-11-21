@@ -57,6 +57,7 @@ import {
   type BossInfo,
   type CardPreview,
   type LossInfo,
+  type MenuPlace,
   type PagePoint,
   type PlantPanel,
   type PlayerAction,
@@ -67,6 +68,7 @@ import {
   type UnlockInfo,
   type UnlockItem,
 } from '../EventBus';
+import type { TitleSceneData } from './TitleScene';
 import { createAmbience, type Ambience } from '../view/ambience';
 import { BoardLabel, drawArea, drawCell, type LabelLine } from '../view/boardMarks';
 import { BulletView } from '../view/bulletView';
@@ -579,9 +581,10 @@ export class BoardScene extends Phaser.Scene {
     const onRestart = () => this.scene.restart({ quality: this.level, outbreak: this.match.outbreak } satisfies BoardSceneData);
     // T-011: se guarda al ocultar o cerrar la pestana, y al salir al menu de inicio, que pasa a la portada.
     const onSave = () => this.saveGame();
-    const onExit = () => {
+    // T-019: la escena de portada arranca ya en el sitio al que se vuelve (la portada o, desde la victoria, el Invernadero).
+    const onExit = (place?: MenuPlace) => {
       this.saveGame();
-      this.scene.start(SCENES.title, { quality: this.level });
+      this.scene.start(SCENES.title, { quality: this.level, place } satisfies TitleSceneData);
     };
 
     EventBus.on(GameEvents.cardPicked, onPicked);

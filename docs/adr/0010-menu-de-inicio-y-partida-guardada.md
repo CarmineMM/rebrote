@@ -45,7 +45,7 @@ Condiciones previas:
 - Un solo hueco en `localStorage` (`rebrote.partida`), con versión (`SAVE_VERSION`), la fecha y el `MatchState` entero, más el aviso de desbloqueo sin aceptar (T-009). Código y validación en `src/game/save.ts`, con tests.
 - Se guarda sola: la escena guarda al empezar la partida y cada ronda, y cuando React se lo pide (`saveRequested`) al ocultar o cerrar la pestaña; y al salir al menú. No hay botón de guardar (I-02).
 - Al perder o ganar se borra (I-04): perder sigue obligando a empezar desde la ronda 1, y no se esquiva cerrando la pestaña porque se guarda el momento exacto.
-- Al cargar, se comprueba la forma entera del estado (tipos de enemigos, carriles, ronda dentro del guion...). Lo que no se entiende, de otra versión o de una partida acabada, se ignora: "Cargar partida" queda desactivado.
+- Al cargar, se comprueba la forma entera del estado (tipos de enemigos, carriles, ronda dentro del guion...). Lo que no se entiende, de otra versión o de una partida acabada, se ignora: "Cargar partida" queda desactivado (desde T-019 se llama "Continuar", ADR-0016).
 
 ## Consecuencias
 
@@ -54,4 +54,4 @@ Condiciones previas:
 - Si cambia el guion de rondas, una guardada puede quedar en una ronda que ya no existe: se ignora.
 - Todo lo que pase con el tiempo en la portada usa el reloj y los tweens de su escena, como en el tablero.
 - Las monedas soltadas en el suelo no se guardan: son de la vista.
-- La lista de jefes tiene su botón desactivado en el menú; cuando exista, será otra vista del mismo panel.
+- La lista de jefes tenía su botón desactivado en el menú. Desde T-019 no existe: la sustituye la ruta de brotes del Invernadero, y el flujo de pantallas fuera de la partida es el del ADR-0016.

@@ -51,7 +51,7 @@ Durante la partida React pinta el HUD encima del juego (en el menú de inicio, e
 - **Salir al menú** (T-011) vuelve al menú de inicio; la partida se guarda en ese momento (ADR-0010).
 - Si se cambia la calidad con el menú abierto, el juego nuevo arranca ya en pausa y con la misma partida.
 - Las preferencias se guardan en `localStorage` (`rebrote.ajustes`).
-- En el menú de inicio no hay pausa: Esc y P no hacen nada (Esc vuelve del panel de opciones o de créditos). Un clic en la portada también activa la pantalla completa, y "Nueva partida" y "Cargar partida" son gestos válidos para entrar en ella.
+- En el menú de inicio no hay pausa: Esc y P no hacen nada (Esc vuelve del panel de opciones o de créditos, y del Invernadero y su ruta, ADR-0016). Un clic en la portada también activa la pantalla completa, y todo botón que empieza o reanuda una partida ("Nueva partida", "Continuar", y en el Invernadero "Reanudar" y jugar un brote) es un gesto válido para entrar en ella.
 
 ## Consecuencias
 

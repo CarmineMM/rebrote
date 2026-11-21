@@ -39,8 +39,16 @@ export const COVER_LOOK = {
   ouchText: { color: '#ffe3f0', stroke: '#4a2a7a', fontSize: 30 },
 } as const;
 
+/** Cuanto se corre lo sembrado de el centro de su casilla, en casillas (el jardin del Invernadero, T-019). */
+export interface Nudge {
+  x: number;
+  y: number;
+}
+
 export interface PlantSpot {
   cell: Cell;
+  /** Sembrada fuera del centro de su casilla: en el Invernadero no hay casillas. */
+  nudge?: Nudge;
   cannons: CannonCount;
   element: ElementType | null;
   level: number;
@@ -70,7 +78,7 @@ export function engagedX(kind: EnemyKind, col: number): number {
 /** Reparto de una batalla de portada: plantas, minas y enemigos, cada uno en su sitio. */
 export interface CoverCast {
   plants: PlantSpot[];
-  mines: Array<{ cell: Cell; element: ElementType }>;
+  mines: Array<{ cell: Cell; element: ElementType; nudge?: Nudge }>;
   enemies: EnemySpot[];
 }
 
@@ -124,6 +132,8 @@ export class TitleCover {
   private cursor = 'default';
   /** Forma de cada disparadora del reparto (por casilla). */
   private readonly designs = new Map<string, ShooterDesign>();
+  /** Lo que se corre cada pieza del centro de su casilla (por casilla); sin entrada, en el centro. */
+  private readonly nudges = new Map<string, Nudge>();
 
   /**
    * `cast` cambia el reparto: la galeria de propuestas de la disparadora (T-016) monta asi su batalla, con la forma de
@@ -136,6 +146,7 @@ export class TitleCover {
   ) {
     let state = createMatch();
     const plants = state.plants.map((lane) => [...lane]);
+    for (const { cell, nudge } of [...cast.plants, ...cast.mines]) if (nudge) this.nudges.set(cellKey(cell), nudge);
     cast.plants.forEach(({ cell, cannons, element, level, design }, i) => {
       // Cada una empieza a disparar a su hora: que no vayan todas a la vez.
       const plant = createPlant({ cannons, element, level });
@@ -210,6 +221,8 @@ export class TitleCover {
       this.setSown(target.cell, { ...sown, reloadMs: 0 });
       this.voicedCells.add(cellKey(target.cell));
       this.plantViews.get(cellKey(target.cell))?.beckon();
+      // Sin enemigos (el jardin del Invernadero, T-019) no hay disparo que suene: el saltito suena a hojas.
+      if (this.state.enemies.length === 0) sfx.play('sow', panAt(target.cell.col + 0.5, BOARD.columns));
     } else if (sown?.kind === 'mine' && sown.fuseMs === null) {
       // Se arma: cuenta como en el juego y explota (la regla de la mina hace el resto).
       this.setSown(target.cell, { ...sown, fuseMs: MINE.countdownMs });
@@ -293,12 +306,20 @@ export class TitleCover {
   }
 
   private addSown(cell: Cell, sown: Sown, sprout: boolean): void {
+    // Las reglas siguen en su casilla; la vista puede ir corrida (en el Invernadero no hay casillas).
+    const at = this.placeOf(cell);
     if (sown.kind === 'shooter') {
       const design = this.designs.get(cellKey(cell)) ?? SHOOTER;
-      this.plantViews.set(cellKey(cell), new PlantView(this.scene, this.fx, cell, sown.shooter, 1, sprout, design));
+      this.plantViews.set(cellKey(cell), new PlantView(this.scene, this.fx, at, sown.shooter, 1, sprout, design));
     } else {
-      this.mineViews.set(cellKey(cell), new MineView(this.scene, this.fx, sown.element, cell, sown, sprout));
+      this.mineViews.set(cellKey(cell), new MineView(this.scene, this.fx, sown.element, at, sown, sprout));
     }
+  }
+
+  /** Donde se pinta lo sembrado en `cell`: su casilla, corrida si el reparto lo pide. */
+  placeOf(cell: Cell): Cell {
+    const nudge = this.nudges.get(cellKey(cell));
+    return nudge ? { lane: cell.lane + nudge.y, col: cell.col + nudge.x } : cell;
   }
 
   private addEnemy(enemy: Enemy, delayMs: number): void {

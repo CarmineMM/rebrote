@@ -834,7 +834,8 @@ body {
   display: grid; justify-items: start; gap: 4px;
 }
 /* Letras gordas de hoja verde con contorno oscuro; caen una tras otra y luego se mecen. De la "O" sale un brote. */
-.title-logo { margin: 0; display: flex; font-size: clamp(3rem, 8.2vw, 8rem); font-weight: 900; line-height: 1; letter-spacing: 0.01em; }
+/* `--logo-fit` encoge una palabra larga ("INVERNADERO", T-019) para que no se meta bajo el panel. */
+.title-logo { margin: 0; display: flex; font-size: calc(clamp(3rem, 8.2vw, 8rem) * var(--logo-fit, 1)); font-weight: 900; line-height: 1; letter-spacing: 0.01em; }
 .title-letter {
   --tilt: -3deg;
   position: relative; display: inline-block; padding: 0 0.01em;
@@ -944,7 +945,7 @@ body {
 /* Pantallas pequenas o bajas (movil en horizontal): titulo y panel mas pequenos, cada uno en su lado. */
 @media (max-width: 860px), (max-height: 560px) {
   .title-brand { left: max(16px, env(safe-area-inset-left)); top: max(22px, env(safe-area-inset-top)); }
-  .title-logo { font-size: clamp(2.2rem, 7.4vw, 4.6rem); }
+  .title-logo { font-size: calc(clamp(2.2rem, 7.4vw, 4.6rem) * var(--logo-fit, 1)); }
   .title-panel { right: max(12px, env(safe-area-inset-right)); width: min(310px, 48vw); padding: 14px; border-radius: 18px; }
   .title-panel .pause-kicker { margin-bottom: 8px; font-size: 0.7rem; }
   .title-panel .btn { padding: 8px 12px; font-size: 0.92rem; border-radius: 12px; }
@@ -971,6 +972,244 @@ body {
 /* Pantalla en vertical: el menu baja y ocupa el ancho. */
 @media (max-aspect-ratio: 4/5) {
   .title-panel { left: 16px; right: 16px; top: auto; bottom: max(16px, env(safe-area-inset-bottom)); translate: none; width: auto; max-height: 62%; }
+}
+
+/* ---------- Invernadero (T-019): el mismo panel de la derecha; el titulo grande dice "INVERNADERO" ---------- */
+.greenhouse-panel { animation-delay: 0.05s; }
+/* La casita de cristal, en el boton de la victoria que lleva al Invernadero. */
+.greenhouse-icon { flex: none; width: 24px; height: 22px; overflow: visible; }
+.greenhouse-glass { fill: rgba(196, 240, 255, 0.42); }
+.greenhouse-frame { fill: none; stroke: #1d4a17; stroke-width: 2.6; stroke-linejoin: round; stroke-linecap: round; }
+.greenhouse-base { fill: none; stroke: #1d4a17; stroke-width: 3.2; stroke-linecap: round; }
+.greenhouse-shine { fill: none; stroke: rgba(255, 255, 255, 0.8); stroke-width: 2; stroke-linecap: round; }
+.greenhouse-stem { fill: none; stroke: #2f8a28; stroke-width: 2.4; stroke-linecap: round; }
+.greenhouse-leaf { stroke: #1d4a17; stroke-width: 1.4; stroke-linejoin: round; }
+.greenhouse-leaf.is-left { fill: #9be564; }
+.greenhouse-leaf.is-right { fill: #74cc48; }
+.greenhouse-sprout { transform-box: fill-box; transform-origin: 50% 100%; animation: sprout-sway 2.6s ease-in-out infinite; }
+/* Tienda y plantas, con candado hasta T-022 y T-023: en una fila, la mitad cada una. */
+.greenhouse-locked { display: grid; grid-template-columns: 1fr 1fr; gap: inherit; }
+
+/* ---------- Ruta de brotes (T-019): un mapa ancho sobre el jardin, con el camino, sus lugares y la ficha del elegido ---------- */
+.route-overlay {
+  position: absolute; inset: 0; z-index: 3; display: grid; place-items: center; pointer-events: auto;
+  padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  background: rgba(10, 25, 12, 0.4); backdrop-filter: blur(5px) saturate(1.1); -webkit-backdrop-filter: blur(5px) saturate(1.1);
+  animation: fade-in 0.2s ease-out;
+}
+.route-card {
+  width: min(1120px, 100%); height: min(600px, 100%); display: grid; grid-template-rows: auto minmax(0, 1fr) auto auto; gap: 12px;
+  padding: 18px 20px; border-radius: 22px; border: 2px solid #5fa54f;
+  background: linear-gradient(180deg, #2e5233 0%, #1b3020 100%);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5), inset 0 2px 0 rgba(255, 255, 255, 0.08);
+  animation: pop-in 0.3s cubic-bezier(0.2, 1.3, 0.4, 1);
+}
+.route-head { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.route-head .pause-title.is-small { flex: 1; min-width: 0; }
+.route-tally { font-size: 0.75rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: #9fd88a; white-space: nowrap; }
+
+/* El mapa: cielo arriba y loma abajo. Si los lugares no caben, se desplaza en horizontal con una barra fina. */
+.route-map {
+  position: relative; min-height: 0; overflow-x: auto; overflow-y: hidden; border-radius: 16px;
+  border: 2px solid rgba(0, 0, 0, 0.35); background: #bfe6ff;
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.1);
+  scrollbar-width: thin; scrollbar-color: rgba(159, 216, 138, 0.6) transparent;
+}
+/* El cielo se enturbia de morado pasado lo recorrido, como el suelo. */
+.route-track {
+  position: relative;
+  background:
+    linear-gradient(90deg, transparent 0 var(--healed), rgba(74, 40, 110, 0.5) calc(var(--healed) + 220px)),
+    linear-gradient(180deg, #8fd3ff 0%, #c4eaff 48%, #eef9ff 78%);
+}
+.route-ground, .route-path { position: absolute; left: 0; top: 0; pointer-events: none; overflow: visible; }
+.route-soil-healed { stop-color: #7cc95a; }
+.route-soil-corrupt { stop-color: #4b3468; }
+.route-tuft { fill: none; stroke: #3d8a2c; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.route-flower circle { fill: #ff8cc6; stroke: #8a2d5c; stroke-width: 1; }
+.route-flower.is-1 circle { fill: #fff6c0; stroke: #8a6a12; }
+.route-flower.is-2 circle { fill: #9fd8ff; stroke: #2f5f80; }
+.route-flower circle.route-flower-heart { fill: #ffd23f; stroke: none; }
+.route-spark { fill: #39ff88; animation: route-spark 2.2s ease-in-out infinite; }
+.route-circuit { fill: none; stroke: #39ff88; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; animation: route-spark 3s ease-in-out infinite; }
+.route-circuit circle { fill: #241733; }
+@keyframes route-spark { 0%, 100% { opacity: 0.25; } 50% { opacity: 0.95; } }
+
+/* El camino: tierra con borde oscuro y pasitos claros que avanzan hacia lo que toca. Lo que viene, apagado; al final, punteado. */
+.route-segment path { fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.route-segment-edge { stroke: #5b3a1e; stroke-width: calc(var(--path) + 6px); }
+.route-segment-dirt { stroke: #c38c50; stroke-width: var(--path); }
+.route-segment-steps { stroke: #ecc893; stroke-width: calc(var(--path) * 0.34); stroke-dasharray: 2 15; }
+.route-segment.is-walked .route-segment-steps { animation: route-steps 1.8s linear infinite; }
+@keyframes route-steps { to { stroke-dashoffset: -17; } }
+.route-segment.is-ahead { opacity: 0.75; }
+.route-segment.is-ahead .route-segment-edge { stroke: #2c1d3d; }
+.route-segment.is-ahead .route-segment-dirt { stroke: #7d6292; }
+.route-segment.is-ahead .route-segment-steps { stroke: #a993bd; }
+.route-segment.is-far { opacity: 0.8; }
+.route-segment.is-far .route-segment-edge, .route-segment.is-far .route-segment-steps { display: none; }
+.route-segment.is-far .route-segment-dirt { stroke: #8e74aa; stroke-width: calc(var(--path) * 0.42); stroke-dasharray: 1 12; }
+
+/* Cada lugar: un cerco redondo con cielo y loma, su jefe dentro y su nombre debajo. */
+.route-stops { margin: 0; padding: 0; list-style: none; }
+.route-stop { position: absolute; width: var(--size); height: var(--size); translate: -50% -50%; animation: route-stop-in 0.45s cubic-bezier(0.2, 1.5, 0.4, 1) both; }
+.route-stop:nth-child(2) { animation-delay: 0.08s; }
+.route-stop:nth-child(3) { animation-delay: 0.16s; }
+.route-stop:nth-child(n + 4) { animation-delay: 0.24s; }
+@keyframes route-stop-in { from { opacity: 0; transform: scale(0.4) translateY(12px); } to { opacity: 1; transform: none; } }
+.route-stop-body {
+  position: relative; display: block; width: 100%; height: 100%; padding: 0; border: 0; border-radius: 50%;
+  background: none; color: inherit; font: inherit; text-align: center;
+}
+button.route-stop-body { cursor: pointer; transition: transform 0.15s ease; }
+button.route-stop-body:hover { transform: translateY(-3px) scale(1.05); }
+button.route-stop-body:active { transform: scale(0.97); }
+.route-ring {
+  position: absolute; inset: 0; display: grid; place-items: center; border-radius: 50%;
+  border: calc(var(--size) * 0.05) solid #2f6a2a;
+  background:
+    radial-gradient(ellipse 90% 42% at 50% 100%, #6cbc4c 0 96%, transparent 100%),
+    linear-gradient(180deg, #bfe6ff 0%, #eef9ff 70%);
+  box-shadow: 0 calc(var(--size) * 0.05) 0 rgba(0, 0, 0, 0.3), 0 0 0 3px rgba(255, 255, 255, 0.22);
+  transition: box-shadow 0.2s ease, outline-color 0.2s ease;
+  outline: 3px solid transparent; outline-offset: 4px;
+}
+/* El recorte del jefe se agranda un poco y se recorta al cerco: los pies sobre la loma. */
+.route-photo { position: absolute; inset: 0; overflow: hidden; border-radius: 50%; }
+.route-boss { display: block; width: 100%; height: 100%; object-fit: contain; transform: scale(1.32) translateY(-6%); pointer-events: none; user-select: none; }
+.route-stop.is-selected .route-ring { outline-color: #ffffff; }
+button.route-stop-body:focus-visible { outline: none; }
+button.route-stop-body:focus-visible .route-ring { outline-color: #ffe066; }
+
+/* Superado: el jefe atrapado, algo apagado, con un sello de oro. */
+.route-stop.is-defeated .route-boss { filter: saturate(0.7) brightness(0.95); }
+.route-seal {
+  position: absolute; right: -6%; bottom: -4%; display: grid; place-items: center; width: 38%; height: 38%; border-radius: 50%;
+  background: radial-gradient(circle at 36% 30%, #fff6c0 0%, #ffd23f 50%, #d1920f 100%); border: 2px solid #6b4505;
+  color: #4a3000; font-size: calc(var(--size) * 0.2); font-weight: 900; line-height: 1;
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.3); animation: route-seal-in 0.5s 0.45s cubic-bezier(0.2, 1.8, 0.4, 1) both;
+}
+@keyframes route-seal-in { from { opacity: 0; transform: scale(2) rotate(-30deg); } to { opacity: 1; transform: none; } }
+
+/* El que toca: borde dorado que late, suelo aun corrupto, el jefe que se mece y una flecha que salta encima. */
+.route-stop.is-current .route-ring {
+  border-color: #ffd23f;
+  background:
+    radial-gradient(ellipse 90% 42% at 50% 100%, #6b4f8f 0 96%, transparent 100%),
+    linear-gradient(180deg, #c9b8e6 0%, #eef0ff 72%);
+  animation: route-glow 1.6s ease-in-out infinite;
+}
+@keyframes route-glow { 0%, 100% { box-shadow: 0 calc(var(--size) * 0.05) 0 rgba(0, 0, 0, 0.3), 0 0 0 3px rgba(255, 224, 102, 0.35), 0 0 12px rgba(255, 224, 102, 0.4); } 50% { box-shadow: 0 calc(var(--size) * 0.05) 0 rgba(0, 0, 0, 0.3), 0 0 0 6px rgba(255, 224, 102, 0.55), 0 0 26px rgba(255, 224, 102, 0.75); } }
+.route-stop.is-current .route-boss { animation: route-bob 1.8s ease-in-out infinite; }
+@keyframes route-bob { 0%, 100% { transform: scale(1.32) translateY(-6%); } 50% { transform: scale(1.32) translateY(-10%) rotate(-2deg); } }
+.route-here {
+  position: absolute; left: 50%; top: calc(var(--size) * -0.3); width: 0; height: 0; margin-left: -11px; z-index: 1; pointer-events: none;
+  border-left: 11px solid transparent; border-right: 11px solid transparent; border-top: 15px solid #ffd23f;
+  filter: drop-shadow(0 2px 0 #8a5d08); animation: route-here 0.9s ease-in-out infinite;
+}
+@keyframes route-here { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
+
+/* En sombra: el jefe en silueta y un candado; lo que aun no existe, una interrogacion. */
+.route-stop.is-locked .route-ring, .route-stop.is-soon .route-ring {
+  border-color: #4b3468; border-style: dashed;
+  background:
+    radial-gradient(ellipse 90% 42% at 50% 100%, #3a2851 0 96%, transparent 100%),
+    linear-gradient(180deg, #6d5a8c 0%, #9b8bb5 72%);
+  box-shadow: 0 calc(var(--size) * 0.05) 0 rgba(0, 0, 0, 0.3);
+}
+.route-stop.is-locked .route-boss { filter: brightness(0) opacity(0.55); }
+.route-lock { position: absolute; left: 50%; bottom: 14%; margin: 0 0 0 -9px; width: 18px; height: 14px; color: #f1e7ff; filter: drop-shadow(0 2px 0 rgba(0, 0, 0, 0.45)); }
+.route-lock::before { left: 3px; top: -10px; width: 8px; height: 9px; border-width: 3px; }
+.route-mystery { font-size: calc(var(--size) * 0.52); font-weight: 900; line-height: 1; color: #e4d4ff; text-shadow: 0 3px 0 #2b2034; animation: route-mystery 2.4s ease-in-out infinite; }
+@keyframes route-mystery { 0%, 100% { transform: rotate(-6deg); opacity: 0.7; } 50% { transform: rotate(6deg) scale(1.06); opacity: 1; } }
+.route-stop.is-locked .route-caption, .route-stop.is-soon .route-caption { opacity: 0.8; }
+
+/* El destino final: pequeno, a lo lejos y algo borroso, con su torre y su ojo neon. */
+.route-stop.is-final .route-ring {
+  border-color: #2b2034;
+  background: radial-gradient(circle at 50% 40%, #4a2f6b 0%, #241733 70%);
+  box-shadow: 0 0 18px rgba(57, 255, 136, 0.25);
+}
+.route-stop.is-final { filter: saturate(0.85); }
+.route-stop.is-final .route-caption { opacity: 0.8; }
+.route-spire { width: 86%; height: 86%; overflow: visible; }
+.route-spire-hill { fill: #2b2034; }
+.route-spire-body { fill: #120c1b; stroke: #39ff88; stroke-width: 1; stroke-opacity: 0.5; }
+.route-spire-arm { fill: none; stroke: #120c1b; stroke-width: 2.6; stroke-linecap: round; }
+.route-spire-eye { fill: #39ff88; animation: route-eye 2.6s ease-in-out infinite; }
+@keyframes route-eye { 0%, 40%, 100% { opacity: 1; } 45%, 50% { opacity: 0.15; } 70% { opacity: 0.6; } }
+.route-spire-bit { fill: #39ff88; animation: route-spark 1.6s ease-in-out infinite; }
+.route-spire-bit.is-b { animation-delay: 0.5s; }
+.route-spire-bit.is-c { animation-delay: 1s; }
+
+/* La partida a medias de ese brote: un circulito naranja con la pausa, arriba a la izquierda. */
+.route-saved {
+  position: absolute; left: -2%; top: -2%; width: 30%; height: 30%; border-radius: 50%;
+  background: radial-gradient(circle at 36% 30%, #ffd2a8 0%, #ff9a4a 55%, #c2561a 100%); border: 2px solid #5a240a;
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.3);
+}
+.route-saved::before {
+  content: ''; position: absolute; left: 50%; top: 50%; width: 34%; height: 40%; translate: -50% -50%;
+  border-left: 3px solid #4a1d06; border-right: 3px solid #4a1d06;
+}
+
+.route-caption {
+  position: absolute; left: 50%; top: calc(100% + 4px); translate: -50% 0; display: grid; justify-items: center;
+  width: max-content; max-width: var(--caption-max, 180px); padding: 2px 9px 3px; border-radius: 10px;
+  background: rgba(16, 26, 17, 0.6); text-align: center; line-height: 1.15; pointer-events: none;
+}
+.route-caption small { font-size: 0.62rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: #c9f2a8; }
+/* El nombre del jefe en una linea: si no cabe, se corta con puntos (entero en la ficha y en su etiqueta). */
+.route-caption strong { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.92rem; font-weight: 900; color: #ffffff; }
+.route-stop.is-current .route-caption strong { color: #ffe066; }
+
+/* La ficha del elegido: nombre, jefe y rondas a la izquierda; jugar (o reanudar) a la derecha. */
+.route-detail { min-height: 66px; display: grid; align-items: center; }
+.route-detail-body {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px; min-width: 0;
+  padding: 10px 14px; border-radius: 14px; background: rgba(0, 0, 0, 0.22); border: 1px solid rgba(255, 255, 255, 0.06);
+  animation: unlock-item-in 0.32s cubic-bezier(0.2, 1.4, 0.4, 1) both;
+}
+.route-detail-body.is-confirm { border-color: rgba(255, 154, 138, 0.45); }
+.route-detail-text { display: grid; gap: 2px; min-width: 0; }
+.route-detail-text h3 { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; font-size: 1.2rem; font-weight: 900; color: #fff6c0; }
+.route-detail-text p { margin: 0; font-size: 0.86rem; font-weight: 700; color: #e9ffd6; }
+.route-detail-text p.route-detail-note { color: #ffcf9a; }
+.route-detail-text p.route-detail-warn { color: #ffdfe4; }
+.route-detail-body.is-confirm .route-detail-note { color: #9fd88a; }
+.route-badge { padding: 2px 9px; border-radius: 999px; font-size: 0.64rem; font-weight: 900; letter-spacing: 0.08em; text-transform: uppercase; }
+.route-badge.is-defeated { background: rgba(255, 210, 63, 0.16); border: 1px solid rgba(255, 210, 63, 0.6); color: #ffe066; }
+.route-badge.is-open { background: rgba(159, 216, 138, 0.16); border: 1px solid rgba(159, 216, 138, 0.6); color: #c9f2a8; }
+.route-detail-actions { display: flex; gap: 10px; flex: none; }
+.route-detail-actions .btn { width: auto; white-space: nowrap; }
+.route-hint { margin: 0; text-align: center; font-weight: 700; opacity: 0.7; }
+.pause-hint.route-keys { margin: 0; }
+
+/* Movil en horizontal o ventana baja: todo mas recogido, y sin la linea de las teclas. */
+@media (max-width: 860px), (max-height: 560px) {
+  .route-overlay { padding: max(8px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left)); }
+  .route-card { gap: 8px; padding: 10px 12px; border-radius: 18px; }
+  .route-head { gap: 8px; }
+  .route-head .btn-ghost { width: 34px; height: 34px; }
+  .route-head .pause-title.is-small { font-size: 1.2rem; }
+  .route-tally { font-size: 0.66rem; }
+  .route-map { border-radius: 12px; }
+  .route-caption { padding: 1px 7px 2px; }
+  .route-caption small { font-size: 0.56rem; }
+  .route-caption strong { font-size: 0.78rem; }
+  .route-here { margin-left: -8px; border-left-width: 8px; border-right-width: 8px; border-top-width: 11px; }
+  .route-detail { min-height: 50px; }
+  .route-detail-body { gap: 10px; padding: 6px 10px; }
+  .route-detail-text h3 { font-size: 1rem; }
+  .route-detail-text p { font-size: 0.74rem; }
+  /* Los botones de la ficha, uno encima de otro a la derecha: el texto gana ancho y el mapa, alto. */
+  .route-detail-actions { flex-direction: column; align-items: stretch; gap: 6px; }
+  .route-detail-actions .btn { padding: 5px 12px; font-size: 0.84rem; border-radius: 11px; gap: 6px; }
+  .pause-hint.route-keys { display: none; }
+}
+@media (max-height: 420px) {
+  .greenhouse-locked .btn-detail { display: none; }
+  .route-detail-body.is-confirm .route-detail-note { display: none; }
 }
 
 /* ---------- Tours de ayuda (T-013, ADR-0012): velo con huecos, aros que laten, la mano y el bocadillo con Brotito ---------- */

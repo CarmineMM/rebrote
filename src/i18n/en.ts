@@ -13,6 +13,7 @@ export const en: Dictionary = {
     back: 'Back',
     close: 'Close',
     loading: 'Loading the garden…',
+    soon: 'Coming soon',
   },
 
   /** Aviso de girar la pantalla en un movil o tableta en vertical (ADR-0011). */
@@ -28,19 +29,20 @@ export const en: Dictionary = {
 
   outbreak: {
     title: (number, boss) => `Outbreak ${number}: ${boss}`,
+    number: (number) => `Outbreak ${number}`,
   },
 
   title: {
     tagline: 'Only nature can save us',
     menu: 'Main menu',
     newGame: 'New game',
-    loadGame: 'Load game',
+    continue: 'Continue',
     noSave: 'No saved game',
+    toGreenhouse: 'To the greenhouse',
+    waiting: (outbreak, round) => `Game in progress (${outbreak}, round ${round})`,
     saveSummary: (round, total, lives, coins) => `Round ${round} of ${total} · ${lives === 1 ? '1 life' : `${lives} lives`} · ${coins} coins`,
     savedAt: (when) => `Saved ${when}`,
     options: 'Options',
-    bosses: 'Bosses',
-    comingSoon: 'Coming soon',
     credits: 'Credits',
     language: 'Language',
     autosave: 'Your game saves itself.',
@@ -64,6 +66,40 @@ export const en: Dictionary = {
     confirmKept: 'Your settings, language and seen help tours stay.',
     confirmYes: 'Yes, delete',
     confirmNo: 'Never mind',
+  },
+
+  greenhouse: {
+    title: 'Greenhouse',
+    logo: 'GREENHOUSE',
+    resume: 'Resume',
+    resumeDetail: (outbreak, round, total) => `${outbreak} · round ${round} of ${total}`,
+    next: 'Next outbreak',
+    route: 'Outbreak route',
+    routeDetail: (defeated) => (defeated === 1 ? '1 boss defeated' : `${defeated} bosses defeated`),
+    shop: 'Shop',
+    plants: 'Plants',
+    back: 'Back to the title',
+    confirmTitle: (outbreak) => `Start ${outbreak}?`,
+    confirmText: (outbreak, round) => `Your game in progress (${outbreak}, round ${round}) will be deleted.`,
+    confirmYes: 'Yes, start',
+    confirmNo: 'Never mind',
+  },
+
+  route: {
+    title: 'Outbreak route',
+    defeated: 'Cleared',
+    current: 'Up next',
+    locked: (boss) => `Locked: opens when you beat ${boss}`,
+    final: '???',
+    finalHint: 'The end of the road',
+    boss: (name, rounds) => `Boss: ${name} · ${rounds} rounds`,
+    saved: (round, total) => `Game in progress: round ${round} of ${total}`,
+    play: 'Play',
+    replay: 'Play again',
+    resume: 'Resume',
+    restart: 'Start over',
+    hint: 'Tap a place on the road to see it.',
+    keys: '← → to move along the road · Esc to go back',
   },
 
   cover: {
@@ -261,7 +297,7 @@ export const en: Dictionary = {
     text: (rounds) => `You beat all ${rounds} rounds and the garden is safe.`,
     hint: 'Creeper (1971) was the first computer worm: it hopped from machine to machine.',
     again: 'Play again',
-    menu: 'Main menu',
+    greenhouse: 'To the greenhouse',
   },
 
   board: {
