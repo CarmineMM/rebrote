@@ -223,13 +223,37 @@ Decisiones R-01 a R-04 cerradas el 21 nov 2026 con la recomendación. Cómo se h
 
 ### Progreso permanente (T-017)
 Decisiones K-01 y K-02 cerradas el 21 nov 2026 con la recomendación. Cómo se hace: ADR-0014.
-- **Qué es:** lo que el jugador no pierde al acabar una partida. Es de cada jugador (T-034). Hoy, los jefes vencidos y la historia vista (T-031); después, las semillas (T-020), las compras (T-022) y las mejoras (T-023).
+- **Qué es:** lo que el jugador no pierde al acabar una partida. Es de cada jugador (T-034). Hoy, los jefes vencidos, la historia vista (T-031) y las semillas (T-020); después, las compras (T-022) y las mejoras (T-023).
 - **Jefe vencido:** al vencer al jefe de un brote queda apuntado para siempre. Volver a vencerlo no cambia nada.
 - **No se pierde** al ganar, al perder ni al empezar una partida nueva. Mientras el juego esté en desarrollo, un progreso guardado con otra versión de su forma se descarta, sin convertirlo (ADR-0014).
 - **Se borra con el jugador:** "Borrar jugador" en la pantalla de jugadores (T-034). Hasta T-034 era "Borrar progreso", en Opciones.
 - **Si algo falla:** un progreso que no se entiende cuenta como vacío, sin error, y no toca la partida guardada. En una ventana privada o con el almacenamiento lleno, el progreso dura lo que dure la sesión. Con dos pestañas abiertas, cada una escribe en su jugador.
 - **Antes de T-017 (K-01):** quien venció a Creeper antes no lo tiene vencido, porque no quedó constancia: tiene que vencerlo otra vez.
 - **Exportar e importar (K-02):** no por ahora; se apunta como mejora si el juego crece.
+
+### Semillas (T-020)
+Decisiones C-01 a C-05 cerradas el 21 nov 2026. Los valores están en `SEEDS` de `balance.ts` y son PROVISIONAL hasta que existan los precios de la tienda.
+- **Qué son:** la segunda moneda. Se ganan en la partida y se gastan fuera de ella (la tienda, T-022, y el nivel base, T-023). Van en el progreso permanente del jugador, nunca en el saldo de la partida. Icono propio (una semilla parda con un brote verde) y color verde: la moneda de la partida es un disco dorado.
+- **Ronda superada:** cada ronda superada, menos la última (la del jefe), suma a la partida entre el 75 y el 100 % de su tope, al azar: nunca dan lo mismo (C-02). El tope en el brote 1 es 50. Sale "+N semillas" bajo "¡Ronda N superada!".
+- **Jefe vencido:** entre el 75 y el 100 % de su tope, 500 en el brote 1.
+- **Brote ya vencido (C-03):** las rondas y el jefe dan entre el 15 y el 25 % de su tope. Vale lo que diga el progreso al empezar la partida.
+- **Se cobran al acabar la partida.** Al ganar, todo, y cada vida que queda suma un 10 % de lo ganado en las rondas y el jefe (C-05): con 3 vidas, un 30 % más. Al perder solo se cobra el 25 % de lo que dieron las rondas (C-04): perder da algo, pero poco. Salir al menú no cobra nada: lo sumado va en la partida guardada y se cobra cuando acabe.
+- **Cada brote da algo más:** los topes suben un 5 % de los del brote 1 por cada brote anterior (el brote 2, al 105 %; el 26, al 225 %).
+- **Siempre en enteros,** redondeando hacia abajo. El saldo no pasa de 999.999.
+- **Dónde se ve:** la victoria y la derrota enseñan lo cobrado en grande, de dónde sale (rondas, jefe y vidas; al perder, el 25 % de las rondas), si el brote ya estaba vencido y el saldo nuevo. El menú de pausa dice lo que lleva la partida y que al perder solo se cobra el 25 %. El Invernadero enseña el saldo arriba del panel, y la pantalla de jugadores lo cuenta entre lo que se pierde al borrar a uno.
+- **Una sola vez:** lo cobrado pasa al progreso antes de borrar la partida guardada, en una sola escritura con el jefe vencido. Una partida acabada que se recrea (al cambiar la calidad o el idioma) no cobra otra vez, y recargar la página en la victoria tampoco.
+- **Para qué tienda está pensado:** artículos normales de 1000 a 2000 semillas y el más caro de unos 10.000. Así queda con el azar:
+
+| Partida (brote 1) | Semillas |
+|---|---|
+| Vencerlo por primera vez sin perder vidas | De 920 a 1235 (unas 1080) |
+| Vencerlo por primera vez con 1 vida | De 778 a 1045 |
+| Perder en la ronda 7 sin haberlo vencido | De 55 a 75 |
+| Perder en el combate final sin haberlo vencido | De 83 a 112 |
+| Volver a vencerlo sin perder vidas | De 179 a 302 |
+| Perder en la ronda 7 de un brote ya vencido | De 10 a 18 |
+
+  Contando la subida por brote y suponiendo brotes de 10 rondas, las primeras victorias sin perder vidas suman, de media, unas 1080 semillas tras el brote 1, 4600 tras el 4, 13.000 tras el 10 y 45.000 tras los 26 de la ruta (unas 260 rondas); el brote 26 da unas 2400. La tienda debería costar más que eso en total, para que haya que repetir algún brote para comprarlo todo. Perder a propósito nunca da más que volver a ganar un brote ya vencido (hay un test que lo comprueba).
 
 ### Jugadores (T-034)
 Decisiones PF-01 a PF-07 cerradas el 21 nov 2026 con la recomendación. Cómo se hace: ADR-0018.
@@ -239,7 +263,7 @@ Decisiones PF-01 a PF-07 cerradas el 21 nov 2026 con la recomendación. Cómo se
 - **La pantalla de jugadores**, en el panel de la portada, lista a cada uno con su avatar, su nombre, sus jefes vencidos y la última vez que jugó ("Aún sin estrenar" si nunca guardó nada); el activo, con borde dorado y "Jugando". Elegir uno lo deja activo y vuelve al menú: cambian la partida, el progreso, el Invernadero, la ruta y los tours vistos.
 - **Nuevo jugador** empieza desde cero (sin progreso, sin partida y con los tours sin ver) y queda activo. Con 3 jugadores el botón se apaga y dice "Máximo de jugadores".
 - **Nombre (PF-05):** mientras no elija uno (T-033), "Jugador 1", "Jugador 2"... (el menor número libre), en el idioma del juego. Los nombres se pueden repetir (PF-07). Cómo se elige: "Nombre del jugador (T-033)".
-- **Borrar jugador (PF-06):** la papelera de cada fila pide confirmar y dice qué se pierde para siempre (jefes vencidos, partida guardada y tours vistos) o que no tiene nada guardado; los demás jugadores y los ajustes no cambian. Si era el activo, pasa a serlo el que jugó por última vez; si era el último, queda uno nuevo y vacío. El único jugador, sin nada guardado, no se puede borrar: no cambiaría nada.
+- **Borrar jugador (PF-06):** la papelera de cada fila pide confirmar y dice qué se pierde para siempre (jefes vencidos, semillas desde T-020, partida guardada y tours vistos) o que no tiene nada guardado; los demás jugadores y los ajustes no cambian. Si era el activo, pasa a serlo el que jugó por última vez; si era el último, queda uno nuevo y vacío. El único jugador, sin nada guardado, no se puede borrar: no cambiaría nada.
 - **Lo guardado antes de T-034** (progreso, partida a medias y tours vistos) se descarta y se borra del navegador, sin convertirlo: se empieza como "Jugador 1". Los ajustes se conservan.
 - **Para el futuro:** cada jugador tiene un identificador que no cambia aunque cambie su nombre y la fecha de su último guardado. No son cuentas: no se sincronizan ni se protegen.
 - **Teclado:** Tab recorre la lista, Enter elige y Esc vuelve (de la confirmación a la lista y de la lista al menú, con el foco en "Cambiar").
@@ -306,6 +330,8 @@ T-010: la fuerza de los enemigos está en `combat.ts` (`enemyTierBonus`, `enemyP
 T-011: la partida guardada (formato con versión, comprobación al cargar, guardar, leer y borrar) está en `src/game/save.ts`, con tests en `save.test.ts`; la escena guarda (`saveGame`) y borra al perder o ganar. Los textos de las reglas que se enseñan al jugador ya no están en `balance.ts`: el aviso de cada ronda está en `round.notices` y el grito de Creeper es una clave (`RoundGroup.shout`, `CreeperShout`) con su texto en `creeper.shouts`, en `src/i18n/` (ADR-0009).
 
 T-017: el progreso permanente (forma con versión, comprobación al leer y jefe vencido) está en `src/game/progress.ts` (`recordDefeat`, `isOutbreakDefeated`, `hasProgress`, `decodeProgress`, `ProgressKeeper`), con tests en `progress.test.ts` (desde T-034, sin migraciones y por jugador); el nombre del brote, en el `id` de cada brote de `OUTBREAKS` (desde T-018; antes, `OUTBREAK_ID` de `rounds.ts`). La escena lo apunta al ganar (`enterVictory`), antes de borrar la partida guardada.
+
+T-020: las semillas están en `src/game/core/seeds.ts` (`seedCaps`, `rollSeedPercent`, `rollSeeds`, `creditRound`, `seedPayout`, `settleSeeds`, `heartBonusPercent`, `addSeeds`), con tests en `seeds.test.ts` (y en `outbreaks.test.ts`, que cada brote da algo más). La partida lleva lo suyo en `MatchState.seeds` (`MatchSeeds`: si es una repetición, rondas, lo sumado y lo cobrado); `stepRound` suma cada ronda superada (evento `roundCleared` con `seeds`) y la escena cobra al ganar o perder (`settle` en `BoardScene`, que llama a `settleSeeds` y a `ProgressKeeper.recordMatchEnd`) antes de borrar la partida guardada. El saldo va en `Progress.seeds` (`PROGRESS_VERSION` 3) y la partida guardada pasa a la versión 3. El resumen de la victoria y la derrota y el saldo del Invernadero están en `src/ui/SeedsEarned.tsx`; el icono, en `SeedIcon.tsx`.
 
 T-018: los brotes están en `src/game/core/outbreaks.ts` (`OutbreakId`, `OutbreakScript`, `FIRST_OUTBREAK`, `outbreakScript`, `outbreakNumber`, `roundCount`, `outbreaksBefore`, `outbreakOfBoss` e `isOutbreakOpen`, B-04), con tests en `outbreaks.test.ts` sobre dos brotes de prueba. La partida sabe su brote (`MatchState.outbreak`) y todas las reglas de `rounds.ts` lo reciben: lo desbloqueado y el tope de nivel suman los brotes anteriores (`unlockedAt`, `levelCapAt`; B-01) y lo nuevo de cada ronda es solo lo que no llegó ya desbloqueado (`newFeaturesAt`, que usan `roundUnlocks` y los tours). `createMatch` empieza con el saldo inicial del brote (B-02). La partida guardada va por la versión 2; las anteriores se ignoran. El nombre "Brote N: jefe" lo compone `src/ui/outbreakName.ts` con `outbreak.title` de `src/i18n/`; los avisos de ronda están por brote en `round.notices`.
 

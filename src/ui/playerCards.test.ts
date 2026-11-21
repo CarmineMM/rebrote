@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { createMatch } from '../game/core/match';
 import { firstList, type Profile } from '../game/profiles';
-import { PROGRESS_KEY, emptyProgress, encodeProgress, recordDefeat, recordStory } from '../game/progress';
+import { PROGRESS_KEY, emptyProgress, encodeProgress, recordDefeat, recordMatchEnd, recordStory } from '../game/progress';
 import { writeSave, type SaveStore } from '../game/save';
 import { setLanguage, text } from '../i18n';
 import { describePlayer, hasPlayed, lostLines, playerName } from './playerCards';
@@ -46,6 +46,12 @@ describe('pantalla de jugadores (T-034)', () => {
       'Las viñetas de la historia vistas',
       'Los tours de ayuda vistos',
     ]);
+  });
+
+  it('al borrarlo tambien se pierden sus semillas (T-020)', () => {
+    const store = memoryStore();
+    store.setItem(PROGRESS_KEY, encodeProgress(recordMatchEnd(emptyProgress(), 'creeper', 12345)));
+    expect(lostLines(text('es'), describePlayer(profile, store))).toEqual(['Jefes vencidos: Creeper', 'Semillas: 12.345']);
   });
 
   it('quien solo vio la historia tambien tiene algo que perder (T-031)', () => {

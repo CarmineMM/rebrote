@@ -8,6 +8,7 @@ import { formatSavedAt } from '../i18n';
 import { GreenhousePatty } from './GreenhousePatty';
 import { outbreakTitle } from './outbreakName';
 import { RouteMap } from './RouteMap';
+import { SeedBalance } from './SeedsEarned';
 import { replayableStories, storyTitle, type StoryId } from './story/stories';
 import { NO_AUTO_FULLSCREEN } from './useFullscreen';
 import { useLanguage, useText } from './useText';
@@ -57,7 +58,7 @@ function LockedButton({ label, detail }: { label: string; detail: string }) {
  * vencer a Creeper (R-01) y se llega desde "Continuar" en la portada o desde la victoria. Va en el panel de la derecha,
  * como el menu de la portada: reanudar la partida a medias (con su brote y su ronda), jugar el siguiente brote, abrir la
  * ruta de brotes, la historia vista para volver a verla (T-031), la tienda y las plantas (con candado hasta T-022 y T-023)
- * y volver a la portada. Empezar un brote con una partida a medias pide confirmacion. Esc vuelve atras: de la confirmacion
+ * y volver a la portada. Arriba, las semillas del jugador (T-020). Empezar un brote con una partida a medias pide confirmacion. Esc vuelve atras: de la confirmacion
  * o de la historia al Invernadero y de ahi a la portada. Dentro esta Patty (T-032, VT-05), junto al panel: a veces dice
  * algo al entrar; con la ruta abierta se esconde.
  */
@@ -122,6 +123,8 @@ export function Greenhouse({ saved, progress, art, onResume, onPlay, onReplay, o
             <h2 id={titleId} className="visually-hidden">
               {t.greenhouse.title}
             </h2>
+            {/* Las semillas del jugador (T-020), arriba del panel: lo que tendra para la tienda. */}
+            <SeedBalance balance={progress.seeds} />
             <div className="pause-actions title-actions">
               {summary && (
                 <button ref={firstButton} type="button" className="btn btn-primary has-detail" onClick={onResume}>

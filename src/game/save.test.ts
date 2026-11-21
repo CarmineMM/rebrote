@@ -114,6 +114,24 @@ describe('partida guardada (T-011)', () => {
     expect(decodeSave(JSON.stringify({ ...good, pendingUnlock: { round: 'x' } }))?.pendingUnlock).toBeNull();
   });
 
+  it('guarda las semillas que llevan las rondas, sin cobrar, y si el brote ya estaba vencido (T-020)', () => {
+    const match: MatchState = { ...createMatch(undefined, 3, OUTBREAK, true), seeds: { replay: true, rounds: 3, earned: 31, payout: null } };
+    expect(decodeSave(encodeSave(match, null, 0))?.match.seeds).toEqual({ replay: true, rounds: 3, earned: 31, payout: null });
+  });
+
+  it('una partida guardada sin semillas, con semillas rotas o ya cobradas no se carga (T-020)', () => {
+    const good = JSON.parse(encodeSave(createMatch(), null, 0));
+    const { seeds, ...noSeeds } = good.match;
+    expect(decodeSave(JSON.stringify({ ...good, match: noSeeds }))).toBeNull();
+    expect(decodeSave(JSON.stringify({ ...good, match: { ...good.match, seeds: { ...seeds, earned: -4 } } }))).toBeNull();
+    expect(decodeSave(JSON.stringify({ ...good, match: { ...good.match, seeds: { ...seeds, earned: 2.5 } } }))).toBeNull();
+    expect(decodeSave(JSON.stringify({ ...good, match: { ...good.match, seeds: { ...seeds, rounds: ROUND_COUNT + 1 } } }))).toBeNull();
+    expect(decodeSave(JSON.stringify({ ...good, match: { ...good.match, seeds: { ...seeds, replay: 'no' } } }))).toBeNull();
+    expect(decodeSave(JSON.stringify({ ...good, match: { ...good.match, seeds: { ...seeds, payout: { total: 10 } } } }))).toBeNull();
+    // La version 2 (antes de las semillas) se ignora.
+    expect(decodeSave(JSON.stringify({ ...good, version: 2, match: noSeeds }))).toBeNull();
+  });
+
   it('sin almacenamiento o si falla, el juego sigue sin partida guardada', () => {
     const broken: SaveStore = {
       getItem: () => {

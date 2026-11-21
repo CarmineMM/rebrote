@@ -3,6 +3,7 @@ import type { CardId, MatchState } from './core/match';
 import type { OutbreakId } from './core/outbreaks';
 import type { ElementType } from './core/plants';
 import type { RoundPhase } from './core/rounds';
+import type { SeedPayout } from './core/seeds';
 
 /** Canal unico entre React (interfaz) y Phaser (juego). */
 export const EventBus = new Phaser.Events.EventEmitter();
@@ -25,7 +26,7 @@ export const GameEvents = {
   cardPreview: 'card-preview',
   /** Phaser -> React. Payload: LossInfo. La partida se perdio; React muestra la pantalla de derrota. */
   matchLost: 'match-lost',
-  /** Phaser -> React. Sin payload: superada la ultima ronda, la del jefe (T-008); React muestra la victoria. */
+  /** Phaser -> React. Payload: WinInfo. Superada la ultima ronda, la del jefe (T-008); React muestra la victoria. */
   matchWon: 'match-won',
   /**
    * Phaser -> React. Payload: BossInfo | null. Vida y fase del Creeper (T-008) para su barra. Solo se manda si cambia.
@@ -172,9 +173,20 @@ export interface PlantPanel {
 }
 
 /** Como se perdio la partida. */
+/** Semillas de una partida acabada (T-020): lo que se cobro, de donde sale, y el saldo del jugador ya con ello. */
+export interface SeedSummary {
+  payout: SeedPayout;
+  balance: number;
+}
+
 export interface LossInfo {
   /** El Creeper cruzo el jardin (T-008): se pierde aunque queden vidas. */
   byBoss: boolean;
+  seeds: SeedSummary;
+}
+
+export interface WinInfo {
+  seeds: SeedSummary;
 }
 
 /** Barra del jefe (T-008). Sale del Creeper del estado y de `CREEPER` en balance. */
@@ -207,6 +219,8 @@ export interface RoundInfo {
   infusable: ElementType[];
   /** Aviso de una linea con el concepto nuevo de la ronda. */
   notice: string;
+  /** Semillas que llevan las rondas superadas de la partida, sin cobrar (T-020): el menu de pausa las ensena. */
+  seeds: number;
 }
 
 /**

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BOARD, COSTS, ENEMIES, ENEMY_LEVELS, LIMITS, LIVES, OUTBREAKS, ROUND_PREP } from '../config/balance';
+import { BOARD, COSTS, ENEMIES, ENEMY_LEVELS, LIMITS, LIVES, OUTBREAKS, ROUND_PREP, SEEDS } from '../config/balance';
 import type { Cell } from './board';
 import { enemyMaxHp, spawnEnemy, stepCombat } from './combat';
 import { cardPlay, createMatch, createPlant, fusionBlocker, fusionTargets, levelUpOffer, playCard, type MatchState } from './match';
@@ -366,12 +366,22 @@ describe('fin de ronda', () => {
   const lastGroupOut = (index: number) => attacking(index, 999_999, ROUNDS[index].groups.length);
 
   it('sin enemigos por salir ni vivos, pasa a la preparacion de la siguiente con su aviso', () => {
-    const { state, events } = stepRound(lastGroupOut(2), 16, HOLE_X);
+    // El azar mas bajo: la ronda da el minimo de sus semillas (T-020).
+    const { state, events } = stepRound(lastGroupOut(2), 16, HOLE_X, () => 0);
+    const seeds = Math.floor((SEEDS.round * SEEDS.firstPercent.min) / 100);
     expect(events).toEqual([
-      { type: 'roundCleared', index: 2 },
+      { type: 'roundCleared', index: 2, seeds },
       { type: 'roundStarted', index: 3 },
     ]);
     expect(state.round).toEqual(createRound(OUTBREAK_1, 3));
+    expect(state.seeds).toEqual({ replay: false, rounds: 1, earned: seeds, payout: null });
+  });
+
+  it('cada ronda superada suma sus semillas a la partida, sin cobrarlas (T-020)', () => {
+    const cleared = stepRound(lastGroupOut(0), 16, HOLE_X, () => 0.999).state;
+    expect(cleared.seeds).toEqual({ replay: false, rounds: 1, earned: SEEDS.round, payout: null });
+    const next = stepRound({ ...lastGroupOut(1), seeds: cleared.seeds }, 16, HOLE_X, () => 0.999).state;
+    expect(next.seeds).toEqual({ replay: false, rounds: 2, earned: 2 * SEEDS.round, payout: null });
   });
 
   it('plantas, saldo y vidas se conservan de una ronda a la siguiente', () => {
@@ -386,7 +396,9 @@ describe('fin de ronda', () => {
 
   it('tras la ultima ronda la partida esta ganada y ya no pasa nada mas', () => {
     const { state, events } = stepRound(lastGroupOut(ROUND_COUNT - 1), 16, HOLE_X);
-    expect(events).toEqual([{ type: 'roundCleared', index: ROUND_COUNT - 1 }, { type: 'won' }]);
+    // La ultima ronda no suma semillas de ronda: da las del jefe al cobrar (T-020).
+    expect(events).toEqual([{ type: 'roundCleared', index: ROUND_COUNT - 1, seeds: 0 }, { type: 'won' }]);
+    expect(state.seeds).toEqual(lastGroupOut(ROUND_COUNT - 1).seeds);
     expect(isWon(state)).toBe(true);
     const later = stepRound(state, 60_000, HOLE_X);
     expect(later.state).toBe(state);

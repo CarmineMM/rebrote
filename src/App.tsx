@@ -16,6 +16,7 @@ import {
   type RouteArt,
   type RoundInfo,
   type UnlockInfo,
+  type WinInfo,
 } from './game/EventBus';
 import { activeProfile, profiles, type ProfileList } from './game/profiles';
 import { playerProgress, type Progress } from './game/progress';
@@ -107,6 +108,8 @@ export function App() {
   const [round, setRound] = useState<RoundInfo | null>(null);
   const [boss, setBoss] = useState<BossInfo | null>(null);
   const [loss, setLoss] = useState<LossInfo | null>(null);
+  /** Lo que dejo la victoria: las semillas cobradas (T-020). */
+  const [win, setWin] = useState<WinInfo | null>(null);
   /** Aviso de lo desbloqueado que el jugador aun no acepto (T-009). */
   const [unlock, setUnlock] = useState<UnlockInfo | null>(null);
   /** Ficha abierta con doble clic (T-010), o null. */
@@ -187,10 +190,12 @@ export function App() {
       setLost(true);
       setPaused(false);
     };
-    const onWon = () => {
+    const onWon = (info?: WinInfo) => {
+      setWin(info ?? null);
       setWon(true);
       setPaused(false);
-      // La escena ya apunto al jefe como vencido: el Invernadero esta abierto cuando se va a el desde la victoria.
+      // La escena ya apunto al jefe como vencido (y las semillas, T-020): el Invernadero esta abierto cuando se va a el
+      // desde la victoria.
       setProgress(playerProgress.read());
     };
     const onUnlocked = (info: UnlockInfo) => {
@@ -272,6 +277,7 @@ export function App() {
     setRound(null);
     setBoss(null);
     setLoss(null);
+    setWin(null);
     setUnlock(null);
     setInfo(null);
     setLost(false);
@@ -530,7 +536,13 @@ export function App() {
       {onBoard && lost && <DefeatScreen round={round} loss={loss} onRestart={restart} onMenu={exitToCover} />}
 
       {onBoard && won && !lost && !storyOn && (
-        <VictoryScreen outbreak={round?.outbreak ?? FIRST_OUTBREAK} rounds={round?.total ?? 0} onRestart={restart} onGreenhouse={exitToGreenhouse} />
+        <VictoryScreen
+          outbreak={round?.outbreak ?? FIRST_OUTBREAK}
+          rounds={round?.total ?? 0}
+          seeds={win?.seeds ?? null}
+          onRestart={restart}
+          onGreenhouse={exitToGreenhouse}
+        />
       )}
 
       {onBoard && unlock && !paused && !over && !storyOn && (
@@ -542,6 +554,7 @@ export function App() {
       {onBoard && paused && !over && (
         <PauseMenu
           outbreak={round?.outbreak ?? FIRST_OUTBREAK}
+          seeds={round?.seeds ?? 0}
           settings={settings}
           autoLevel={autoLevel}
           fullscreenSupported={fullscreen.supported}

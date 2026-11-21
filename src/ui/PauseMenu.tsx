@@ -1,15 +1,19 @@
 import { useEffect, useId, useRef, useState } from 'react';
+import { SEEDS } from '../game/config/balance';
 import type { OutbreakId } from '../game/core/outbreaks';
 import type { QualityLevel } from '../game/view/quality';
+import { formatAmount, formatPercent } from '../i18n';
 import { outbreakTitle } from './outbreakName';
 import { SettingsPanel } from './SettingsPanel';
 import { NO_AUTO_FULLSCREEN } from './useFullscreen';
 import type { Settings } from './useSettings';
-import { useText } from './useText';
+import { useLanguage, useText } from './useText';
 
 interface PauseMenuProps {
   /** Brote de la partida (T-018), para su nombre arriba de la tarjeta. */
   outbreak: OutbreakId;
+  /** Semillas que llevan las rondas superadas, sin cobrar (T-020). */
+  seeds: number;
   settings: Settings;
   /** Nivel que elegiria el modo automatico ahora mismo. */
   autoLevel: QualityLevel;
@@ -22,13 +26,14 @@ interface PauseMenuProps {
 
 /**
  * Menu de pausa (ADR-0007): el juego queda congelado detras y desde aqui se llega a los ajustes o se sale al menu de
- * inicio (T-011), con la partida guardada.
+ * inicio (T-011), con la partida guardada. Dice las semillas que lleva la partida y que se cobran al acabar (T-020).
  */
-export function PauseMenu({ outbreak, settings, autoLevel, fullscreenSupported, onChange, onResume, onExit }: PauseMenuProps) {
+export function PauseMenu({ outbreak, seeds, settings, autoLevel, fullscreenSupported, onChange, onResume, onExit }: PauseMenuProps) {
   const [view, setView] = useState<'main' | 'settings'>('main');
   const titleId = useId();
   const firstButton = useRef<HTMLButtonElement>(null);
   const t = useText();
+  const language = useLanguage();
 
   useEffect(() => {
     firstButton.current?.focus();
@@ -55,6 +60,9 @@ export function PauseMenu({ outbreak, settings, autoLevel, fullscreenSupported, 
               </button>
             </div>
             <p className="pause-note">{t.title.autosave}</p>
+            {seeds > 0 && (
+              <p className="pause-note is-seeds">{t.seeds.pending(formatAmount(seeds, language), formatPercent(SEEDS.defeatPercent / 100, language))}</p>
+            )}
             <p className="pause-hint">{t.pause.hint}</p>
           </>
         ) : (

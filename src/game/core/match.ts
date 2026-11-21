@@ -17,6 +17,7 @@ import {
 } from './plants';
 import { FIRST_OUTBREAK, outbreakScript, type OutbreakId } from './outbreaks';
 import { createRound, infuseFeature, isUnlocked, levelCap, levelCapRaisedAfter, sowFeature, type RoundState } from './rounds';
+import { newMatchSeeds, type MatchSeeds } from './seeds';
 
 /** Cartas que se pueden jugar desde el HUD: la disparadora y los elementos. */
 export type CardId = 'shooter' | ElementType;
@@ -67,6 +68,11 @@ export interface MatchState {
    * ataque sigue donde iba (ver `stepIncome`).
    */
   readonly incomeMs: number;
+  /**
+   * Semillas de la partida (T-020): lo que llevan las rondas superadas, sin cobrar, y si el brote ya estaba vencido. Se
+   * cobran al acabar (`settleSeeds`); salir al menu con la partida guardada no entrega nada.
+   */
+  readonly seeds: MatchSeeds;
   /** Siguiente id libre para enemigos y balas: la vista sigue a cada uno por su id. */
   readonly nextId: number;
 }
@@ -74,9 +80,10 @@ export interface MatchState {
 /**
  * Partida nueva del brote `outbreak`, en la preparacion de la ronda `roundIndex` (desde 0) con el tablero vacio y, si no
  * se dice otro, el saldo inicial del brote (T-018, B-02: no se trae nada de otro brote). El juego siempre empieza en la
- * primera ronda; empezar en otra sirve para probar lo que desbloquean las siguientes.
+ * primera ronda; empezar en otra sirve para probar lo que desbloquean las siguientes. `replay` dice si su jefe ya estaba
+ * vencido: entonces las semillas dan menos (T-020, C-03).
  */
-export function createMatch(balance?: number, roundIndex = 0, outbreak: OutbreakId = FIRST_OUTBREAK): MatchState {
+export function createMatch(balance?: number, roundIndex = 0, outbreak: OutbreakId = FIRST_OUTBREAK, replay = false): MatchState {
   const start = balance ?? outbreakScript(outbreak).startingBalance;
   assertWholeAmount(start);
   const plants = Array.from({ length: BOARD.lanes }, () => Array.from({ length: BOARD.columns }, (): Sown | null => null));
@@ -90,6 +97,7 @@ export function createMatch(balance?: number, roundIndex = 0, outbreak: Outbreak
     spits: [],
     round: createRound(outbreak, roundIndex),
     incomeMs: 0,
+    seeds: newMatchSeeds(replay),
     nextId: 1,
   };
 }

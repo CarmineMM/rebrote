@@ -45,6 +45,39 @@ export const LIVES = {
   start: 3,
 } as const;
 
+/**
+ * Semillas (T-020, C-01 a C-05, decididas el 21 nov 2026): la moneda que el jugador se lleva de la partida y gasta fuera
+ * de ella (la tienda, T-022, y el nivel base, T-023). Va en el progreso permanente, nunca en el saldo de la partida.
+ * - Cada ronda superada (menos la ultima, la del jefe) suma a lo que lleva la partida un azar entre el `firstPercent` de
+ *   su tope (`round`): nunca dan lo mismo (C-02). Vencer al jefe da lo mismo con su tope (`boss`).
+ * - En un brote ya vencido, el azar es el de `replayPercent` (C-03).
+ * - Se cobra al acabar la partida. Al ganar, cada corazon que queda suma `heartPercent` de lo ganado (C-05); al perder
+ *   solo se cobra `defeatPercent` de lo de las rondas (C-04): perder da poco.
+ * - Los topes son los del brote 1 y suben `growthPercent` (de los del brote 1) en cada brote siguiente: los brotes de
+ *   mas adelante cuestan mas y dan algo mas.
+ * Esta pensado para una tienda con articulos de unas 1000 o 2000 semillas y el mas caro de unas 10 000: la primera
+ * victoria del brote 1 sin perder vidas da unas 1000, y para comprarlo todo hay que repetir algun brote. Siempre en
+ * enteros, redondeando hacia abajo. PROVISIONAL hasta que existan los precios de la tienda.
+ */
+export const SEEDS = {
+  /** Tope de cada ronda superada en el brote 1. PROVISIONAL. */
+  round: 50,
+  /** Tope del jefe del brote 1. PROVISIONAL. */
+  boss: 500,
+  /** Cuanto suben los topes en cada brote siguiente, en % de los del brote 1: el brote 2, al 105 %; el 3, al 110 %. PROVISIONAL. */
+  growthPercent: 5,
+  /** Lo que da cada recompensa en un brote sin vencer, en % de su tope, al azar (C-02). */
+  firstPercent: { min: 75, max: 100 },
+  /** Lo mismo en un brote ya vencido (C-03): repetir sirve, pero no vacia la tienda en una tarde. */
+  replayPercent: { min: 15, max: 25 },
+  /** Al perder se cobra este % de lo que dieron las rondas superadas (C-04). PROVISIONAL. */
+  defeatPercent: 25,
+  /** Al ganar, cada corazon que queda suma este % de lo ganado en las rondas y el jefe (C-05). PROVISIONAL. */
+  heartPercent: 10,
+  /** Saldo maximo: el marcador nunca pasa de 6 cifras. */
+  maxBalance: 999_999,
+} as const;
+
 /** Disparadora de un canon y nivel 1. Fusionar y subir de nivel parten de estos valores (ver plants.ts). */
 export const SHOOTER = {
   hp: 300, // PROVISIONAL

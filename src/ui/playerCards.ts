@@ -2,7 +2,7 @@ import type { Profile } from '../game/profiles';
 import { ProgressKeeper, type Progress } from '../game/progress';
 import { readSave, summarizeSave, type SaveSummary } from '../game/save';
 import type { SaveStore } from '../game/storage';
-import { formatList, type Dictionary } from '../i18n';
+import { formatAmount, formatList, type Dictionary } from '../i18n';
 import { defeatedBossName } from './outbreakName';
 import { hasSeenTours, readTourProgress } from './tour/tourProgress';
 
@@ -37,11 +37,15 @@ export function hasPlayed(profile: Profile): boolean {
   return profile.updatedAt > profile.createdAt;
 }
 
-/** Lo que se perderia al borrarlo, una linea por cosa: jefes vencidos, partida a medias, historia vista (T-031) y tours vistos. */
+/**
+ * Lo que se perderia al borrarlo, una linea por cosa: jefes vencidos, semillas (T-020), partida a medias, historia vista
+ * (T-031) y tours vistos.
+ */
 export function lostLines(t: Dictionary, card: PlayerCard): string[] {
   const lines: string[] = [];
-  const { defeated, story } = card.progress;
+  const { defeated, story, seeds } = card.progress;
   if (defeated.length > 0) lines.push(t.players.bosses(formatList(defeated.map((id) => defeatedBossName(t, id)))));
+  if (seeds > 0) lines.push(t.players.seeds(formatAmount(seeds)));
   if (card.save) lines.push(t.players.save(card.save.round));
   if (story.length > 0) lines.push(t.players.story);
   if (card.toursSeen) lines.push(t.players.tours);

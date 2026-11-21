@@ -17,8 +17,11 @@ import type { SaveStore } from './storage';
  */
 export const SAVE_KEY = 'partida';
 
-/** Sube cuando cambia la forma de `MatchState` o de la guardada: las de otra version se ignoran. La 2 (T-018) anade el brote. */
-export const SAVE_VERSION = 2;
+/**
+ * Sube cuando cambia la forma de `MatchState` o de la guardada: las de otra version se ignoran. La 2 (T-018) anade el
+ * brote; la 3 (T-020), las semillas de la partida.
+ */
+export const SAVE_VERSION = 3;
 
 export interface SavedGame {
   readonly version: number;
@@ -207,7 +210,22 @@ export function isMatchState(value: unknown): value is MatchState {
     spits.every(isProjectile) &&
     isRound(value.round, value.outbreak) &&
     isNumber(value.incomeMs) &&
+    isMatchSeeds(value.seeds, value.outbreak) &&
     isInt(value.nextId, 0)
+  );
+}
+
+/**
+ * Semillas de una partida a medias (T-020): lo que llevan sus rondas, sin cobrar. Nunca mas rondas de las que tiene su
+ * brote. Una guardada nunca esta cobrada: al acabar la partida se borra.
+ */
+function isMatchSeeds(value: unknown, outbreak: OutbreakId): boolean {
+  return (
+    isRecord(value) &&
+    typeof value.replay === 'boolean' &&
+    isInt(value.rounds, 0, roundCount(outbreak)) &&
+    isInt(value.earned, 0) &&
+    value.payout === null
   );
 }
 

@@ -1,7 +1,9 @@
 import { useEffect, useId, useRef } from 'react';
 import type { OutbreakId } from '../game/core/outbreaks';
+import type { SeedSummary } from '../game/EventBus';
 import { GreenhouseIcon } from './GreenhouseIcon';
 import { outbreakTitle } from './outbreakName';
+import { SeedsEarned } from './SeedsEarned';
 import { NO_AUTO_FULLSCREEN } from './useFullscreen';
 import { useText } from './useText';
 
@@ -10,6 +12,8 @@ interface VictoryScreenProps {
   outbreak: OutbreakId;
   /** Rondas superadas: todas las del brote. */
   rounds: number;
+  /** Semillas cobradas (T-020) y saldo nuevo; null mientras la escena no lo dice. */
+  seeds: SeedSummary | null;
   onRestart: () => void;
   /** Va al Invernadero (T-019): el sitio entre un brote y el siguiente. */
   onGreenhouse: () => void;
@@ -18,9 +22,10 @@ interface VictoryScreenProps {
 /**
  * Victoria de un brote (T-008; por brote desde T-018): se superaron sus rondas y se atrapo a su jefe en la ultima. Misma tarjeta que la
  * pausa y la derrota, con una copa que salta y destellos. Lleva al Invernadero (T-019), donde la ruta ya ensena el jefe
- * superado y lo que viene; "Jugar otra vez" empieza el mismo brote desde la ronda 1.
+ * superado y lo que viene; "Jugar otra vez" empieza el mismo brote desde la ronda 1. Ensena las semillas que se lleva
+ * (T-020): de las rondas, del jefe y de las vidas que le quedan, y su saldo nuevo.
  */
-export function VictoryScreen({ outbreak, rounds, onRestart, onGreenhouse }: VictoryScreenProps) {
+export function VictoryScreen({ outbreak, rounds, seeds, onRestart, onGreenhouse }: VictoryScreenProps) {
   const titleId = useId();
   const button = useRef<HTMLButtonElement>(null);
   const t = useText();
@@ -58,6 +63,7 @@ export function VictoryScreen({ outbreak, rounds, onRestart, onGreenhouse }: Vic
           {t.victory.title}
         </h2>
         <p className="victory-text">{t.victory.text(rounds)}</p>
+        {seeds && <SeedsEarned seeds={seeds} />}
         <div className="pause-actions">
           <button ref={button} type="button" className="btn btn-primary" onClick={onGreenhouse}>
             <GreenhouseIcon /> {t.victory.greenhouse}

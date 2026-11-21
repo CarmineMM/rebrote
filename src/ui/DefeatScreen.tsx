@@ -4,6 +4,7 @@ import { FIRST_OUTBREAK } from '../game/core/outbreaks';
 import type { LossInfo, RoundInfo } from '../game/EventBus';
 import { HEART_PATH } from './Lives';
 import { outbreakTitle } from './outbreakName';
+import { SeedsEarned } from './SeedsEarned';
 import { NO_AUTO_FULLSCREEN } from './useFullscreen';
 import { useText } from './useText';
 
@@ -23,7 +24,8 @@ const CRACK = 'L10.6 7 L13.2 11 L10.8 15 L12 24';
 /**
  * Pantalla de derrota (ADR-0007): una superposicion como el menu de pausa, con el juego detenido detras.
  * "Jugar otra vez" empieza una partida nueva desde la ronda 1, no continua la anterior; "Menu principal" vuelve al menu
- * de inicio (T-011; la partida guardada ya se borro al perder). Si gano el Creeper (T-008), lo cuenta a su manera.
+ * de inicio (T-011; la partida guardada ya se borro al perder). Si gano el Creeper (T-008), lo cuenta a su manera. Ensena
+ * las pocas semillas que se lleva (T-020): la parte de lo de sus rondas que se cobra al perder, y su saldo nuevo.
  */
 export function DefeatScreen({ round, loss, onRestart, onMenu }: DefeatScreenProps) {
   const titleId = useId();
@@ -64,6 +66,7 @@ export function DefeatScreen({ round, loss, onRestart, onMenu }: DefeatScreenPro
         <p className="defeat-text">
           {byBoss ? t.defeat.bossText : t.defeat.text(lives, round ? round.number : null, round?.total ?? 0)}
         </p>
+        {loss && <SeedsEarned seeds={loss.seeds} />}
         <div className="pause-actions">
           <button ref={button} type="button" className="btn btn-primary" onClick={onRestart}>
             <span aria-hidden="true">↻</span> {t.defeat.again}

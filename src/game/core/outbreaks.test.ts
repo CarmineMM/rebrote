@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { BOARD, LIMITS, OUTBREAKS } from '../config/balance';
+import { BOARD, LIMITS, OUTBREAKS, SEEDS } from '../config/balance';
 import { decodeSave, encodeSave, summarizeSave } from '../save';
 import { createMatch, type MatchState } from './match';
 import {
@@ -30,6 +30,7 @@ import {
   unlockedAt,
   type RoundEvent,
 } from './rounds';
+import { seedCaps } from './seeds';
 
 /**
  * Brotes de prueba (T-018): en vez de los del juego, dos inventados. "alpha" tiene 3 rondas y ensena la disparadora,
@@ -193,6 +194,29 @@ describe('cada brote empieza de cero (B-02)', () => {
     expect(beta.plants.every((lane) => lane.every((cell) => cell === null))).toBe(true);
     expect(beta.enemies).toEqual([]);
     expect(createMatch().balance).toBe(300);
+  });
+});
+
+describe('las semillas de cada brote (T-020)', () => {
+  it('el primero da los topes de SEEDS y cada uno de los siguientes, un poco mas', () => {
+    expect(seedCaps(ALPHA)).toEqual({ round: SEEDS.round, boss: SEEDS.boss });
+    const percent = 100 + SEEDS.growthPercent;
+    expect(seedCaps(BETA)).toEqual({ round: Math.floor((SEEDS.round * percent) / 100), boss: Math.floor((SEEDS.boss * percent) / 100) });
+    expect(seedCaps(BETA).round).toBeGreaterThan(seedCaps(ALPHA).round);
+  });
+
+  it('las rondas de un brote de 3 suman dos veces y la ultima da las del jefe al cobrar', () => {
+    let state = createMatch(undefined, 0, ALPHA);
+    const seeds: number[] = [];
+    for (let i = 0; i < 3; i++) {
+      const step = clearRound(state);
+      state = step.state;
+      for (const event of step.events) if (event.type === 'roundCleared') seeds.push(event.seeds);
+    }
+    expect(seeds).toHaveLength(3);
+    expect(seeds[2]).toBe(0);
+    expect(state.seeds.rounds).toBe(2);
+    expect(state.seeds.earned).toBe(seeds[0] + seeds[1]);
   });
 });
 

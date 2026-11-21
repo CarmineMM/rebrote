@@ -94,6 +94,8 @@ export const es = {
     confirmLost: 'Se perderá para siempre:',
     confirmNothing: 'No tiene nada guardado.',
     bosses: (names: string) => `Jefes vencidos: ${names}`,
+    /** Su saldo de semillas (T-020), ya formateado. */
+    seeds: (amount: string) => `Semillas: ${amount}`,
     save: (round: number) => `Partida guardada en la ronda ${round}`,
     /** Las viñetas de la historia que ya vio (T-031). */
     story: 'Las viñetas de la historia vistas',
@@ -451,10 +453,38 @@ export const es = {
     greenhouse: 'Al Invernadero',
   },
 
+  /**
+   * Semillas (T-020): la moneda que el jugador se lleva de cada partida y gasta fuera de ella (la tienda, T-022). Nunca se
+   * confunden con la moneda de la partida: otro nombre, otro icono y otro color. Las cantidades llegan ya formateadas
+   * (`formatAmount`) y los porcentajes, con `formatPercent`.
+   */
+  seeds: {
+    name: 'Semillas',
+    amount: (amount: string, count: number) => (count === 1 ? '1 semilla' : `${amount} semillas`),
+    /** Lo cobrado al acabar la partida, en grande, y su unidad al lado, en pequeno. */
+    earned: (amount: string) => `+${amount}`,
+    unit: (count: number): string => (count === 1 ? 'semilla' : 'semillas'),
+    rounds: (count: number) => (count === 1 ? '1 ronda superada' : `${count} rondas superadas`),
+    boss: 'Jefe vencido',
+    hearts: (hearts: number, percent: string) => `${hearts === 1 ? 'Te queda 1 vida' : `Te quedan ${hearts} vidas`} (+${percent})`,
+    /** Al perder solo se cobra una parte de lo de las rondas (C-04). */
+    kept: (percent: string) => `Al perder te llevas el ${percent}`,
+    none: 'Supera una ronda para llevarte semillas.',
+    /** Brote ya vencido (C-03). */
+    replay: 'Brote ya superado: da menos semillas.',
+    balance: (amount: string) => `Ahora tienes ${amount}`,
+    /** En el menu de pausa: lo que llevan las rondas, sin cobrar. */
+    pending: (amount: string, percent: string) => `Semillas de esta partida: ${amount}. Se cobran al acabar; si pierdes, solo el ${percent}.`,
+    /** Saldo en el Invernadero. */
+    owned: 'Tus semillas',
+  },
+
   /** Rotulos y textos que salen sobre el tablero. */
   board: {
     attack: '¡Ahí vienen!',
     roundCleared: (round: number) => `¡Ronda ${round} superada!`,
+    /** Bajo "¡Ronda N superada!": lo que sumo a la partida (T-020). */
+    seedsEarned: (amount: string, count: number) => `+${count === 1 ? '1 semilla' : `${amount} semillas`}`,
     bossDown: '¡Creeper atrapado!',
     gardenSafe: '¡Jardín a salvo!',
     bossEscaped: '¡Se escapó!',

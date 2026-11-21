@@ -34,6 +34,7 @@ import {
 } from '../core/match';
 import { FIRST_OUTBREAK, roundCount, type OutbreakId } from '../core/outbreaks';
 import { plantMaxHp } from '../core/plants';
+import { settleSeeds, type SeedPayout } from '../core/seeds';
 import {
   availableCards,
   bossRoundIndex,
@@ -62,11 +63,13 @@ import {
   type PlantPanel,
   type PlayerAction,
   type RoundInfo,
+  type SeedSummary,
   type TourArt,
   type TourBoard,
   type TourSpot,
   type UnlockInfo,
   type UnlockItem,
+  type WinInfo,
 } from '../EventBus';
 import type { TitleSceneData } from './TitleScene';
 import { createAmbience, type Ambience } from '../view/ambience';
@@ -86,8 +89,8 @@ import { SpitView } from '../view/spitView';
 import { MINE_SIZE, SHOOTER_SIZE, TEX, registerTextures, shooterTexture, mineTexture } from '../view/textures';
 import { tourCells } from '../view/tourSpots';
 import { WormView, type EnemyView } from '../view/wormView';
-import { text } from '../../i18n';
-import { playerProgress } from '../progress';
+import { formatAmount, text } from '../../i18n';
+import { isOutbreakDefeated, playerProgress } from '../progress';
 import { clearSave, writeSave } from '../save';
 import { SCENES } from './keys';
 import { FpsMeter, applyPostFx, fitCamera } from './sceneKit';
@@ -123,6 +126,13 @@ const LOOK = {
   attackText: { color: '#b8ffd4', stroke: '#2b2034', fontSize: 44 },
   /** Ronda superada (T-007): texto en el centro del cesped. */
   clearedText: { color: '#fff6c0', stroke: '#24561c', fontSize: 48 },
+  /**
+   * Semillas que suma la ronda superada (T-020): debajo del texto de la ronda y algo despues, en el verde de las semillas
+   * (el de la moneda es dorado).
+   */
+  seedsText: { color: '#b9f27c', stroke: '#2f4a12', fontSize: 34 },
+  seedsBelow: 58,
+  seedsDelayMs: 260,
   /** Partida ganada (T-007): tiempo de celebracion antes de que React muestre la victoria. */
   victoryDelayMs: 1600,
   /** Creeper (T-008): se escapa (en el camino) o lo derrotan (en el centro del cesped). */
@@ -304,8 +314,9 @@ export class BoardScene extends Phaser.Scene {
   }
 
   create(): void {
-    // B-02 (T-018): una partida nueva empieza con el tablero vacio y el saldo inicial de su brote.
-    this.match = this.resume ?? createMatch(undefined, 0, this.outbreak);
+    // B-02 (T-018): una partida nueva empieza con el tablero vacio y el saldo inicial de su brote. Si su jefe ya estaba
+    // vencido, sus semillas dan menos (T-020, C-03).
+    this.match = this.resume ?? createMatch(undefined, 0, this.outbreak, isOutbreakDefeated(playerProgress.read(), this.outbreak));
     this.selected = null;
     this.hoverCell = null;
     this.defeated = false;
@@ -747,7 +758,7 @@ export class BoardScene extends Phaser.Scene {
         this.announceAttack();
         break;
       case 'roundCleared':
-        if (event.index + 1 < roundCount(this.match.outbreak)) this.celebrate(text().board.roundCleared(event.index + 1));
+        if (event.index + 1 < roundCount(this.match.outbreak)) this.celebrate(text().board.roundCleared(event.index + 1), event.seeds);
         break;
       case 'won':
         this.enterVictory(LOOK.victoryDelayMs);
@@ -803,15 +814,19 @@ export class BoardScene extends Phaser.Scene {
   }
 
   /** Ronda superada: las plantas dan un saltito una tras otra, con destellos, y sale el texto en el centro. */
-  private celebrate(text: string): void {
+  private celebrate(label: string, seeds = 0): void {
     this.plantViews.forEach((view, key) => {
       const { col } = keyCell(key);
       // Si muere antes de su turno, ya no salta.
       this.time.delayedCall(col * 70, () => this.plantViews.get(key) === view && view.beckon());
     });
     const center = perspective.toScreen({ x: BOARD.columns / 2, y: BOARD.lanes / 2 });
-    this.fx.floatText(text, center.x, center.y, LOOK.clearedText);
+    this.fx.floatText(label, center.x, center.y, LOOK.clearedText);
     this.fx.sparkles(center.x, center.y, 18);
+    // Lo que la ronda sumo a la partida (T-020), debajo y un poco despues, en el color de las semillas.
+    if (seeds > 0) {
+      this.time.delayedCall(LOOK.seedsDelayMs, () => this.fx.floatText(text().board.seedsEarned(formatAmount(seeds), seeds), center.x, center.y + LOOK.seedsBelow, LOOK.seedsText));
+    }
   }
 
   /** La regla ya esta aplicada en el estado; aqui solo se anima. */
@@ -982,11 +997,12 @@ export class BoardScene extends Phaser.Scene {
     this.pickPlant(null);
     this.clearProjectiles();
     this.wormViews.forEach((worm) => worm.cheer());
-    // Perder obliga a empezar desde la ronda 1 (I-04): no queda partida que cargar.
-    clearSave();
+    // Se cobra lo poco que dan las rondas al perder (T-020) y despues se borra la guardada: perder obliga a empezar desde la
+    // ronda 1 (I-04).
+    const seeds = this.settle();
     // Una partida perdida que se recrea (al cambiar la calidad) no vuelve a sonar.
     if (delayMs > 0) sfx.play('defeat');
-    const loss: LossInfo = { byBoss: this.lostToBoss };
+    const loss: LossInfo = { byBoss: this.lostToBoss, seeds };
     this.time.delayedCall(delayMs, () => EventBus.emit(GameEvents.matchLost, loss));
   }
 
@@ -997,11 +1013,8 @@ export class BoardScene extends Phaser.Scene {
   private enterVictory(delayMs: number): void {
     if (this.won) return;
     this.won = true;
-    // El jefe del brote queda vencido para siempre (T-017). Antes de borrar la partida guardada: si la pestana se cierra
-    // justo ahora, no se pierde la victoria.
-    playerProgress.recordDefeat(this.match.outbreak);
-    // La partida acabo (I-04): no queda nada que cargar.
-    clearSave();
+    // El jefe del brote queda vencido para siempre (T-017) y se cobran las semillas (T-020); despues se borra la guardada.
+    const seeds = this.settle();
     this.cancelDrag();
     this.press = null;
     this.setCursor('default');
@@ -1023,7 +1036,23 @@ export class BoardScene extends Phaser.Scene {
         });
       }
     }
-    this.time.delayedCall(delayMs, () => EventBus.emit(GameEvents.matchWon));
+    const win: WinInfo = { seeds };
+    this.time.delayedCall(delayMs, () => EventBus.emit(GameEvents.matchWon, win));
+  }
+
+  /**
+   * La partida acabo (T-020): apunta en ella lo que se cobra y, si aun no estaba cobrada, lo pasa al progreso permanente en
+   * una sola escritura, con el jefe vencido si gano. Todo antes de borrar la partida guardada (I-04): si la pestana se cierra
+   * justo ahora, no se pierde lo ganado, y no queda partida que cargar para cobrar dos veces. Una partida acabada que se
+   * recrea (al cambiar la calidad o el idioma) ya trae su cobro: no paga otra vez.
+   */
+  private settle(): SeedSummary {
+    const alreadyPaid = this.match.seeds.payout !== null;
+    this.match = settleSeeds(this.match);
+    const payout = this.match.seeds.payout as SeedPayout;
+    const progress = alreadyPaid ? playerProgress.read() : playerProgress.recordMatchEnd(isWon(this.match) ? this.match.outbreak : null, payout.total);
+    clearSave();
+    return { payout, balance: progress.seeds };
   }
 
   /** Balas y escupitajos en vuelo se apagan (la partida acabo y ya no se mueven). */
@@ -1976,6 +2005,7 @@ export class BoardScene extends Phaser.Scene {
       cards: availableCards(this.match),
       infusable: infusableElements(this.match),
       notice: text().round.notices[outbreak]?.[round.index] ?? '',
+      seeds: this.match.seeds.earned,
     };
     const key = JSON.stringify(info);
     if (key === this.roundKey) return;

@@ -1,10 +1,12 @@
+import { SEEDS } from './config/balance';
+import { addSeeds } from './core/seeds';
 import { profiles } from './profiles';
 import type { SaveStore } from './storage';
 
 /**
  * Progreso permanente (T-017, ADR-0014): lo que el jugador no pierde al acabar una partida. Hoy, los brotes cuyo jefe ya
- * vencio y las secuencias de la historia que ya vio (T-031); despues, la moneda secundaria (T-020), las compras (T-022) y
- * las mejoras (T-023).
+ * vencio, las secuencias de la historia que ya vio (T-031) y sus semillas (T-020); despues, las compras (T-022) y las
+ * mejoras (T-023).
  *
  * Es de cada jugador (T-034, ADR-0018): va en el hueco `progreso` de su perfil, aparte de la partida guardada
  * (`save.ts`). Ganar, perder o empezar una partida nueva no lo toca; se pierde al borrar el jugador.
@@ -17,8 +19,9 @@ export const PROGRESS_KEY = 'progreso';
 /**
  * Sube cuando cambia la forma de `Progress` (un campo nuevo, otro significado). Lo de otra version se descarta.
  * 2 (T-031): las secuencias de la historia vistas (`story`).
+ * 3 (T-020): las semillas (`seeds`).
  */
-export const PROGRESS_VERSION = 2;
+export const PROGRESS_VERSION = 3;
 
 export interface Progress {
   /**
@@ -31,9 +34,11 @@ export interface Progress {
    * `src/ui/story/stories.ts`), en el orden en que se vieron. Una vista no vuelve a salir sola.
    */
   readonly story: readonly string[];
+  /** Semillas (T-020): lo cobrado al acabar cada partida, menos lo gastado. Entero, de 0 a `SEEDS.maxBalance`. */
+  readonly seeds: number;
 }
 
-export const emptyProgress = (): Progress => ({ defeated: [], story: [] });
+export const emptyProgress = (): Progress => ({ defeated: [], story: [], seeds: 0 });
 
 // ---------------------------------------------------------------------------
 // Reglas
@@ -58,9 +63,19 @@ export function recordStory(progress: Progress, id: string): Progress {
   return hasSeenStory(progress, id) ? progress : { ...progress, story: [...progress.story, id] };
 }
 
+/**
+ * Apunta como acaba una partida (T-020): suma las semillas cobradas y, si gano, el jefe de su brote (`won`, su `id`).
+ * Sin nada que apuntar devuelve el mismo progreso.
+ */
+export function recordMatchEnd(progress: Progress, won: string | null, seeds: number): Progress {
+  const defeated = won === null ? progress : recordDefeat(progress, won);
+  const balance = addSeeds(defeated.seeds, seeds);
+  return balance === defeated.seeds ? defeated : { ...defeated, seeds: balance };
+}
+
 /** Hay algo que perder si se borra. */
 export function hasProgress(progress: Progress): boolean {
-  return progress.defeated.length > 0 || progress.story.length > 0;
+  return progress.defeated.length > 0 || progress.story.length > 0 || progress.seeds > 0;
 }
 
 // ---------------------------------------------------------------------------
@@ -89,7 +104,12 @@ function parse(raw: string | null): Record<string, unknown> | null {
 
 /** Se queda con lo que entiende de un progreso de esta version: lo que este roto se pierde, lo demas no. */
 function sanitize(data: Record<string, unknown>): Progress {
-  return { defeated: names(data.defeated), story: names(data.story) };
+  return { defeated: names(data.defeated), story: names(data.story), seeds: seedBalance(data.seeds) };
+}
+
+/** Un saldo de semillas: un entero de 0 al maximo. Lo que no lo es cuenta como 0; lo que pasa del maximo, como el maximo. */
+function seedBalance(value: unknown): number {
+  return Number.isInteger(value) && (value as number) > 0 ? Math.min(SEEDS.maxBalance, value as number) : 0;
 }
 
 /** Lista de nombres sin repetir; lo que no es un nombre se pierde. */
@@ -142,6 +162,14 @@ export class ProgressKeeper {
     return this.change((progress) => recordStory(progress, id));
   }
 
+  /**
+   * Apunta como acabo una partida (T-020) en una sola escritura: las semillas cobradas y, si gano, el jefe vencido. Sin
+   * nada que apuntar, no escribe nada.
+   */
+  recordMatchEnd(won: string | null, seeds: number): Progress {
+    return this.change((progress) => recordMatchEnd(progress, won, seeds));
+  }
+
   private change(rule: (progress: Progress) => Progress): Progress {
     const before = this.read();
     const after = rule(before);
@@ -150,5 +178,5 @@ export class ProgressKeeper {
   }
 }
 
-/** El progreso del jugador activo. Lo usan la escena (al vencer a un jefe) y el menu de inicio. */
+/** El progreso del jugador activo. Lo usan la escena (al acabar una partida) y el menu de inicio. */
 export const playerProgress = new ProgressKeeper();

@@ -563,6 +563,85 @@ body {
 @keyframes star-twinkle { 0%, 100% { opacity: 0.45; transform: scale(0.6); } 50% { opacity: 1; transform: scale(1.2) rotate(45deg); } }
 .victory-text { margin: -8px 0 20px; text-align: center; font-size: 1.1rem; font-weight: 700; color: #fff6c0; }
 
+/* ---------- Semillas (T-020): lo que se lleva de la partida. Pardo y verde, nunca el dorado de la moneda ---------- */
+.seed-icon { width: 1.4em; height: 1.4em; flex: none; overflow: visible; filter: drop-shadow(0 2px 0 rgba(0, 0, 0, 0.25)); }
+.seed-icon.is-small { width: 1.15em; height: 1.15em; }
+.seed-icon-body { stroke: #4a2a0e; stroke-width: 1.2; stroke-linejoin: round; }
+.seed-icon-seam { fill: none; stroke: rgba(74, 42, 14, 0.55); stroke-width: 1.1; stroke-linecap: round; }
+.seed-icon-stem { fill: none; stroke: #2a6b22; stroke-width: 1.6; stroke-linecap: round; }
+.seed-icon-leaf { fill: #8be05a; stroke: #2a6b22; stroke-width: 1.1; stroke-linejoin: round; }
+
+/* En la victoria y en la derrota: lo cobrado en grande, de donde sale y el saldo nuevo. */
+.seeds-earned {
+  margin: -6px 0 18px; padding: 10px 14px; border-radius: 16px;
+  background: rgba(8, 28, 10, 0.45); border: 2px solid rgba(185, 242, 124, 0.32); color: #e3f7d2;
+}
+.seeds-earned-total { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 0; font-size: 1rem; font-weight: 800; color: #b9f27c; }
+.seeds-earned-total .seed-icon { width: 34px; height: 34px; animation: seed-pop 0.6s 0.35s cubic-bezier(0.2, 1.6, 0.4, 1) both; }
+.seeds-earned-total strong {
+  font-size: 2rem; font-weight: 900; line-height: 1; font-variant-numeric: tabular-nums; text-shadow: 0 2px 0 #1f3a0c;
+  animation: seed-count 0.5s 0.45s ease-out both;
+}
+.seeds-earned-lines { display: grid; gap: 2px; margin: 8px 0 0; }
+.seeds-earned-line { display: flex; justify-content: space-between; gap: 12px; font-size: 0.86rem; }
+.seeds-earned-line dt { opacity: 0.8; }
+.seeds-earned-line dd { margin: 0; font-weight: 800; font-variant-numeric: tabular-nums; color: #b9f27c; }
+.seeds-earned-note { margin: 6px 0 0; text-align: center; font-size: 0.78rem; opacity: 0.75; }
+.seeds-earned-balance {
+  display: flex; align-items: center; justify-content: center; gap: 6px; margin: 8px 0 0; padding-top: 7px;
+  border-top: 1px solid rgba(185, 242, 124, 0.2); font-size: 0.86rem; font-weight: 800; font-variant-numeric: tabular-nums;
+}
+@keyframes seed-pop { from { opacity: 0; transform: translateY(8px) scale(0.3) rotate(-30deg); } to { opacity: 1; transform: none; } }
+@keyframes seed-count { from { opacity: 0; transform: scale(0.6); } to { opacity: 1; transform: none; } }
+.pause-note.is-seeds { color: #b9f27c; font-weight: 700; opacity: 0.9; }
+
+/* En el Invernadero: el saldo en una pastilla, arriba del panel. Seis cifras caben. */
+.seed-balance {
+  display: flex; align-items: center; justify-content: center; gap: 8px; margin: 0 0 12px; padding: 5px 14px;
+  border-radius: 999px; background: rgba(8, 28, 10, 0.5); border: 2px solid rgba(185, 242, 124, 0.32); color: #b9f27c; white-space: nowrap;
+}
+.seed-balance .seed-icon { width: 26px; height: 26px; }
+.seed-balance strong { font-size: 1.35rem; font-weight: 900; font-variant-numeric: tabular-nums; text-shadow: 0 2px 0 #1f3a0c; }
+.seed-balance span { font-size: 0.8rem; font-weight: 800; color: #e3f7d2; opacity: 0.85; }
+
+/* Pantallas bajas (un movil en horizontal): la victoria y la derrota se aprietan para que quepan las semillas y los botones. */
+@media (max-height: 560px) {
+  .is-victory .pause-card, .is-defeat .pause-card { padding: 14px 20px; }
+  .is-victory .victory-art { height: 54px; }
+  .is-victory .trophy { width: 52px; height: 52px; }
+  .is-defeat .broken-heart { width: 50px; height: 50px; }
+  .is-victory .pause-title, .is-defeat .pause-title { margin-bottom: 10px; font-size: 1.9rem; }
+  .victory-text, .defeat-text { margin: -4px 0 10px; font-size: 0.95rem; }
+  .seeds-earned { margin: 0 0 10px; padding: 6px 12px; }
+  .seeds-earned-total strong { font-size: 1.6rem; }
+  .seeds-earned-total .seed-icon { width: 28px; height: 28px; }
+  .seeds-earned-lines { margin-top: 4px; }
+  .is-victory .pause-hint, .is-defeat .pause-hint { margin-top: 10px; }
+}
+@media (max-height: 420px) {
+  .is-victory .pause-card, .is-defeat .pause-card { width: min(520px, 100%); padding: 8px 16px 10px; }
+  .is-victory .victory-art, .is-defeat .defeat-art { display: none; }
+  .is-victory .pause-title, .is-defeat .pause-title { margin: 0 0 4px; font-size: 1.45rem; }
+  .victory-text, .defeat-text { margin: 0 0 6px; font-size: 0.82rem; }
+  .is-victory .pause-hint, .is-defeat .pause-hint { margin-top: 6px; font-size: 0.72rem; }
+  .is-victory .pause-actions, .is-defeat .pause-actions { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .is-victory .pause-actions .btn, .is-defeat .pause-actions .btn { padding: 7px 10px; font-size: 0.9rem; }
+  .seeds-earned { margin: 0 0 8px; padding: 4px 12px 5px; }
+  .seeds-earned-total strong { font-size: 1.3rem; }
+  .seeds-earned-total .seed-icon { width: 22px; height: 22px; }
+  .seeds-earned-lines { margin-top: 2px; gap: 0; }
+  .seeds-earned-line, .seeds-earned-balance { font-size: 0.76rem; }
+  .seeds-earned-note { margin-top: 2px; font-size: 0.7rem; }
+  .seeds-earned-balance { margin-top: 3px; padding-top: 3px; }
+  .seed-balance { margin-bottom: 6px; padding: 1px 10px; }
+  .seed-balance strong { font-size: 1.05rem; }
+  .seed-balance .seed-icon { width: 20px; height: 20px; }
+}
+/* El movil mas pequeno (568 x 320): la pista de la victoria y la derrota sobra, los botones no. */
+@media (max-height: 360px) {
+  .is-victory .pause-hint, .is-defeat .pause-hint { display: none; }
+}
+
 /* ---------- Aviso de lo desbloqueado (T-009): "¡YA LO TIENES!" brillando, con rayos que giran detras ---------- */
 .pause-overlay.is-unlock { background: rgba(40, 32, 6, 0.4); overflow: hidden; }
 .unlock-rays {

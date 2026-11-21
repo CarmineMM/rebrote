@@ -20,7 +20,7 @@ Tras T-019 el Invernadero tiene un hueco de tienda con candado, tras T-020 el ju
 | # | Pregunta | Opciones | Recomendación | Decide |
 |---|---|---|---|---|
 | T-01 | ¿Qué se compra exactamente? | Depende de O-01 (T-021): unidades de un uso, o el poder para siempre | El poder para siempre, con una mejora cara que da una segunda carga por partida | Carmine |
-| T-02 | Precios | Valores libres | Primer poder al alcance tras vencer a Creeper una vez (unas 100 semillas); los otros, más caros | Carmine |
+| T-02 | Precios | Valores libres. Carmine adelantó al cerrar T-020 (21 nov 2026): artículos normales de unas 1000 o 2000 semillas y el más caro de unos 10.000 | Primer poder a 1000: al alcance tras vencer a Creeper una vez sin perder vidas (da de 920 a 1235; con menos vidas hay que repetir algo); los otros, 1500 y 2000. La tienda entera debe costar más de lo que dan las primeras victorias (ver "Semillas (T-020)" en `01-mecanicas.md`) | Carmine |
 | T-03 | ¿Se puede devolver una compra? | Sí o no | No | Carmine |
 | T-04 | ¿Dónde se eligen los poderes que se llevan? | a) En la tienda. b) Antes de empezar el brote | b: es el mismo sitio donde más adelante se ordenarán las cartas de plantas | Carmine |
 
@@ -57,11 +57,11 @@ Esta task no se puede ejecutar hasta cerrar O-01.
 - Riesgo: una tienda con 3 artículos se vacía pronto. Es suficiente para probar si el bucle engancha; después llegan T-023 y más poderes.
 
 ## Objetivo final con ejemplos
-Con el primer poder a 100 semillas:
+Con el primer poder a 1000 semillas (T-02 sin cerrar):
 | Situación | Resultado |
 |---|---|
-| 150 semillas, compra el meteorito | Quedan 50; el meteorito aparece como "Tuyo" |
-| 50 semillas, intenta comprar el muro de hielo | Botón apagado, saldo sin cambios |
+| 1089 semillas, compra el meteorito | Quedan 89; el meteorito aparece como "Tuyo" |
+| 89 semillas, intenta comprar el muro de hielo | Botón apagado, saldo sin cambios |
 | Empieza el brote 2 con el meteorito elegido | Panel izquierdo con el meteorito y 1 carga |
 | No venció a Creeper | Tienda con candado |
 

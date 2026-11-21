@@ -25,7 +25,7 @@ Carmine quiere una mejora permanente y muy cara, con tope 5, para que las planta
 | N-05 | La planta que nace en nivel 5, ¿trae el premio del nivel 5 (T-027)? | Sí o no | Sí: es una planta de nivel 5 a todos los efectos, con su jardincito | Carmine |
 | N-06 | ¿Cuánto cuesta subirla en la partida? | a) Lo que cuesta desde su nivel (más caro). b) Como si partiera de nivel 1 | a: no hay que tocar la regla de costos, y compensa lo que ya trae | Carmine |
 | N-02 | ¿Cuánto da cada paso? | Valores libres | Lo mismo que un nivel de partida: 10 % de daño y 3 % de cadencia | Carmine |
-| N-03 | Precios | Valores libres | Crecientes; el quinto paso, varias victorias completas | Carmine |
+| N-03 | Precios | Valores libres. Con la economía de T-020, una primera victoria sin perder vidas da unas 1000 semillas en el brote 1 y algo más en los siguientes | Crecientes; el quinto paso, el artículo más caro de la tienda (unas 10.000 semillas, lo que dijo Carmine al cerrar T-020) | Carmine |
 | N-04 | ¿Afecta a rejugar brotes ya vencidos? | Sí o no | Sí: que el jugador sienta lo que compró | Carmine |
 
 ## Criterios de aceptación

@@ -69,6 +69,14 @@ export function formatNumber(value: number, decimals = 1, language: Language = c
 }
 
 /**
+ * Cantidad entera con el separador de miles del idioma, para las semillas (T-020), que llegan a 6 cifras: "1080" y
+ * "12.345" en espanol (el punto, desde 5 cifras) y "1,080" y "12,345" en ingles. Sin decimales.
+ */
+export function formatAmount(value: number, language: Language = current): string {
+  return new Intl.NumberFormat(text(language).locale, { maximumFractionDigits: 0 }).format(Math.floor(value));
+}
+
+/**
  * Fraccion como porcentaje, con un decimal si lo tiene, al estilo del idioma: "20 %" o "4,5 %" en espanol y "20%" o
  * "4.5%" en ingles.
  */

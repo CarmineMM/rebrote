@@ -21,6 +21,7 @@ Cómo se escriben los textos de Rebrote para que salgan en español y en inglés
   - `formatPercent(0.4)` → "40 %" o "40%".
   - `formatSeconds(1240)` → "1,24 s" o "1.24 s".
   - `formatSavedAt(savedAt, now)` → "hace 5 minutos" o "5 minutes ago".
+  - `formatAmount(12345)` → "12.345" o "12,345". Enteros con separador de miles (en español, desde 5 cifras: "1080"); para las semillas (T-020), que llegan a 6 cifras.
   - Los enteros (rondas, niveles, monedas) se pasan tal cual.
 - **Los números salen de las reglas.** El diccionario nunca lleva un número de balance: "cuenta 2 s" es `text(formatSeconds(MINE.countdownMs))`, no "2 s" escrito.
 - **Plurales:** los resuelve la función ("1 vida" / "3 vidas"; "1 life" / "3 lives").
@@ -47,6 +48,8 @@ Cómo se escriben los textos de Rebrote para que salgan en español y en inglés
   | Mina | Mine |
   | Gusano, acorazado, escupidor | Worm, armored worm, spitter worm |
   | Moneda | Coin |
+  | Semillas (T-020) | Seeds |
+  | Vidas | Lives |
   | Ronda | Round |
   | Brote ("Brote 1: Creeper") | Outbreak ("Outbreak 1: Creeper") |
   | Ficha | Info card |

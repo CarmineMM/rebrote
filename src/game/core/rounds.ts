@@ -3,6 +3,7 @@ import { isDefeated, rollEnemyLevel, spawnEnemy, type Enemy, type EnemyKind } fr
 import type { CardId, MatchState } from './match';
 import { outbreakScript, outbreaksBefore, roundCount, type OutbreakId } from './outbreaks';
 import type { ElementType } from './plants';
+import { creditRound } from './seeds';
 
 /**
  * Rondas con guion (T-007). Cada ronda empieza con una preparacion (se puede sembrar, infundir, fusionar y subir
@@ -99,8 +100,11 @@ export interface RoundState {
 export type RoundEvent =
   /** Acabo la preparacion (o el jugador la adelanto): empiezan a salir enemigos. */
   | { readonly type: 'attackStarted'; readonly index: number }
-  /** No quedan enemigos por salir ni vivos. Tras la ultima ronda del brote le sigue `won`; si no, `roundStarted`. */
-  | { readonly type: 'roundCleared'; readonly index: number }
+  /**
+   * No quedan enemigos por salir ni vivos. Tras la ultima ronda del brote le sigue `won`; si no, `roundStarted`. `seeds`
+   * es lo que sumo a la partida (T-020): 0 en la ultima, que da las del jefe al cobrar.
+   */
+  | { readonly type: 'roundCleared'; readonly index: number; readonly seeds: number }
   /** Empieza la preparacion de la ronda `index`, con lo que desbloquea y su aviso. */
   | { readonly type: 'roundStarted'; readonly index: number }
   /** Superada la ultima ronda del brote (vencido su jefe): partida ganada. */
@@ -310,7 +314,8 @@ export function startAttack(state: MatchState): MatchState {
  * Avanza la ronda `dtMs` milisegundos: cuenta la preparacion, saca los grupos del guion a su hora (en `spawnX`, el
  * agujero de su carril, que pone la vista) y pasa a la siguiente ronda cuando la actual queda despejada. El tiempo
  * que sobra al acabar la preparacion cuenta para el ataque. No modifica el estado recibido. Sin vidas o con la
- * partida ganada no hace nada. `random` (en [0, 1), como Math.random) elige el nivel de cada enemigo (T-009).
+ * partida ganada no hace nada. `random` (en [0, 1), como Math.random) elige el nivel de cada enemigo (T-009) y las semillas de
+ * cada ronda superada (T-020).
  */
 export function stepRound(state: MatchState, dtMs: number, spawnX: number, random: () => number = Math.random): RoundStep {
   if (isDefeated(state) || isWon(state)) return { state, spawned: [], events: [] };
@@ -344,11 +349,15 @@ export function stepRound(state: MatchState, dtMs: number, spawnX: number, rando
   round = { ...round, elapsedMs, released };
 
   if (released === groups.length && current.enemies.length === 0) {
-    events.push({ type: 'roundCleared', index: round.index });
     if (round.index + 1 < roundCount(outbreak)) {
+      // T-020: la ronda superada suma sus semillas a la partida; la ultima no, que da las del jefe al cobrar.
+      const credit = creditRound(current, random);
+      current = credit.state;
+      events.push({ type: 'roundCleared', index: round.index, seeds: credit.seeds });
       round = createRound(outbreak, round.index + 1);
       events.push({ type: 'roundStarted', index: round.index });
     } else {
+      events.push({ type: 'roundCleared', index: round.index, seeds: 0 });
       round = { ...round, phase: 'won' };
       events.push({ type: 'won' });
     }

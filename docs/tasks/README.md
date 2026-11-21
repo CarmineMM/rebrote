@@ -23,7 +23,7 @@ Una task por archivo. El tamaño es orientativo.
 | T-017 | [Guardado] Progreso permanente separado de la partida en curso | Completada (21 nov 2026) | M | Ninguna | Ninguna (K-01 y K-02 cerradas) |
 | T-018 | [Brotes] Varios brotes y fin de "Mundo 1" | Completada (21 nov 2026) | L | T-017 | Ninguna (B-01 a B-04 cerradas) |
 | T-019 | [Interfaz] Invernadero y ruta de brotes | Completada (21 nov 2026) | L | T-017, T-018 | Ninguna (R-01 a R-04 cerradas) |
-| T-020 | [Progresión] Moneda secundaria: semillas | Pendiente | S | T-017, T-018 | C-01 a C-05 |
+| T-020 | [Progresión] Moneda secundaria: semillas | Completada (21 nov 2026, 0.5.0) | S | T-017, T-018 | Ninguna (C-01 a C-05 cerradas) |
 | T-021 | [Poderes] Tres poderes en la partida y panel izquierdo | Pendiente | L | T-018 | O-01 a O-07 |
 | T-022 | [Tienda] Tienda de poderes | Pendiente | M | T-019, T-020, T-021 | O-01, T-01 a T-04 |
 | T-023 | [Progresión] Nivel base permanente de la disparadora | Pendiente | M | T-019, T-020, T-022 | N-02 a N-06 (N-01 cerrada) |
@@ -53,7 +53,7 @@ El estado se escribe en dos sitios: en esta tabla y en la cabecera de la task (`
 
 T-001, T-002, T-006, T-004, T-005, T-003, T-007, T-008, T-009, T-010, T-011, T-012, T-013.
 
-Después de T-013 se hicieron T-014, T-016 a T-019, T-027, T-028 y T-030 a T-034.
+Después de T-013 se hicieron T-014, T-016 a T-020, T-027, T-028 y T-030 a T-034.
 
 Al cerrar una task se sube la versión del juego (ADR-0017). Mientras el juego esté en desarrollo, ninguna task migra datos guardados (ADR-0014).
 
