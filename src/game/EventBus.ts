@@ -260,6 +260,8 @@ export interface EntityInfo {
   tags: InfoTag[];
   /** Como funciona, en una o dos frases. */
   about: string;
+  /** Lo que cuenta Boxer del virus de verdad (T-032, VT-04): solo los jefes; null en lo demas. */
+  lore: string | null;
   /** Foto (data URL de una imagen PNG). */
   portrait: string;
 }

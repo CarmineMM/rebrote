@@ -47,6 +47,16 @@ describe('idiomas (T-011)', () => {
     }
   });
 
+  it('cada brote tiene lo que cuenta Boxer de su jefe, en una linea y completo, en los dos idiomas (T-032)', () => {
+    for (const language of LANGUAGES) {
+      for (const outbreak of OUTBREAKS) {
+        const lore = text(language).story.lore[outbreak.id];
+        expect(lore.line.length, `${language} ${outbreak.id}`).toBeGreaterThan(20);
+        expect(lore.card.length, `${language} ${outbreak.id}`).toBeGreaterThan(lore.line.length);
+      }
+    }
+  });
+
   it('cada brote se llama por su numero y su jefe: "Brote 1: Creeper" (T-018)', () => {
     expect(es.outbreak.title(1, es.info.enemy.names.creeper)).toBe('Brote 1: Creeper');
     expect(en.outbreak.title(1, en.info.enemy.names.creeper)).toBe('Outbreak 1: Creeper');

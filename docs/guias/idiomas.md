@@ -55,6 +55,7 @@ Cómo se escriben los textos de Rebrote para que salgan en español y en inglés
 - No se traducen: "Rebrote", Creeper, Boxer, Patty, los nombres de tecnologías, el nombre de cada idioma en el selector y el apodo que pone Boxer, "Rookie" (T-033, NJ-03), que vive en `src/game/playerName.ts` porque se guarda en el perfil como un nombre más.
 - El nombre del jugador (T-033) es un dato: nunca se traduce y siempre va como argumento dentro de la frase (`story.lines`, `greenhouse.hello`, `name.saved`).
 - La IA de la historia es "ella" en español y "she" en inglés (T-031).
+- **Quién habla (T-032).** Las frases de los tours las dice Boxer: de tú, con prisa y algo de gracia, pero cortas e igual de claras. Lo que presenta un desbloqueo lo dice Boxer en el brote 1 y Patty desde el brote 2 (`unlock.presenters`: Patty siempre empieza por "¡He creado algo nuevo!"). Patty en el Invernadero (`greenhouse.patty`): frases cortas que puedan salir en cualquier momento, sin contar nada del juego.
 - Un texto en inglés puede ser más largo: hay que comprobar que cabe donde va (cartas de tamaño fijo, botones del menú, rótulos del tablero) en los dos idiomas.
 
 ## 5. Lista de comprobación
@@ -71,12 +72,14 @@ Cómo se escriben los textos de Rebrote para que salgan en español y en inglés
 
 ### Brote nuevo (T-018)
 - [ ] Sus avisos de ronda están en `round.notices.<brote>`, uno por ronda, en los dos idiomas.
+- [ ] Lo que cuenta Boxer de su jefe (T-032) está en `story.lore.<brote>` en los dos idiomas: `line`, una línea que avisa de que llega y dice qué fue el virus de verdad; `card`, lo completo para su ficha (el test comprueba que cada brote los tiene).
 - [ ] Su jefe tiene nombre en `info.enemy.names`: de ahí sale "Brote N: jefe" (`outbreak.title`, compuesto en `src/ui/outbreakName.ts`). No se escribe a mano.
 - [ ] Ningún texto dice "mundo": esa palabra queda para el futuro (el test lo comprueba).
 
 ### Paso de un tour de ayuda (T-013)
 - [ ] Su frase está en `tour.steps.<tour>.<paso>` en los dos idiomas, con la misma clave que el paso de `TOURS` (el test lo comprueba), y el tour tiene su nombre en `tour.names`.
 - [ ] Es corta (unas seis u ocho palabras): lo importante lo enseñan la mano y el dibujo. Cabe en el bocadillo a 568 × 320.
+- [ ] La dice Boxer (T-032): con su voz. Repasar una frase nunca la alarga: el test compara con lo que medía antes (`LENGTH_BEFORE_T032` en `tours.test.ts`; un paso nuevo se añade ahí con lo que mide).
 
 ### Viñeta nueva (T-031)
 - [ ] Su texto está en `story.lines.<secuencia>.<viñeta>` en los dos idiomas, con la misma clave que el paso de `STORIES` (el test lo comprueba), y la secuencia tiene su título en `story.titles`.

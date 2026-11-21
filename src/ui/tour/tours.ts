@@ -2,6 +2,7 @@ import type { OutbreakId } from '../../game/core/outbreaks';
 import { newFeaturesAt, type Feature } from '../../game/core/rounds';
 import type { CardId } from '../../game/core/match';
 import type { PagePoint, PlayerAction, TourAreaId, TourBoard, TourSpotId } from '../../game/EventBus';
+import type { CharacterId } from '../../game/view/characters/design';
 
 /**
  * Tours de ayuda (T-013, ADR-0012): que se ensena, con que pasos y cuando. Todo es dato y funciones puras: lo pinta
@@ -11,6 +12,12 @@ import type { PagePoint, PlayerAction, TourAreaId, TourBoard, TourSpotId } from 
  * `TOUR_OF_FEATURE` (si se anade una sin tour, no compila).
  */
 export type TourId = 'basics' | 'levelUp' | 'fireMine' | 'iceMine' | 'infuse' | 'fuse';
+
+/**
+ * Quien da los tours (T-032): Boxer, en todos. Lo nuevo de los brotes siguientes lo presenta Patty en el aviso (VT-03),
+ * pero ensenar a usarlo es cosa suya. Su retrato y su nombre van en el bocadillo (la pista de la moneda no lleva).
+ */
+export const TOUR_GUIDE: CharacterId = 'boxer';
 
 /** Pistas sueltas que salen en mitad del juego, sin parar nada (T-013, G-08). */
 export type HintId = 'droppedCoin';

@@ -3,7 +3,8 @@ import { OUTBREAKS } from '../../game/config/balance';
 import { FIRST_OUTBREAK, roundCount } from '../../game/core/outbreaks';
 import type { Feature } from '../../game/core/rounds';
 import type { TourBoard } from '../../game/EventBus';
-import { LANGUAGES, text } from '../../i18n';
+import { MINE } from '../../game/config/balance';
+import { LANGUAGES, formatSeconds, setLanguage, text, type Language } from '../../i18n';
 import { BUBBLE_MARGIN, overlap, placeBubble } from './placeBubble';
 import {
   HINT_MAX_SHOWS,
@@ -17,7 +18,7 @@ import {
   readTourProgress,
   writeTourProgress,
 } from './tourProgress';
-import { TOURS, TOUR_OF_FEATURE, cueOf, hudTargetsOf, placeStep, toursOfRound, type Box, type TourId } from './tours';
+import { TOURS, TOUR_GUIDE, TOUR_OF_FEATURE, cueOf, hudTargetsOf, placeStep, toursOfRound, type Box, type TourId } from './tours';
 
 const box = (left: number, top: number, width: number, height: number): Box => ({ left, top, width, height });
 
@@ -154,5 +155,44 @@ describe('donde va el bocadillo (T-013)', () => {
     const hand = { ...below, ...size };
     const place = placeBubble(size, [target], viewport, [hand]);
     expect(overlap({ ...place, ...size }, hand)).toBe(0);
+  });
+});
+
+/** Lo que media cada frase de los tours en T-013, en letras, con la cuenta atras de la mina ("2 s"). */
+const LENGTH_BEFORE_T032: Record<Language, Record<TourId, Record<string, number>>> = {
+  es: {
+    basics: { sow: 33, lane: 44, coins: 47, lives: 48, info: 43, go: 20 },
+    levelUp: { pick: 20, up: 43 },
+    fireMine: { sow: 29, boom: 42 },
+    iceMine: { sow: 29, freeze: 43 },
+    infuse: { card: 42, mine: 39 },
+    fuse: { drag: 41 },
+  },
+  en: {
+    basics: { sow: 30, lane: 45, coins: 47, lives: 46, info: 38, go: 21 },
+    levelUp: { pick: 13, up: 43 },
+    fireMine: { sow: 26, boom: 52 },
+    iceMine: { sow: 25, freeze: 50 },
+    infuse: { card: 31, mine: 30 },
+    fuse: { drag: 34 },
+  },
+};
+
+describe('Boxer da los tours (T-032)', () => {
+  it('la voz de todos los tours es Boxer', () => {
+    expect(TOUR_GUIDE).toBe('boxer');
+  });
+
+  it.each(LANGUAGES)('%s: con su voz, ninguna frase es mas larga que la de antes (VT-01)', (language) => {
+    setLanguage(language);
+    const steps = text(language).tour.steps as Record<string, Record<string, string | ((countdown: string) => string)>>;
+    for (const [tour, list] of Object.entries(TOURS)) {
+      for (const step of list) {
+        const entry = steps[tour][step.id];
+        const phrase = typeof entry === 'function' ? entry(formatSeconds(MINE.countdownMs)) : entry;
+        expect(Array.from(phrase).length, `${tour}.${step.id}: ${phrase}`).toBeLessThanOrEqual(LENGTH_BEFORE_T032[language][tour as TourId][step.id]);
+      }
+    }
+    setLanguage('es');
   });
 });

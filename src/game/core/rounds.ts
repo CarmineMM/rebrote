@@ -22,6 +22,13 @@ export type Feature = 'shooter' | 'levelUp' | 'fireMine' | 'fireInfuse' | 'iceMi
 /** Gritos de Creeper (T-009). El texto de cada uno, en cada idioma, esta en `creeper.shouts` de `src/i18n/` (T-011). */
 export type CreeperShout = 'escort';
 
+/**
+ * Quien presenta lo nuevo en el aviso "¡YA LO TIENES!" (T-032): un personaje de la historia (`CharacterId` de
+ * `view/characters/design.ts`). La regla de la historia: lo del brote 1 lo da Boxer (VT-02); las plantas y piezas nuevas
+ * de los brotes siguientes las crea Patty (VT-03). Es un dato del guion; la vista pinta su retrato y su frase.
+ */
+export type Presenter = 'boxer' | 'patty';
+
 /** Grupo del guion: un enemigo de `kind` por cada carril de `lanes`, todos a la vez. */
 export interface RoundGroup {
   /** Milisegundos desde que empieza el ataque. Los grupos de una ronda van en orden. */
@@ -65,6 +72,11 @@ export interface RoundScript {
   readonly haste?: number;
   /** El jefe se prepara durante esta ronda: se le ve esperando a la derecha (T-008). */
   readonly bossPreparing?: boolean;
+  /**
+   * Quien presenta lo que desbloquea la ronda (T-032), en vez del que toca (`unlockPresenter`): por ejemplo, Boxer en una
+   * ronda del brote 2 que trae algo que no es una planta ni una pieza que haya creado Patty.
+   */
+  readonly presenter?: Presenter;
   readonly groups: readonly RoundGroup[];
 }
 
@@ -195,6 +207,19 @@ export function roundUnlocks(outbreak: OutbreakId, index: number): Unlock[] {
   return unlocks;
 }
 
+/**
+ * Quien presenta lo nuevo de la ronda `index` del brote en el aviso que hay que aceptar (T-032): el que diga la ronda; si
+ * no, lo que trae por primera vez (una planta o una pieza) lo presenta el de su brote o, si el brote no lo dice, el que
+ * pide la historia: Boxer en el primer brote (VT-02) y Patty, que lo crea, en los demas (VT-03). Lo que no es nada nuevo
+ * que sembrar (un tope de nivel mas alto) lo cuenta Boxer.
+ */
+export function unlockPresenter(outbreak: OutbreakId, index: number): Presenter {
+  const own = roundScript(outbreak, index).presenter;
+  if (own) return own;
+  if (newFeaturesAt(outbreak, index).length === 0) return 'boxer';
+  return outbreakScript(outbreak).presenter ?? (outbreaksBefore(outbreak).length === 0 ? 'boxer' : 'patty');
+}
+
 /** Ronda (desde 0) del brote que desbloquea `feature`, o null si ninguna de las suyas lo hace. */
 export function unlockRound(outbreak: OutbreakId, feature: Feature): number | null {
   const index = outbreakScript(outbreak).rounds.findIndex((round) => round.unlocks.includes(feature));
@@ -249,6 +274,16 @@ export function isBossRound(outbreak: OutbreakId, index: number): boolean {
 export function bossRoundIndex(outbreak: OutbreakId): number | null {
   const index = outbreakScript(outbreak).rounds.findIndex((round) => bossGroupIndex(outbreak, round) >= 0);
   return index < 0 ? null : index;
+}
+
+/**
+ * Primera ronda (desde 0) en la que se ve al jefe del brote: la primera que lo pone a prepararse (`bossPreparing`) o, si
+ * ninguna lo hace, la de su combate. Null si su guion no lo saca. En ella cuenta Boxer que hizo el virus de verdad (T-032,
+ * VT-04).
+ */
+export function bossFirstSeenRound(outbreak: OutbreakId): number | null {
+  const index = outbreakScript(outbreak).rounds.findIndex((round) => round.bossPreparing);
+  return index >= 0 ? index : bossRoundIndex(outbreak);
 }
 
 /**

@@ -605,6 +605,39 @@ body {
 .unlock-text strong { font-size: 1.1rem; font-weight: 900; color: #fff6c0; }
 .unlock-text small { font-size: 0.85rem; font-weight: 700; color: #d9f0cc; line-height: 1.3; }
 .unlock-go { font-size: 1.2rem; }
+/* Quien presenta lo nuevo (T-032): su retrato y su frase en un bocadillo crema con el borde de su color. */
+.unlock-speaker { position: relative; z-index: 2; display: flex; align-items: center; gap: 12px; margin: -4px 0 10px; text-align: left; }
+.unlock-cameo { --cameo: 62px; animation: cameo-in 0.5s 0.15s cubic-bezier(0.2, 1.6, 0.4, 1) both; }
+.unlock-line {
+  position: relative; flex: 1; min-width: 0; margin: 8px 0 0; padding: 12px 14px 9px; border-radius: 14px;
+  border: 2px solid var(--tone-dark); background: linear-gradient(180deg, #fffdf4 0%, #f4ecd4 100%); color: #2b2418;
+  font-size: 1rem; font-weight: 800; line-height: 1.3; box-shadow: 0 6px 14px rgba(0, 0, 0, 0.3);
+  animation: bubble-in 0.34s 0.25s cubic-bezier(0.2, 1.4, 0.4, 1) both;
+}
+/* Pico hacia quien habla. */
+.unlock-line::before {
+  content: ''; position: absolute; left: -8px; top: 50%; width: 12px; height: 12px; margin-top: -2px;
+  background: #f9f4e2; border-left: 2px solid var(--tone-dark); border-bottom: 2px solid var(--tone-dark); transform: rotate(45deg);
+}
+.unlock-line-name {
+  position: absolute; left: 10px; top: 0; transform: translateY(-58%); padding: 0 9px 1px; border-radius: 999px;
+  border: 2px solid var(--tone-dark); background: linear-gradient(180deg, var(--tone-mid), var(--tone-dark)); color: #fff;
+  font-size: 0.72rem; font-weight: 900; letter-spacing: 0.05em; text-shadow: 0 1px 0 rgba(0, 0, 0, 0.3);
+}
+/* Pantallas bajas (un movil en horizontal): la tarjeta se aprieta para que quepan quien presenta, lo nuevo y "¡A jugar!". */
+@media (max-height: 420px) {
+  .unlock-card { padding: 10px 16px 12px; }
+  .unlock-speaker { gap: 9px; margin: 0 0 2px; }
+  .unlock-cameo { --cameo: 42px; }
+  .unlock-line { margin-top: 6px; padding: 8px 10px 5px; font-size: 0.86rem; line-height: 1.25; }
+  .unlock-line-name { font-size: 0.64rem; }
+  .unlock-card .pause-kicker { font-size: 0.66rem; }
+  .unlock-title { margin-bottom: 6px; font-size: 1.6rem; }
+  .unlock-list { gap: 6px; margin-bottom: 8px; }
+  .unlock-item { padding: 6px 10px; }
+  .unlock-icon { height: 34px; }
+  .unlock-go { padding-top: 7px; padding-bottom: 7px; font-size: 1.05rem; }
+}
 
 .settings-header { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
 .settings-section { margin-top: 14px; }
@@ -763,6 +796,23 @@ body {
 .info-stat dd { margin: 0; font-size: 0.95rem; font-weight: 900; color: #fff; font-variant-numeric: tabular-nums; }
 .info-stat dd small { display: block; font-size: 0.74rem; font-weight: 700; line-height: 1.2; color: rgba(255, 255, 255, 0.68); }
 .info-about { margin: 0; font-size: 0.86rem; line-height: 1.35; color: rgba(255, 255, 255, 0.82); }
+/* Lo que cuenta Boxer del virus de verdad (T-032): al pie de la ficha de un jefe, a todo lo ancho, con su retrato. */
+.info-lore { grid-column: 1 / -1; display: flex; align-items: flex-start; gap: 12px; margin-top: 14px; text-align: left; }
+.info-lore-cameo { --cameo: 50px; margin-top: 4px; }
+.info-lore-text {
+  position: relative; flex: 1; min-width: 0; margin: 10px 0 0; padding: 13px 14px 10px; border-radius: 14px;
+  border: 2px solid var(--tone-dark); background: linear-gradient(180deg, #fffdf4 0%, #f4ecd4 100%); color: #2b2418;
+  font-size: 0.86rem; font-weight: 700; line-height: 1.4; box-shadow: 0 6px 14px rgba(0, 0, 0, 0.3);
+}
+.info-lore-text::before {
+  content: ''; position: absolute; left: -8px; top: 18px; width: 12px; height: 12px;
+  background: #fcf8ea; border-left: 2px solid var(--tone-dark); border-bottom: 2px solid var(--tone-dark); transform: rotate(45deg);
+}
+.info-lore-name {
+  position: absolute; left: 10px; top: 0; transform: translateY(-58%); padding: 0 9px 1px; border-radius: 999px;
+  border: 2px solid var(--tone-dark); background: linear-gradient(180deg, var(--tone-mid), var(--tone-dark)); color: #fff;
+  font-size: 0.72rem; font-weight: 900; letter-spacing: 0.05em; text-shadow: 0 1px 0 rgba(0, 0, 0, 0.3);
+}
 
 .info-close {
   position: absolute; top: 12px; right: 12px; width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center;
@@ -784,6 +834,9 @@ body {
   .info-stats { column-gap: 10px; row-gap: 3px; padding: 7px 10px; }
   .info-stat dd { font-size: 0.86rem; }
   .info-about { font-size: 0.78rem; }
+  .info-lore { gap: 9px; margin-top: 10px; }
+  .info-lore-cameo { --cameo: 40px; }
+  .info-lore-text { padding: 11px 11px 8px; font-size: 0.78rem; line-height: 1.35; }
 }
 
 /* Sin sitio en una fila para bandeja, ronda y marcadores: la ronda baja a una segunda fila, en linea. */
@@ -827,7 +880,11 @@ body {
 }
 
 /* ---------- Menu de inicio (T-011): titulo arriba a la izquierda, portada (Phaser) debajo y menu a la derecha ---------- */
-.title-screen { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
+.title-screen {
+  /* Donde esta el panel de la derecha: lo usan el panel y Patty, que se pone a su izquierda sin taparlo (T-032). */
+  --panel-right: max(24px, 4vw, env(safe-area-inset-right)); --panel-w: min(380px, 42vw);
+  position: absolute; inset: 0; z-index: 2; pointer-events: none;
+}
 
 .title-brand {
   position: absolute; left: max(28px, 4vw, env(safe-area-inset-left)); top: max(34px, 6vh, env(safe-area-inset-top));
@@ -870,8 +927,8 @@ body {
 
 /* El menu flota a la derecha, sobre el suelo corrupto; las opciones y los creditos salen en el mismo panel. */
 .title-panel {
-  position: absolute; right: max(24px, 4vw, env(safe-area-inset-right)); top: 50%; translate: 0 -50%;
-  width: min(380px, 42vw); max-height: calc(100% - 32px); padding: 20px; pointer-events: auto;
+  position: absolute; right: var(--panel-right); top: 50%; translate: 0 -50%;
+  width: var(--panel-w); max-height: calc(100% - 32px); padding: 20px; pointer-events: auto;
   animation: title-panel-in 0.55s 0.3s cubic-bezier(0.2, 1.3, 0.4, 1) both;
 }
 @keyframes title-panel-in { from { opacity: 0; transform: translateX(48px) scale(0.94); } to { opacity: 1; transform: none; } }
@@ -945,9 +1002,10 @@ body {
 
 /* Pantallas pequenas o bajas (movil en horizontal): titulo y panel mas pequenos, cada uno en su lado. */
 @media (max-width: 860px), (max-height: 560px) {
+  .title-screen { --panel-right: max(12px, env(safe-area-inset-right)); --panel-w: min(310px, 48vw); }
   .title-brand { left: max(16px, env(safe-area-inset-left)); top: max(22px, env(safe-area-inset-top)); }
   .title-logo { font-size: calc(clamp(2.2rem, 7.4vw, 4.6rem) * var(--logo-fit, 1)); }
-  .title-panel { right: max(12px, env(safe-area-inset-right)); width: min(310px, 48vw); padding: 14px; border-radius: 18px; }
+  .title-panel { padding: 14px; border-radius: 18px; }
   .title-panel .pause-kicker { margin-bottom: 8px; font-size: 0.7rem; }
   .title-panel .btn { padding: 8px 12px; font-size: 0.92rem; border-radius: 12px; }
   .title-panel .btn.has-detail { padding-top: 6px; padding-bottom: 6px; }
@@ -1395,7 +1453,7 @@ button.route-stop-body:focus-visible .route-ring { outline-color: #ffe066; }
 @keyframes hand-ripple-start { 0%, 15% { opacity: 0; transform: scale(0.3); } 19% { opacity: 1; } 36%, 100% { opacity: 0; transform: scale(1.6); } }
 @keyframes hand-ripple-end { 0%, 71% { opacity: 0; transform: scale(0.3); } 75% { opacity: 1; } 92%, 100% { opacity: 0; transform: scale(1.6); } }
 
-/* Bocadillo: tarjeta del menu con borde dorado; Brotito se asoma por la esquina. */
+/* Bocadillo: tarjeta del menu con borde dorado; Boxer, que da los tours (T-032), se asoma por la esquina con su nombre. */
 .tour-bubble {
   position: absolute; display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 12px;
   width: min(420px, calc(100vw - 20px)); padding: 12px 14px 12px 12px; border-radius: 20px; border: 2px solid #ffd23f;
@@ -1435,18 +1493,21 @@ button.route-stop-body:focus-visible .route-ring { outline-color: #ffe066; }
 .tour-cheer::after { right: -12px; bottom: -8px; width: 9px; height: 9px; animation-delay: 0.4s; }
 @keyframes cheer-pop { from { opacity: 0; transform: scale(0.3) rotate(-10deg); } to { opacity: 1; transform: rotate(-3deg); } }
 
-/* Brotito: semillita con dos hojas que se mecen, ojos que parpadean y mofletes. */
-.tour-buddy { position: absolute; left: -16px; top: -26px; width: 42px; height: 46px; overflow: visible; filter: drop-shadow(0 3px 0 rgba(0, 0, 0, 0.25)); transform-origin: 50% 100%; animation: buddy-bob 2.2s ease-in-out infinite; }
-.tour-buddy-stem { fill: none; stroke: #3f9a35; stroke-width: 3; stroke-linecap: round; }
-.tour-buddy-leaf { fill: #80d153; stroke: #2a6b22; stroke-width: 1.6; stroke-linejoin: round; transform-origin: 22px 10px; animation: leaf-wave 2.2s ease-in-out infinite; }
-.tour-buddy-leaf.is-right { fill: #62c046; animation-delay: -1.1s; }
-.tour-buddy-body { fill: #a6e07a; stroke: #2a6b22; stroke-width: 2; }
-.tour-buddy-blush { fill: rgba(255, 120, 140, 0.45); }
-.tour-buddy-eyes { fill: #1a2614; transform-origin: 22px 30px; animation: buddy-blink 3.4s infinite; }
-.tour-buddy-smile { fill: none; stroke: #1a2614; stroke-width: 1.8; stroke-linecap: round; }
-@keyframes buddy-bob { 0%, 100% { transform: rotate(-6deg); } 50% { transform: rotate(6deg) translateY(-3px); } }
-@keyframes leaf-wave { 0%, 100% { transform: rotate(-8deg); } 50% { transform: rotate(8deg); } }
-@keyframes buddy-blink { 0%, 92%, 100% { transform: none; } 95% { transform: scaleY(0.1); } }
+/* Boxer en el bocadillo (T-032): su retrato redondo asoma por la esquina de arriba a la izquierda y, al lado, la placa
+   con su nombre sobre el borde. Asoma como asomaba Brotito: casi no tapa el dibujo y el bocadillo no crece. */
+.tour-guide { position: absolute; left: -20px; top: -28px; z-index: 1; display: flex; align-items: center; pointer-events: none; }
+.tour-cameo { --cameo: 54px; animation: cameo-in 0.45s 0.08s cubic-bezier(0.2, 1.6, 0.4, 1) both; }
+.tour-guide-name {
+  margin: 14px 0 0 -6px; padding: 1px 10px 2px 12px; border-radius: 0 999px 999px 0; border: 2px solid var(--tone-dark); border-left: 0;
+  background: linear-gradient(180deg, var(--tone-mid), var(--tone-dark)); color: #fff;
+  font-size: 0.72rem; font-weight: 900; letter-spacing: 0.06em; text-shadow: 0 1px 0 rgba(0, 0, 0, 0.35);
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  animation: guide-name-in 0.35s 0.3s cubic-bezier(0.2, 1.4, 0.4, 1) both;
+}
+@keyframes guide-name-in { from { opacity: 0; transform: translateX(-10px); } }
+.tour.is-cheer .tour-cameo { animation: cameo-hop 0.5s cubic-bezier(0.2, 1.6, 0.4, 1); }
+/* El cuerpo deja sitio a la placa del nombre, que asoma sobre el borde de arriba. */
+.tour-head { margin-top: 2px; }
 
 /*
  * Dibujo del bocadillo: un trocito de jardin (cielo y cesped) de 128 x 92 donde pasa el paso en bucle de 2,8 s. Plantas,
@@ -1647,10 +1708,30 @@ button.route-stop-body:focus-visible .route-ring { outline-color: #ffe066; }
   .tour-text { margin-bottom: 6px; font-size: 0.92rem; }
   .btn.tour-next { padding: 6px 12px; font-size: 0.88rem; }
   .tour-skip { font-size: 0.8rem; }
-  .tour-buddy { left: -12px; top: -20px; width: 32px; height: 35px; }
+  .tour-guide { left: -14px; top: -22px; }
+  .tour-cameo { --cameo: 42px; }
+  .tour-guide-name { margin-top: 10px; padding: 0 8px 1px 10px; font-size: 0.62rem; }
   .tour-gesture { --hand: 46px; }
   .coin-hint-label { font-size: 0.82rem; padding: 4px 10px 4px 6px; }
 }
+
+/* Personajes fuera de las viñetas (T-032): retrato redondo (cabeza y hombros en un circulo del color del personaje) que
+   respira, habla y parpadea; y lo que aun no se ha dicho de una frase, que ocupa su sitio para que nada salte. */
+.cameo {
+  --cameo: 52px;
+  position: relative; flex: none; display: block; width: var(--cameo); height: var(--cameo); border-radius: 50%; overflow: hidden;
+  border: max(2px, calc(var(--cameo) * 0.05)) solid var(--tone-dark);
+  background: radial-gradient(circle at 38% 30%, color-mix(in srgb, var(--tone-light) 70%, #fff) 0%, var(--tone-light) 45%, var(--tone-mid) 100%);
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.28), 0 0 0 3px color-mix(in srgb, var(--tone-mid) 35%, transparent);
+}
+/* El busto de 320 x 360 encuadrado en la cabeza y los hombros. */
+.cameo-face {
+  position: absolute; left: -5.5%; top: -6%; width: 111%; height: 125%; transform-origin: 50% 85%;
+  animation: portrait-hop 0.42s cubic-bezier(0.2, 1.6, 0.4, 1) both, portrait-breathe 3.4s 0.42s ease-in-out infinite;
+}
+@keyframes cameo-in { from { opacity: 0; transform: scale(0.3) rotate(-20deg); } }
+@keyframes cameo-hop { 40% { transform: translateY(-6px) scale(1.08); } }
+.spoken-rest { visibility: hidden; }
 
 /* Viñetas de la historia (T-031, ADR-0019): el busto de quien habla, su nombre y un bocadillo de tebeo sobre la escena
    oscurecida. Todo se mide con el sitio que tiene (consultas de contenedor, cqh y cqw): en el juego es la pantalla y en la
@@ -1817,6 +1898,59 @@ button.route-stop-body:focus-visible .route-ring { outline-color: #ffe066; }
    ve: la viñeta que pregunta el nombre y el panel del menu (Opciones), que se desplaza para dejar a la vista el campo. */
 .app.has-keyboard .story { top: var(--keyboard-top); bottom: auto; height: var(--keyboard-height); }
 .app.has-keyboard .title-panel { top: calc(var(--keyboard-top) + 8px); translate: none; max-height: calc(var(--keyboard-height) - 16px); }
+
+/* Patty en el Invernadero (T-032, VT-05): su busto asoma por abajo, a la izquierda del panel y sin tocarlo; respira y
+   parpadea. Lo que dice sale en un bocadillo crema sobre su cabeza, que tampoco llega al panel. Se esconde con la ruta
+   abierta, con una viñeta encima y en una ventana en vertical (el panel baja y no queda sitio). */
+.greenhouse-patty {
+  --patty-h: clamp(104px, 36vh, 320px);
+  position: absolute; bottom: 0; right: calc(var(--panel-right) + var(--panel-w) + 10px); width: calc(var(--patty-h) * 320 / 360);
+  height: var(--patty-h); pointer-events: none;
+}
+.greenhouse-patty.is-hidden { visibility: hidden; }
+.greenhouse-patty.is-hidden .patty-bubble { display: none; }
+.patty-figure {
+  position: absolute; inset: 0; padding: 0; border: 0; background: none; cursor: pointer; pointer-events: auto;
+  filter: drop-shadow(0 8px 14px rgba(0, 0, 0, 0.35)); -webkit-tap-highlight-color: transparent;
+  animation: patty-in 0.7s 0.45s cubic-bezier(0.2, 1.3, 0.4, 1) both;
+}
+.patty-figure:focus-visible { outline: 3px solid #ffe066; outline-offset: -6px; border-radius: 24px; }
+@keyframes patty-in { from { opacity: 0; transform: translateY(70%); } }
+.patty-body {
+  position: absolute; inset: 0; transform-origin: 50% 100%;
+  animation: portrait-breathe 3.4s ease-in-out infinite;
+}
+.patty-body.is-talking { animation: portrait-hop 0.42s cubic-bezier(0.2, 1.6, 0.4, 1) both, portrait-breathe 3.4s 0.42s ease-in-out infinite; }
+.patty-figure:hover .patty-body { filter: brightness(1.06); }
+.patty-bubble {
+  position: absolute; right: 18%; bottom: calc(100% - var(--patty-h) * 0.08); width: max-content;
+  max-width: min(330px, calc(100vw - var(--panel-right) - var(--panel-w) - 40px));
+  margin: 0; padding: 13px 14px 9px; border-radius: 16px; border: 2px solid var(--tone-dark);
+  background: linear-gradient(180deg, #fffdf4 0%, #f4ecd4 100%); color: #2b2418;
+  font-size: 0.98rem; font-weight: 800; line-height: 1.3; text-align: left; pointer-events: none;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35), 0 0 0 4px color-mix(in srgb, var(--tone-mid) 30%, transparent);
+  transform-origin: 85% 100%; animation: patty-bubble-in 0.36s cubic-bezier(0.2, 1.4, 0.4, 1) both;
+}
+/* Pico hacia su cabeza. */
+.patty-bubble::before {
+  content: ''; position: absolute; right: 22px; bottom: -8px; width: 13px; height: 13px;
+  background: #f5eed8; border-right: 2px solid var(--tone-dark); border-bottom: 2px solid var(--tone-dark); transform: rotate(45deg);
+}
+.patty-bubble.is-leaving { animation: patty-bubble-out 0.3s ease both; }
+@keyframes patty-bubble-in { from { opacity: 0; transform: translateY(8px) scale(0.85); } }
+@keyframes patty-bubble-out { to { opacity: 0; transform: translateY(6px) scale(0.92); } }
+.patty-bubble-name {
+  position: absolute; left: 12px; top: 0; transform: translateY(-58%); padding: 0 9px 1px; border-radius: 999px;
+  border: 2px solid var(--tone-dark); background: linear-gradient(180deg, var(--tone-mid), var(--tone-dark)); color: #fff;
+  font-size: 0.72rem; font-weight: 900; letter-spacing: 0.05em; text-shadow: 0 1px 0 rgba(0, 0, 0, 0.3);
+}
+@media (max-width: 860px), (max-height: 560px) {
+  .patty-bubble { padding: 11px 11px 7px; border-radius: 13px; font-size: 0.82rem; line-height: 1.25; }
+  .patty-bubble-name { font-size: 0.62rem; }
+}
+@media (max-aspect-ratio: 4/5) {
+  .greenhouse-patty { display: none; }
+}
 
 /* Invernadero: lista de la historia vista para volver a verla (T-031, Y-05). */
 .story-list { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }

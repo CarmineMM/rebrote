@@ -1,17 +1,26 @@
 import { useEffect, useId, useRef, type ReactNode } from 'react';
 import { sfx } from '../game/audio/sfx';
 import { MINE } from '../game/config/balance';
+import type { OutbreakId } from '../game/core/outbreaks';
 import type { UnlockInfo, UnlockItem } from '../game/EventBus';
+import { CAST } from '../game/view/characters/cast';
 import { formatSeconds, type Dictionary } from '../i18n';
 import { medalTier } from '../game/view/levelMedal';
 import { CardIcon } from './Card';
+import { Cameo, SpokenText, toneStyle, useSpeech } from './story/Portrait';
+import { unlockSpeech } from './story/speech';
 import { NO_AUTO_FULLSCREEN } from './useFullscreen';
 import { useText } from './useText';
 
 interface UnlockModalProps {
   unlock: UnlockInfo;
+  /** Brote de la partida: dice quien presenta lo nuevo (T-032). */
+  outbreak: OutbreakId;
   onAccept: () => void;
 }
+
+/** Lo que espera quien presenta a hablar: antes salta la tarjeta y suena el aviso. */
+const SPEAK_DELAY_MS = 420;
 
 /** Lo que se cuenta de cada cosa nueva: dibujo, nombre y una linea de como se usa. */
 interface Shown {
@@ -96,8 +105,12 @@ function describe(t: Dictionary['unlock'], items: readonly UnlockItem[]): Shown[
 /**
  * Aviso de lo desbloqueado al empezar una ronda (T-009): "¡YA LO TIENES!" brillando en dorado, con rayos que giran
  * detras y una tarjeta por cosa nueva. El juego espera en pausa hasta que el jugador lo acepta (Enter, Esc o el boton).
+ *
+ * Arriba, quien lo presenta (T-032): su retrato y su frase en un bocadillo, dicha letra a letra con su voz. Boxer en el
+ * brote 1 ("Toma, esto te va a hacer falta", VT-02) y Patty en los siguientes ("¡He creado algo nuevo!", VT-03), segun
+ * diga el guion del brote.
  */
-export function UnlockModal({ unlock, onAccept }: UnlockModalProps) {
+export function UnlockModal({ unlock, outbreak, onAccept }: UnlockModalProps) {
   const titleId = useId();
   const button = useRef<HTMLButtonElement>(null);
 
@@ -109,6 +122,8 @@ export function UnlockModal({ unlock, onAccept }: UnlockModalProps) {
 
   const t = useText();
   const shown = describe(t.unlock, unlock.items);
+  const speech = unlockSpeech(t, outbreak, unlock.round - 1);
+  const saying = useSpeech({ speaker: speech.speaker, text: speech.text, delayMs: SPEAK_DELAY_MS, voice: true, replay: unlock.round });
 
   return (
     <div className="pause-overlay is-unlock" role="dialog" aria-modal="true" aria-labelledby={titleId} {...{ [NO_AUTO_FULLSCREEN]: '' }}>
@@ -117,6 +132,13 @@ export function UnlockModal({ unlock, onAccept }: UnlockModalProps) {
         <span className="victory-star is-a" aria-hidden="true" />
         <span className="victory-star is-b" aria-hidden="true" />
         <span className="victory-star is-c" aria-hidden="true" />
+        <div className={`unlock-speaker is-${speech.speaker}`} style={toneStyle(CAST[speech.speaker])}>
+          <Cameo speaker={speech.speaker} expression={speech.expression} open={saying.open} blink={saying.blink} className="unlock-cameo" />
+          <p className="unlock-line">
+            <span className="unlock-line-name">{t.story.names[speech.speaker]}</span>
+            <SpokenText text={speech.text} typed={saying.typed} />
+          </p>
+        </div>
         <p className="pause-kicker">{t.unlock.round(unlock.round)}</p>
         <h2 id={titleId} className="unlock-title">
           {t.unlock.title}

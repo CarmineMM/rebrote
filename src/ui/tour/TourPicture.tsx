@@ -172,25 +172,3 @@ export function TourPicture({ id, art }: TourPictureProps) {
     </span>
   );
 }
-
-/**
- * Brotito, el que acompana los bocadillos de ayuda (T-013): una semillita verde con dos hojas, ojos que parpadean y una
- * sonrisa. Se asoma por la esquina del bocadillo y se mece.
- */
-export function TourBuddy() {
-  return (
-    <svg className="tour-buddy" viewBox="0 0 44 48" aria-hidden="true">
-      <path className="tour-buddy-stem" d="M22 20 Q21 14 22 9" />
-      <path className="tour-buddy-leaf" d="M22 10 Q12 1 5 7 Q12 15 22 10 Z" />
-      <path className="tour-buddy-leaf is-right" d="M22 9 Q31 -1 39 5 Q32 14 22 9 Z" />
-      <ellipse className="tour-buddy-body" cx="22" cy="32" rx="15" ry="13.5" />
-      <ellipse className="tour-buddy-blush" cx="13.5" cy="35.5" rx="3" ry="1.8" />
-      <ellipse className="tour-buddy-blush" cx="30.5" cy="35.5" rx="3" ry="1.8" />
-      <g className="tour-buddy-eyes">
-        <ellipse cx="16.5" cy="30" rx="2.2" ry="2.8" />
-        <ellipse cx="27.5" cy="30" rx="2.2" ry="2.8" />
-      </g>
-      <path className="tour-buddy-smile" d="M18 37 Q22 40.5 26 37" />
-    </svg>
-  );
-}

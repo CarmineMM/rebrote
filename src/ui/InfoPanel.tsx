@@ -1,5 +1,7 @@
 import { useEffect, useId, useRef, type CSSProperties } from 'react';
 import type { EntityInfo } from '../game/EventBus';
+import { CAST } from '../game/view/characters/cast';
+import { Cameo, toneStyle } from './story/Portrait';
 import { NO_AUTO_FULLSCREEN } from './useFullscreen';
 import { useText } from './useText';
 
@@ -11,7 +13,8 @@ interface InfoPanelProps {
 /**
  * Ficha de una planta, una mina o un enemigo (T-010): sale con doble clic y el juego espera en pausa detras. Foto a la
  * izquierda (sacada de las texturas del juego) y a la derecha nombre, nivel, vida, estados del momento, datos y como
- * funciona. Se cierra con el boton, con Esc o haciendo clic fuera. React solo pinta lo que le manda la escena.
+ * funciona. Se cierra con el boton, con Esc o haciendo clic fuera. React solo pinta lo que le manda la escena. La de un
+ * jefe acaba con lo que cuenta Boxer del virus de verdad (T-032), con su retrato y su nombre.
  */
 export function InfoPanel({ info, onClose }: InfoPanelProps) {
   const titleId = useId();
@@ -84,6 +87,15 @@ export function InfoPanel({ info, onClose }: InfoPanelProps) {
           </dl>
           <p className="info-about">{info.about}</p>
         </div>
+        {info.lore && (
+          <aside className="info-lore" style={toneStyle(CAST.boxer)}>
+            <Cameo speaker="boxer" expression="normal" className="info-lore-cameo" />
+            <p className="info-lore-text">
+              <span className="info-lore-name">{t.story.names.boxer}</span>
+              {info.lore}
+            </p>
+          </aside>
+        )}
         <button ref={closeRef} type="button" className="info-close" aria-label={t.info.close} title={t.info.closeTitle} onClick={onClose}>
           <span aria-hidden="true" />
         </button>

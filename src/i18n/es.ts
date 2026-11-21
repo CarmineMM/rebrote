@@ -148,6 +148,16 @@ export const es = {
     confirmText: (outbreak: string, round: number) => `Se borrará tu partida a medias (${outbreak}, ronda ${round}).`,
     confirmYes: 'Sí, empezar',
     confirmNo: 'Mejor no',
+    /** Patty en el Invernadero (T-032, VT-05): lo que dice a veces al entrar o al tocarla. Pocas y cortas. */
+    patty: [
+      '¡Hola! Estoy regando. Tú haz como si nada.',
+      'Shh… Estoy creando algo nuevo. ¡No mires!',
+      '¿Ves esas hojas? Les hablo cada mañana.',
+      'Si algo brota raro, avísame. O no: me encantan las sorpresas.',
+      (name: string | null) => (name ? `¡Hola otra vez, ${name}! Pasa, pasa.` : '¡Hola otra vez! Pasa, pasa.'),
+    ],
+    /** Para los lectores de pantalla y el puntero: tocarla le hace decir otra cosa. */
+    talkToPatty: 'Habla con Patty',
   },
 
   /** Ruta de brotes (T-019): un camino con un lugar por brote, hasta el destino final. */
@@ -285,6 +295,14 @@ export const es = {
     round: (round: number) => `Ronda ${round}`,
     title: '¡YA LO TIENES!',
     go: '¡A jugar!',
+    /**
+     * Lo que dice quien presenta lo nuevo (T-032): Boxer en el brote 1 (VT-02) y Patty desde el brote 2, con lo que ella
+     * crea (VT-03). Rotan por orden: el primer aviso de cada uno dice la primera.
+     */
+    presenters: {
+      boxer: ['Toma, esto te va a hacer falta.', 'Otra cosa para tu caja de herramientas.', '¡Esto no les va a gustar nada!'],
+      patty: ['¡He creado algo nuevo!', '¡He creado algo nuevo! Recién brotado.', '¡He creado algo nuevo! Trátalo con cariño.'],
+    },
     shooter: { title: 'Disparadora', text: 'Siémbrala en una casilla: dispara a los gusanos de su carril.' },
     levelUp: {
       title: 'Subir de nivel',
@@ -322,33 +340,37 @@ export const es = {
     skip: 'Saltar',
     nice: '¡Bien!',
     stepOf: (step: number, total: number) => `Paso ${step} de ${total}`,
+    /**
+     * Lo que dice Boxer en cada paso (T-032, VT-01): con su voz, con prisa y de tú, pero sin alargarlas: una frase corta
+     * por paso, nunca mas larga que la de T-013 (el test lo comprueba).
+     */
     steps: {
       basics: {
-        sow: 'Arrastra la disparadora al césped',
-        lane: 'Solo dispara en su carril: ¡cubre los cinco!',
-        coins: 'Sembrar cuesta monedas; cazar gusanos te da más',
-        lives: 'Si un gusano cruza el jardín, pierdes un corazón',
-        info: 'Toca dos veces una planta para ver su ficha',
+        sow: '¡Rápido, arrástrala al césped!',
+        lane: 'Cada una vigila su carril: ¡cubre los cinco!',
+        coins: 'Sembrar cuesta monedas. ¡Los gusanos pagan!',
+        lives: 'Ojo: cada gusano que se cuela, un corazón menos',
+        info: '¿Dudas? Toca dos veces y verás su ficha',
         go: '¿Listo? ¡Que vengan!',
       },
       levelUp: {
         pick: 'Toca una disparadora',
-        up: 'Pulsa «Subir»: pega más fuerte y más rápido',
+        up: 'Dale a «Subir»: más fuerte y más rápida',
       },
       fireMine: {
-        sow: 'Siembra el fuego en el césped',
-        boom: (countdown: string) => `Si un gusano se acerca, cuenta ${countdown} y ¡pum!`,
+        sow: 'Siembra fuego en el césped',
+        boom: (countdown: string) => `¿Un gusano cerca? Cuenta ${countdown} y… ¡pum!`,
       },
       iceMine: {
-        sow: 'Siembra el hielo en el césped',
-        freeze: 'Al explotar, frena mucho a los de alrededor',
+        sow: 'Siembra hielo en el césped',
+        freeze: '¡Al explotar, los deja medio congelados!',
       },
       infuse: {
-        card: 'Suelta fuego o hielo sobre una disparadora',
-        mine: 'O arrastra hasta ella una mina sembrada',
+        card: 'Echa fuego o hielo sobre una disparadora',
+        mine: 'O llévale una mina ya sembrada',
       },
       fuse: {
-        drag: 'Arrastra una disparadora sobre otra igual',
+        drag: 'Arrastra una sobre otra igual: ¡fusión!',
       },
     },
     /** Pista de la moneda en el suelo (G-08). */
@@ -375,6 +397,19 @@ export const es = {
       opening: 'El rescate',
       creeperDown: 'Lo que pasó',
       pattyGreenhouse: 'Patty, la botánica',
+    },
+    /** Titulo de lo que cuenta Boxer de cada jefe (T-032), para volver a verlo. */
+    loreTitle: (boss: string) => `El ${boss} de verdad`,
+    /**
+     * Lo que cuenta Boxer del virus de verdad de cada jefe (T-032, VT-04), uno por brote: `line`, en una viñeta al empezar
+     * la ronda en que el jefe se prepara (avisa de que llega: el jefe aparece al cerrarla); `card`, completo, en la ficha
+     * del jefe. Un jefe nuevo solo necesita estos textos.
+     */
+    lore: {
+      creeper: {
+        line: '¡Ojo, que viene Creeper, el primer gusano informático! Al de verdad lo paró Reaper, el primer antivirus. ¡Hoy el Reaper eres tú!',
+        card: 'Creeper (1971) fue el primer gusano informático: un experimento que saltaba de un ordenador a otro por ARPANET, la red de la que nació internet. No rompía nada: solo escribía «I’M THE CREEPER: CATCH ME IF YOU CAN!». Para atraparlo se programó Reaper, el primer antivirus.',
+      },
     },
     lines: {
       opening: {

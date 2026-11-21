@@ -1,6 +1,6 @@
 import { OUTBREAKS } from '../config/balance';
 import type { EnemyKind } from './combat';
-import type { RoundScript } from './rounds';
+import type { Presenter, RoundScript } from './rounds';
 
 /**
  * Brotes (T-018, ADR-0015): cada campana que acaba en un jefe ("Brote 1: Creeper"). Cada brote trae su guion de rondas,
@@ -29,6 +29,13 @@ export interface OutbreakScript {
   readonly startingBalance: number;
   /** Guion de rondas, en orden: cuantas hay, que desbloquea cada una y que enemigos saca. */
   readonly rounds: readonly RoundScript[];
+  /**
+   * Quien presenta en "¡YA LO TIENES!" lo nuevo que traen sus rondas (T-032): Boxer en el brote 1 (lo da el, VT-02) y
+   * Patty en los siguientes, que traen plantas y piezas que crea ella (VT-03). Una ronda puede decir otro
+   * (`RoundScript.presenter`). Sin decirlo, la regla de la historia (`unlockPresenter`); un tope de nivel sin nada nuevo
+   * lo cuenta siempre Boxer.
+   */
+  readonly presenter?: Presenter;
 }
 
 /** Brote con el que empieza el juego: el primero de la lista. */

@@ -71,6 +71,7 @@ export function shooterInfo(plant: Plant, cell: Cell, levelCap: number | null): 
     stats,
     tags: [],
     about: t.shooter.about[element ?? 'plain'],
+    lore: null,
   };
 }
 
@@ -99,6 +100,7 @@ export function mineInfo(mine: Mine, cell: Cell): EntityInfoData {
     stats,
     tags,
     about: t.mine.about[mine.element](formatSeconds(MINE.countdownMs)),
+    lore: null,
   };
 }
 
@@ -164,5 +166,12 @@ export function enemyInfo(enemy: Enemy): EntityInfoData {
     stats: rows,
     tags,
     about: enemyAbout(enemy.kind),
+    lore: bossLore(enemy.kind),
   };
+}
+
+/** Lo que cuenta Boxer del virus de verdad (T-032, VT-04), completo: solo si es el jefe de un brote. */
+function bossLore(kind: Enemy['kind']): string | null {
+  const outbreak = outbreakOfBoss(kind);
+  return outbreak ? text().story.lore[outbreak].card : null;
 }

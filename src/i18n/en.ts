@@ -115,6 +115,14 @@ export const en: Dictionary = {
     confirmText: (outbreak, round) => `Your game in progress (${outbreak}, round ${round}) will be deleted.`,
     confirmYes: 'Yes, start',
     confirmNo: 'Never mind',
+    patty: [
+      "Hi! I'm watering. Act natural.",
+      "Shh… I'm making something new. No peeking!",
+      'See those leaves? I talk to them every morning.',
+      "If anything sprouts weird, tell me. Or don't: I love surprises.",
+      (name) => (name ? `Hi again, ${name}! Come on in.` : 'Hi again! Come on in.'),
+    ],
+    talkToPatty: 'Talk to Patty',
   },
 
   route: {
@@ -247,6 +255,10 @@ export const en: Dictionary = {
     round: (round) => `Round ${round}`,
     title: 'UNLOCKED!',
     go: "Let's play!",
+    presenters: {
+      boxer: ["Here, you're going to need this.", 'One more thing for your toolbox.', "Oh, they're not going to like this!"],
+      patty: ['I made something new!', 'I made something new! Freshly sprouted.', 'I made something new! Be gentle with it.'],
+    },
     shooter: { title: 'Shooter', text: 'Plant it on a tile: it shoots the worms in its lane.' },
     levelUp: {
       title: 'Level up',
@@ -282,31 +294,31 @@ export const en: Dictionary = {
     stepOf: (step, total) => `Step ${step} of ${total}`,
     steps: {
       basics: {
-        sow: 'Drag the shooter onto the lawn',
-        lane: 'It only shoots down its lane: cover all five!',
-        coins: 'Planting costs coins; catching worms earns more',
-        lives: 'If a worm crosses the garden, you lose a heart',
-        info: 'Tap a plant twice to see its info card',
+        sow: 'Quick, drag it onto the lawn!',
+        lane: 'Each one guards its own lane. Cover all five!',
+        coins: 'Planting costs coins. Worms pay you back!',
+        lives: 'Each worm that sneaks past costs a heart',
+        info: 'Curious? Double-tap for its info card',
         go: 'Ready? Bring them on!',
       },
       levelUp: {
         pick: 'Tap a shooter',
-        up: 'Press “Level up”: it hits harder and faster',
+        up: 'Hit “Level up”: it gets stronger and faster',
       },
       fireMine: {
-        sow: 'Plant the fire on the lawn',
-        boom: (countdown) => `When a worm gets close, it counts ${countdown} and goes boom!`,
+        sow: 'Plant fire on the lawn',
+        boom: (countdown) => `Worm nearby? It counts ${countdown} and… boom!`,
       },
       iceMine: {
-        sow: 'Plant the ice on the lawn',
-        freeze: 'When it blows, it badly slows everything around it',
+        sow: 'Plant ice on the lawn',
+        freeze: 'When it blows, everything nearby half-freezes!',
       },
       infuse: {
-        card: 'Drop fire or ice onto a shooter',
-        mine: 'Or drag a planted mine onto it',
+        card: 'Toss fire or ice onto a shooter',
+        mine: 'Or bring it a planted mine',
       },
       fuse: {
-        drag: 'Drag a shooter onto a matching one',
+        drag: 'Drag one onto its twin to fuse!',
       },
     },
     coin: 'Tap it! It is worth more',
@@ -326,6 +338,13 @@ export const en: Dictionary = {
       opening: 'The rescue',
       creeperDown: 'What happened',
       pattyGreenhouse: 'Patty, the botanist',
+    },
+    loreTitle: (boss) => `The real ${boss}`,
+    lore: {
+      creeper: {
+        line: "Heads up, Creeper's coming: the very first computer worm! The real one was stopped by Reaper, the first antivirus. Today, you're the Reaper!",
+        card: 'Creeper (1971) was the first computer worm: an experiment that hopped from computer to computer across ARPANET, the network the internet grew out of. It broke nothing; it just printed “I’M THE CREEPER: CATCH ME IF YOU CAN!” To catch it, someone wrote Reaper, the first antivirus.',
+      },
     },
     lines: {
       opening: {

@@ -1,6 +1,6 @@
 # ADR-0019: Viñetas de la historia y retratos pintados con código
 
-- **Estado:** Aceptada
+- **Estado:** Aceptada. Ampliada el 2026-11-21 por T-032 (ver "Historial")
 - **Fecha:** 2026-11-21
 - **Modifica:** ADR-0014 (el progreso permanente guarda también la historia vista)
 
@@ -49,3 +49,8 @@ Viñetas hechas en React encima del juego, con retratos que pinta un pintor de C
 ## Cuándo se revisa
 
 Si una viñeta tiene que salir dentro del lienzo (por ejemplo, un personaje que habla junto a algo del tablero), o si los retratos pasan a animarse por partes (brazos, pelo), que con imágenes enteras no se puede.
+
+## Historial
+
+- **2026-11-21, versión original (T-031).**
+- **2026-11-21, ampliación (T-032):** los personajes salen también fuera de las viñetas: Boxer en el bocadillo de los tours y al pie de la ficha de un jefe, quien presenta cada desbloqueo arriba del aviso y Patty en el Invernadero. Siguen siendo imágenes del mismo pintor que React solo enseña: los fotogramas, el retrato redondo (`Cameo`) y la frase dicha letra a letra con la boca y la voz (`useSpeech`) están en `src/ui/story/Portrait.tsx`, que usa también la viñeta. Quién presenta cada desbloqueo es un dato del guion de cada brote (`presenter` en `OUTBREAKS`, `unlockPresenter` en `rounds.ts`). Lo que cuenta Boxer antes de cada jefe es una secuencia más, una por brote (`lore:<brote>`), que no se declara en `STORIES`: sale de la lista de brotes y de su texto en `story.lore`.

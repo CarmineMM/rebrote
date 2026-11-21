@@ -70,7 +70,8 @@ const SCENE_OF: Record<GameScreen, string> = { title: SCENES.title, board: SCENE
  * portada. Las viñetas de la historia (T-031, ADR-0019) salen al empezar el brote 1, al vencer a Creeper y al llegar al
  * Invernadero: mientras hay una, el juego espera en pausa, los tours esperan debajo y la victoria espera a que acabe.
  * En la de Creeper, Boxer pregunta el nombre del jugador (T-033), que va en su perfil y se cambia en Opciones; quien no lo
- * dice o salta las viñetas se queda con el apodo de Boxer. Con el teclado en pantalla abierto, la viñeta y el panel del
+ * dice o salta las viñetas se queda con el apodo de Boxer. Boxer da los tours y cuenta que fue cada jefe antes de su
+ * combate; lo nuevo lo presenta quien diga el brote (Boxer o Patty), y Patty esta en el Invernadero (T-032). Con el teclado en pantalla abierto, la viñeta y el panel del
  * menu se meten en lo que se ve (`useKeyboardArea`).
  */
 export function App() {
@@ -423,6 +424,8 @@ export function App() {
               onPlay={playOutbreak}
               onReplay={story.replay}
               onBack={() => setPlace('cover')}
+              quiet={storyOn}
+              name={player.name}
             />
           ) : (
             <TitleMenu
@@ -530,7 +533,9 @@ export function App() {
         <VictoryScreen outbreak={round?.outbreak ?? FIRST_OUTBREAK} rounds={round?.total ?? 0} onRestart={restart} onGreenhouse={exitToGreenhouse} />
       )}
 
-      {onBoard && unlock && !paused && !over && !storyOn && <UnlockModal unlock={unlock} onAccept={acceptUnlock} />}
+      {onBoard && unlock && !paused && !over && !storyOn && (
+        <UnlockModal unlock={unlock} outbreak={round?.outbreak ?? FIRST_OUTBREAK} onAccept={acceptUnlock} />
+      )}
 
       {onBoard && info && !paused && !over && !unlock && <InfoPanel info={info} onClose={closeInfo} />}
 

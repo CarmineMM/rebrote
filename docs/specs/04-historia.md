@@ -1,6 +1,6 @@
 # Historia y personajes
 
-Notas de la historia. Última revisión: 21 nov 2026. El arranque ya tiene tasks (T-031 a T-033); lo lejano queda aquí anotado, sin tasks.
+Notas de la historia. Última revisión: 21 nov 2026. El arranque ya está hecho (T-031 a T-033) y Boxer y Patty ya están en el juego (T-032); lo lejano queda aquí anotado, sin tasks.
 
 Lo marcado como "Decidido" lo dijo Carmine. Lo marcado como "Propuesta" es una idea por aprobar.
 
@@ -29,15 +29,16 @@ Aventura de dibujos animados: hay peligro y hay prisa, pero no se ve morir a nad
 - Hombre de complexión normal. Aspecto (T-031, Y-01, decidido): un informático moderno de pelo oscuro peinado con raya, barba completa con bigote y gafas de pasta negras; sudadera negra con cremallera y un portátil lleno de pegatinas. Ya no se le fija la edad en unos 50: aparenta treinta y tantos.
 - Era informático. Por eso sabe tanto de la IA y de los virus, y sabe cómo combatirlos.
 - Rescata al jugador y le enseña a luchar.
-- Es la voz de los tours de ayuda: cada cosa nueva la enseña él (T-032).
+- Es la voz de los tours de ayuda: cada cosa nueva la enseña él (T-032, VT-01), con su cara, su nombre y su voz en el bocadillo.
+- Lo del brote 1 se lo da él al jugador: presenta cada desbloqueo con un "Toma, esto te va a hacer falta" (T-032, VT-02).
+- Antes de cada jefe cuenta en una línea qué fue el virus de verdad, en la ronda en que el jefe se prepara; lo completo está en la ficha del jefe (T-032, VT-04, decidido).
 - Tras el cuarto jefe, propone dejar de defenderse e ir a por el jefe final.
-
-Propuesta: antes de cada jefe cuenta en una frase qué hizo el virus de verdad.
 
 ### Patty, la botánica (decidido)
 - Cuida el Invernadero.
 - Creó las plantas que disparan, con biología y con la ayuda de Boxer.
-- Sigue creando: cuando el jugador avanza, llega con un "He creado algo nuevo" y aparecen plantas nuevas.
+- Sigue creando: cuando el jugador avanza, llega con un "He creado algo nuevo" y aparecen plantas nuevas. Desde el brote 2, presenta en el aviso de desbloqueo cada planta o pieza nueva; Boxer enseña a usarla en el tour (T-032, VT-03).
+- Vive en el Invernadero: asoma junto al menú y a veces dice algo al entrar, o si se la toca (T-032, VT-05).
 
 Decidido (T-031, Y-02): joven, de unos 28 años, con media melena negra y un flequillo que le tapa parte de las cejas, una flor en el pelo, bata blanca con un pin de hoja y un tubo de ensayo con un brote.
 
@@ -76,6 +77,14 @@ Boxer será la primera persona que dibuja el juego: su estilo marca el de todas 
 > BOXER: ¡No hay tiempo para explicarte! Toma esa planta y sígueme el juego.
 
 Y empieza la ronda 1, con los tours.
+
+### Antes de Creeper (T-032)
+
+En la preparación de la ronda 8, cuando Creeper empieza a prepararse (aparece al cerrar la viñeta):
+
+> BOXER: ¡Ojo, que viene Creeper, el primer gusano informático! Al de verdad lo paró Reaper, el primer antivirus. ¡Hoy el Reaper eres tú!
+
+En su ficha, completo: Creeper (1971) fue el primer gusano informático, un experimento que saltaba de un ordenador a otro por ARPANET, la red de la que nació internet. No rompía nada: solo escribía "I'M THE CREEPER: CATCH ME IF YOU CAN!". Para atraparlo se programó Reaper, el primer antivirus.
 
 ### Después de vencer a Creeper (aprobado por Carmine el 21 nov 2026, con el ajuste de Patty)
 

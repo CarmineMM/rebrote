@@ -1,7 +1,22 @@
 import { describe, expect, it } from 'vitest';
 import { LANGUAGES, text } from '../../i18n';
 import { NICKNAME } from '../../game/playerName';
-import { STORIES, STORY_ORDER, STORY_PROMPTS, asksName, nameAfterStory, replayableStories, stepText, storiesAt, storySteps, type StoryId } from './stories';
+import {
+  STORIES,
+  STORY_ORDER,
+  STORY_PROMPTS,
+  asksName,
+  loreOutbreak,
+  loreStory,
+  nameAfterStory,
+  replayableStories,
+  stepText,
+  storiesAt,
+  storyScript,
+  storySteps,
+  storyTitle,
+  type StoryId,
+} from './stories';
 import { glyphs, revealTimes, typedLength, typingDuration, TYPEWRITER } from './typewriter';
 
 describe('cuando salen las viñetas (T-031)', () => {
@@ -31,6 +46,43 @@ describe('cuando salen las viñetas (T-031)', () => {
 
   it('sin el Invernadero abierto no sale nada', () => {
     expect(storiesAt({ kind: 'greenhouse', defeated: [] }, [])).toEqual([]);
+  });
+});
+
+describe('Boxer cuenta que fue cada jefe antes de su combate (T-032, VT-04)', () => {
+  const at = (round: number, phase: 'prep' | 'attack' = 'prep') => ({ kind: 'match' as const, outbreak: 'creeper' as const, round, phase });
+
+  it('sale en la preparacion de la ronda 8 del brote 1, cuando Creeper empieza a prepararse', () => {
+    expect(storiesAt(at(7), ['opening'])).toEqual(['lore:creeper']);
+    expect(storiesAt(at(7), ['opening', 'lore:creeper'])).toEqual([]);
+  });
+
+  it('antes no, en pleno ataque tampoco; si no se vio, en la preparacion de las siguientes hasta la del combate', () => {
+    expect([0, 3, 6].flatMap((round) => storiesAt(at(round), ['opening']))).toEqual([]);
+    expect(storiesAt(at(7, 'attack'), [])).toEqual([]);
+    expect(storiesAt(at(8), [])).toEqual(['lore:creeper']);
+    expect(storiesAt(at(9), [])).toEqual(['lore:creeper']);
+  });
+
+  it('es una sola viñeta de Boxer con su texto de cada brote, y se vuelve a ver antes de lo que cuenta al vencerlo', () => {
+    expect(loreStory('creeper')).toBe('lore:creeper');
+    expect(loreOutbreak('lore:creeper')).toBe('creeper');
+    expect(loreOutbreak('creeperDown')).toBeNull();
+    expect(loreOutbreak('lore:otro')).toBeNull();
+    expect(storyScript('lore:creeper').map((step) => step.speaker)).toEqual(['boxer']);
+    const order = [...STORY_ORDER];
+    expect(order.indexOf('lore:creeper')).toBeGreaterThan(order.indexOf('opening'));
+    expect(order.indexOf('lore:creeper')).toBeLessThan(order.indexOf('creeperDown'));
+    expect(replayableStories(['creeperDown', 'lore:creeper'])).toEqual(['lore:creeper', 'creeperDown']);
+  });
+
+  it('su texto y su titulo salen de los textos de cada brote: anadir la de un jefe nuevo es anadir un texto', () => {
+    const [step] = storyScript('lore:creeper');
+    expect(stepText(text('es'), 'lore:creeper', step, null)).toBe(text('es').story.lore.creeper.line);
+    expect(stepText(text('en'), 'lore:creeper', step, 'Ana')).toBe(text('en').story.lore.creeper.line);
+    expect(storyTitle(text('es'), 'lore:creeper')).toBe('El Creeper de verdad');
+    expect(storyTitle(text('en'), 'lore:creeper')).toBe('The real Creeper');
+    expect(storyTitle(text('es'), 'creeperDown')).toBe('Lo que pasó');
   });
 });
 
@@ -94,8 +146,8 @@ describe('los textos de las viñetas (T-031)', () => {
   it.each(LANGUAGES)('%s: cada viñeta tiene su texto, y cada secuencia su titulo', (language) => {
     const t = text(language);
     for (const id of STORY_ORDER) {
-      expect(t.story.titles[id]).toBeTruthy();
-      for (const step of STORIES[id]) expect(stepText(t, id, step, null).length, `${id}.${step.id}`).toBeGreaterThan(10);
+      expect(storyTitle(t, id)).toBeTruthy();
+      for (const step of storyScript(id)) expect(stepText(t, id, step, null).length, `${id}.${step.id}`).toBeGreaterThan(10);
     }
   });
 

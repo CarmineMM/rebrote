@@ -1,6 +1,6 @@
 # ADR-0012: Tours de ayuda hechos a mano, sobre el juego vivo
 
-- **Estado:** Aceptada. Modificada el 2026-11-21 por ADR-0018 (ver "Historial").
+- **Estado:** Aceptada. Modificada el 2026-11-21 por ADR-0018 y por T-032 (ver "Historial").
 - **Fecha:** 2026-11-20
 
 ## Contexto
@@ -43,3 +43,4 @@ Tours hechos a mano en React, encima del juego vivo.
 
 - **2026-11-20, versión original (T-013).**
 - **2026-11-21, modificación (T-034, ADR-0018):** los tours vistos son de cada jugador (PF-02): un jugador nuevo en el mismo aparato ve la ayuda. Van en el hueco `tours` de su perfil (`rebrote.perfil.<id>.tours`); `useTours` lee los del jugador activo y los vuelve a leer al cambiar de jugador. Solo se escriben cuando cambian. La opción "Ayuda" sigue siendo del aparato (`rebrote.ajustes`). El hueco `rebrote.tours` se borra al arrancar, sin convertirlo.
+- **2026-11-21, modificación (T-032):** los tours los da Boxer. En el bocadillo, donde asomaba Brotito, asoma su retrato redondo con su nombre (`TOUR_GUIDE` en `tours.ts`; el retrato y la frase dicha con su voz salen de `src/ui/story/Portrait.tsx`, ADR-0019). Lo que asoma cuenta como parte del bocadillo al colocarlo. Las frases se repasaron con su voz sin alargarlas. Brotito se retira.

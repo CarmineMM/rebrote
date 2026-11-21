@@ -6,6 +6,7 @@ import { cardPlay, createMatch, createPlant, fusionBlocker, fusionTargets, level
 import { outbreakScript, roundCount, type OutbreakId } from './outbreaks';
 import {
   availableCards,
+  bossFirstSeenRound,
   bossRoundIndex,
   createRound,
   infusableElements,
@@ -18,6 +19,7 @@ import {
   roundHaste,
   roundUnlocks,
   startAttack,
+  unlockPresenter,
   stepRound,
   unlockRound,
   unlockedAt,
@@ -446,5 +448,15 @@ describe('ronda completa', () => {
     }
     expect(state.lives).toBe(0);
     expect(state.round.index).toBe(0);
+  });
+});
+
+describe('Boxer y Patty en el brote 1 (T-032)', () => {
+  it('lo nuevo del brote 1 lo presenta Boxer (VT-02)', () => {
+    for (let i = 0; i < roundCount(OUTBREAK_1); i++) expect(unlockPresenter(OUTBREAK_1, i), `ronda ${i + 1}`).toBe('boxer');
+  });
+
+  it('Creeper se ve por primera vez en la ronda 8, cuando empieza a prepararse (VT-04)', () => {
+    expect(bossFirstSeenRound(OUTBREAK_1)).toBe(7);
   });
 });

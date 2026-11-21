@@ -460,8 +460,9 @@ const CREEPER_ROUNDS: readonly RoundScript[] = [
  * rondas (`rounds`, como el de arriba) y el saldo con el que se empieza (`startingBalance`). Lo que desbloquearon los
  * brotes anteriores llega desbloqueado desde la ronda 1 (B-01), asi que las rondas de un brote nuevo solo desbloquean lo
  * suyo. Entre brotes no pasa nada de la partida: tablero vacio y su saldo inicial (B-02). Anadir un brote es anadirlo
- * aqui, con su nombre en `OutbreakId` (`src/game/core/outbreaks.ts`) y los avisos de sus rondas en `round.notices` de
- * `src/i18n/`; si trae algo que desbloquear, con su tour (regla 9 de `CLAUDE.md`).
+ * aqui, con su nombre en `OutbreakId` (`src/game/core/outbreaks.ts`), los avisos de sus rondas en `round.notices` de
+ * `src/i18n/` y lo que cuenta Boxer de su jefe en `story.lore` (T-032); si trae algo que desbloquear, con su tour (regla 9
+ * de `CLAUDE.md`) y con quien lo presenta (`presenter`: Patty desde el brote 2, VT-03).
  */
 export const OUTBREAKS: readonly OutbreakScript[] = [
   {
@@ -469,6 +470,8 @@ export const OUTBREAKS: readonly OutbreakScript[] = [
     boss: 'creeper',
     startingBalance: 250,
     rounds: CREEPER_ROUNDS,
+    // Lo del brote 1 lo da Boxer (T-032, VT-02).
+    presenter: 'boxer',
   },
 ];
 

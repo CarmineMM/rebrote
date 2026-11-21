@@ -1,13 +1,16 @@
 import { useEffect, useId, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
 import { MINE } from '../../game/config/balance';
 import type { TourArt, TourBoard } from '../../game/EventBus';
+import { CAST } from '../../game/view/characters/cast';
 import { formatSeconds, type Dictionary } from '../../i18n';
+import { Cameo, SpokenText, toneStyle, useSpeech } from '../story/Portrait';
 import { NO_AUTO_FULLSCREEN } from '../useFullscreen';
 import { useText } from '../useText';
 import { placeBubble, type BubblePlace, type Size } from './placeBubble';
-import { TourBuddy, TourPicture } from './TourPicture';
+import { TourPicture } from './TourPicture';
 import { TourHand } from './TourHand';
 import {
+  TOUR_GUIDE,
   hudTargetsOf,
   placeStep,
   shapeBox,
@@ -41,6 +44,8 @@ const HAND_BOX = { left: -22, top: -4, width: 70, height: 78 };
 /** Puntos del camino del arrastre que el bocadillo tampoco tapa, si puede, y lo que mide cada uno. */
 const TRAIL_SAMPLES = 9;
 const TRAIL_BOX = 28;
+/** Lo que espera Boxer a decir la frase de cada paso: antes entra el bocadillo de un salto. */
+const SPEAK_DELAY_MS = 260;
 
 /** Frase del paso, en el idioma en curso. La de la mina de fuego lleva su cuenta atras (de las reglas). */
 function stepText(t: Dictionary, tour: TourId, step: TourStep): string {
@@ -78,9 +83,13 @@ const viewportNow = (): Size => ({ width: window.innerWidth, height: window.inne
 
 /**
  * Un paso de un tour de ayuda (T-013, ADR-0012), encima del juego vivo: un velo que oscurece todo menos lo que se ensena
- * (con aros que laten alrededor), la mano haciendo el gesto y un bocadillo con Brotito, un dibujo animado, una frase
- * corta, los puntos de los pasos, "Saltar" y "Siguiente". El velo, los aros y la mano no recogen clics: el jugador puede
- * hacer el gesto de verdad. Lo del HUD se mide en cada fotograma y lo del tablero lo manda la escena.
+ * (con aros que laten alrededor), la mano haciendo el gesto y un bocadillo con un dibujo animado, una frase corta, los
+ * puntos de los pasos, "Saltar" y "Siguiente". El velo, los aros y la mano no recogen clics: el jugador puede hacer el
+ * gesto de verdad. Lo del HUD se mide en cada fotograma y lo del tablero lo manda la escena.
+ *
+ * La frase la dice Boxer (T-032): su retrato asoma por la esquina del bocadillo con su nombre al lado, y la dice letra a
+ * letra con su voz, moviendo la boca; al hacer el gesto, sonrie. Lo que aun no dijo ocupa su sitio: el bocadillo no cambia
+ * de tamano mientras habla, asi que `placeBubble` lo coloca igual.
  */
 export function TourOverlay({ tour, step, index, count, board, art, cheer, hideHand, onNext, onSkip }: TourOverlayProps) {
   const t = useText();
@@ -88,12 +97,15 @@ export function TourOverlay({ tour, step, index, count, board, art, cheer, hideH
   const maskId = `tour-mask-${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`;
   const textId = useId();
   const bubble = useRef<HTMLDivElement>(null);
+  const guide = useRef<HTMLSpanElement>(null);
   const next = useRef<HTMLButtonElement>(null);
   const [hud, setHud] = useState<Partial<Record<HudTarget, Box>>>({});
   const [obstacles, setObstacles] = useState<Box[]>([]);
   const [viewport, setViewport] = useState<Size>(viewportNow);
   const [place, setPlace] = useState<BubblePlace | null>(null);
   const last = index === count - 1;
+  const line = stepText(t, tour, step);
+  const speech = useSpeech({ speaker: TOUR_GUIDE, text: line, delayMs: SPEAK_DELAY_MS, voice: true, replay: `${tour}:${index}` });
 
   // El HUD se mueve (cartas que llegan, panel de nivel que se abre, ventana que cambia): se mide en cada fotograma y
   // solo se vuelve a pintar si algo cambio.
@@ -127,12 +139,16 @@ export function TourOverlay({ tour, step, index, count, board, art, cheer, hideH
   const gesture = cheer || hideHand ? null : placed.gesture;
   const shapeKey = JSON.stringify([placed, obstacles, viewport]);
 
-  // El bocadillo se coloca antes de pintarse: junto a lo iluminado, sin taparlo ni ponerse sobre la mano.
+  // El bocadillo se coloca antes de pintarse: junto a lo iluminado, sin taparlo ni ponerse sobre la mano. Boxer asoma por
+  // arriba a la izquierda (T-032): cuenta como parte del bocadillo, asi tampoco tapa lo que se senala.
   useLayoutEffect(() => {
     const element = bubble.current;
     if (!element) return;
-    const size = { width: element.offsetWidth, height: element.offsetHeight };
-    setPlace(placeBubble(size, placed.shapes.map(shapeBox), viewport, [...gestureBoxes(placed.gesture), ...obstacles]));
+    const outLeft = Math.max(0, -(guide.current?.offsetLeft ?? 0));
+    const outTop = Math.max(0, -(guide.current?.offsetTop ?? 0));
+    const size = { width: element.offsetWidth + outLeft, height: element.offsetHeight + outTop };
+    const spot = placeBubble(size, placed.shapes.map(shapeBox), viewport, [...gestureBoxes(placed.gesture), ...obstacles]);
+    setPlace({ left: spot.left + outLeft, top: spot.top + outTop });
     // `shapeKey` resume lo que importa de `placed`, `obstacles` y `viewport`; `t`, el idioma (cambia lo que mide el bocadillo).
   }, [shapeKey, step.id, t]);
 
@@ -164,7 +180,10 @@ export function TourOverlay({ tour, step, index, count, board, art, cheer, hideH
       {gesture && <TourHand key={`${step.id}:${gesture.kind}`} gesture={gesture} />}
 
       <div ref={bubble} key={`${tour}:${step.id}`} className="tour-bubble" style={bubbleStyle} role="dialog" aria-modal="false" aria-labelledby={textId}>
-        <TourBuddy />
+        <span ref={guide} className="tour-guide" style={toneStyle(CAST[TOUR_GUIDE])}>
+          <Cameo speaker={TOUR_GUIDE} expression={cheer ? 'happy' : 'normal'} open={speech.open} blink={speech.blink} className="tour-cameo" />
+          <span className="tour-guide-name">{t.story.names[TOUR_GUIDE]}</span>
+        </span>
         <TourPicture id={step.picture} art={art} />
         <div className="tour-body">
           <div className="tour-head">
@@ -180,7 +199,7 @@ export function TourOverlay({ tour, step, index, count, board, art, cheer, hideH
             )}
           </div>
           <p id={textId} className="tour-text">
-            {stepText(t, tour, step)}
+            <SpokenText text={line} typed={speech.typed} />
           </p>
           <div className="tour-footer">
             {!last && (

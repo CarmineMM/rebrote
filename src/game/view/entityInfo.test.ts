@@ -112,6 +112,13 @@ describe('ficha de un enemigo', () => {
     expect(angry.tags[0]).toEqual({ text: '¡Enfadado!', tone: 'alert' });
     expect(stat(angry, 'Próximo salto')?.value).toBe('Ya no salta más');
   });
+
+  it('la de un jefe acaba con lo que cuenta Boxer del virus de verdad; las demas no (T-032)', () => {
+    expect(enemyInfo(enemy('creeper')).lore).toMatch(/^Creeper \(1971\) fue el primer gusano informático/);
+    expect(enemyInfo(enemy('worm')).lore).toBeNull();
+    expect(shooterInfo(createPlant(shooter()), cell, 5).lore).toBeNull();
+    expect(mineInfo(createMine('ice'), cell).lore).toBeNull();
+  });
 });
 
 describe('ficha en ingles (T-011)', () => {

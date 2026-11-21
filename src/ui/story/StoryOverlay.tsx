@@ -1,13 +1,13 @@
-import { useCallback, useEffect, useId, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { sfx } from '../../game/audio/sfx';
 import { voiceCue } from '../../game/audio/cues';
 import { NICKNAME, cleanName, isValidName } from '../../game/playerName';
 import { CAST } from '../../game/view/characters/cast';
-import type { CharacterDesign, CharacterId, Expression } from '../../game/view/characters/design';
-import { portraitUrl } from '../../game/view/characters/portraitImage';
+import type { CharacterDesign, CharacterId } from '../../game/view/characters/design';
 import { NameField } from '../NameField';
 import { NO_AUTO_FULLSCREEN } from '../useFullscreen';
 import { useText } from '../useText';
+import { FACE, PortraitFrames, SPEAKING, reducedMotion, toneStyle } from './Portrait';
 import { stepText, type StoryId, type StoryStep } from './stories';
 import { glyphs, typedLength } from './typewriter';
 
@@ -36,42 +36,8 @@ interface StoryOverlayProps {
   onSkip: () => void;
 }
 
-/** Ritmo de la boca al hablar y del parpadeo, en ms. */
-const LOOK = {
-  mouthMs: 115,
-  blinkEveryMs: 3400,
-  blinkMs: 150,
-  /** Lo que tarda en irse la viñeta al acabar la secuencia o saltarla. */
-  leaveMs: 220,
-} as const;
-
-const SPEAKING = /[\p{L}\p{N}]/u;
-
-const reducedMotion = () => typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true;
-
-/** Los cuatro fotogramas de una expresion (boca y ojos), apilados: cambiar de uno a otro no parpadea. */
-function PortraitFrames({ design, expression, open, blink }: { design: CharacterDesign; expression: Expression; open: boolean; blink: boolean }) {
-  const frames = useMemo(
-    () =>
-      [false, true].flatMap((b) =>
-        [false, true].map((o) => ({ key: `${b ? 1 : 0}${o ? 1 : 0}`, blink: b, open: o, url: portraitUrl(design, { expression, blink: b, open: o }) })),
-      ),
-    [design, expression],
-  );
-  return (
-    <>
-      {frames.map((frame) => (
-        <img
-          key={frame.key}
-          className={`story-frame${frame.blink === blink && frame.open === open ? ' is-on' : ''}`}
-          src={frame.url}
-          alt=""
-          draggable={false}
-        />
-      ))}
-    </>
-  );
-}
+/** Lo que tarda en irse la viñeta al acabar la secuencia o saltarla, en ms. La boca y el parpadeo van al ritmo de `FACE`. */
+const LOOK = { leaveMs: 220 } as const;
 
 /**
  * Una viñeta de la historia (T-031, ADR-0019) sobre la escena oscurecida: el busto de quien habla, su nombre y el
@@ -144,8 +110,8 @@ export function StoryOverlay({ story, step, index, count, name, onAnswer, initia
         show(shown);
       }
       const talking = c.typed < total && SPEAKING.test(chars[c.typed - 1] ?? '');
-      setOpen(talking && Math.floor(c.step / LOOK.mouthMs) % 2 === 0);
-      setBlink(c.life % LOOK.blinkEveryMs > LOOK.blinkEveryMs - LOOK.blinkMs);
+      setOpen(talking && Math.floor(c.step / FACE.mouthMs) % 2 === 0);
+      setBlink(c.life % FACE.blinkEveryMs > FACE.blinkEveryMs - FACE.blinkMs);
       frame = requestAnimationFrame(tick);
     };
     frame = requestAnimationFrame(tick);
@@ -228,7 +194,7 @@ export function StoryOverlay({ story, step, index, count, name, onAnswer, initia
     return () => window.removeEventListener('keydown', onKey, true);
   }, [hidden, advance, skip]);
 
-  const tone = { '--tone-light': design.tone.light, '--tone-mid': design.tone.mid, '--tone-dark': design.tone.dark } as CSSProperties;
+  const tone = toneStyle(design);
   const chars = glyphs(text);
 
   return (

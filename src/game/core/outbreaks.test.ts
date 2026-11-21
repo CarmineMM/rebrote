@@ -15,6 +15,7 @@ import {
 } from './outbreaks';
 import {
   availableCards,
+  bossFirstSeenRound,
   bossRoundIndex,
   createRound,
   isBossRound,
@@ -24,6 +25,7 @@ import {
   roundUnlocks,
   startAttack,
   stepRound,
+  unlockPresenter,
   unlockRound,
   unlockedAt,
   type RoundEvent,
@@ -191,5 +193,19 @@ describe('cada brote empieza de cero (B-02)', () => {
     expect(beta.plants.every((lane) => lane.every((cell) => cell === null))).toBe(true);
     expect(beta.enemies).toEqual([]);
     expect(createMatch().balance).toBe(300);
+  });
+});
+
+describe('quien presenta lo nuevo en el aviso (T-032)', () => {
+  it('sin decirlo, la regla de la historia: Boxer en el primer brote (VT-02) y Patty en los siguientes (VT-03)', () => {
+    expect([0, 1, 2].map((i) => unlockPresenter(ALPHA, i))).toEqual(['boxer', 'boxer', 'boxer']);
+    expect([0, 1].map((i) => unlockPresenter(BETA, i))).toEqual(['patty', 'patty']);
+  });
+});
+
+describe('la ronda en que se ve por primera vez al jefe (T-032, VT-04)', () => {
+  it('sin ninguna ronda en que se prepare, la de su combate', () => {
+    expect(bossFirstSeenRound(ALPHA)).toBe(2);
+    expect(bossFirstSeenRound(BETA)).toBe(1);
   });
 });
