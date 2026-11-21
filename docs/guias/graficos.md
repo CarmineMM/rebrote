@@ -48,6 +48,10 @@ Cómo se pinta y se anima Rebrote, para que todo lo nuevo (enemigos, mundos, efe
 | `scripts/audio/` | De dónde sale cada sonido (`manifest.ts`), recetas de jsfxr (`sfxr.ts`) y quien fabrica los archivos (`build.ts`, `npm run audio`) |
 | `public/audio/` | Los archivos que carga el juego (OGG y MP3) y `LICENCIAS.md` con el origen y la licencia de cada uno |
 | `sonidos.html`, `src/dev/` | Página de prueba de los sonidos, solo con `npm run dev` |
+| `src/icons/` | Icono del juego (T-028), sin Phaser y con test: el dibujo maestro de cada propuesta y forma (`iconArt.ts`, la elegida en `ICON`) y el contexto de Canvas que escribe SVG (`svgCanvas.ts`), para sacar la disparadora de su propio pintor |
+| `scripts/icons/` | Quien fabrica los iconos (`build.ts`, `npm run icons`) y el PNG con paleta para los que pesan mucho (`png.ts`) |
+| `public/favicon.*`, `public/apple-touch-icon.png`, `public/icons/` | Los iconos que enlaza `index.html` (y, con T-029, el manifiesto) |
+| `iconos.html`, `src/dev/iconLab*` | Galería de propuestas del icono (T-028), solo con `npm run dev` |
 | `disparadoras.html`, `src/dev/shooterLab*`, `src/dev/levelFlair.ts` | Galería de las formas de la disparadora (T-016), solo con `npm run dev`: vitrina, tablero y prueba de silueta. En "Niveles", propuestas de adorno para los tramos de nivel 5, 10, 15 y 20 (`levelFlair.ts`), sin decidir |
 | `src/ui/tour/` | Tours de ayuda (T-013, ADR-0012): qué tours hay y sus pasos (`tours.ts`), tours vistos (`tourProgress.ts`), dónde va el bocadillo (`placeBubble.ts`), velo, aros y bocadillo (`TourOverlay`), la mano (`TourHand`), los dibujos animados y Brotito (`TourPicture`), la pista de la moneda (`CoinHint`) y quién los pone en marcha (`useTours`) |
 | `src/ui/` | HUD flotante (cartas con su precio, ronda con su cuenta atrás y su aviso en `RoundHud`, barra del jefe en `BossBar`, vidas, saldo), panel de nivel de la planta seleccionada (`LevelPanel`), ficha de información (`InfoPanel`, T-010), menú de pausa, ajustes (`SettingsPanel`, con el idioma), pantallas de derrota y de victoria, menú de inicio con su título, créditos y logo de Claude (`TitleScreen`, `TitleMenu`, `Credits`, `ClaudeLogo`, T-011), Invernadero y ruta de brotes (`Greenhouse`, `GreenhouseIcon`, `RouteMap`, con la colocación en `routeLayout`, T-019), y aviso de girar la pantalla en un móvil en vertical (`RotateNotice`, `useLandscapeOnly`, ADR-0011) (React) |
@@ -395,7 +399,20 @@ Detalle y porqué en el ADR-0013. El arte se pinta con código; el sonido sale d
 | `attackStarted`, `roundCleared`, aviso de desbloqueo, derrota, victoria | `attackStarted`, `roundCleared`, `unlock`, `defeat`, `victory` |
 | Botón de un menú | `button` |
 
-## 17. Listas de comprobación
+## 17. Icono del juego (T-028)
+
+- **Es la disparadora del juego** sobre el cielo y el césped de la portada (W-03, elegida por Carmine entre cinco propuestas). No se dibuja aparte: `drawShooter` llama al pintor de la forma activa (`SHOOTER.paint`, de un cañón y sin elemento) con un contexto de Canvas que escribe SVG (`SvgCanvas`). Si la disparadora se redibuja o `SHOOTER` cambia, el icono la sigue con `npm run icons`; mientras no se pase, el test de `iconArt.test.ts` falla.
+- **Un dibujo, cuatro formas** (`iconSvg`), todas en un lienzo de 512:
+  - `tab`, la pestaña: sin fondo, con los contornos más gruesos (`SHOOTER_TAB_STROKE`) y sin lo semitransparente (vetas, brillo, mejilla), que a 16 px solo ensucia.
+  - `tile`, icono de aplicación (192 y 512): ficha con las esquinas redondeadas.
+  - `full`, iPhone (180): cuadrado, a sangre y sin canal alfa; iOS redondea las esquinas.
+  - `maskable`, Android (192 y 512): a sangre, con la disparadora entera dentro del círculo central de radio 40 % (test).
+- **El motivo se mide solo.** Lo que se pinta va ampliando una caja (con el grosor de los trazos) y la composición encaja esa caja en su margen o en la zona segura. El césped se coloca a la altura de los pies.
+- **Archivos.** `npm run icons` pinta los SVG con ffmpeg (librsvg) y escribe `favicon.svg`, `favicon.ico` (32), `apple-touch-icon.png` y `icons/` en `public/`, que es lo que enlaza `index.html`. El lector de SVG de ffmpeg entrega los colores premultiplicados: el script lo deshace (`unpremultiply`) o los bordes salen oscuros. Cada PNG va sin pérdida; si pasa de 50 kB, con paleta de 256 colores que guarda el alfa de cada borde (`png.ts`), porque la de ffmpeg deja las esquinas dentadas. Dos pasadas dan los mismos archivos.
+- **Color de tema** (`THEME_COLOR`, `<meta name="theme-color">`): el azul de arriba del cielo de la portada, `#2a80d2`.
+- **Elegir viendo.** `/iconos.html` enseña cada propuesta en la pestaña clara y oscura, a 16, 32, 180 y 512 píxeles (16 y 32 también ampliados píxel a píxel), recortada como Android y en la pantalla de inicio de un iPhone. Para cambiar de icono se pone otra en `ICON` y se pasa `npm run icons`.
+
+## 18. Listas de comprobación
 
 ### Enemigo nuevo
 Ejemplos: el acorazado y el escupidor de T-007, en `wormView.ts` (`KIND_LOOK`).
@@ -472,6 +489,10 @@ Ejemplos: el acorazado y el escupidor de T-007, en `wormView.ts` (`KIND_LOOK`).
 
 ### Texto nuevo en pantalla (T-011)
 - [ ] Sigue la lista de `docs/guias/idiomas.md`: en `es.ts` y en `en.ts`, leído con `text()` o `useText()`, y cabe en los dos idiomas.
+
+### Disparadora redibujada (T-028)
+- [ ] `npm run icons`: el icono sale del pintor de la disparadora y el test de `iconArt.test.ts` falla hasta que se rehace.
+- [ ] En `/iconos.html`, la propuesta "Disparadora" se sigue leyendo a 16 px en pestaña clara y oscura, y entera en el círculo de Android.
 
 ### Enemigo o planta nuevos en la portada (T-011)
 - [ ] Si se quiere en la portada, se añade a `CAST` de `titleCover.ts`: el que ataca, a su distancia (`engagedX`); las minas, lejos de los enemigos.

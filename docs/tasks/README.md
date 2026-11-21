@@ -31,7 +31,7 @@ Una task por archivo. El tamaño es orientativo.
 | T-025 | [Enemigos] Tropas del brote 2 y juglar | Pendiente | L | T-018, T-024 | F-01 a F-06 |
 | T-026 | [Jefe] Elk Cloner y rondas del brote 2 (antes Blaster, que pasó al brote 11) | Pendiente | L | T-024, T-025 | L-01, L-03 a L-09 (L-02 cerrada) |
 | T-027 | [Plantas] Premio en los niveles 5, 10, 15 y 20 y jardincito | Completada (21 nov 2026) | M | T-003 | Ninguna (Q-01 a Q-03 cerradas) |
-| T-028 | [Web] Icono del juego y favicon | Pendiente | S | Ninguna | W-01 a W-03 |
+| T-028 | [Web] Icono del juego y favicon | Completada (21 nov 2026, 0.1.1) | S | Ninguna | Ninguna (W-01 a W-03 cerradas) |
 | T-029 | [Web] Instalar el juego como aplicación (PWA) | Pendiente | M | T-028 | V-02 a V-05 |
 | T-030 | [Enemigos] Aura en los tramos de nivel de los gusanos | Completada (21 nov 2026) | M | T-027 | Ninguna (Z-01 a Z-04 cerradas) |
 | T-031 | [Historia] Viñetas, Boxer y Patty: el arranque de la historia | Pendiente | L | T-019 | Y-01 a Y-07 |

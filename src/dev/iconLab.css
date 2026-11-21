@@ -1,0 +1,284 @@
+/* Galeria de propuestas del icono (T-028): solo en desarrollo. */
+:root {
+  color-scheme: dark;
+  font-family: ui-rounded, 'Nunito', system-ui, sans-serif;
+}
+
+html,
+body {
+  margin: 0;
+  background: #1d2b1f;
+  color: #f4ffe9;
+}
+
+.icon-bar {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 18px;
+  padding: 10px 16px;
+  background: #24361f;
+  border-bottom: 2px solid #3f5a2f;
+}
+
+.icon-bar h1 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.icon-bar h1 span {
+  margin-left: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #b9d99a;
+}
+
+.icon-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.icon-tools button {
+  font: inherit;
+  font-size: 14px;
+  font-weight: 800;
+  color: #1d2b1f;
+  background: #e9f7d8;
+  border: 2px solid #2a6b22;
+  border-radius: 999px;
+  padding: 5px 12px;
+  cursor: pointer;
+}
+
+.icon-tools button.is-on {
+  background: #80d153;
+}
+
+.icon-notes {
+  margin: 0;
+  padding: 10px 16px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: #cfe8c2;
+}
+
+.icon-swatch {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  vertical-align: -2px;
+}
+
+.icon-list {
+  display: grid;
+  gap: 18px;
+  padding: 0 16px 24px;
+}
+
+.icon-proposal {
+  display: grid;
+  gap: 12px;
+  padding: 14px 16px 16px;
+  background: #24361f;
+  border: 2px solid #3f5a2f;
+  border-radius: 14px;
+}
+
+.icon-proposal h2 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+  margin: 0;
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.icon-proposal h2 code {
+  font-size: 13px;
+  color: #b9d99a;
+}
+
+.icon-proposal p {
+  margin: 4px 0 0;
+  font-size: 14px;
+  color: #cfe8c2;
+}
+
+.icon-current {
+  padding: 2px 8px;
+  font-size: 12px;
+  font-weight: 800;
+  color: #1d2b1f;
+  background: #ffe36b;
+  border-radius: 999px;
+}
+
+.icon-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.icon-proposal figure {
+  display: grid;
+  justify-items: center;
+  align-content: end;
+  gap: 6px;
+  margin: 0;
+}
+
+.icon-proposal figcaption {
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* Pestanas del navegador, como las de Chrome en tema claro y oscuro. */
+.icon-browser {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  padding: 8px 10px 0;
+  border-radius: 10px 10px 0 0;
+  font: 12px system-ui, sans-serif;
+}
+
+.icon-browser.is-light {
+  background: #dee1e6;
+  color: #1f1f1f;
+}
+
+.icon-browser.is-dark {
+  background: #202124;
+  color: #e8eaed;
+}
+
+.icon-tab {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 190px;
+  padding: 8px 10px;
+  border-radius: 8px 8px 0 0;
+}
+
+.is-light .icon-tab:not(.is-other) {
+  background: #ffffff;
+}
+
+.is-dark .icon-tab:not(.is-other) {
+  background: #35363a;
+}
+
+.icon-tab.is-other {
+  opacity: 0.7;
+}
+
+.icon-tab-generic {
+  width: 14px;
+  height: 14px;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+  opacity: 0.6;
+}
+
+.icon-tab-close {
+  margin-left: auto;
+  opacity: 0.6;
+}
+
+/* Tamanos sobre fondo claro y oscuro. */
+.icon-sizes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 18px 24px;
+  padding: 14px 16px;
+  border-radius: 10px;
+}
+
+.icon-sizes.is-light {
+  background: #f3f4f1;
+  color: #2b3a2c;
+}
+
+.icon-sizes.is-dark {
+  background: #202124;
+  color: #e8eaed;
+}
+
+.icon-sizes-label {
+  align-self: flex-start;
+  width: 100%;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  opacity: 0.7;
+}
+
+.icon-pixels {
+  image-rendering: pixelated;
+  outline: 1px dashed rgba(127, 127, 127, 0.5);
+}
+
+/* Android: el maskable recortado en sus formas, sobre un fondo de pantalla. */
+.icon-android,
+.icon-iphone {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  padding: 16px 18px;
+  border-radius: 14px;
+  color: #ffffff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+}
+
+.icon-android {
+  background: linear-gradient(160deg, #4b2f6e, #1c4a5c);
+}
+
+.icon-iphone {
+  background: linear-gradient(200deg, #f39a6b, #6a5acd);
+}
+
+.icon-safe {
+  position: relative;
+  display: grid;
+  place-items: center;
+}
+
+.icon-safe img {
+  grid-area: 1 / 1;
+}
+
+.icon-safe-ring {
+  grid-area: 1 / 1;
+  border: 2px dashed #ffe36b;
+  border-radius: 50%;
+}
+
+/* iPhone: iOS redondea las esquinas (radio de ~22 % del lado). */
+.icon-iphone img,
+.icon-iphone .is-ghost span {
+  width: 60px;
+  height: 60px;
+  border-radius: 13.4px;
+}
+
+.icon-iphone .is-ghost span {
+  display: block;
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.icon-iphone figcaption {
+  font: 11px system-ui, sans-serif;
+}
