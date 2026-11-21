@@ -26,7 +26,9 @@ export const en: Dictionary = {
     justNow: 'just now',
   },
 
-  world1: 'World 1: Worms',
+  outbreak: {
+    title: (number, boss) => `Outbreak ${number}: ${boss}`,
+  },
 
   title: {
     tagline: 'Only nature can save us',
@@ -134,18 +136,20 @@ export const en: Dictionary = {
     seconds: 's',
     go: 'Bring them on!',
     goBoss: 'Bring it on!',
-    notices: [
-      'Plant shooters: each one guards its own lane',
-      'Tap a shooter to level it up (up to level 5)',
-      'Plant fire on its own and it explodes. Here comes the armored worm, and worms now have levels!',
-      'Plant ice on its own to slow down an area. Here comes the spitter!',
-      'Drop fire or ice on a shooter (or drag a mine onto it) to infuse it',
-      'Drag a shooter onto a matching one to fuse them',
-      'They all come at once: worms, armored worms and spitters. Hold on!',
-      'Creeper is getting ready! Its troops come faster and in greater numbers',
-      'Creeper is almost ready: even more troops, and even faster',
-      'Creeper arrives with its escort! It jumps lanes: spread out your defenses',
-    ],
+    notices: {
+      creeper: [
+        'Plant shooters: each one guards its own lane',
+        'Tap a shooter to level it up (up to level 5)',
+        'Plant fire on its own and it explodes. Here comes the armored worm, and worms now have levels!',
+        'Plant ice on its own to slow down an area. Here comes the spitter!',
+        'Drop fire or ice on a shooter (or drag a mine onto it) to infuse it',
+        'Drag a shooter onto a matching one to fuse them',
+        'They all come at once: worms, armored worms and spitters. Hold on!',
+        'Creeper is getting ready! Its troops come faster and in greater numbers',
+        'Creeper is almost ready: even more troops, and even faster',
+        'Creeper arrives with its escort! It jumps lanes: spread out your defenses',
+      ],
+    },
   },
 
   boss: {
@@ -374,8 +378,8 @@ export const en: Dictionary = {
         worm: 'Computer worm',
         armored: 'With a steel helmet and plates',
         spitter: 'Attacks from afar',
-        boss: 'World 1 boss',
-        bossEnraged: 'World 1 boss · phase 2',
+        boss: (outbreak) => `Outbreak ${outbreak} boss`,
+        bossEnraged: (outbreak) => `Outbreak ${outbreak} boss · phase 2`,
       },
       tier: (percent) => `+${percent} strength from its tier`,
       about: {

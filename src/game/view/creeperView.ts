@@ -1,10 +1,11 @@
 import * as Phaser from 'phaser';
 import { sfx } from '../audio/sfx';
 import { panAt } from '../audio/voices';
-import { BOARD, ROUNDS } from '../config/balance';
+import { BOARD } from '../config/balance';
 import type { BoardPoint } from '../core/board';
 import { isEnraged, type Enemy } from '../core/combat';
 import type { MatchState } from '../core/match';
+import { outbreakScript } from '../core/outbreaks';
 import { isBossRound, roundScript } from '../core/rounds';
 import { drawArea } from './boardMarks';
 import type { Effects } from './effects';
@@ -14,7 +15,7 @@ import { CREEPER_SIZE, WORM_LOOK, WormView, type EnemyView } from './wormView';
 import { text } from '../../i18n';
 
 /**
- * Creeper (T-008), jefe del mundo 1. Su cuerpo es un `WormView` grande con cabeza de monitor; aqui va lo suyo: el
+ * Creeper (T-008), jefe del brote 1. Su cuerpo es un `WormView` grande con cabeza de monitor; aqui va lo suyo: el
  * aviso del salto (diana en el carril de destino y la curva que hara), sus frases en un bocadillo de terminal, la luz
  * de la antena, el enfado de la fase 2, el aterrizaje y la derrota. Tambien `CreeperOmen`: Creeper preparandose a la
  * derecha en las rondas 8 y 9 (y en la preparacion de la 10), que acelera a los gusanos. No decide nada (ADR-0008).
@@ -46,12 +47,14 @@ export const OMEN_LEAP_MS = 520;
  * con el ataque de cada una, y se llena en la ronda del combate. Es solo aspecto.
  */
 export function bossLoadProgress(state: MatchState): number {
-  const { round } = state;
-  if (isBossRound(round.index)) return 1;
-  const preparing = ROUNDS.map((script, i) => (script.bossPreparing ? i : -1)).filter((i) => i >= 0);
+  const { round, outbreak } = state;
+  if (isBossRound(outbreak, round.index)) return 1;
+  const preparing = outbreakScript(outbreak)
+    .rounds.map((script, i) => (script.bossPreparing ? i : -1))
+    .filter((i) => i >= 0);
   const k = preparing.indexOf(round.index);
   if (k < 0) return 0;
-  const { groups } = roundScript(round.index);
+  const { groups } = roundScript(outbreak, round.index);
   const lastAt = groups[groups.length - 1]?.atMs ?? 1;
   const within = round.phase === 'attack' ? Math.min(1, round.elapsedMs / lastAt) : 0;
   return Math.min(0.96, (k + within) / preparing.length);

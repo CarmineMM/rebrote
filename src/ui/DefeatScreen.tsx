@@ -1,7 +1,9 @@
 import { useEffect, useId, useRef } from 'react';
 import { LIVES } from '../game/config/balance';
+import { FIRST_OUTBREAK } from '../game/core/outbreaks';
 import type { LossInfo, RoundInfo } from '../game/EventBus';
 import { HEART_PATH } from './Lives';
+import { outbreakTitle } from './outbreakName';
 import { NO_AUTO_FULLSCREEN } from './useFullscreen';
 import { useText } from './useText';
 
@@ -55,7 +57,7 @@ export function DefeatScreen({ round, loss, onRestart, onMenu }: DefeatScreenPro
             </g>
           </svg>
         </div>
-        <p className="pause-kicker">{t.world1}</p>
+        <p className="pause-kicker">{outbreakTitle(t, round?.outbreak ?? FIRST_OUTBREAK)}</p>
         <h2 id={titleId} className="pause-title">
           {byBoss ? t.defeat.bossTitle : t.defeat.title}
         </h2>

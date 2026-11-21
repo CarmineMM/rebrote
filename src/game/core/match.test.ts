@@ -26,17 +26,22 @@ import {
   type MatchState,
   type Plant,
 } from './match';
+import { FIRST_OUTBREAK, outbreakScript, roundCount } from './outbreaks';
 import { createShooter, infusionCost, plantMaxHp, type Shooter } from './plants';
-import { ROUND_COUNT } from './rounds';
+
+/** Las partidas de estos tests son del primer brote (T-018): su saldo inicial y sus rondas. */
+const STARTING_BALANCE = outbreakScript(FIRST_OUTBREAK).startingBalance;
+const ROUND_COUNT = roundCount(FIRST_OUTBREAK);
 
 const cost = COSTS.shooter;
 const plantShooter = (state: MatchState, cell: Cell) => playCard(state, 'shooter', cell);
 const plantBlocker = (state: MatchState, cell: Cell) => cardPlay(state, 'shooter', cell).blocker;
 
 describe('partida nueva', () => {
-  it('arranca con el saldo inicial y el tablero vacio', () => {
+  it('arranca en el primer brote, con su saldo inicial y el tablero vacio', () => {
     const match = createMatch();
-    expect(match.balance).toBe(ECONOMY.startingBalance);
+    expect(match.outbreak).toBe(FIRST_OUTBREAK);
+    expect(match.balance).toBe(STARTING_BALANCE);
     expect(match.plants).toHaveLength(BOARD.lanes);
     expect(match.plants.every((lane) => lane.length === BOARD.columns && lane.every((p) => p === null))).toBe(true);
   });
@@ -59,7 +64,7 @@ describe('sembrar', () => {
   it('no modifica el estado anterior', () => {
     const before = createMatch();
     plantShooter(before, { lane: 0, col: 0 });
-    expect(before.balance).toBe(ECONOMY.startingBalance);
+    expect(before.balance).toBe(STARTING_BALANCE);
     expect(plantAt(before, { lane: 0, col: 0 })).toBeNull();
   });
 
@@ -86,7 +91,7 @@ describe('sembrar', () => {
     expect(plantBlocker(match, { lane: -1, col: 0 })).toBe('off-board');
     expect(plantBlocker(match, { lane: 0, col: BOARD.columns })).toBe('off-board');
     expect(() => plantShooter(match, { lane: BOARD.lanes, col: 0 })).toThrow();
-    expect(match.balance).toBe(ECONOMY.startingBalance);
+    expect(match.balance).toBe(STARTING_BALANCE);
   });
 
   it('con el saldo justo alcanza', () => {

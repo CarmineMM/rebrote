@@ -1,4 +1,5 @@
-import { roundScript, type Feature } from '../../game/core/rounds';
+import type { OutbreakId } from '../../game/core/outbreaks';
+import { newFeaturesAt, type Feature } from '../../game/core/rounds';
 import type { CardId } from '../../game/core/match';
 import type { PagePoint, PlayerAction, TourAreaId, TourBoard, TourSpotId } from '../../game/EventBus';
 
@@ -139,10 +140,13 @@ export const TOURS: Record<TourId, readonly TourStep[]> = {
   ],
 };
 
-/** Tours de lo que desbloquea la ronda `index` (desde 0), en orden y sin repetir. */
-export function toursOfRound(index: number): TourId[] {
+/**
+ * Tours de lo que desbloquea por primera vez la ronda `index` (desde 0) del brote, en orden y sin repetir. Lo que llego
+ * desbloqueado de un brote anterior (T-018, B-01) no trae tour: ya se enseno alli.
+ */
+export function toursOfRound(outbreak: OutbreakId, index: number): TourId[] {
   const tours: TourId[] = [];
-  for (const feature of roundScript(index).unlocks) {
+  for (const feature of newFeaturesAt(outbreak, index)) {
     const tour = TOUR_OF_FEATURE[feature];
     if (!tours.includes(tour)) tours.push(tour);
   }

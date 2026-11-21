@@ -13,6 +13,7 @@ import {
   type Enemy,
 } from '../core/combat';
 import type { Mine, Plant } from '../core/match';
+import { FIRST_OUTBREAK, outbreakNumber, outbreakOfBoss } from '../core/outbreaks';
 import { plantMaxHp } from '../core/plants';
 import type { EntityInfo, InfoStat, InfoTag } from '../EventBus';
 import { formatNumber, formatPercent, formatSeconds, text } from '../../i18n';
@@ -107,6 +108,13 @@ function enemyAbout(kind: Enemy['kind']): string {
   return kind === 'spitter' ? about.spitter(formatNumber(ENEMIES.spitter.range)) : about[kind];
 }
 
+/** "Jefe del brote 1" (T-018: el brote del que es jefe), y su fase. */
+function bossSubtitle(enemy: Enemy): string {
+  const { subtitle } = text().info.enemy;
+  const number = outbreakNumber(outbreakOfBoss(enemy.kind) ?? FIRST_OUTBREAK);
+  return isEnraged(enemy) ? subtitle.bossEnraged(number) : subtitle.boss(number);
+}
+
 /** Ficha de un enemigo: su nivel y su tramo (T-009 y T-010), lo que quita, lo rapido que va y lo que le pasa ahora. */
 export function enemyInfo(enemy: Enemy): EntityInfoData {
   const t = text().info;
@@ -144,7 +152,7 @@ export function enemyInfo(enemy: Enemy): EntityInfoData {
     id: `enemigo:${enemy.id}`,
     tone: enemy.kind,
     title: t.enemy.names[enemy.kind],
-    subtitle: enemy.kind === 'creeper' ? (isEnraged(enemy) ? subtitle.bossEnraged : subtitle.boss) : subtitle[enemy.kind],
+    subtitle: enemy.kind === 'creeper' ? bossSubtitle(enemy) : subtitle[enemy.kind],
     level: boss
       ? null
       : {

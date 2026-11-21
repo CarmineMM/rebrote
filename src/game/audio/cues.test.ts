@@ -4,7 +4,7 @@ import type { Cell } from '../core/board';
 import { spawnEnemy, stepCombat, type Bullet, type CombatEvent } from '../core/combat';
 import { createMatch, createMine, createPlant, type MatchState, type Mine } from '../core/match';
 import { createShooter, type ElementType } from '../core/plants';
-import { ROUND_COUNT } from '../core/rounds';
+import { FIRST_OUTBREAK, roundCount } from '../core/outbreaks';
 import { actionCue, combatCues, mineTicks, roundCues } from './cues';
 
 const ids = (cues: ReadonlyArray<{ id: string }>) => cues.map((cue) => cue.id);
@@ -124,9 +124,15 @@ describe('combatCues', () => {
 
 describe('roundCues', () => {
   it('suena el inicio del ataque y la ronda superada, pero no tras la ultima: ahi suena la victoria', () => {
-    expect(ids(roundCues([{ type: 'attackStarted', index: 0 }]))).toEqual(['attackStarted']);
-    expect(ids(roundCues([{ type: 'roundCleared', index: 0 }, { type: 'roundStarted', index: 1 }]))).toEqual(['roundCleared']);
-    expect(ids(roundCues([{ type: 'roundCleared', index: ROUND_COUNT - 1 }, { type: 'won' }]))).toEqual([]);
+    const rounds = roundCount(FIRST_OUTBREAK);
+    expect(ids(roundCues([{ type: 'attackStarted', index: 0 }], rounds))).toEqual(['attackStarted']);
+    expect(ids(roundCues([{ type: 'roundCleared', index: 0 }, { type: 'roundStarted', index: 1 }], rounds))).toEqual(['roundCleared']);
+    expect(ids(roundCues([{ type: 'roundCleared', index: rounds - 1 }, { type: 'won' }], rounds))).toEqual([]);
+  });
+
+  it('la ultima ronda es la del brote en curso: en uno de 3, la tercera ya no suena como ronda superada (T-018)', () => {
+    expect(ids(roundCues([{ type: 'roundCleared', index: 1 }], 3))).toEqual(['roundCleared']);
+    expect(ids(roundCues([{ type: 'roundCleared', index: 2 }, { type: 'won' }], 3))).toEqual([]);
   });
 });
 

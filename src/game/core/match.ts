@@ -1,4 +1,4 @@
-import { BOARD, COSTS, ECONOMY, LIVES, MINE } from '../config/balance';
+import { BOARD, COSTS, LIVES, MINE } from '../config/balance';
 import { isOnBoard, type Cell } from './board';
 import type { Bullet, Enemy, Spit } from './combat';
 import {
@@ -15,6 +15,7 @@ import {
   type FuseBlocker,
   type Shooter,
 } from './plants';
+import { FIRST_OUTBREAK, outbreakScript, type OutbreakId } from './outbreaks';
 import { createRound, infuseFeature, isUnlocked, levelCap, levelCapRaisedAfter, sowFeature, type RoundState } from './rounds';
 
 /** Cartas que se pueden jugar desde el HUD: la disparadora y los elementos. */
@@ -49,6 +50,8 @@ export type Sown = Plant | Mine;
  * con este estado, asi que lo que no este aqui se pierde (ADR-0008).
  */
 export interface MatchState {
+  /** Brote al que pertenece la partida (T-018): su guion de rondas, su jefe y lo que llega desbloqueado. No cambia. */
+  readonly outbreak: OutbreakId;
   readonly balance: number;
   readonly lives: number;
   /** Lo sembrado por carril y columna (disparadoras y minas); null si la casilla esta vacia. */
@@ -69,20 +72,23 @@ export interface MatchState {
 }
 
 /**
- * Partida nueva, en la preparacion de la ronda `roundIndex` (desde 0) con el tablero vacio. El juego siempre empieza
- * en la primera; empezar en otra sirve para probar lo que desbloquean las siguientes.
+ * Partida nueva del brote `outbreak`, en la preparacion de la ronda `roundIndex` (desde 0) con el tablero vacio y, si no
+ * se dice otro, el saldo inicial del brote (T-018, B-02: no se trae nada de otro brote). El juego siempre empieza en la
+ * primera ronda; empezar en otra sirve para probar lo que desbloquean las siguientes.
  */
-export function createMatch(balance: number = ECONOMY.startingBalance, roundIndex = 0): MatchState {
-  assertWholeAmount(balance);
+export function createMatch(balance?: number, roundIndex = 0, outbreak: OutbreakId = FIRST_OUTBREAK): MatchState {
+  const start = balance ?? outbreakScript(outbreak).startingBalance;
+  assertWholeAmount(start);
   const plants = Array.from({ length: BOARD.lanes }, () => Array.from({ length: BOARD.columns }, (): Sown | null => null));
   return {
-    balance,
+    outbreak,
+    balance: start,
     lives: LIVES.start,
     plants,
     enemies: [],
     bullets: [],
     spits: [],
-    round: createRound(roundIndex),
+    round: createRound(outbreak, roundIndex),
     incomeMs: 0,
     nextId: 1,
   };
@@ -371,7 +377,7 @@ export function levelUpOffer(state: MatchState, cell: Cell): LevelUpOffer | null
       : canAfford(state.balance, cost)
         ? null
         : 'insufficient-funds';
-  const capRaisedAt = capped ? levelCapRaisedAfter(state.round.index, shooter.level) : null;
+  const capRaisedAt = capped ? levelCapRaisedAfter(state.outbreak, state.round.index, shooter.level) : null;
   return { level: shooter.level, cap, capRaisedAt, cost, multiplier: shooter.cannons, blocker };
 }
 

@@ -1,9 +1,13 @@
 import { useEffect, useId, useRef } from 'react';
+import type { OutbreakId } from '../game/core/outbreaks';
+import { outbreakTitle } from './outbreakName';
 import { NO_AUTO_FULLSCREEN } from './useFullscreen';
 import { useText } from './useText';
 
 interface VictoryScreenProps {
-  /** Rondas superadas: todas las del mundo. */
+  /** Brote superado (T-018). */
+  outbreak: OutbreakId;
+  /** Rondas superadas: todas las del brote. */
   rounds: number;
   onRestart: () => void;
   /** Vuelve al menu de inicio (T-011). */
@@ -11,10 +15,10 @@ interface VictoryScreenProps {
 }
 
 /**
- * Victoria del mundo 1 (T-008): se superaron sus rondas y se atrapo al Creeper en la ultima. Misma tarjeta que la
+ * Victoria de un brote (T-008; por brote desde T-018): se superaron sus rondas y se atrapo a su jefe en la ultima. Misma tarjeta que la
  * pausa y la derrota, con una copa que salta y destellos. "Jugar otra vez" empieza una partida nueva desde la ronda 1.
  */
-export function VictoryScreen({ rounds, onRestart, onMenu }: VictoryScreenProps) {
+export function VictoryScreen({ outbreak, rounds, onRestart, onMenu }: VictoryScreenProps) {
   const titleId = useId();
   const button = useRef<HTMLButtonElement>(null);
   const t = useText();
@@ -47,7 +51,7 @@ export function VictoryScreen({ rounds, onRestart, onMenu }: VictoryScreenProps)
           <span className="victory-star is-b" />
           <span className="victory-star is-c" />
         </div>
-        <p className="pause-kicker">{t.world1}</p>
+        <p className="pause-kicker">{outbreakTitle(t, outbreak)}</p>
         <h2 id={titleId} className="pause-title">
           {t.victory.title}
         </h2>

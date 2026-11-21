@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { LIVES } from './config/balance';
 import { spawnEnemy, stepCombat } from './core/combat';
 import { createMatch, earn, playCard, type MatchState } from './core/match';
-import { ROUND_COUNT, createRound, startAttack } from './core/rounds';
+import { FIRST_OUTBREAK, roundCount } from './core/outbreaks';
+import { createRound, startAttack } from './core/rounds';
 import type { UnlockInfo } from './EventBus';
 import {
   SAVE_KEY,
@@ -30,7 +31,7 @@ function memoryStore(): SaveStore & { data: Map<string, string> } {
 /** Partida a mitad de un ataque: plantas, una mina, enemigos, balas en vuelo y un gusano quemado. */
 function midAttack(): MatchState {
   let match = earn(createMatch(), 1000);
-  match = { ...match, round: createRound(4) };
+  match = { ...match, round: createRound(OUTBREAK, 4) };
   match = playCard(match, 'shooter', { lane: 2, col: 1 });
   match = playCard(match, 'fire', { lane: 2, col: 1 });
   match = playCard(match, 'ice', { lane: 0, col: 3 });
@@ -42,6 +43,8 @@ function midAttack(): MatchState {
 }
 
 const unlock: UnlockInfo = { round: 5, items: [{ id: 'infuse' }] };
+const OUTBREAK = FIRST_OUTBREAK;
+const ROUND_COUNT = roundCount(OUTBREAK);
 
 describe('partida guardada (T-011)', () => {
   it('guarda y recupera la partida entera, tambien a mitad de un ataque', () => {
@@ -57,10 +60,15 @@ describe('partida guardada (T-011)', () => {
     expect(save?.pendingUnlock).toEqual(unlock);
   });
 
+  it('la partida es de su brote y lo conserva al guardarse y cargarse (T-018)', () => {
+    const save = decodeSave(encodeSave(midAttack(), null, 0));
+    expect(save?.match.outbreak).toBe(OUTBREAK);
+  });
+
   it('dice en que ronda va, con cuantas vidas y monedas, y cuando se guardo', () => {
-    const match = { ...earn(createMatch(), 40), round: createRound(3), lives: 2 };
+    const match = { ...earn(createMatch(), 40), round: createRound(OUTBREAK, 3), lives: 2 };
     const save = decodeSave(encodeSave(match, null, 99));
-    expect(save && summarizeSave(save)).toEqual({ round: 4, total: ROUND_COUNT, lives: 2, balance: match.balance, savedAt: 99 });
+    expect(save && summarizeSave(save)).toEqual({ outbreak: OUTBREAK, round: 4, total: ROUND_COUNT, lives: 2, balance: match.balance, savedAt: 99 });
   });
 
   it('se escribe en su clave y se borra', () => {
@@ -81,7 +89,7 @@ describe('partida guardada (T-011)', () => {
     expect(readSave(store)).toBeNull();
 
     writeSave(createMatch(), null, store);
-    const won = { ...createMatch(), round: { ...createRound(ROUND_COUNT - 1), phase: 'won' as const } };
+    const won = { ...createMatch(), round: { ...createRound(OUTBREAK, ROUND_COUNT - 1), phase: 'won' as const } };
     expect(writeSave(won, null, store)).toBe(false);
     expect(readSave(store)).toBeNull();
   });
@@ -95,6 +103,10 @@ describe('partida guardada (T-011)', () => {
     expect(decodeSave(JSON.stringify({ ...good, match: { ...good.match, lives: LIVES.start + 1 } }))).toBeNull();
     // Una ronda que ya no existe (el guion cambio).
     expect(decodeSave(JSON.stringify({ ...good, match: { ...good.match, round: { ...good.match.round, index: ROUND_COUNT } } }))).toBeNull();
+    // Un brote que este juego no tiene (T-018), o sin brote en la version 2.
+    expect(decodeSave(JSON.stringify({ ...good, match: { ...good.match, outbreak: 'blaster' } }))).toBeNull();
+    const { outbreak: _outbreak, ...noOutbreak } = good.match;
+    expect(decodeSave(JSON.stringify({ ...good, match: noOutbreak }))).toBeNull();
     // Un enemigo de un tipo que no existe.
     const ghost = { id: 1, kind: 'ghost', lane: 0, x: 3, hp: 10, attackMs: null, burn: null, slow: null, haste: 1, level: 1, jump: null, jumpsUsed: 0 };
     expect(decodeSave(JSON.stringify({ ...good, match: { ...good.match, enemies: [ghost] } }))).toBeNull();

@@ -1,9 +1,11 @@
 import { useEffect, useId, useRef, useState } from 'react';
-import { hasProgress, type OutbreakId, type Progress } from '../game/progress';
+import { FIRST_OUTBREAK } from '../game/core/outbreaks';
+import { hasProgress, type Progress } from '../game/progress';
 import { summarizeSave, type SaveSummary, type SavedGame } from '../game/save';
 import type { QualityLevel } from '../game/view/quality';
 import { formatList, formatSavedAt, type Dictionary } from '../i18n';
 import { Credits } from './Credits';
+import { defeatedBossName, outbreakTitle } from './outbreakName';
 import { LanguagePicker, SettingsPanel } from './SettingsPanel';
 import { NO_AUTO_FULLSCREEN } from './useFullscreen';
 import type { Settings } from './useSettings';
@@ -26,15 +28,10 @@ interface TitleScreenProps {
 
 type View = 'main' | 'options' | 'credits' | 'confirm' | 'erase';
 
-/** Nombre del jefe de cada brote. Uno que este juego no conoce (de una version mas nueva) sale con su nombre guardado. */
-function bossName(id: OutbreakId, t: Dictionary): string {
-  return id === 'creeper' ? t.creeper.name : id;
-}
-
 /** Lo que se perderia al borrar el progreso, una linea por cosa: jefes vencidos y partida guardada. */
 function progressLines(progress: Progress, summary: SaveSummary | null, t: Dictionary): string[] {
   const lines: string[] = [];
-  if (hasProgress(progress)) lines.push(t.progress.bosses(formatList(progress.defeated.map((id) => bossName(id, t)))));
+  if (hasProgress(progress)) lines.push(t.progress.bosses(formatList(progress.defeated.map((id) => defeatedBossName(t, id)))));
   if (summary) lines.push(t.progress.save(summary.round));
   return lines;
 }
@@ -126,7 +123,8 @@ export function TitleScreen({ saved, progress, settings, autoLevel, fullscreenSu
             <h2 id={titleId} className="visually-hidden">
               {t.title.menu}
             </h2>
-            <p className="pause-kicker">{t.world1}</p>
+            {/* "Nueva partida" empieza el primer brote (T-018); elegir otro llega con la ruta de brotes (T-019). */}
+            <p className="pause-kicker">{outbreakTitle(t, FIRST_OUTBREAK)}</p>
             <div className="pause-actions title-actions">
               <button ref={firstButton} type="button" className="btn btn-primary" onClick={startNew}>
                 <span aria-hidden="true">▶</span> {t.title.newGame}

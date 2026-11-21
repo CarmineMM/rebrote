@@ -10,7 +10,7 @@ Cómo se escriben los textos de Rebrote para que salgan en español y en inglés
 | `src/i18n/en.ts` | Los mismos textos en inglés, con las mismas claves (si falta o sobra una, `npm run build` falla) |
 | `src/i18n/index.ts` | Idioma en curso (`getLanguage`, `setLanguage`), textos (`text()`), formatos de número, porcentaje, segundos y fecha, e idioma del navegador (`detectLanguage`) |
 | `src/ui/useText.ts` | `useText()` y `useLanguage()` para React: el componente se vuelve a pintar al cambiar de idioma |
-| `src/i18n/i18n.test.ts` | Mismas claves en los dos, un aviso por ronda, ninguna función que devuelva "undefined" y los formatos |
+| `src/i18n/i18n.test.ts` | Mismas claves en los dos, un aviso por ronda de cada brote, ninguna función que devuelva "undefined", ningún "mundo" y los formatos |
 
 ## 2. Cómo se usa
 
@@ -48,6 +48,7 @@ Cómo se escriben los textos de Rebrote para que salgan en español y en inglés
   | Gusano, acorazado, escupidor | Worm, armored worm, spitter worm |
   | Moneda | Coin |
   | Ronda | Round |
+  | Brote ("Brote 1: Creeper") | Outbreak ("Outbreak 1: Creeper") |
   | Ficha | Info card |
 
 - Creeper habla en mayúsculas, como en su terminal. En inglés su frase de entrada es la del original de 1971: "I'M THE CREEPER: CATCH ME IF YOU CAN!".
@@ -64,7 +65,12 @@ Cómo se escriben los textos de Rebrote para que salgan en español y en inglés
 - [ ] Si se pinta en una textura, se lee en el pintor de `textures.ts` (el juego se recrea al cambiar de idioma y la vuelve a pintar).
 
 ### Ronda nueva
-- [ ] Su aviso de una línea está en `round.notices`, en su posición, en los dos idiomas (el test comprueba que hay uno por ronda).
+- [ ] Su aviso de una línea está en `round.notices.<brote>` (el `id` de su brote), en su posición, en los dos idiomas (el test comprueba que hay uno por ronda de cada brote).
+
+### Brote nuevo (T-018)
+- [ ] Sus avisos de ronda están en `round.notices.<brote>`, uno por ronda, en los dos idiomas.
+- [ ] Su jefe tiene nombre en `info.enemy.names`: de ahí sale "Brote N: jefe" (`outbreak.title`, compuesto en `src/ui/outbreakName.ts`). No se escribe a mano.
+- [ ] Ningún texto dice "mundo": esa palabra queda para el futuro (el test lo comprueba).
 
 ### Paso de un tour de ayuda (T-013)
 - [ ] Su frase está en `tour.steps.<tour>.<paso>` en los dos idiomas, con la misma clave que el paso de `TOURS` (el test lo comprueba), y el tour tiene su nombre en `tour.names`.

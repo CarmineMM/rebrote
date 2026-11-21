@@ -19,10 +19,10 @@ Divertirse haciéndolo. Si gusta a la gente, se estudia monetizarlo.
 
 ## Alcance actual
 
-Solo el mundo 1 (ver `02-mundo-1-gusanos.md`). No se diseña el mundo 2 hasta que el 1 se juegue completo.
+El brote 1, el de Creeper (ver `02-brote-1-creeper.md`). El juego ya admite varios brotes (T-018) y el 2, el de Blaster, está planificado (T-024 a T-026). La lista de jefes candidatos está en `03-ruta-de-brotes.md`.
 
 ## Riesgos conocidos
 
 - **Parecido con Plants vs. Zombies.** Sin problema como proyecto personal. Antes de monetizar hay que revisar nombre, arte e interfaz para que no se lea como clon.
-- **Explosión de contenido.** Cada elemento nuevo multiplica variantes a balancear. Por eso el mundo 1 se limita a 1 disparadora y 2 elementos.
+- **Explosión de contenido.** Cada elemento nuevo multiplica variantes a balancear. Por eso el brote 1 se limita a 1 disparadora y 2 elementos.
 - **Uso de nombres de virus reales.** Son hechos históricos, pero conviene revisarlo también antes de monetizar.

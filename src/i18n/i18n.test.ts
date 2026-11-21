@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { ROUND_COUNT } from '../game/core/rounds';
+import { OUTBREAKS } from '../game/config/balance';
 import { en } from './en';
 import { es } from './es';
 import {
@@ -41,8 +41,25 @@ describe('idiomas (T-011)', () => {
     expect(leaves(en)).toEqual(leaves(es));
   });
 
-  it('cada ronda del guion tiene su aviso en los dos idiomas', () => {
-    for (const language of LANGUAGES) expect(text(language).round.notices).toHaveLength(ROUND_COUNT);
+  it('cada ronda de cada brote tiene su aviso en los dos idiomas (T-018)', () => {
+    for (const language of LANGUAGES) {
+      for (const outbreak of OUTBREAKS) expect(text(language).round.notices[outbreak.id], `${language} ${outbreak.id}`).toHaveLength(outbreak.rounds.length);
+    }
+  });
+
+  it('cada brote se llama por su numero y su jefe: "Brote 1: Creeper" (T-018)', () => {
+    expect(es.outbreak.title(1, es.info.enemy.names.creeper)).toBe('Brote 1: Creeper');
+    expect(en.outbreak.title(1, en.info.enemy.names.creeper)).toBe('Outbreak 1: Creeper');
+  });
+
+  it('ningun texto que ve el jugador habla de "mundo" (T-018: ahora son brotes)', () => {
+    for (const language of LANGUAGES) {
+      for (const [path, fn] of functions(text(language))) expect(fn(3, 'Creeper', 2, 120), path).not.toMatch(/\b(mundo|world)\b/i);
+      for (const [path] of leaves(text(language))) {
+        const value = path.split('.').reduce<unknown>((node, key) => (node as Record<string, unknown>)[key], text(language));
+        if (typeof value === 'string') expect(value, path).not.toMatch(/\b(mundo|world)\b/i);
+      }
+    }
   });
 
   it('ningun texto queda vacio ni con "undefined" al rellenarlo', () => {

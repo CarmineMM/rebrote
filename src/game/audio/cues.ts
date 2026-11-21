@@ -3,7 +3,7 @@ import { BOARD } from '../config/balance';
 import type { CombatEvent } from '../core/combat';
 import type { MatchState } from '../core/match';
 import { isMilestoneLevel, type ElementType } from '../core/plants';
-import { ROUND_COUNT, type RoundEvent } from '../core/rounds';
+import type { RoundEvent } from '../core/rounds';
 import type { PlayerAction } from '../EventBus';
 import { panAt } from './voices';
 
@@ -95,14 +95,15 @@ export function combatCues(events: readonly CombatEvent[], before: MatchState): 
 }
 
 /**
- * Lo que suena con las rondas: el inicio del ataque y la ronda superada. Tras la ultima ronda suena la victoria, que la
- * pone la escena con su celebracion. El grito de Creeper suena con su bocadillo.
+ * Lo que suena con las rondas: el inicio del ataque y la ronda superada. Tras la ultima ronda del brote (`rounds` son
+ * las suyas, T-018) suena la victoria, que la pone la escena con su celebracion. El grito de Creeper suena con su
+ * bocadillo.
  */
-export function roundCues(events: readonly RoundEvent[]): SfxCue[] {
+export function roundCues(events: readonly RoundEvent[], rounds: number): SfxCue[] {
   const cues: SfxCue[] = [];
   for (const event of events) {
     if (event.type === 'attackStarted') cues.push(centered('attackStarted'));
-    else if (event.type === 'roundCleared' && event.index + 1 < ROUND_COUNT) cues.push(centered('roundCleared'));
+    else if (event.type === 'roundCleared' && event.index + 1 < rounds) cues.push(centered('roundCleared'));
   }
   return cues;
 }

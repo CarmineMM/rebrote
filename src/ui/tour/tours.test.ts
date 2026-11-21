@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { ROUND_COUNT, roundScript, type Feature } from '../../game/core/rounds';
+import { OUTBREAKS } from '../../game/config/balance';
+import { FIRST_OUTBREAK, roundCount } from '../../game/core/outbreaks';
+import type { Feature } from '../../game/core/rounds';
 import type { TourBoard } from '../../game/EventBus';
 import { LANGUAGES, text } from '../../i18n';
 import { BUBBLE_MARGIN, overlap, placeBubble } from './placeBubble';
@@ -20,15 +22,16 @@ import { TOURS, TOUR_OF_FEATURE, cueOf, hudTargetsOf, placeStep, toursOfRound, t
 const box = (left: number, top: number, width: number, height: number): Box => ({ left, top, width, height });
 
 describe('tours de ayuda (T-013)', () => {
-  it('cada cosa que desbloquea una ronda tiene su tour', () => {
+  it('cada cosa que desbloquea una ronda de cualquier brote tiene su tour', () => {
     const features = new Set<Feature>();
-    for (let i = 0; i < ROUND_COUNT; i++) roundScript(i).unlocks.forEach((feature) => features.add(feature));
+    for (const outbreak of OUTBREAKS) outbreak.rounds.forEach((round) => round.unlocks.forEach((feature) => features.add(feature)));
     for (const feature of features) expect(TOURS[TOUR_OF_FEATURE[feature]].length, feature).toBeGreaterThan(0);
   });
 
-  it('las rondas 1 a 6 traen su tour y las siguientes ninguno', () => {
-    expect([0, 1, 2, 3, 4, 5].map(toursOfRound)).toEqual([['basics'], ['levelUp'], ['fireMine'], ['iceMine'], ['infuse'], ['fuse']]);
-    for (let i = 6; i < ROUND_COUNT; i++) expect(toursOfRound(i)).toEqual([]);
+  it('las rondas 1 a 6 del brote 1 traen su tour y las siguientes ninguno', () => {
+    const tours = (index: number) => toursOfRound(FIRST_OUTBREAK, index);
+    expect([0, 1, 2, 3, 4, 5].map(tours)).toEqual([['basics'], ['levelUp'], ['fireMine'], ['iceMine'], ['infuse'], ['fuse']]);
+    for (let i = 6; i < roundCount(FIRST_OUTBREAK); i++) expect(tours(i)).toEqual([]);
   });
 
   it('cada paso tiene su frase en los dos idiomas', () => {
@@ -74,9 +77,9 @@ describe('tours de ayuda (T-013)', () => {
 describe('tours vistos (T-013, G-05)', () => {
   it('un tour visto deja de estar pendiente; con la ayuda apagada no hay ninguno', () => {
     const progress = markTourDone(emptyProgress(), 'basics');
-    expect(pendingTours(0, progress, true)).toEqual([]);
-    expect(pendingTours(1, progress, true)).toEqual(['levelUp']);
-    expect(pendingTours(1, emptyProgress(), false)).toEqual([]);
+    expect(pendingTours(FIRST_OUTBREAK, 0, progress, true)).toEqual([]);
+    expect(pendingTours(FIRST_OUTBREAK, 1, progress, true)).toEqual(['levelUp']);
+    expect(pendingTours(FIRST_OUTBREAK, 1, emptyProgress(), false)).toEqual([]);
     expect(markTourDone(progress, 'basics')).toBe(progress);
   });
 

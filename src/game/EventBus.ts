@@ -1,5 +1,6 @@
 import * as Phaser from 'phaser';
 import type { CardId, MatchState } from './core/match';
+import type { OutbreakId } from './core/outbreaks';
 import type { ElementType } from './core/plants';
 import type { RoundPhase } from './core/rounds';
 
@@ -107,6 +108,8 @@ export const GameEvents = {
 /** Partida que se pide desde el menu de inicio (T-011): nueva (sin `resume`) o la guardada, con su aviso sin aceptar. */
 export interface MatchRequest {
   resume?: MatchState;
+  /** Brote de la partida nueva (T-018); sin el, el primero. Una guardada ya lleva el suyo. */
+  outbreak?: OutbreakId;
   pendingUnlock?: UnlockInfo | null;
 }
 
@@ -168,10 +171,13 @@ export interface BossInfo {
 
 /** Ronda en curso (T-007). Sale de `round` en el estado y de `rounds.ts` en core. */
 export interface RoundInfo {
+  /** Brote de la partida (T-018): de el salen su nombre ("Brote 1: Creeper") y sus tours. */
+  outbreak: OutbreakId;
   /** Ronda en curso, desde 1 ("Ronda 3 de 10"). */
   number: number;
+  /** Rondas del brote. */
   total: number;
-  /** Ronda del combate contra el jefe (T-008), desde 1, o null si el mundo no tiene. */
+  /** Ronda del combate contra el jefe (T-008), desde 1, o null si el brote no tiene. */
   bossRound: number | null;
   phase: RoundPhase;
   /** En la preparacion, segundos que faltan para el ataque (redondeados hacia arriba); null en otra fase. */

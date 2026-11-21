@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { BOARD, COSTS, ENEMIES, ENEMY_LEVELS, LIMITS, LIVES, ROUND_PREP, ROUNDS } from '../config/balance';
+import { BOARD, COSTS, ENEMIES, ENEMY_LEVELS, LIMITS, LIVES, OUTBREAKS, ROUND_PREP } from '../config/balance';
 import type { Cell } from './board';
 import { enemyMaxHp, spawnEnemy, stepCombat } from './combat';
 import { cardPlay, createMatch, createPlant, fusionBlocker, fusionTargets, levelUpOffer, playCard, type MatchState } from './match';
+import { outbreakScript, roundCount, type OutbreakId } from './outbreaks';
 import {
-  ROUND_COUNT,
   availableCards,
   bossRoundIndex,
   createRound,
@@ -24,6 +24,11 @@ import {
   type Feature,
   type RoundEvent,
 } from './rounds';
+
+/** El brote 1, el de Creeper (T-018): estas reglas son las suyas. Los demas brotes se prueban en `outbreaks.test.ts`. */
+const OUTBREAK_1: OutbreakId = 'creeper';
+const ROUNDS = outbreakScript(OUTBREAK_1).rounds;
+const ROUND_COUNT = roundCount(OUTBREAK_1);
 
 /** Donde salen los enemigos en el juego (el agujero de su carril). */
 const HOLE_X = BOARD.columns + 0.75;
@@ -45,11 +50,29 @@ const withPlantAt = (state: MatchState, cell: Cell): MatchState => ({
 
 const types = (events: readonly RoundEvent[]) => events.map((e) => e.type);
 
+describe('brotes (datos, T-018)', () => {
+  it('cada brote tiene nombre propio, su jefe en la ultima ronda (y en ninguna otra), saldo inicial y rondas', () => {
+    const ids = OUTBREAKS.map((outbreak) => outbreak.id);
+    expect(new Set(ids).size).toBe(ids.length);
+    for (const outbreak of OUTBREAKS) {
+      expect(outbreak.rounds.length, outbreak.id).toBeGreaterThan(0);
+      expect(Number.isInteger(outbreak.startingBalance) && outbreak.startingBalance > 0, outbreak.id).toBe(true);
+      expect(bossRoundIndex(outbreak.id), outbreak.id).toBe(outbreak.rounds.length - 1);
+      expect(outbreak.rounds.filter((_, i) => isBossRound(outbreak.id, i)), outbreak.id).toHaveLength(1);
+    }
+  });
+
+  it('el primero es el de Creeper, con el saldo inicial de siempre (250)', () => {
+    expect(OUTBREAKS[0]).toMatchObject({ id: 'creeper', boss: 'creeper', startingBalance: 250 });
+    expect(createMatch().balance).toBe(250);
+  });
+});
+
 describe('guion de las rondas (datos)', () => {
-  it('el mundo 1 tiene 10 rondas: la ultima es el combate contra Creeper (T-008)', () => {
+  it('el brote 1 tiene 10 rondas: la ultima es el combate contra Creeper (T-008)', () => {
     expect(ROUND_COUNT).toBe(10);
-    expect(bossRoundIndex()).toBe(9);
-    expect(ROUNDS.map((_, i) => isBossRound(i))).toEqual([false, false, false, false, false, false, false, false, false, true]);
+    expect(bossRoundIndex(OUTBREAK_1)).toBe(9);
+    expect(ROUNDS.map((_, i) => isBossRound(OUTBREAK_1, i))).toEqual([false, false, false, false, false, false, false, false, false, true]);
   });
 
   it('en la ronda 10 sale Creeper por el carril del centro, detras de su escolta (T-009)', () => {
@@ -65,7 +88,7 @@ describe('guion de las rondas (datos)', () => {
   });
 
   it('en las rondas 8 y 9 Creeper se prepara y acelera a sus tropas un 25 % y un 35 %; las demas van a su velocidad', () => {
-    expect(ROUNDS.map((_, i) => roundHaste(i))).toEqual([1, 1, 1, 1, 1, 1, 1, 1.25, 1.35, 1]);
+    expect(ROUNDS.map((_, i) => roundHaste(OUTBREAK_1, i))).toEqual([1, 1, 1, 1, 1, 1, 1, 1.25, 1.35, 1]);
     expect(ROUNDS.map((round) => round.bossPreparing ?? false)).toEqual([false, false, false, false, false, false, false, true, true, false]);
   });
 
@@ -159,12 +182,12 @@ describe('guion de las rondas (datos)', () => {
 
 describe('desbloqueo', () => {
   it('lo de cada ronda se suma a lo de las anteriores', () => {
-    expect([...unlockedAt(0)]).toEqual(['shooter']);
-    expect([...unlockedAt(2)]).toEqual(['shooter', 'levelUp', 'fireMine']);
-    expect(unlockedAt(ROUND_COUNT - 1).size).toBe(7);
-    expect(unlockRound('iceMine')).toBe(3);
-    expect(unlockRound('fireInfuse')).toBe(4);
-    expect(unlockRound('fuse')).toBe(5);
+    expect([...unlockedAt(OUTBREAK_1, 0)]).toEqual(['shooter']);
+    expect([...unlockedAt(OUTBREAK_1, 2)]).toEqual(['shooter', 'levelUp', 'fireMine']);
+    expect(unlockedAt(OUTBREAK_1, ROUND_COUNT - 1).size).toBe(7);
+    expect(unlockRound(OUTBREAK_1, 'iceMine')).toBe(3);
+    expect(unlockRound(OUTBREAK_1, 'fireInfuse')).toBe(4);
+    expect(unlockRound(OUTBREAK_1, 'fuse')).toBe(5);
   });
 
   it('en la bandeja solo aparecen las cartas que ya se pueden jugar', () => {
@@ -199,16 +222,16 @@ describe('desbloqueo', () => {
     expect(levelUpOffer(withPlantAt(atRound(1), cell), cell)?.blocker).toBeNull();
   });
 
-  it('el tope de nivel es 5 desde la ronda 2 hasta el final del mundo 1 (T-010)', () => {
-    expect(ROUNDS.map((_, i) => levelCapAt(i))).toEqual([LIMITS.maxLevel, 5, 5, 5, 5, 5, 5, 5, 5, 5]);
-    expect(levelCapRaisedAfter(1, 5)).toBeNull();
-    expect(levelCapRaisedAfter(6, 5)).toBeNull();
-    expect(levelCapRaisedAfter(1, 3)).toBe(2);
+  it('el tope de nivel es 5 desde la ronda 2 hasta el final del brote 1 (T-010)', () => {
+    expect(ROUNDS.map((_, i) => levelCapAt(OUTBREAK_1, i))).toEqual([LIMITS.maxLevel, 5, 5, 5, 5, 5, 5, 5, 5, 5]);
+    expect(levelCapRaisedAfter(OUTBREAK_1, 1, 5)).toBeNull();
+    expect(levelCapRaisedAfter(OUTBREAK_1, 6, 5)).toBeNull();
+    expect(levelCapRaisedAfter(OUTBREAK_1, 1, 3)).toBe(2);
   });
 
   it('lo nuevo de cada ronda para el aviso que hay que aceptar (T-009); la ronda 1 y la 7 no avisan (T-010)', () => {
     expect(ROUNDS[0].quiet).toBe(true);
-    expect(ROUNDS.map((_, i) => roundUnlocks(i))).toEqual([
+    expect(ROUNDS.map((_, i) => roundUnlocks(OUTBREAK_1, i))).toEqual([
       [],
       [
         { kind: 'feature', feature: 'levelUp' },
@@ -265,7 +288,7 @@ describe('preparacion', () => {
 
   it('tiene preparacion antes de cada ronda: entre rondas se puede sembrar', () => {
     const cleared = stepRound(attacking(0, 999_999, ROUNDS[0].groups.length), 16, HOLE_X).state;
-    expect(cleared.round).toEqual(createRound(1));
+    expect(cleared.round).toEqual(createRound(OUTBREAK_1, 1));
     expect(cardPlay(cleared, 'shooter', { lane: 2, col: 2 }).blocker).toBeNull();
   });
 });
@@ -307,7 +330,7 @@ describe('ataque', () => {
       const [first] = ROUNDS[index].groups;
       const { spawned } = stepRound(attacking(index), first.atMs, HOLE_X);
       expect(spawned.length).toBeGreaterThan(0);
-      expect(spawned.every((e) => e.haste === roundHaste(index))).toBe(true);
+      expect(spawned.every((e) => e.haste === roundHaste(OUTBREAK_1, index))).toBe(true);
     }
   });
 
@@ -346,7 +369,7 @@ describe('fin de ronda', () => {
       { type: 'roundCleared', index: 2 },
       { type: 'roundStarted', index: 3 },
     ]);
-    expect(state.round).toEqual(createRound(3));
+    expect(state.round).toEqual(createRound(OUTBREAK_1, 3));
   });
 
   it('plantas, saldo y vidas se conservan de una ronda a la siguiente', () => {
@@ -413,7 +436,7 @@ describe('ronda completa', () => {
     }
     expect(types(events)).toEqual(['attackStarted', 'roundCleared', 'roundStarted']);
     expect(state.lives).toBe(LIVES.start);
-    expect(state.round).toEqual(createRound(1));
+    expect(state.round).toEqual(createRound(OUTBREAK_1, 1));
   });
 
   it('sin plantas, los gusanos de la ronda 1 se cuelan y se pierde', () => {

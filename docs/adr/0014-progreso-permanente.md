@@ -24,7 +24,7 @@ Condiciones previas:
 
 Un hueco propio, `rebrote.progreso`, en `src/game/progress.ts`, con tests en `progress.test.ts`.
 
-- **Forma (versión 1):** `{ version: 1, defeated: ['creeper'] }`. `defeated` son los brotes cuyo jefe se venció al menos una vez, por su nombre (`OUTBREAK_ID` en `core/rounds.ts`, el del jefe), en el orden en que se vencieron. Se guarda el nombre y no la posición para que reordenar los brotes no mezcle el progreso.
+- **Forma (versión 1):** `{ version: 1, defeated: ['creeper'] }`. `defeated` son los brotes cuyo jefe se venció al menos una vez, por su nombre (el del jefe: `OUTBREAK_ID` en `core/rounds.ts` hasta T-018; desde entonces, el `id` de cada brote en `OUTBREAKS`, ADR-0015), en el orden en que se vencieron. Se guarda el nombre y no la posición para que reordenar los brotes no mezcle el progreso.
 - **Reglas puras** (`recordDefeat`, `isOutbreakDefeated`, `hasProgress`) sin Phaser, como pide la regla 1 de `CLAUDE.md`.
 - **Migraciones:** `PROGRESS_VERSION` sube cuando cambia la forma, y `MIGRATIONS` tiene, por cada versión anterior, la función que la pasa a la siguiente. Al leer se aplican en cadena hasta la actual. Un progreso viejo nunca se descarta. Un test exige una migración por versión y otro lee a mano un progreso de la versión 1, que no se cambia nunca.
 - **Datos rotos:** lo que no se entiende (texto corrupto, sin versión) cuenta como vacío y no da error. De un progreso que se entiende a medias se queda lo que vale. Leer nunca toca la partida guardada.

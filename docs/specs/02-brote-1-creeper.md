@@ -1,4 +1,6 @@
-# Mundo 1: Gusanos
+# Brote 1: Creeper
+
+Un brote es una campaña que termina en un jefe (T-018, ver "Brotes" en `01-mecanicas.md`). Este es el primero: sus tropas son gusanos y su jefe, Creeper. Hasta T-018 se llamaba "Mundo 1: Gusanos"; "gusanos" dejó de ser el nombre porque habrá más jefes gusano con tropas modificadas, y "mundo" queda reservado para el futuro.
 
 ## Idea
 
@@ -34,7 +36,7 @@ Un concepto nuevo por ronda.
 
 ### Guion (T-007, T-008 y T-009, PROVISIONAL)
 
-Borrador en `ROUNDS` de `balance.ts`, para afinar jugando. Cada ronda empieza con 20 s de preparación que se pueden adelantar.
+Borrador en las rondas del brote `creeper` de `OUTBREAKS` (`balance.ts`), para afinar jugando. Cada ronda empieza con 20 s de preparación que se pueden adelantar. El brote empieza con 250 monedas (`startingBalance`).
 
 | Ronda | Gusanos | Acorazados | Escupidores | Último grupo | Idea del guion |
 |---|---|---|---|---|---|
@@ -67,12 +69,14 @@ Con T-010 (20 nov 2026) y la fuerza a 15, 25 y 40 %, ese bot perdía las 6 parti
 - **Copias (J-03):** al despegar deja un gusano acelerado en el carril que abandona. Desde T-009 las copias son de nivel 10 y en la fase 2 pueden ser acorazados o escupidores. Muerde 117,5, lo que un gusano de nivel 10 en T-009; con la fuerza de T-010, 129,25, y tiene 4400 de vida.
 - **Aterrizaje (J-05):** golpea a lo primero sembrado que tiene delante.
 - **Fase 2 (J-04):** por debajo del 50 % la pantalla se le pone roja, se enfada y salta cada 10 %, avisa solo 0,6 s y deja dos copias.
-- **Fin:** si cruza el borde izquierdo se pierde la partida. Al derrotarlo sus copias se desconectan y el mundo 1 está superado.
+- **Fin:** si cruza el borde izquierdo se pierde la partida. Al derrotarlo sus copias se desconectan y el brote 1 está superado: queda vencido para siempre en el progreso permanente (T-017) y abre el brote 2 (T-018, B-04).
 - **Aspecto:** un gusano gigante hecho de ordenador antiguo: cabeza de monitor de carcasa crema con la cara en fósforo verde y una antena con luz roja, y anillos de carcasa con rejilla y lucecitas.
 
 Las reglas están en `docs/specs/01-mecanicas.md` y los valores, como PROVISIONAL en `ENEMIES.creeper` y `CREEPER` de `balance.ts`.
 
 ## Mundos futuros (solo ideas, no se diseñan aún)
+
+La palabra "mundo" queda para esto: familias de virus que podrían agrupar varios brotes.
 
 - Troyanos: llegan con pinta inofensiva y sueltan enemigos al morir.
 - Ransomware: ponen un candado a una planta hasta que pagues.

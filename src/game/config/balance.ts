@@ -1,3 +1,4 @@
+import type { OutbreakScript } from '../core/outbreaks';
 import type { RoundScript } from '../core/rounds';
 
 /**
@@ -12,7 +13,7 @@ export const BOARD = {
 
 export const LIMITS = {
   maxCannons: 3,
-  /** Tope absoluto de nivel de una disparadora. En el mundo 1 cada ronda pone el suyo (`levelCap` en `ROUNDS`, T-009). */
+  /** Tope absoluto de nivel de una disparadora. Cada ronda de un brote puede poner el suyo (`levelCap` en `OUTBREAKS`, T-009). */
   maxLevel: 20,
 } as const;
 
@@ -27,9 +28,9 @@ export const COSTS = {
  * solo corre durante el ataque (T-010: en la preparacion no se gana moneda esperando). Al eliminar un enemigo, la moneda se cobra sola salvo en `dropChance` de los casos:
  * entonces queda en el suelo y solo se cobra si el jugador la recoge con un clic,
  * con un `dropBonusPercent` extra redondeado hacia arriba. Siempre en enteros.
+ * El saldo con el que empieza la partida es de cada brote (`startingBalance` en `OUTBREAKS`, T-018).
  */
 export const ECONOMY = {
-  startingBalance: 250,
   passiveIncome: 25, // PROVISIONAL
   /** Cada cuanto tiempo de ataque cae el goteo. En la preparacion el reloj se para y sigue donde iba. PROVISIONAL. */
   passiveIntervalMs: 10_000,
@@ -114,7 +115,7 @@ export const ENEMIES = {
     halfLength: 0.4,
   },
   /**
-   * Creeper (T-008), jefe del mundo 1 y unico enemigo de la ronda 10: muerde como el gusano, con mucha mas vida, y
+   * Creeper (T-008), jefe del brote 1 y unico enemigo de la ronda 10: muerde como el gusano, con mucha mas vida, y
    * salta de carril al perder vida (`CREEPER`). Mas grande que el gusano: le dan antes y se para mas lejos a morder.
    * No tiene nivel: de `ENEMY_POWER` solo le toca la fuerza de todos (T-010). Al caer se gana la partida: no da moneda.
    */
@@ -136,7 +137,7 @@ export const ENEMIES = {
 /**
  * Niveles de los enemigos (T-009, P-04 y P-05, decididos el 20 nov 2026). Cada nivel suma `perLevel` a la vida y al dano
  * (mordisco o escupitajo) de nivel 1; la velocidad no cambia. Encima va la fuerza de `ENEMY_POWER` (T-010). Cada ronda
- * dice con que pesos sale cada nivel (`levels` en `ROUNDS`); sin tabla, todos de nivel 1. Las copias del Creeper y su
+ * dice con que pesos sale cada nivel (`levels` en las rondas de `OUTBREAKS`); sin tabla, todos de nivel 1. Las copias del Creeper y su
  * escolta tienen nivel fijo. PROVISIONAL.
  */
 export const ENEMY_LEVELS = {
@@ -215,9 +216,9 @@ export const ROUND_PREP = {
 } as const;
 
 /**
- * Las rondas del mundo 1 (T-007; de 7 a 10 en T-008; progresion de T-009 y T-010), en orden. Cada una desbloquea lo suyo
+ * Las rondas del brote 1, el de Creeper (T-007; de 7 a 10 en T-008; progresion de T-009 y T-010), en orden. Cada una desbloquea lo suyo
  * al empezar su preparacion (`unlocks`, y el tope de nivel de las disparadoras en `levelCap`), avisa con una linea
- * (su texto, en `round.notices` de `src/i18n/`, T-011) y, si trae algo nuevo, con el aviso que hay que aceptar (salvo `quiet`: la ronda 1, T-010). Saca sus grupos de enemigos: cada grupo, un enemigo por carril de `lanes` a la vez, `atMs` milisegundos
+ * (su texto, en `round.notices.creeper` de `src/i18n/`, T-011) y, si trae algo nuevo, con el aviso que hay que aceptar (salvo `quiet`: la ronda 1, T-010). Saca sus grupos de enemigos: cada grupo, un enemigo por carril de `lanes` a la vez, `atMs` milisegundos
  * despues de que empiece el ataque (en orden). La ronda acaba cuando no quedan enemigos por salir ni vivos. Los
  * carriles van de 0 (el del fondo) a 4 (el de delante).
  * Los enemigos salen con un nivel al azar segun `levels` (tablas de `ENEMY_LEVELS`; sin ella, nivel 1), salvo los
@@ -226,7 +227,7 @@ export const ROUND_PREP = {
  * velocidad respecto a la normal). La 10 es el combate contra Creeper: primero manda a su escolta (un grupo con su
  * propio `level` y `haste`, y un grito, `shout`, cuyo texto esta en `creeper.shouts` de `src/i18n/`) y sale detras. PROVISIONAL: se ajusta jugando.
  */
-export const ROUNDS: readonly RoundScript[] = [
+const CREEPER_ROUNDS: readonly RoundScript[] = [
   {
     unlocks: ['shooter'],
     // T-010 (A-01): la disparadora se da por sabida; basta el aviso de una linea.
@@ -244,7 +245,7 @@ export const ROUNDS: readonly RoundScript[] = [
   },
   {
     unlocks: ['levelUp'],
-    // T-010 (A-05): el tope se queda en 5 todo el mundo 1.
+    // T-010 (A-05): el tope se queda en 5 todo el brote 1.
     levelCap: 5,
     groups: [
       { atMs: 3_000, kind: 'worm', lanes: [2] },
@@ -451,6 +452,23 @@ export const ROUNDS: readonly RoundScript[] = [
       },
       { atMs: 5_500, kind: 'creeper', lanes: [2] },
     ],
+  },
+];
+
+/**
+ * Brotes (T-018, ADR-0015), en orden: cada uno es una campana que acaba en su jefe ("Brote 1: Creeper"), con su guion de
+ * rondas (`rounds`, como el de arriba) y el saldo con el que se empieza (`startingBalance`). Lo que desbloquearon los
+ * brotes anteriores llega desbloqueado desde la ronda 1 (B-01), asi que las rondas de un brote nuevo solo desbloquean lo
+ * suyo. Entre brotes no pasa nada de la partida: tablero vacio y su saldo inicial (B-02). Anadir un brote es anadirlo
+ * aqui, con su nombre en `OutbreakId` (`src/game/core/outbreaks.ts`) y los avisos de sus rondas en `round.notices` de
+ * `src/i18n/`; si trae algo que desbloquear, con su tour (regla 9 de `CLAUDE.md`).
+ */
+export const OUTBREAKS: readonly OutbreakScript[] = [
+  {
+    id: 'creeper',
+    boss: 'creeper',
+    startingBalance: 250,
+    rounds: CREEPER_ROUNDS,
   },
 ];
 

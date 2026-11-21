@@ -16,12 +16,12 @@ export const PROGRESS_KEY = 'rebrote.progreso';
  */
 export const PROGRESS_VERSION = 1;
 
-/** Nombre de un brote para el progreso (`OUTBREAK_ID` en `core/rounds.ts`): el de su jefe. */
-export type OutbreakId = string;
-
 export interface Progress {
-  /** Brotes cuyo jefe se vencio al menos una vez, en el orden en que se vencieron por primera vez. */
-  readonly defeated: readonly OutbreakId[];
+  /**
+   * Brotes cuyo jefe se vencio al menos una vez, en el orden en que se vencieron por primera vez, por su nombre (`id` en
+   * `OUTBREAKS`, T-018: el de su jefe). Puede haber alguno que este juego no conoce, de una version mas nueva.
+   */
+  readonly defeated: readonly string[];
 }
 
 /** Un progreso tal como se lee del navegador, antes de comprobarlo. */
@@ -42,12 +42,12 @@ export const emptyProgress = (): Progress => ({ defeated: [] });
 // Reglas
 
 /** El jefe del brote `id` ya se vencio alguna vez. */
-export function isOutbreakDefeated(progress: Progress, id: OutbreakId): boolean {
+export function isOutbreakDefeated(progress: Progress, id: string): boolean {
   return progress.defeated.includes(id);
 }
 
 /** Apunta el jefe del brote `id` como vencido. Si ya lo estaba, devuelve el mismo progreso. */
-export function recordDefeat(progress: Progress, id: OutbreakId): Progress {
+export function recordDefeat(progress: Progress, id: string): Progress {
   return isOutbreakDefeated(progress, id) ? progress : { ...progress, defeated: [...progress.defeated, id] };
 }
 
@@ -114,13 +114,13 @@ function parse(raw: string | null): ProgressData | null {
 /** Se queda con lo que entiende de un progreso de esta version: lo que este roto se pierde, lo demas no. */
 function sanitize(data: ProgressData): Progress {
   const listed: unknown[] = Array.isArray(data.defeated) ? data.defeated : [];
-  return { defeated: [...new Set(listed.filter(isOutbreakId))] };
+  return { defeated: [...new Set(listed.filter(isOutbreakName))] };
 }
 
 const isRecord = (value: unknown): value is ProgressData => typeof value === 'object' && value !== null && !Array.isArray(value);
 const isVersion = (value: unknown): value is number => Number.isInteger(value) && (value as number) >= 1;
 /** Se guardan tambien los brotes que este juego no conoce: pueden ser de una version mas nueva. */
-const isOutbreakId = (value: unknown): value is OutbreakId => typeof value === 'string' && value.length > 0 && value.length <= 64;
+const isOutbreakName = (value: unknown): value is string => typeof value === 'string' && value.length > 0 && value.length <= 64;
 
 // ---------------------------------------------------------------------------
 // Almacenamiento
@@ -164,7 +164,7 @@ export class ProgressKeeper {
   }
 
   /** Apunta el jefe del brote `id` como vencido. Ya apuntado, no escribe nada. */
-  recordDefeat(id: OutbreakId): Progress {
+  recordDefeat(id: string): Progress {
     const before = this.read();
     const after = recordDefeat(before, id);
     if (after !== before) this.write(after);

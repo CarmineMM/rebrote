@@ -1,7 +1,7 @@
 import { BOARD, ENEMIES, LIMITS, LIVES } from './config/balance';
 import type { Burn, Enemy, Jump, Slow } from './core/combat';
 import type { MatchState, Sown } from './core/match';
-import { ROUND_COUNT } from './core/rounds';
+import { isOutbreakId, roundCount, type OutbreakId } from './core/outbreaks';
 import type { UnlockInfo } from './EventBus';
 
 /**
@@ -13,8 +13,8 @@ import type { UnlockInfo } from './EventBus';
  */
 export const SAVE_KEY = 'rebrote.partida';
 
-/** Sube cuando cambia la forma de `MatchState` o de la guardada: las de otra version se ignoran. */
-export const SAVE_VERSION = 1;
+/** Sube cuando cambia la forma de `MatchState` o de la guardada: las de otra version se ignoran. La 2 (T-018) anade el brote. */
+export const SAVE_VERSION = 2;
 
 export interface SavedGame {
   readonly version: number;
@@ -27,8 +27,10 @@ export interface SavedGame {
 
 /** Lo que dice "Cargar partida" en el menu. */
 export interface SaveSummary {
+  readonly outbreak: OutbreakId;
   /** Ronda en curso, desde 1. */
   readonly round: number;
+  /** Rondas del brote de la partida (T-018). */
   readonly total: number;
   readonly lives: number;
   readonly balance: number;
@@ -68,13 +70,20 @@ export function decodeSave(raw: string | null): SavedGame | null {
   }
   if (!isRecord(data) || data.version !== SAVE_VERSION || !isNumber(data.savedAt)) return null;
   if (!isMatchState(data.match) || !isSavable(data.match)) return null;
-  const pendingUnlock = isUnlockInfo(data.pendingUnlock) ? data.pendingUnlock : null;
+  const pendingUnlock = isUnlockInfo(data.pendingUnlock, data.match.outbreak) ? data.pendingUnlock : null;
   return { version: SAVE_VERSION, savedAt: data.savedAt, match: data.match, pendingUnlock };
 }
 
 export function summarizeSave(save: SavedGame): SaveSummary {
   const { match } = save;
-  return { round: match.round.index + 1, total: ROUND_COUNT, lives: match.lives, balance: match.balance, savedAt: save.savedAt };
+  return {
+    outbreak: match.outbreak,
+    round: match.round.index + 1,
+    total: roundCount(match.outbreak),
+    lives: match.lives,
+    balance: match.balance,
+    savedAt: save.savedAt,
+  };
 }
 
 export function readSave(store: SaveStore | null = browserStore()): SavedGame | null {
@@ -174,10 +183,11 @@ const isBulletEffect = (value: unknown): boolean =>
 const isProjectile = (value: unknown): value is Data =>
   isRecord(value) && isInt(value.id, 0) && isLane(value.lane) && isNumber(value.x) && isNumber(value.damage);
 
-function isRound(value: unknown): boolean {
+/** Ronda que existe en el guion del brote de la partida (T-018: cada brote tiene sus rondas). */
+function isRound(value: unknown, outbreak: OutbreakId): boolean {
   return (
     isRecord(value) &&
-    isInt(value.index, 0, ROUND_COUNT - 1) &&
+    isInt(value.index, 0, roundCount(outbreak) - 1) &&
     (value.phase === 'prep' || value.phase === 'attack') &&
     isNumber(value.prepMs) &&
     isNumber(value.elapsedMs) &&
@@ -189,6 +199,7 @@ export function isMatchState(value: unknown): value is MatchState {
   if (!isRecord(value)) return false;
   const { plants, enemies, bullets, spits } = value;
   return (
+    isOutbreakId(value.outbreak) &&
     isInt(value.balance, 0) &&
     isInt(value.lives, 0, LIVES.start) &&
     Array.isArray(plants) &&
@@ -200,12 +211,12 @@ export function isMatchState(value: unknown): value is MatchState {
     bullets.every((bullet) => isProjectile(bullet) && isNullOr(bullet.effect, isBulletEffect)) &&
     Array.isArray(spits) &&
     spits.every(isProjectile) &&
-    isRound(value.round) &&
+    isRound(value.round, value.outbreak) &&
     isNumber(value.incomeMs) &&
     isInt(value.nextId, 0)
   );
 }
 
-function isUnlockInfo(value: unknown): value is UnlockInfo {
-  return isRecord(value) && isInt(value.round, 1, ROUND_COUNT) && Array.isArray(value.items) && value.items.every((item) => isRecord(item) && typeof item.id === 'string');
+function isUnlockInfo(value: unknown, outbreak: OutbreakId): value is UnlockInfo {
+  return isRecord(value) && isInt(value.round, 1, roundCount(outbreak)) && Array.isArray(value.items) && value.items.every((item) => isRecord(item) && typeof item.id === 'string');
 }

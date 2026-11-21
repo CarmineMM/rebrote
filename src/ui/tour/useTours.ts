@@ -35,29 +35,32 @@ export function useTours({ onBoard, round, help, covered, over }: UseToursOption
   const [coins, setCoins] = useState<DroppedCoin[]>([]);
   /** Moneda que lleva la pista ahora mismo. */
   const [hintCoin, setHintCoin] = useState<number | null>(null);
-  const roundSeen = useRef<number | null>(null);
+  /** Ultima ronda que trajo sus tours, con su brote ("creeper:3"). */
+  const roundSeen = useRef<string | null>(null);
   /** Tour que ya se llego a ver: si empieza el ataque a medias, cuenta como visto. */
   const shown = useRef<TourId | null>(null);
 
   useEffect(() => writeTourProgress(progress), [progress]);
 
   const roundNumber = round?.number ?? null;
+  const outbreak = round?.outbreak ?? null;
   const phase = round?.phase ?? null;
 
   // Cada ronda nueva que empieza por su preparacion trae sus tours. Una partida cargada en mitad del ataque, ninguno.
   useEffect(() => {
-    if (!onBoard || roundNumber === null) {
+    if (!onBoard || roundNumber === null || outbreak === null) {
       roundSeen.current = null;
       setQueue([]);
       return;
     }
-    if (roundNumber === roundSeen.current) return;
-    roundSeen.current = roundNumber;
-    setQueue(phase === 'prep' ? toursOfRound(roundNumber - 1) : []);
+    const seen = `${outbreak}:${roundNumber}`;
+    if (seen === roundSeen.current) return;
+    roundSeen.current = seen;
+    setQueue(phase === 'prep' ? toursOfRound(outbreak, roundNumber - 1) : []);
     setStepIndex(0);
     setCheer(false);
     // Solo cuenta el cambio de ronda: la fase se lee en ese momento.
-  }, [onBoard, roundNumber]);
+  }, [onBoard, outbreak, roundNumber]);
 
   const tour: TourId | null =
     help && onBoard && !over && phase === 'prep' ? (queue.find((id) => !progress.done.includes(id)) ?? null) : null;

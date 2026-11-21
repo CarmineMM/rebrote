@@ -63,7 +63,12 @@ export class TitleScene extends Phaser.Scene {
 
     // Nueva partida o la guardada: el tablero toma el relevo con la misma calidad.
     const onMatch = (request: MatchRequest) => {
-      const data: BoardSceneData = { quality: this.level, resume: request.resume, pendingUnlock: request.pendingUnlock ?? null };
+      const data: BoardSceneData = {
+        quality: this.level,
+        resume: request.resume,
+        outbreak: request.outbreak,
+        pendingUnlock: request.pendingUnlock ?? null,
+      };
       this.input.setDefaultCursor('default');
       this.scene.start(SCENES.board, data);
     };

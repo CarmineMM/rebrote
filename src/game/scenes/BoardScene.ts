@@ -32,10 +32,9 @@ import {
   type Mine,
   type Plant,
 } from '../core/match';
+import { FIRST_OUTBREAK, roundCount, type OutbreakId } from '../core/outbreaks';
 import { plantMaxHp } from '../core/plants';
 import {
-  OUTBREAK_ID,
-  ROUND_COUNT,
   availableCards,
   bossRoundIndex,
   createRound,
@@ -209,6 +208,8 @@ export interface BoardSceneData {
   quality: QualityLevel;
   /** Partida a continuar: al cambiar el nivel grafico o el idioma, que recrean el juego, o al cargar la guardada (T-011). */
   resume?: MatchState;
+  /** Brote de la partida nueva (T-018), si no se continua otra. Sin el, el primero. */
+  outbreak?: OutbreakId;
   /** Aviso de lo desbloqueado que el jugador no habia aceptado en la partida guardada (T-011): vuelve a salir. */
   pendingUnlock?: UnlockInfo | null;
   /** Arrancar en pausa (por ejemplo, si se cambia la calidad desde el menu de pausa). */
@@ -231,6 +232,8 @@ export class BoardScene extends Phaser.Scene {
   private level: QualityLevel = 'medium';
   private quality: QualityProfile = QUALITY_PROFILES.medium;
   private resume: MatchState | undefined;
+  /** Brote de la partida nueva, si no se continua otra (T-018). */
+  private outbreak: OutbreakId = FIRST_OUTBREAK;
   private plantViews = new Map<string, PlantView>();
   /** Vistas de los enemigos por id: gusanos (`WormView`) y el Creeper (`CreeperView`, T-008). */
   private wormViews = new Map<number, EnemyView>();
@@ -292,13 +295,15 @@ export class BoardScene extends Phaser.Scene {
     this.level = data.quality ?? 'medium';
     this.quality = QUALITY_PROFILES[this.level];
     this.resume = data.resume;
+    this.outbreak = data.outbreak ?? FIRST_OUTBREAK;
     this.restoredUnlock = data.pendingUnlock ?? null;
     this.wantPaused = data.paused ?? false;
     this.created = false;
   }
 
   create(): void {
-    this.match = this.resume ?? createMatch();
+    // B-02 (T-018): una partida nueva empieza con el tablero vacio y el saldo inicial de su brote.
+    this.match = this.resume ?? createMatch(undefined, 0, this.outbreak);
     this.selected = null;
     this.hoverCell = null;
     this.defeated = false;
@@ -570,8 +575,8 @@ export class BoardScene extends Phaser.Scene {
     };
     const onPause = (paused: boolean) => this.applyPause(paused);
     const onTourHold = (hold: boolean) => this.setTourHold(hold);
-    // Partida nueva desde cero: no continua la anterior (sin `resume`) y arranca sin pausa.
-    const onRestart = () => this.scene.restart({ quality: this.level } satisfies BoardSceneData);
+    // Partida nueva desde cero, del mismo brote: no continua la anterior (sin `resume`) y arranca sin pausa.
+    const onRestart = () => this.scene.restart({ quality: this.level, outbreak: this.match.outbreak } satisfies BoardSceneData);
     // T-011: se guarda al ocultar o cerrar la pestana, y al salir al menu de inicio, que pasa a la portada.
     const onSave = () => this.saveGame();
     const onExit = () => {
@@ -624,8 +629,8 @@ export class BoardScene extends Phaser.Scene {
   /** Pasa a la preparacion de la ronda siguiente sin esperar; los enemigos que hubiera siguen ahi. */
   private skipRound(): void {
     const next = this.match.round.index + 1;
-    if (this.defeated || this.won || next >= ROUND_COUNT) return;
-    this.match = { ...this.match, round: createRound(next) };
+    if (this.defeated || this.won || next >= roundCount(this.match.outbreak)) return;
+    this.match = { ...this.match, round: createRound(this.match.outbreak, next) };
     this.cancelDrag();
     this.announceUnlocks(next);
     this.emitRound();
@@ -669,7 +674,7 @@ export class BoardScene extends Phaser.Scene {
     this.match = round.state;
     this.showSpawned(round.spawned);
     round.events.forEach((event) => this.showRoundEvent(event));
-    sfx.playCues(roundCues(round.events));
+    sfx.playCues(roundCues(round.events, roundCount(this.match.outbreak)));
 
     const income = stepIncome(this.match, delta);
     this.match = income.state;
@@ -739,7 +744,7 @@ export class BoardScene extends Phaser.Scene {
         this.announceAttack();
         break;
       case 'roundCleared':
-        if (event.index + 1 < ROUND_COUNT) this.celebrate(text().board.roundCleared(event.index + 1));
+        if (event.index + 1 < roundCount(this.match.outbreak)) this.celebrate(text().board.roundCleared(event.index + 1));
         break;
       case 'won':
         this.enterVictory(LOOK.victoryDelayMs);
@@ -764,7 +769,7 @@ export class BoardScene extends Phaser.Scene {
    */
   private announceUnlocks(index: number): void {
     const items: UnlockItem[] = [];
-    for (const unlock of roundUnlocks(index)) {
+    for (const unlock of roundUnlocks(this.match.outbreak, index)) {
       if (unlock.kind === 'levelCap') {
         items.push({ id: 'levelCap', level: unlock.level });
         continue;
@@ -989,9 +994,9 @@ export class BoardScene extends Phaser.Scene {
   private enterVictory(delayMs: number): void {
     if (this.won) return;
     this.won = true;
-    // El jefe queda vencido para siempre (T-017). Antes de borrar la partida guardada: si la pestana se cierra justo
-    // ahora, no se pierde la victoria.
-    playerProgress.recordDefeat(OUTBREAK_ID);
+    // El jefe del brote queda vencido para siempre (T-017). Antes de borrar la partida guardada: si la pestana se cierra
+    // justo ahora, no se pierde la victoria.
+    playerProgress.recordDefeat(this.match.outbreak);
     // La partida acabo (I-04): no queda nada que cargar.
     clearSave();
     this.cancelDrag();
@@ -1006,7 +1011,7 @@ export class BoardScene extends Phaser.Scene {
     this.emitBoss();
     if (delayMs > 0) {
       sfx.play('victory');
-      this.celebrate(isBossRound(this.match.round.index) ? text().board.bossDown : text().board.gardenSafe);
+      this.celebrate(isBossRound(this.match.outbreak, this.match.round.index) ? text().board.bossDown : text().board.gardenSafe);
       for (let i = 0; i < 6; i++) {
         this.time.delayedCall(180 + i * 190, () => {
           const at = perspective.toScreen({ x: Phaser.Math.FloatBetween(1, BOARD.columns - 1), y: Phaser.Math.FloatBetween(0.5, BOARD.lanes - 0.5) });
@@ -1110,7 +1115,7 @@ export class BoardScene extends Phaser.Scene {
       return;
     }
     const price = play.multiplier > 1 ? `×${play.multiplier} = ${play.cost}` : `${play.cost}`;
-    const unlocksAt = element ? unlockRound(infuseFeature(element)) : null;
+    const unlocksAt = element ? unlockRound(this.match.outbreak, infuseFeature(element)) : null;
     const labels = text().board;
     const lines: LabelLine[] =
       play.blocker === 'locked'
@@ -1956,17 +1961,18 @@ export class BoardScene extends Phaser.Scene {
 
   /** Avisa al HUD de la ronda en curso (T-007), solo si cambia: en la preparacion, la cuenta atras cambia cada segundo. */
   private emitRound(): void {
-    const { round } = this.match;
-    const bossRound = bossRoundIndex();
+    const { round, outbreak } = this.match;
+    const bossRound = bossRoundIndex(outbreak);
     const info: RoundInfo = {
+      outbreak,
       number: round.index + 1,
-      total: ROUND_COUNT,
+      total: roundCount(outbreak),
       bossRound: bossRound === null ? null : bossRound + 1,
       phase: round.phase,
       prepSeconds: round.phase === 'prep' ? Math.ceil(round.prepMs / 1000) : null,
       cards: availableCards(this.match),
       infusable: infusableElements(this.match),
-      notice: text().round.notices[round.index] ?? '',
+      notice: text().round.notices[outbreak]?.[round.index] ?? '',
     };
     const key = JSON.stringify(info);
     if (key === this.roundKey) return;

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { CardId } from './game/core/match';
+import { FIRST_OUTBREAK } from './game/core/outbreaks';
 import type { GameScreen } from './game/createGame';
 import {
   EventBus,
@@ -379,7 +380,9 @@ export function App() {
 
       {onBoard && lost && <DefeatScreen round={round} loss={loss} onRestart={restart} onMenu={exitToMenu} />}
 
-      {onBoard && won && !lost && <VictoryScreen rounds={round?.total ?? 0} onRestart={restart} onMenu={exitToMenu} />}
+      {onBoard && won && !lost && (
+        <VictoryScreen outbreak={round?.outbreak ?? FIRST_OUTBREAK} rounds={round?.total ?? 0} onRestart={restart} onMenu={exitToMenu} />
+      )}
 
       {onBoard && unlock && !paused && !over && <UnlockModal unlock={unlock} onAccept={acceptUnlock} />}
 
@@ -387,6 +390,7 @@ export function App() {
 
       {onBoard && paused && !over && (
         <PauseMenu
+          outbreak={round?.outbreak ?? FIRST_OUTBREAK}
           settings={settings}
           autoLevel={autoLevel}
           fullscreenSupported={fullscreen.supported}

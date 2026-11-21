@@ -1,0 +1,80 @@
+import { OUTBREAKS } from '../config/balance';
+import type { EnemyKind } from './combat';
+import type { RoundScript } from './rounds';
+
+/**
+ * Brotes (T-018, ADR-0015): cada campana que acaba en un jefe ("Brote 1: Creeper"). Cada brote trae su guion de rondas,
+ * su jefe y su saldo inicial; la lista, en orden, es `OUTBREAKS` de `balance.ts`. Anadir un brote es anadir sus datos
+ * ahi (y su nombre a `OutbreakId`, sus avisos de ronda en `round.notices` de `src/i18n/`): las escenas no cambian.
+ *
+ * Decidido el 21 nov 2026 (B-01 a B-04):
+ * - Lo desbloqueado en los brotes anteriores llega desbloqueado desde la ronda 1 (B-01): cada brote solo ensena lo suyo.
+ * - Entre brotes no pasa nada de la partida (B-02): tablero vacio y el saldo inicial del brote.
+ * - El nombre del jefe se ve siempre, tambien antes de llegar a el (B-03).
+ * - Para entrar en un brote hay que haber vencido al jefe del anterior (B-04).
+ */
+
+/** Nombre de cada brote: el de su jefe. Al anadir un brote, su nombre va aqui. */
+export type OutbreakId = 'creeper';
+
+export interface OutbreakScript {
+  /**
+   * Nombre estable del brote. Con el se guarda la partida (ADR-0010) y se apunta el jefe vencido en el progreso
+   * permanente (ADR-0014), asi que no cambia aunque cambie el orden de la lista.
+   */
+  readonly id: OutbreakId;
+  /** Jefe del brote: sale en su ultima ronda y al vencerlo se gana la partida. */
+  readonly boss: EnemyKind;
+  /** Saldo con el que empieza la partida (B-02: no se trae nada del brote anterior). */
+  readonly startingBalance: number;
+  /** Guion de rondas, en orden: cuantas hay, que desbloquea cada una y que enemigos saca. */
+  readonly rounds: readonly RoundScript[];
+}
+
+/** Brote con el que empieza el juego: el primero de la lista. */
+export const FIRST_OUTBREAK: OutbreakId = OUTBREAKS[0].id;
+
+/** Posicion del brote en la lista, desde 0. */
+export function outbreakIndex(id: OutbreakId): number {
+  const index = OUTBREAKS.findIndex((outbreak) => outbreak.id === id);
+  if (index < 0) throw new Error(`Brote desconocido: ${id}`);
+  return index;
+}
+
+export function outbreakScript(id: OutbreakId): OutbreakScript {
+  return OUTBREAKS[outbreakIndex(id)];
+}
+
+/** Numero del brote para el jugador, desde 1 ("Brote 1: Creeper"). */
+export function outbreakNumber(id: OutbreakId): number {
+  return outbreakIndex(id) + 1;
+}
+
+/** Rondas del brote. */
+export function roundCount(id: OutbreakId): number {
+  return outbreakScript(id).rounds.length;
+}
+
+/** Es el nombre de un brote de este juego (una partida guardada o un progreso pueden traer otro). */
+export function isOutbreakId(value: unknown): value is OutbreakId {
+  return OUTBREAKS.some((outbreak) => outbreak.id === value);
+}
+
+/** Brotes que van antes que `id`, en orden (B-01: lo que desbloquearon llega ya desbloqueado). */
+export function outbreaksBefore(id: OutbreakId): readonly OutbreakScript[] {
+  return OUTBREAKS.slice(0, outbreakIndex(id));
+}
+
+/** Brote cuyo jefe es `kind`, o null si no es jefe de ninguno. */
+export function outbreakOfBoss(kind: EnemyKind): OutbreakId | null {
+  return OUTBREAKS.find((outbreak) => outbreak.boss === kind)?.id ?? null;
+}
+
+/**
+ * Se puede jugar el brote `id` (B-04): el primero siempre; los demas, si ya se vencio al jefe del anterior. `defeated`
+ * son los brotes vencidos del progreso permanente (`Progress.defeated`).
+ */
+export function isOutbreakOpen(id: OutbreakId, defeated: readonly string[]): boolean {
+  const index = outbreakIndex(id);
+  return index === 0 || defeated.includes(OUTBREAKS[index - 1].id);
+}

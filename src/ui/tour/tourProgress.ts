@@ -1,3 +1,4 @@
+import type { OutbreakId } from '../../game/core/outbreaks';
 import { TOURS, toursOfRound, type HintId, type TourId } from './tours';
 
 /**
@@ -72,10 +73,10 @@ export function markTourDone(progress: TourProgress, id: TourId): TourProgress {
   return progress.done.includes(id) ? progress : { ...progress, done: [...progress.done, id] };
 }
 
-/** Tours de la ronda `index` (desde 0) que aun no se vieron. Con la ayuda apagada, ninguno. */
-export function pendingTours(index: number, progress: TourProgress, help: boolean): TourId[] {
+/** Tours de la ronda `index` (desde 0) del brote que aun no se vieron. Con la ayuda apagada, ninguno. */
+export function pendingTours(outbreak: OutbreakId, index: number, progress: TourProgress, help: boolean): TourId[] {
   if (!help) return [];
-  return toursOfRound(index).filter((id) => !progress.done.includes(id));
+  return toursOfRound(outbreak, index).filter((id) => !progress.done.includes(id));
 }
 
 /** La pista aun tiene que salir: no se aprendio y no salio ya todas sus veces. */

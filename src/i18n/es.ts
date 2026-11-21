@@ -27,7 +27,13 @@ export const es = {
     justNow: 'ahora mismo',
   },
 
-  world1: 'Mundo 1: Gusanos',
+  /**
+   * Brotes (T-018): cada campana que acaba en un jefe. Su nombre es su numero y su jefe ("Brote 1: Creeper"), que se ve
+   * siempre (B-03). El nombre del jefe sale de `info.enemy.names`.
+   */
+  outbreak: {
+    title: (number: number, boss: string) => `Brote ${number}: ${boss}`,
+  },
 
   /** Menu de inicio (T-011). */
   title: {
@@ -140,19 +146,21 @@ export const es = {
     seconds: 's',
     go: '¡Que vengan!',
     goBoss: '¡Que venga!',
-    /** Aviso de una linea de cada ronda del mundo 1, en orden (una por ronda de `ROUNDS`). */
-    notices: [
-      'Siembra disparadoras: cada una defiende su carril',
-      'Toca una disparadora para subirla de nivel (hasta el 5)',
-      'Siembra fuego solo y explota. ¡Llega el acorazado, y los gusanos ya tienen nivel!',
-      'Siembra hielo solo y frena en área. ¡Llega el escupidor!',
-      'Suelta fuego o hielo sobre una disparadora (o arrastra una mina hasta ella) para infundirla',
-      'Arrastra una disparadora sobre otra igual para fusionarlas',
-      'Llegan todos a la vez: gusanos, acorazados y escupidores. ¡Aguanta!',
-      '¡Creeper se prepara! Sus tropas llegan más rápido y en mayor número',
-      'Creeper casi está listo: aún más tropas y más rápidas',
-      '¡Llega Creeper con su escolta! Salta de carril: reparte tus defensas',
-    ],
+    /** Aviso de una linea de cada ronda de cada brote (T-018), en orden: uno por ronda de su guion en `OUTBREAKS`. */
+    notices: {
+      creeper: [
+        'Siembra disparadoras: cada una defiende su carril',
+        'Toca una disparadora para subirla de nivel (hasta el 5)',
+        'Siembra fuego solo y explota. ¡Llega el acorazado, y los gusanos ya tienen nivel!',
+        'Siembra hielo solo y frena en área. ¡Llega el escupidor!',
+        'Suelta fuego o hielo sobre una disparadora (o arrastra una mina hasta ella) para infundirla',
+        'Arrastra una disparadora sobre otra igual para fusionarlas',
+        'Llegan todos a la vez: gusanos, acorazados y escupidores. ¡Aguanta!',
+        '¡Creeper se prepara! Sus tropas llegan más rápido y en mayor número',
+        'Creeper casi está listo: aún más tropas y más rápidas',
+        '¡Llega Creeper con su escolta! Salta de carril: reparte tus defensas',
+      ],
+    },
   },
 
   boss: {
@@ -392,8 +400,8 @@ export const es = {
         worm: 'Gusano informático',
         armored: 'Con casco y placas de acero',
         spitter: 'Ataca desde lejos',
-        boss: 'Jefe del mundo 1',
-        bossEnraged: 'Jefe del mundo 1 · fase 2',
+        boss: (outbreak: number) => `Jefe del brote ${outbreak}`,
+        bossEnraged: (outbreak: number) => `Jefe del brote ${outbreak} · fase 2`,
       },
       tier: (percent: string) => `+${percent} de fuerza por su tramo`,
       about: {

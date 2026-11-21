@@ -3,7 +3,7 @@
 **Estado:** Pendiente · **Prioridad:** Baja · **Tamaño estimado:** M (orientativo) · **Depende de:** T-019, T-020, T-022 · **Bloquea a:** ninguna · **Origen:** conversación de diseño del 20 nov 2026
 
 ## Contexto
-En la partida, cada disparadora empieza en nivel 1 y sube pagando moneda: cada nivel suma un 10 % de daño y un 3 % de cadencia (`LEVELING` en `balance.ts`, `levelBonus` en `src/game/core/plants.ts`). Desde T-027 (21 nov 2026), llegar a los niveles 5 y 15 suma 1,5 veces eso y llegar al 10 y al 20, el doble: si la mejora se cuenta como niveles (N-01 c), hay que decidir si esos pasos también llevan premio. Cada ronda pone un tope de nivel: en el brote 1 es 5 desde la ronda 2 (`levelCap` en `ROUNDS`, T-009 y T-010). Subir de nivel se desbloquea en la ronda 2 y tiene su tour.
+En la partida, cada disparadora empieza en nivel 1 y sube pagando moneda: cada nivel suma un 10 % de daño y un 3 % de cadencia (`LEVELING` en `balance.ts`, `levelBonus` en `src/game/core/plants.ts`). Desde T-027 (21 nov 2026), llegar a los niveles 5 y 15 suma 1,5 veces eso y llegar al 10 y al 20, el doble: si la mejora se cuenta como niveles (N-01 c), hay que decidir si esos pasos también llevan premio. Cada ronda pone un tope de nivel: en el brote 1 es 5 desde la ronda 2 (`levelCap` en las rondas de `OUTBREAKS`, T-009, T-010 y T-018). Subir de nivel se desbloquea en la ronda 2 y tiene su tour.
 
 Carmine quiere una mejora permanente y muy cara, con tope 5, para que las plantas empiecen la partida con ese nivel ya hecho, sin cambiar el precio de sembrarlas.
 

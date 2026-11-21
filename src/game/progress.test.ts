@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import { OUTBREAKS } from './config/balance';
 import { createMatch } from './core/match';
-import { OUTBREAK_ID } from './core/rounds';
+import type { OutbreakId } from './core/outbreaks';
 import {
   MIGRATIONS,
   PROGRESS_KEY,
@@ -17,6 +18,9 @@ import {
   type Migration,
 } from './progress';
 import { SAVE_KEY, clearSave, readSave, writeSave, type SaveStore } from './save';
+
+/** El brote 1 (T-018). */
+const CREEPER: OutbreakId = 'creeper';
 
 /** Almacenamiento de mentira, como el `localStorage` del navegador; cuenta las escrituras. */
 function memoryStore(entries: Record<string, string> = {}): SaveStore & { data: Map<string, string>; writes: number } {
@@ -74,25 +78,25 @@ describe('progreso permanente: reglas (T-017)', () => {
     expect(recordDefeat(once, 'blaster').defeated).toEqual(['creeper', 'blaster']);
   });
 
-  it('el brote de hoy tiene nombre propio', () => {
-    expect(OUTBREAK_ID).toBe('creeper');
+  it('el progreso apunta cada brote por su nombre, el de su jefe (T-018)', () => {
+    expect(OUTBREAKS[0].id).toBe('creeper');
   });
 });
 
 describe('progreso permanente: guardar y recargar (T-017)', () => {
   it('vencer a un jefe queda escrito y sigue ahi al recargar la pagina', () => {
     const store = memoryStore();
-    keeperOn(store).recordDefeat(OUTBREAK_ID);
+    keeperOn(store).recordDefeat(CREEPER);
     // Otra pagina: otro guardian con el mismo navegador.
-    expect(isOutbreakDefeated(keeperOn(store).read(), OUTBREAK_ID)).toBe(true);
+    expect(isOutbreakDefeated(keeperOn(store).read(), CREEPER)).toBe(true);
     expect(JSON.parse(store.data.get(PROGRESS_KEY) ?? '')).toEqual({ version: PROGRESS_VERSION, defeated: ['creeper'] });
   });
 
   it('volver a vencer al mismo jefe no vuelve a escribir', () => {
     const store = memoryStore();
     const keeper = keeperOn(store);
-    keeper.recordDefeat(OUTBREAK_ID);
-    keeper.recordDefeat(OUTBREAK_ID);
+    keeper.recordDefeat(CREEPER);
+    keeper.recordDefeat(CREEPER);
     expect(store.writes).toBe(1);
     expect(keeper.read().defeated).toEqual(['creeper']);
   });
@@ -100,7 +104,7 @@ describe('progreso permanente: guardar y recargar (T-017)', () => {
   it('ganar, perder o empezar otra partida no lo toca: solo se borra la partida guardada', () => {
     const store = memoryStore();
     const keeper = keeperOn(store);
-    keeper.recordDefeat(OUTBREAK_ID);
+    keeper.recordDefeat(CREEPER);
     expect(writeSave(createMatch(), null, store, 1)).toBe(true);
     // Perder o ganar borra la partida guardada (I-04).
     clearSave(store);
@@ -109,7 +113,7 @@ describe('progreso permanente: guardar y recargar (T-017)', () => {
     writeSave({ ...createMatch(), lives: 0 }, null, store, 2);
     // Una partida nueva pisa la guardada.
     writeSave(createMatch(), null, store, 3);
-    expect(isOutbreakDefeated(keeperOn(store).read(), OUTBREAK_ID)).toBe(true);
+    expect(isOutbreakDefeated(keeperOn(store).read(), CREEPER)).toBe(true);
   });
 });
 
@@ -117,7 +121,7 @@ describe('progreso permanente: borrar (T-017)', () => {
   it('borra el progreso y la partida guardada, y deja los ajustes y los tours vistos', () => {
     const store = memoryStore({ 'rebrote.ajustes': '{"language":"en"}', 'rebrote.tours': '{"done":["basics"]}' });
     const keeper = keeperOn(store);
-    keeper.recordDefeat(OUTBREAK_ID);
+    keeper.recordDefeat(CREEPER);
     writeSave(createMatch(), null, store, 1);
     keeper.erase();
     expect(store.data.has(PROGRESS_KEY)).toBe(false);
@@ -129,7 +133,7 @@ describe('progreso permanente: borrar (T-017)', () => {
 
   it('tambien borra lo que solo estaba en memoria', () => {
     const keeper = keeperOn(null);
-    keeper.recordDefeat(OUTBREAK_ID);
+    keeper.recordDefeat(CREEPER);
     keeper.erase();
     expect(keeper.read()).toEqual(emptyProgress());
   });
@@ -204,7 +208,7 @@ describe('progreso permanente: datos rotos (T-017)', () => {
     const keeper = keeperOn(store);
     expect(keeper.read()).toEqual(emptyProgress());
     expect(readSave(store)).not.toBeNull();
-    keeper.recordDefeat(OUTBREAK_ID);
+    keeper.recordDefeat(CREEPER);
     expect(decodeProgress(store.data.get(PROGRESS_KEY) ?? null)?.defeated).toEqual(['creeper']);
   });
 
@@ -215,10 +219,10 @@ describe('progreso permanente: datos rotos (T-017)', () => {
     const store = memoryStore({ [PROGRESS_KEY]: newer });
     const keeper = keeperOn(store);
     expect(keeper.read()).toEqual(emptyProgress());
-    keeper.recordDefeat(OUTBREAK_ID);
+    keeper.recordDefeat(CREEPER);
     expect(store.data.get(PROGRESS_KEY)).toBe(newer);
     // En esta sesion, el jefe vencido se recuerda igual.
-    expect(isOutbreakDefeated(keeper.read(), OUTBREAK_ID)).toBe(true);
+    expect(isOutbreakDefeated(keeper.read(), CREEPER)).toBe(true);
   });
 });
 
@@ -226,16 +230,16 @@ describe('progreso permanente: sin almacenamiento (T-017)', () => {
   it('sin almacenamiento (ventana privada) el juego sigue y el progreso dura la sesion', () => {
     const keeper = keeperOn(null);
     expect(keeper.read()).toEqual(emptyProgress());
-    keeper.recordDefeat(OUTBREAK_ID);
-    expect(isOutbreakDefeated(keeper.read(), OUTBREAK_ID)).toBe(true);
+    keeper.recordDefeat(CREEPER);
+    expect(isOutbreakDefeated(keeper.read(), CREEPER)).toBe(true);
     expect(keeper.write(keeper.read())).toBe(false);
   });
 
   it('con el almacenamiento bloqueado no falla nada', () => {
     const keeper = keeperOn(blockedStore);
     expect(keeper.read()).toEqual(emptyProgress());
-    expect(() => keeper.recordDefeat(OUTBREAK_ID)).not.toThrow();
-    expect(isOutbreakDefeated(keeper.read(), OUTBREAK_ID)).toBe(true);
+    expect(() => keeper.recordDefeat(CREEPER)).not.toThrow();
+    expect(isOutbreakDefeated(keeper.read(), CREEPER)).toBe(true);
     expect(() => keeper.erase()).not.toThrow();
     expect(keeper.read()).toEqual(emptyProgress());
   });
@@ -243,8 +247,8 @@ describe('progreso permanente: sin almacenamiento (T-017)', () => {
   it('con el almacenamiento lleno, lo que no cupo manda sobre lo guardado mientras dure la sesion', () => {
     const store = fullStore({ [PROGRESS_KEY]: encodeProgress(emptyProgress()) });
     const keeper = keeperOn(store);
-    keeper.recordDefeat(OUTBREAK_ID);
-    expect(isOutbreakDefeated(keeper.read(), OUTBREAK_ID)).toBe(true);
+    keeper.recordDefeat(CREEPER);
+    expect(isOutbreakDefeated(keeper.read(), CREEPER)).toBe(true);
     expect(decodeProgress(store.data.get(PROGRESS_KEY) ?? null)).toEqual(emptyProgress());
   });
 
@@ -259,7 +263,7 @@ describe('progreso permanente: sin almacenamiento (T-017)', () => {
       },
     };
     const keeper = keeperOn(flaky);
-    keeper.recordDefeat(OUTBREAK_ID);
+    keeper.recordDefeat(CREEPER);
     expect(store.data.has(PROGRESS_KEY)).toBe(false);
     full = false;
     keeper.recordDefeat('blaster');

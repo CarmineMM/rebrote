@@ -102,13 +102,13 @@ describe('ficha de un enemigo', () => {
   it('Creeper: sin nivel, con su golpe, su proximo salto y su fase', () => {
     const boss = enemy('creeper');
     const info = enemyInfo(boss);
-    expect(info).toMatchObject({ tone: 'creeper', title: 'Creeper', subtitle: 'Jefe del mundo 1', level: null, hp: { current: 4400, max: 4400 } });
+    expect(info).toMatchObject({ tone: 'creeper', title: 'Creeper', subtitle: 'Jefe del brote 1', level: null, hp: { current: 4400, max: 4400 } });
     expect(stat(info, 'Mordisco')?.value).toBe('129,3');
     expect(stat(info, 'Golpe al caer')?.value).toBe('165');
     expect(stat(info, 'Próximo salto')?.value).toBe('Al bajar del 80 % de vida');
     expect(stat(info, 'Recompensa')).toBeUndefined();
     const angry = enemyInfo({ ...boss, hp: 1000, jumpsUsed: CREEPER.jumpAt.length });
-    expect(angry.subtitle).toBe('Jefe del mundo 1 · fase 2');
+    expect(angry.subtitle).toBe('Jefe del brote 1 · fase 2');
     expect(angry.tags[0]).toEqual({ text: '¡Enfadado!', tone: 'alert' });
     expect(stat(angry, 'Próximo salto')?.value).toBe('Ya no salta más');
   });
