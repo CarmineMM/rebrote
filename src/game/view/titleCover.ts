@@ -13,6 +13,7 @@ import { CreeperView } from './creeperView';
 import type { Effects } from './effects';
 import { MineView } from './mineView';
 import { PlantView } from './plantView';
+import { SHOOTER, type ShooterDesign } from './shooterShape';
 import { SpitView } from './spitView';
 import { WormView, type EnemyView } from './wormView';
 
@@ -38,14 +39,16 @@ export const COVER_LOOK = {
   ouchText: { color: '#ffe3f0', stroke: '#4a2a7a', fontSize: 30 },
 } as const;
 
-interface PlantSpot {
+export interface PlantSpot {
   cell: Cell;
   cannons: CannonCount;
   element: ElementType | null;
   level: number;
+  /** Forma con la que se pinta (T-016): la del juego si no se dice. Solo la cambia la galeria de propuestas. */
+  design?: ShooterDesign;
 }
 
-interface EnemySpot {
+export interface EnemySpot {
   kind: EnemyKind;
   lane: number;
   /** Donde se queda, en casillas. Los que muerden o escupen, a su distancia de la planta (ver `engagedX`). */
@@ -58,10 +61,17 @@ interface EnemySpot {
  * Donde se para un enemigo que ataca a lo sembrado en `col`: el que muerde, a su alcance; el escupidor, a su distancia.
  * Un pelo mas cerca para que la regla lo de por enganchado.
  */
-function engagedX(kind: EnemyKind, col: number): number {
+export function engagedX(kind: EnemyKind, col: number): number {
   const stats = ENEMIES[kind];
   const reach = stats.attack === 'spit' ? stats.range : stats.reach;
   return col + 0.5 + reach - 0.05;
+}
+
+/** Reparto de una batalla de portada: plantas, minas y enemigos, cada uno en su sitio. */
+export interface CoverCast {
+  plants: PlantSpot[];
+  mines: Array<{ cell: Cell; element: ElementType }>;
+  enemies: EnemySpot[];
 }
 
 /**
@@ -69,7 +79,7 @@ function engagedX(kind: EnemyKind, col: number): number {
  * fuego delante y, enfrente, el escupidor, un gusano acelerado, Creeper, un gusano que muerde y un acorazado. Las minas
  * quedan lejos de los enemigos para que no se armen solas.
  */
-const CAST: { plants: PlantSpot[]; mines: Array<{ cell: Cell; element: ElementType }>; enemies: EnemySpot[] } = {
+const CAST: CoverCast = {
   plants: [
     { cell: { lane: 0, col: 0 }, cannons: 1, element: 'ice', level: 1 },
     { cell: { lane: 1, col: 1 }, cannons: 2, element: null, level: 5 },
@@ -112,21 +122,29 @@ export class TitleCover {
   private readonly voicedCells = new Set<string>();
   private readonly voicedBullets = new Set<number>();
   private cursor = 'default';
+  /** Forma de cada disparadora del reparto (por casilla). */
+  private readonly designs = new Map<string, ShooterDesign>();
 
+  /**
+   * `cast` cambia el reparto: la galeria de propuestas de la disparadora (T-016) monta asi su batalla, con la forma de
+   * cada planta en su `design`.
+   */
   constructor(
     private readonly scene: Phaser.Scene,
     private readonly fx: Effects,
+    cast: CoverCast = CAST,
   ) {
     let state = createMatch();
     const plants = state.plants.map((lane) => [...lane]);
-    CAST.plants.forEach(({ cell, cannons, element, level }, i) => {
+    cast.plants.forEach(({ cell, cannons, element, level, design }, i) => {
       // Cada una empieza a disparar a su hora: que no vayan todas a la vez.
       const plant = createPlant({ cannons, element, level });
       plants[cell.lane][cell.col] = { ...plant, reloadMs: 250 + i * 330 };
+      this.designs.set(cellKey(cell), design ?? SHOOTER);
     });
-    CAST.mines.forEach(({ cell, element }) => (plants[cell.lane][cell.col] = createMine(element)));
+    cast.mines.forEach(({ cell, element }) => (plants[cell.lane][cell.col] = createMine(element)));
     state = { ...state, plants };
-    for (const spot of CAST.enemies) {
+    for (const spot of cast.enemies) {
       state = spawnEnemy(state, spot.kind, spot.lane, spot.x, undefined, spot.haste ?? 1, spot.level ?? 1);
       const enemy = state.enemies[state.enemies.length - 1];
       this.anchors.set(enemy.id, enemy.x);
@@ -276,7 +294,8 @@ export class TitleCover {
 
   private addSown(cell: Cell, sown: Sown, sprout: boolean): void {
     if (sown.kind === 'shooter') {
-      this.plantViews.set(cellKey(cell), new PlantView(this.scene, this.fx, cell, sown.shooter, 1, sprout));
+      const design = this.designs.get(cellKey(cell)) ?? SHOOTER;
+      this.plantViews.set(cellKey(cell), new PlantView(this.scene, this.fx, cell, sown.shooter, 1, sprout, design));
     } else {
       this.mineViews.set(cellKey(cell), new MineView(this.scene, this.fx, sown.element, cell, sown, sprout));
     }

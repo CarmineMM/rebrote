@@ -1,9 +1,10 @@
 import type * as Phaser from 'phaser';
 import type { EnemyKind } from '../core/combat';
 import type { CannonCount, ElementType } from '../core/plants';
-import { MEDAL, medalCenter, showsMedal } from './levelMedal';
-import { shooterHead } from './shooterShape';
-import { HASTE_STREAK_SIZE, MINE_SIZE, SHOOTER_SIZE, TEX, WORM_SIZE, medalTexture, mineTexture, shooterTexture } from './textures';
+import { GARDEN, gardenSpots, gardenTier } from './gardenArt';
+import { MEDAL, showsMedal } from './levelMedal';
+import { SHOOTER } from './shooterShape';
+import { HASTE_STREAK_SIZE, MINE_SIZE, SHOOTER_SIZE, TEX, WORM_SIZE, levelGardenTexture, medalTexture, mineTexture, shooterTexture } from './textures';
 import { WORM_LOOK } from './wormView';
 
 /**
@@ -53,9 +54,17 @@ interface Piece {
   /** Tamano de diseno de la textura. */
   width: number;
   height: number;
-  /** No cuenta para el encuadre: puede salirse de la foto (las rayas de velocidad). */
+  /** No cuenta para el encuadre: puede salirse de la foto (las rayas de velocidad, el jardincito). */
   loose?: boolean;
+  /** Volteada en horizontal. */
+  flipX?: boolean;
 }
+
+/**
+ * El jardincito sale en la foto mas recogido que en el tablero (mas cerca de la planta y algo mas pequeno): asi asoma a
+ * los lados sin que la planta encoja.
+ */
+const PORTRAIT_GARDEN = { spread: 0.7, scale: 0.85 } as const;
 
 const cache = new Map<string, string>();
 
@@ -134,13 +143,32 @@ function paintBackdrop(ctx: CanvasRenderingContext2D, subject: PortraitSubject):
 function piecesFor(subject: PortraitSubject): Piece[] {
   if (subject.kind === 'shooter') {
     const { width, height, footX, footY } = SHOOTER_SIZE;
+    // Jardincito de los niveles con premio: lo de detras antes que la planta y lo de delante despues.
+    const tier = gardenTier(subject.level);
+    const garden = gardenSpots(tier).map((spot) => ({
+      front: spot.front,
+      piece: {
+        key: levelGardenTexture(tier, spot.part),
+        x: spot.dx * PORTRAIT_GARDEN.spread * SHOOTER_SIZE.width,
+        y: spot.dy * SHOOTER_SIZE.width,
+        scale: spot.scale * PORTRAIT_GARDEN.scale,
+        ox: 0.5,
+        oy: GARDEN.footY / GARDEN.height,
+        width: GARDEN.width,
+        height: GARDEN.height,
+        loose: true,
+        flipX: spot.flip,
+      } satisfies Piece,
+    }));
     const pieces: Piece[] = [
+      ...garden.filter((g) => !g.front).map((g) => g.piece),
       { key: shooterTexture(subject.cannons, subject.element), x: 0, y: 0, scale: 1, ox: footX / width, oy: footY / height, width, height },
     ];
     if (showsMedal(subject.level)) {
-      const medal = medalCenter(shooterHead(subject.cannons));
+      const medal = SHOOTER.medal(subject.cannons);
       pieces.push({ key: medalTexture(subject.level), x: medal.x - footX, y: medal.y - footY, scale: 1, ox: 0.5, oy: 0.5, width: MEDAL.size, height: MEDAL.size });
     }
+    pieces.push(...garden.filter((g) => g.front).map((g) => g.piece));
     return pieces;
   }
   if (subject.kind === 'mine') {
@@ -236,5 +264,13 @@ function drawPiece(ctx: CanvasRenderingContext2D, scene: Phaser.Scene, piece: Pi
   const image = scene.textures.get(piece.key).getSourceImage() as CanvasImageSource;
   const w = piece.width * piece.scale;
   const h = piece.height * piece.scale;
-  ctx.drawImage(image, piece.x - piece.ox * w, piece.y - piece.oy * h, w, h);
+  if (!piece.flipX) {
+    ctx.drawImage(image, piece.x - piece.ox * w, piece.y - piece.oy * h, w, h);
+    return;
+  }
+  ctx.save();
+  ctx.translate(piece.x, 0);
+  ctx.scale(-1, 1);
+  ctx.drawImage(image, -piece.ox * w, piece.y - piece.oy * h, w, h);
+  ctx.restore();
 }

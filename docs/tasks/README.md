@@ -19,7 +19,7 @@ Una task por archivo. El tamaño es orientativo.
 | T-013 | [Interfaz] Tours de ayuda: cada cosa nueva se enseña la primera vez | Completada (20 nov 2026) | L | T-012 | Ninguna (G-01 a G-10 cerradas) |
 | T-014 | [Audio] Efectos de sonido y volumen | Completada (21 nov 2026) | M | Ninguna | Ninguna (S-01 a S-06 cerradas) |
 | T-015 | [Audio] Música de fondo | Pendiente | S | T-014 | U-01, U-02 (faltan las pistas) |
-| T-016 | [Arte] Rediseño de la disparadora | Pendiente | M | Ninguna | X-03 (entre la fase 1 y la 2) |
+| T-016 | [Arte] Rediseño de la disparadora | Completada (21 nov 2026) | M | Ninguna | Ninguna (X-01 a X-03 cerradas) |
 | T-017 | [Guardado] Progreso permanente separado de la partida en curso | Pendiente | M | Ninguna | Ninguna |
 | T-018 | [Brotes] Varios brotes y fin de "Mundo 1" | Pendiente | L | T-017 | B-01 a B-04 |
 | T-019 | [Interfaz] Invernadero y ruta de brotes | Pendiente | L | T-017, T-018 | R-01 a R-03 |
@@ -30,6 +30,7 @@ Una task por archivo. El tamaño es orientativo.
 | T-024 | [Plantas] Escudo: muro e infusión | Pendiente | L | T-016, T-018 | E-01 a E-06 |
 | T-025 | [Enemigos] Tropas del brote 2 y francotirador | Pendiente | L | T-018, T-024 | F-01 a F-06 |
 | T-026 | [Jefe] Blaster y rondas del brote 2 | Pendiente | L | T-024, T-025 | L-01 a L-08 |
+| T-027 | [Plantas] Premio en los niveles 5, 10, 15 y 20 y jardincito | Completada (21 nov 2026) | M | T-003 | Ninguna (Q-01 a Q-03 cerradas) |
 
 ## Estados
 

@@ -156,13 +156,22 @@ Decisiones J-01 a J-05 cerradas el 20 nov 2026.
 - **Por partida (D-03, cerrada el 19 nov 2026 con la recomendación):** los niveles se pierden al acabar la partida. No hay progreso de una partida a otra. Lo que sí se guarda es la partida en curso, para seguirla otro día (T-011, ver "Menú de inicio y partida guardada").
 - Se sube seleccionando la disparadora con un clic (sin arrastrarla) y pulsando "Subir" en su panel. Se cobra en el acto.
 - **Cuánto mejora:** cada nivel suma un 10 % de daño y un 3 % de cadencia sobre los de nivel 1 (decidido el 19 nov 2026). El daño es el del disparo entero: en una fusionada se multiplica con el de los cañones, y la quemadura de una de fuego crece igual.
+- **Premio en los niveles 5, 10, 15 y 20 (T-027, decidido el 21 nov 2026):** llegar a ellos suma más que un nivel normal, y lo ganado se queda. Al 5 y al 15, un 50 % más que un nivel normal (+15 % de daño y +4,5 % de cadencia); al 10 y al 20, el doble (+20 % y +6 %). Son los niveles en los que la medallita cambia de color, y a sus pies le brota un jardincito que crece con cada premio.
+
+  | Nivel | 2 | 4 | 5 | 6 | 9 | 10 | 15 | 20 |
+  |---|---|---|---|---|---|---|---|---|
+  | Daño sobre el nivel 1 (antes) | +10 % | +30 % | +40 % | +50 % | +80 % | +90 % | +140 % | +190 % |
+  | Daño sobre el nivel 1 (con premio) | +10 % | +30 % | +45 % | +55 % | +85 % | +105 % | +160 % | +220 % |
+  | Cadencia sobre el nivel 1 (con premio) | +3 % | +9 % | +13,5 % | +16,5 % | +25,5 % | +31,5 % | +48 % | +66 % |
+
+  El panel de nivel avisa en dorado cuando el siguiente nivel da premio ("¡Premio en el nivel 5!") y subir a él suena distinto. En el mundo 1 el tope es 5, así que solo se llega al primer premio.
   - Lo que frena una de hielo no cambia con el nivel: depende de sus cañones.
   - Subir no cura ni recarga: la planta conserva su vida y su recarga.
 - **Cuánto cuesta (D-05, cerrada el 19 nov 2026):** creciente. De nivel 1 a 2 cuesta 75 y cada nivel siguiente 25 más (75, 100, 125… hasta 525 de 19 a 20). Se paga por cañón, como al infundir: una de 3 cañones paga el triple, y el panel lo muestra como "×3 = 225".
 - No se puede subir sin saldo suficiente ni pasar del tope de la ronda; en el tope el botón dice "Máximo".
 - **Medallita:** sin cambio visual grande en la planta, solo una medallita con el número en la nuca. Cambia de color cada 5 niveles: bronce, plata (desde el 5), oro (10), rubí (15) y cristal irisado en el 20. Las de nivel 1 no llevan. Se ve también en las fusionadas y no tapa los puntos del tallo.
 - Al fusionar, la planta se queda con el nivel más bajo de las dos (ver "Fusionar").
-- Los valores están como PROVISIONAL en `LEVELING` de `balance.ts`.
+- Los valores están como PROVISIONAL en `LEVELING` de `balance.ts` (el premio, en `LEVELING.milestones`).
 
 ### Ficha de información (T-010)
 - Doble clic (o doble toque) sobre una disparadora, una mina o un enemigo, sin carta elegida: el juego queda en pausa y sale su ficha. Se cierra con su botón, con Esc o haciendo clic fuera, y el juego sigue.
@@ -211,7 +220,7 @@ Los valores recomendados ya están como PROVISIONAL en `src/game/config/balance.
 
 Las reglas de fusionar e infundir y el multiplicador de daño están en `src/game/core/plants.ts`, con tests en `plants.test.ts`. Fusionar dos plantas del tablero (destinos válidos, vida resultante, quién deja la casilla) está en `src/game/core/match.ts` (`fusionBlocker`, `fusionTargets`, `fusePlants`). El reparto del daño entre las balas de una fusionada, en `combat.ts` (`bulletDamage`). Los valores de D-02 están en `FUSION` de `balance.ts`.
 
-Subir de nivel (T-003): el costo, la subida y lo que suma cada nivel están en `plants.ts` (`levelUpCost`, `levelUp`, `levelBonus`), y lo que ofrece el panel de una planta del tablero y la subida con su cobro, en `match.ts` (`levelUpOffer`, `levelUpPlant`). Los valores de D-05 están en `LEVELING` de `balance.ts`.
+Subir de nivel (T-003): el costo, la subida y lo que suma cada nivel están en `plants.ts` (`levelUpCost`, `levelUp`, `levelBonus`; desde T-027, con el premio de los niveles 5, 10, 15 y 20: `isMilestoneLevel`, `levelStepBonus`, `milestonesReached`), y lo que ofrece el panel de una planta del tablero y la subida con su cobro, en `match.ts` (`levelUpOffer`, `levelUpPlant`). Los valores de D-05 están en `LEVELING` de `balance.ts`.
 
 Saldo, siembra, infusión y ocupación de casillas están en `src/game/core/match.ts`: qué pasa al soltar una carta en una casilla lo dice `cardPlay` y lo aplica `playCard`. Una casilla puede tener una disparadora o una mina (`Sown`); la recompensa por enemigo y la moneda soltada, en `src/game/core/economy.ts`. Los valores están en `ECONOMY` de `balance.ts`.
 

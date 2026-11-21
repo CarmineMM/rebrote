@@ -161,7 +161,12 @@ describe('actionCue', () => {
     expect(actionCue({ type: 'infuse', element: 'fire', withMine: false }, 2)?.id).toBe('infuseFire');
     expect(actionCue({ type: 'infuse', element: 'ice', withMine: true }, 2)?.id).toBe('infuseIce');
     expect(actionCue({ type: 'fuse' }, 2)?.id).toBe('fuse');
-    expect(actionCue({ type: 'levelUp' }, 2)?.id).toBe('levelUp');
+    expect(actionCue({ type: 'levelUp', level: 3 }, 2)?.id).toBe('levelUp');
     expect(actionCue({ type: 'pick' }, 2)).toBeNull();
+  });
+
+  it('subir a un nivel con premio (5, 10, 15 y 20) suena a premio', () => {
+    for (const level of [5, 10, 15, 20]) expect(actionCue({ type: 'levelUp', level }, 2)?.id).toBe('unlock');
+    for (const level of [2, 4, 6, 11]) expect(actionCue({ type: 'levelUp', level }, 2)?.id).toBe('levelUp');
   });
 });

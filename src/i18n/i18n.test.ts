@@ -89,6 +89,9 @@ describe('idiomas (T-011)', () => {
     expect(formatNumber(-0.01, 1, 'en')).toBe('0');
     expect(formatPercent(0.3, 'es')).toBe('30 %');
     expect(formatPercent(0.3, 'en')).toBe('30%');
+    // Cadencia de un nivel con premio (+4,5 %) y acumulada en el nivel 5 (+13,5 %).
+    expect(formatPercent(0.045, 'es')).toBe('4,5 %');
+    expect(formatPercent(0.135, 'en')).toBe('13.5%');
     expect(formatSeconds(1240, 'es')).toBe('1,24 s');
     expect(formatSeconds(1240, 'en')).toBe('1.24 s');
   });

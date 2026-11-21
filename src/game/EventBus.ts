@@ -290,7 +290,8 @@ export type PlayerAction =
   | { type: 'sow'; card: CardId }
   | { type: 'infuse'; element: ElementType; withMine: boolean }
   | { type: 'pick' }
-  | { type: 'levelUp' }
+  /** `level`: el nivel al que llega (en los que dan premio suena distinto). */
+  | { type: 'levelUp'; level: number }
   | { type: 'fuse' };
 
 /** Moneda en el suelo que ya se puede recoger (T-013): donde esta en la pagina y cuanto mide. */

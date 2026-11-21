@@ -24,6 +24,7 @@ Defensa por carriles: plantas contra virus informáticos históricos que una IA 
 - Esc o clic derecho suelta la carta elegida (o devuelve a su casilla la planta que arrastras).
 - Esc (sin carta elegida), P o el botón de pausa abren el menú de pausa, con los ajustes (idioma, volumen de los efectos, pantalla completa, calidad gráfica y FPS) y "Salir al menú".
 - El juego suena desde el primer clic. En desarrollo, `/sonidos.html` deja oír cada efecto con sus alternativas.
+- En desarrollo, `/disparadoras.html` enseña las propuestas de la nueva disparadora junto a la de siempre (en vitrina, en el tablero y en silueta) y, en "Niveles", los adornos propuestos para los niveles 5, 10, 15 y 20.
 - En desarrollo, `H` lanza la prueba de rendimiento: 20 disparadoras gratis y 60 gusanos con mucha vida.
 
 ## Dónde está cada cosa

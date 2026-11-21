@@ -48,9 +48,9 @@ describe('ficha de una disparadora', () => {
     const plant = { ...createPlant(shooter({ element: 'fire', cannons: 3, level: 5 })), hp: 412.4 };
     const info = shooterInfo(plant, cell, 5);
     expect(info).toMatchObject({ tone: 'fire', title: 'Disparadora de fuego', subtitle: '3 cañones fusionados', level: { value: 5, medalTier: 1 } });
-    // 20 x 3,5 (tres canones) x 1,4 (nivel 5) = 98, en tres semillas.
-    expect(stat(info, 'Daño')).toMatchObject({ value: '98 por disparo', note: '3 semillas de 32,7' });
-    expect(stat(info, 'Quemadura')).toMatchObject({ value: '39,2 por segundo', note: 'durante 3 s' });
+    // 20 x 3,5 (tres canones) x 1,45 (nivel 5, con su premio) = 101,5, en tres semillas.
+    expect(stat(info, 'Daño')).toMatchObject({ value: '101,5 por disparo', note: '3 semillas de 33,8' });
+    expect(stat(info, 'Quemadura')).toMatchObject({ value: '40,6 por segundo', note: 'durante 3 s' });
     expect(info.hp).toEqual({ current: 413, max: 900 });
   });
 
@@ -121,8 +121,8 @@ describe('ficha en ingles (T-011)', () => {
     setLanguage('en');
     const fire = shooterInfo(createPlant(shooter({ element: 'fire', cannons: 3, level: 5 })), cell, 5);
     expect(fire).toMatchObject({ title: 'Fire shooter', subtitle: '3 fused barrels', level: { note: 'Cap 5' } });
-    expect(stat(fire, 'Damage')).toMatchObject({ value: '98 per shot', note: '3 seeds of 32.7' });
-    expect(stat(fire, 'Burn')).toMatchObject({ value: '39.2 per second', note: 'for 3 s' });
+    expect(stat(fire, 'Damage')).toMatchObject({ value: '101.5 per shot', note: '3 seeds of 33.8' });
+    expect(stat(fire, 'Burn')).toMatchObject({ value: '40.6 per second', note: 'for 3 s' });
     const ice = shooterInfo(createPlant(shooter({ element: 'ice', cannons: 2 })), cell, 5);
     expect(stat(ice, 'Slows')).toMatchObject({ value: 'By 40%', note: 'for 2.5 s' });
     const mine = mineInfo({ ...createMine('fire'), fuseMs: 1240 }, cell);

@@ -1,0 +1,108 @@
+/* Galeria de propuestas de la disparadora (T-016): solo en desarrollo. */
+:root {
+  color-scheme: dark;
+  font-family: ui-rounded, 'Nunito', system-ui, sans-serif;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  background: #1d2b1f;
+  color: #f4ffe9;
+}
+
+.lab {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.lab-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 18px;
+  padding: 10px 16px;
+  background: #24361f;
+  border-bottom: 2px solid #3f5a2f;
+}
+
+.lab-bar h1 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.lab-bar h1 span {
+  margin-left: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #b9d99a;
+}
+
+.lab-tabs,
+.lab-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.lab-tools {
+  margin-left: auto;
+}
+
+.lab button,
+.lab select {
+  font: inherit;
+  font-size: 14px;
+  font-weight: 800;
+  color: #1d2b1f;
+  background: #e9f7d8;
+  border: 2px solid #2a6b22;
+  border-radius: 999px;
+  padding: 5px 12px;
+  cursor: pointer;
+}
+
+.lab button.is-on {
+  background: #80d153;
+}
+
+.lab-hint {
+  font-size: 13px;
+  color: #b9d99a;
+}
+
+.lab-stage {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.lab-notes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 4px 18px;
+  padding: 8px 16px 10px;
+  font-size: 13px;
+  line-height: 1.35;
+  background: #24361f;
+  border-top: 2px solid #3f5a2f;
+}
+
+.lab-notes p {
+  margin: 0;
+}
+
+.lab-notes .lab-ask {
+  grid-column: 1 / -1;
+  color: #ffe36b;
+}
+
+/* En la prueba de silueta no se ven las notas: darian pistas de los nombres. */
+.lab-notes[hidden] {
+  display: none;
+}

@@ -79,9 +79,35 @@ export function levelUp(plant: Shooter): Shooter {
   return { ...plant, level: plant.level + 1 };
 }
 
-/** Lo que suma el nivel sobre el de nivel 1, en fracciones (0,2 = un 20 % mas): dano del disparo y cadencia. */
+/** ¿Da premio llegar al nivel `level`? (5, 10, 15 y 20: `LEVELING.milestones`). */
+export function isMilestoneLevel(level: number): boolean {
+  return LEVELING.milestones[level] !== undefined;
+}
+
+/** Cuantos niveles con premio ha alcanzado una planta de nivel `level` (0 antes del 5, 4 en el 20). */
+export function milestonesReached(level: number): number {
+  return Object.keys(LEVELING.milestones).filter((milestone) => level >= Number(milestone)).length;
+}
+
+/** Cuanto vale llegar al nivel `level` respecto a un nivel normal: 1, o su premio (x1,5 en el 5 y el 15, x2 en el 10 y el 20). */
+function levelWeight(level: number): number {
+  return LEVELING.milestones[level] ?? 1;
+}
+
+/** Lo que suma llegar al nivel `level` desde el anterior, en fracciones: dano del disparo y cadencia. */
+export function levelStepBonus(level: number): { damage: number; fireRate: number } {
+  const weight = level > 1 ? levelWeight(level) : 0;
+  return { damage: weight * LEVELING.damagePerLevel, fireRate: weight * LEVELING.fireRatePerLevel };
+}
+
+/**
+ * Lo que suma el nivel sobre el de nivel 1, en fracciones (0,2 = un 20 % mas): dano del disparo y cadencia. Cada nivel
+ * suma lo suyo y los niveles con premio suman mas, asi que el premio se queda para siempre.
+ */
 export function levelBonus(level: number): { damage: number; fireRate: number } {
-  return { damage: (level - 1) * LEVELING.damagePerLevel, fireRate: (level - 1) * LEVELING.fireRatePerLevel };
+  let steps = 0;
+  for (let reached = 2; reached <= level; reached++) steps += levelWeight(reached);
+  return { damage: steps * LEVELING.damagePerLevel, fireRate: steps * LEVELING.fireRatePerLevel };
 }
 
 /** Dano total de cada disparo (todas sus balas juntas) respecto a una disparadora de un canon y nivel 1. */

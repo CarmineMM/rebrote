@@ -28,3 +28,4 @@ Juego de defensa por carriles. Stack: Phaser 4 + React 19 + Vite + TypeScript. S
 
 - `npm run dev`, `npm test`, `npm run build` (incluye chequeo de tipos).
 - `npm run build` no necesita nada más: los sonidos terminados están en `public/audio/`. `npm run audio` los vuelve a fabricar (necesita ffmpeg y unzip; los paquetes de Kenney ya están en `audio-lab/kenney/`). Si falta algo, se para sin tocar `public/audio/`, y dos pasadas dan los mismos archivos. Con `npm run dev`, `/sonidos.html` deja oírlos.
+- Con `npm run dev`, `/disparadoras.html` compara las formas de la disparadora (T-016): la de siempre (`legacy`) y las propuestas del rediseño, y en "Niveles" los adornos propuestos para los tramos de nivel. El juego usa la forma que elige `SHOOTER` en `src/game/view/shooterShape.ts`.

@@ -44,3 +44,4 @@ Al construir enemigos, escenarios y efectos hay libertad creativa para que el ju
 - **2026-11-19, versión original:** "Formas simples hasta validar que el juego divierte": círculos y rectángulos de colores, sin sprites, sin animaciones de arte, sin sonido, hasta poder jugar el mundo 1 completo.
 - **2026-11-19, modificación:** Carmine pidió un juego bonito y lo más animado posible, con libertad creativa en enemigos, escenarios y efectos. Se levantan las prohibiciones de sprites y de animación, y se mantiene la de sonido.
 - **2026-11-20, modificación:** el juego ya suena (T-014). El porqué está en el ADR-0013.
+- **2026-11-21, nota:** para que el juego tenga estilo propio, la disparadora cambia de forma (T-016): Carmine eligió "Brote" (un bulbo sentado en la tierra con los cañones como brotes) entre tres propuestas pintadas por código, manteniendo sus colores (verde, fuego y hielo). La forma de antes queda guardada como `legacy` en `src/game/view/shooters/`.

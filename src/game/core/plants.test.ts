@@ -11,8 +11,11 @@ import {
   fuseBlocker,
   infuse,
   infusionCost,
+  isMilestoneLevel,
   levelBonus,
+  levelStepBonus,
   levelUp,
+  milestonesReached,
   levelUpCost,
   plantMaxHp,
   type Shooter,
@@ -143,7 +146,50 @@ describe('subir de nivel', () => {
   });
 
   it('en una fusionada el nivel multiplica el disparo entero', () => {
-    expect(damageMultiplier(shooter({ cannons: 3, level: 5 }))).toBeCloseTo(damageMultiplier(shooter({ cannons: 3 })) * (1 + 4 * LEVELING.damagePerLevel));
+    expect(damageMultiplier(shooter({ cannons: 3, level: 4 }))).toBeCloseTo(damageMultiplier(shooter({ cannons: 3 })) * (1 + 3 * LEVELING.damagePerLevel));
+    expect(damageMultiplier(shooter({ cannons: 3, level: 5 }))).toBeCloseTo(damageMultiplier(shooter({ cannons: 3 })) * (1 + levelBonus(5).damage));
+  });
+
+  describe('premio en los niveles 5, 10, 15 y 20', () => {
+    it('son los niveles con premio', () => {
+      expect([5, 10, 15, 20].every(isMilestoneLevel)).toBe(true);
+      expect([1, 2, 4, 6, 9, 11, 14, 16, 19].some(isMilestoneLevel)).toBe(false);
+    });
+
+    it('llegar al 5 y al 15 suma un 50 % mas que un nivel normal, y al 10 y al 20 el doble', () => {
+      const normal = levelStepBonus(4);
+      expect(normal.damage).toBeCloseTo(LEVELING.damagePerLevel);
+      expect(normal.fireRate).toBeCloseTo(LEVELING.fireRatePerLevel);
+      for (const level of [5, 15]) {
+        expect(levelStepBonus(level).damage).toBeCloseTo(1.5 * normal.damage);
+        expect(levelStepBonus(level).fireRate).toBeCloseTo(1.5 * normal.fireRate);
+      }
+      for (const level of [10, 20]) {
+        expect(levelStepBonus(level).damage).toBeCloseTo(2 * normal.damage);
+        expect(levelStepBonus(level).fireRate).toBeCloseTo(2 * normal.fireRate);
+      }
+      expect(levelStepBonus(1)).toEqual({ damage: 0, fireRate: 0 });
+    });
+
+    it('el premio se queda: el bonus de un nivel es la suma de lo que dio cada subida', () => {
+      // 10 % por nivel normal: nivel 5 = 3 normales + 1,5 = +45 %; nivel 10 = 7 normales + 1,5 + 2 = +105 %;
+      // nivel 20 = 15 normales + 1,5 + 2 + 1,5 + 2 = +220 %.
+      expect(levelBonus(4).damage).toBeCloseTo(0.3);
+      expect(levelBonus(5).damage).toBeCloseTo(0.45);
+      expect(levelBonus(6).damage).toBeCloseTo(0.55);
+      expect(levelBonus(10).damage).toBeCloseTo(1.05);
+      expect(levelBonus(15).damage).toBeCloseTo(1.6);
+      expect(levelBonus(20).damage).toBeCloseTo(2.2);
+      expect(levelBonus(5).fireRate).toBeCloseTo(0.135);
+      expect(levelBonus(20).fireRate).toBeCloseTo(0.66);
+      for (let level = 2; level <= LIMITS.maxLevel; level++) {
+        expect(levelBonus(level).damage - levelBonus(level - 1).damage).toBeCloseTo(levelStepBonus(level).damage);
+      }
+    });
+
+    it('cuenta los premios alcanzados', () => {
+      expect([1, 4, 5, 9, 10, 14, 15, 19, 20].map(milestonesReached)).toEqual([0, 0, 1, 1, 2, 2, 3, 3, 4]);
+    });
   });
 
   it('se nota: con dos niveles mas un gusano cae antes, y en nivel 4 ya con una semilla menos', () => {

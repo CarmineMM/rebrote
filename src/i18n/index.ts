@@ -68,9 +68,12 @@ export function formatNumber(value: number, decimals = 1, language: Language = c
   return text(language).decimalComma ? plain.replace('.', ',') : plain;
 }
 
-/** Fraccion como porcentaje entero, al estilo del idioma: "20 %" en espanol y "20%" en ingles. */
+/**
+ * Fraccion como porcentaje, con un decimal si lo tiene, al estilo del idioma: "20 %" o "4,5 %" en espanol y "20%" o
+ * "4.5%" en ingles.
+ */
 export function formatPercent(fraction: number, language: Language = current): string {
-  const value = Math.round(fraction * 100);
+  const value = formatNumber(fraction * 100, 1, language);
   return text(language).decimalComma ? `${value} %` : `${value}%`;
 }
 

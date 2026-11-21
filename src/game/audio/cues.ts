@@ -2,7 +2,7 @@ import type { SfxId } from '../config/audio';
 import { BOARD } from '../config/balance';
 import type { CombatEvent } from '../core/combat';
 import type { MatchState } from '../core/match';
-import type { ElementType } from '../core/plants';
+import { isMilestoneLevel, type ElementType } from '../core/plants';
 import { ROUND_COUNT, type RoundEvent } from '../core/rounds';
 import type { PlayerAction } from '../EventBus';
 import { panAt } from './voices';
@@ -135,7 +135,8 @@ export function actionCue(action: PlayerAction, x: number): SfxCue | null {
     case 'fuse':
       return at('fuse', x);
     case 'levelUp':
-      return at('levelUp', x);
+      // Llegar a un nivel con premio (5, 10, 15 y 20) suena a premio: el mismo "¡ya lo tienes!" del aviso de desbloqueo.
+      return at(isMilestoneLevel(action.level) ? 'unlock' : 'levelUp', x);
     case 'pick':
       return null;
   }

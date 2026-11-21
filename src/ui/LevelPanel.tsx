@@ -1,5 +1,5 @@
 import { useLayoutEffect, useRef, useState, type CSSProperties, type RefObject } from 'react';
-import { levelBonus } from '../game/core/plants';
+import { isMilestoneLevel, levelBonus, levelStepBonus } from '../game/core/plants';
 import { EventBus, GameEvents, type PlantPanel } from '../game/EventBus';
 import { formatPercent } from '../i18n';
 import { placeLevelPanel, type PanelPlace } from './levelPanelPlace';
@@ -14,6 +14,7 @@ interface LevelPanelProps {
 /**
  * Panel de la disparadora seleccionada (T-003): su medallita y nivel, lo que suma ese nivel, y el boton para subir
  * con su precio ("x3 = 225" si tiene varios canones). Flota junto a la planta, apuntandola con una flechita.
+ * Si el siguiente nivel da premio (5, 10, 15 y 20), lo anuncia en dorado con lo que suma.
  * React solo pinta y avisa a Phaser por EventBus; las reglas (precio, si alcanza, el maximo) vienen de core.
  */
 export function LevelPanel({ panel, avoid }: LevelPanelProps) {
@@ -48,7 +49,8 @@ export function LevelPanel({ panel, avoid }: LevelPanelProps) {
   }
 
   const now = levelBonus(level);
-  const step = levelBonus(2);
+  const step = levelStepBonus(level + 1);
+  const milestoneNext = !atMax && isMilestoneLevel(level + 1);
   const shownCost = cost === null ? '' : multiplier > 1 ? `×${multiplier} = ${cost}` : String(cost);
   const style = {
     left: place?.left ?? 0,
@@ -78,6 +80,12 @@ export function LevelPanel({ panel, avoid }: LevelPanelProps) {
       <p className="level-panel-stats">
         {level > 1 ? t.level.bonus(formatPercent(now.damage), formatPercent(now.fireRate)) : t.level.base}
       </p>
+      {milestoneNext && (
+        <p className="level-panel-milestone">
+          <span className="level-panel-milestone-title">{t.level.milestone(level + 1)}</span>
+          <span>{t.level.bonus(formatPercent(step.damage), formatPercent(step.fireRate))}</span>
+        </p>
+      )}
       {/* En el tope de la ronda (T-009): hasta cuando. */}
       {atMax && capRaisedAt !== null && <p className="level-panel-cap">{t.level.capUntil(cap, capRaisedAt)}</p>}
       <button
@@ -93,7 +101,7 @@ export function LevelPanel({ panel, avoid }: LevelPanelProps) {
               ? t.level.atMax(cap)
               : t.level.capTitle(cap, capRaisedAt)
             : affordable
-              ? t.level.perLevel(formatPercent(step.damage), formatPercent(step.fireRate))
+              ? t.level.nextLevel(formatPercent(step.damage), formatPercent(step.fireRate))
               : t.level.noFunds
         }
         onClick={onLevelUp}

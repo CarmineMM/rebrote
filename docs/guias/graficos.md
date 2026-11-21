@@ -21,8 +21,12 @@ Cómo se pinta y se anima Rebrote, para que todo lo nuevo (enemigos, mundos, efe
 | `src/game/view/quality.ts` | Niveles gráficos y modo automático |
 | `src/game/view/effects.ts` | Efectos de respuesta compartidos: ráfagas de partículas (tierra, chispas, hojas, píxeles, jugo, llamas, brasas, humo, copos, esquirlas de hielo, vaho, moco, esquirlas de acero), anillos (también tumbados en el suelo), destellos y textos flotantes |
 | `src/game/view/boardMarks.ts` | Marcas sobre el tablero que comparten cartas y arrastre: casilla (`drawCell`), área circular en perspectiva (`drawArea`, `areaSize`) y rótulo de lo que pasará al soltar (`BoardLabel`, `LABEL_TONES`) |
-| `src/game/view/plantView.ts` | Disparadora: brota, respira, retrocede al disparar, se encoge al recibir un mordisco, se marchita y muere (`PLANT_LOOK`). Al arrastrar otra: se atenúa, se levanta o da un saltito. Al fusionarse o infundirse: cambia de textura con un rebote. Al subir de nivel: estirón y medallita nueva (`levelUp`). La de fuego suelta brasas y la de hielo, copos. Boca de cada cañón (`barrelMuzzle`) |
-| `src/game/view/shooterShape.ts` | Forma de la disparadora, sin Phaser: pies (`SHOOTER_SIZE`), cañones (`SHOOTER_BARRELS`), puntos del tallo (`SHOOTER_DOTS`), cabeza (`shooterHead`) y ojo. `textures.ts` la reexporta |
+| `src/game/view/plantView.ts` | Disparadora: brota, respira, retrocede al disparar, se encoge al recibir un mordisco, se marchita y muere (`PLANT_LOOK`). Al arrastrar otra: se atenúa, se levanta o da un saltito. Al fusionarse o infundirse: cambia de textura con un rebote. Al subir de nivel: estirón y medallita nueva (`levelUp`). En los niveles con premio, su jardincito (`LevelGarden`). La de fuego suelta brasas y la de hielo, copos. Boca de cada cañón (`barrelMuzzle`) |
+| `src/game/view/gardenArt.ts` | Jardincito de los niveles con premio (T-027), sin Phaser y con test: tramo según el nivel (`gardenTier`), dónde va cada trozo (`gardenSpots`) y su pintor (`paintGardenPiece`) |
+| `src/game/view/levelGarden.ts` | Jardincito en pantalla (T-027): brota, se mece, destella en el tramo 4, se oscurece y se transparenta con su planta y se encoge al irse (`LevelGarden`) |
+| `src/game/view/shooterShape.ts` | Qué forma de disparadora usa el juego (`SHOOTER`, T-016): desde el 21 nov 2026, Brote (`bulb`). De ahí salen sus pies (`SHOOTER_SIZE`) y sus cañones (`SHOOTER_BARRELS`). `textures.ts` los reexporta |
+| `src/game/view/shooters/` | Formas de la disparadora, sin Phaser (T-016, sección 10): la del juego, Brote (`bulb.ts`), la de antes (`legacy.ts`), las otras propuestas del rediseño (`cactus.ts`, `pod.ts`), lo que comparten (`kit.ts`), qué es una forma (`design.ts`), el catálogo para la galería (`catalog.ts`) y su test de medidas (`designs.test.ts`) |
+| `src/game/view/canvasKit.ts` | Utilidades de pintado con Canvas 2D (círculo, elipse, hoja, florecita) que comparten `textures.ts` y las formas de la disparadora |
 | `src/game/view/levelMedal.ts` | Medallita de nivel (T-003), sin Phaser y con test: dónde va (`MEDAL`, `medalCenter`), color de cada tramo (`MEDAL_TIERS`, `medalTier`) y cuáles la llevan (`showsMedal`) |
 | `src/game/view/mineView.ts` | Mina de fuego (T-004) y de hielo (T-005): se entierra, duerme, se arma con cuenta atrás visible, la muerden, explota (o estalla en escarcha) o se apaga si la destruyen |
 | `src/game/view/fusionDragView.ts` | Arrastre para fusionar (T-006): planta en la mano con su sombra, casillas de destino y rótulo (`DRAG_LOOK`, `dragGround`) |
@@ -44,6 +48,7 @@ Cómo se pinta y se anima Rebrote, para que todo lo nuevo (enemigos, mundos, efe
 | `scripts/audio/` | De dónde sale cada sonido (`manifest.ts`), recetas de jsfxr (`sfxr.ts`) y quien fabrica los archivos (`build.ts`, `npm run audio`) |
 | `public/audio/` | Los archivos que carga el juego (OGG y MP3) y `LICENCIAS.md` con el origen y la licencia de cada uno |
 | `sonidos.html`, `src/dev/` | Página de prueba de los sonidos, solo con `npm run dev` |
+| `disparadoras.html`, `src/dev/shooterLab*`, `src/dev/levelFlair.ts` | Galería de las formas de la disparadora (T-016), solo con `npm run dev`: vitrina, tablero y prueba de silueta. En "Niveles", propuestas de adorno para los tramos de nivel 5, 10, 15 y 20 (`levelFlair.ts`), sin decidir |
 | `src/ui/tour/` | Tours de ayuda (T-013, ADR-0012): qué tours hay y sus pasos (`tours.ts`), tours vistos (`tourProgress.ts`), dónde va el bocadillo (`placeBubble.ts`), velo, aros y bocadillo (`TourOverlay`), la mano (`TourHand`), los dibujos animados y Brotito (`TourPicture`), la pista de la moneda (`CoinHint`) y quién los pone en marcha (`useTours`) |
 | `src/ui/` | HUD flotante (cartas con su precio, ronda con su cuenta atrás y su aviso en `RoundHud`, barra del jefe en `BossBar`, vidas, saldo), panel de nivel de la planta seleccionada (`LevelPanel`), ficha de información (`InfoPanel`, T-010), menú de pausa, ajustes (`SettingsPanel`, con el idioma), pantallas de derrota y de victoria, menú de inicio con su título, créditos y logo de Claude (`TitleScreen`, `Credits`, `ClaudeLogo`, T-011), y aviso de girar la pantalla en un móvil en vertical (`RotateNotice`, `useLandscapeOnly`, ADR-0011) (React) |
 
@@ -191,7 +196,9 @@ Cómo se pinta y se anima Rebrote, para que todo lo nuevo (enemigos, mundos, efe
 - **Al subir (`PlantView.levelUp`):**
   - La planta da un estirón y destella, sale un anillo dorado en el suelo con destellos, y la medallita sale girando con el número nuevo.
   - Si la medallita cambia de color, un anillo y un brillo mayores de su color.
+  - En los niveles con premio (5, 10, 15 y 20, T-027), además le brota o le crece el jardincito a los pies (sección 10): el de antes se encoge y cada trozo nuevo sale con un salto y unas hojas.
   - Sin texto flotante: subiría por detrás del panel, que hace saltar la medallita y el nivel nuevos.
+- **Premio en el panel (T-027).** Si el siguiente nivel da premio, el panel lo anuncia en dorado con un título que late ("¡Premio en el nivel 5!") y lo que suma debajo. En pantallas bajas (menos de 560 px de alto) solo el título, para que el panel no crezca hasta la bandeja. El título del botón dice lo que suma el siguiente nivel.
 - **Medallita:** cómo se pinta, en la sección 10. Va dentro de la figura que respira (`PlantView`: contenedor de reacciones > figura > cuerpo y medallita), así no se despega de la cabeza al respirar, brotar ni rebotar. Al fusionarse se recoloca en la cabeza nueva y toma el nivel resultante.
 - **Ficha de información (T-010).** Doble clic (o doble toque) sobre una disparadora, una mina o un enemigo, sin carta elegida: el juego queda en pausa y React muestra su ficha (`InfoPanel`). Se cierra con su botón, con Esc o haciendo clic fuera.
   - **Doble clic:** lo reconoce la escena (`checkDoubleTap`): dos pulsaciones sobre lo mismo en menos de `LOOK.doubleTap.ms` y sin moverse más de `LOOK.doubleTap.distance`. El primer toque hace lo de siempre (seleccionar una planta, por ejemplo), así que al cerrar la ficha su panel de nivel sigue ahí. Con una carta elegida el clic la juega y no abre fichas.
@@ -246,15 +253,21 @@ Orden de dibujo, de atrás hacia delante (`DEPTH` en `layout.ts`):
   | Creeper (T-008) | carcasa `#fff7e2` a `#efe0bc` a `#c9b48a`, fondo `#b9a479`, contorno `#5a4528`. Pantalla `#123a24` a `#071a10` con fósforo `#39ff88`; en la fase 2, `#40101e` a `#1c050b` con fósforo `#ff5a7a`. Luz de la antena y diana del salto `#ff5a5f` (fase 2 `#ff2e63`) |
 
 - Se ve un cañón por cada cañón de la planta, y el nivel se muestra con una medallita con número.
-  - **Cañones:** la disparadora tiene una textura por número de cañones (`shooterTexture(1 | 2 | 3)`). Los tubos van apilados y sus medidas están en `SHOOTER_BARRELS`, de donde sale también la boca de cada uno. Al fusionarse crece un poco: cabeza algo mayor y una hoja más en la base y en el brote. La de 3 cañones lleva además una flor en la coronilla.
-  - **Puntos:** una semillita dorada en el tallo por cañón (`SHOOTER_DOTS`, en `shooterShape.ts`), también en la de 1 cañón.
+  - **Forma (T-016):** cada forma de la disparadora es un `ShooterDesign` en `src/game/view/shooters/`, sin Phaser: medidas de su textura y pies (`size`), cañones de arriba abajo con su boca (`barrels`), una marca por cañón (`marks`), dónde va la medallita (`medal`), el ojo (`eye`) y su pintor (`paint`, que recibe los cañones y la variante). El juego usa una sola, `SHOOTER` en `shooterShape.ts`; `registerTextures` pinta solo esa y `shooterTexture(cañones, elemento, forma)` da la clave de su textura. `PlantView` y la batalla de la portada aceptan otra forma: así la galería pinta las propuestas con las animaciones de verdad.
+  - **Brote (`bulb.ts`, la del juego desde T-016):** un bulbo gordito sentado en la tierra, sin tallo, con raicillas, vetas de bulbo y un brote de hojas en la punta. Ojo grande mirando a la derecha, sonrisa y mejilla. Se eligió en la galería entre tres propuestas porque su silueta (una cebolla con brotes) no recuerda a ningún otro juego.
+  - **La de antes (`legacy.ts`):** cabeza redonda sobre un tallo, guardada tal cual al empezar el rediseño (T-016), con sus medidas, sus colores y su pintor, para poder volver a ella cambiando `SHOOTER`. No se toca: sus colores son una copia y no dependen de los de las demás (`SHOOTER_COLORS` en `kit.ts`).
+  - **Galería (`/disparadoras.html`, T-016):** solo con `npm run dev`. Compara todas las formas en vitrina (1, 2 y 3 cañones en sus tres variantes y en silueta, a tamaño de tablero), en el tablero de verdad y en una prueba de silueta sin nombres. Las propuestas no entran en `npm run build`: el juego solo importa la activa.
+  - **Jardincito de los niveles con premio (T-027):** matas y flores a los pies de la disparadora en los niveles 5, 10, 15 y 20, sin tocar su dibujo y con los colores de la medallita: margaritas (plata), botones de oro (oro), un arbusto con bayas (rubí) y flores de cristal que destellan (cristal). Cada tramo tiene tres trozos (`GARDEN_PARTS`): dos detrás, a los lados, y uno pequeño delante, que desde el 15 sale también al otro lado (`gardenSpots`). Los de detrás van por debajo de la planta y los de delante por encima, sin tapar su centro. No va en el contenedor de la planta: se queda en el suelo aunque ella retroceda o respire. Se mece con fases distintas; los destellos, solo con `quality.extras`. Se oscurece con la planta mientras se arrastra otra (no se marchita) y se queda medio transparente si se arrastra ella. Sale en la foto de la ficha, más recogido (`PORTRAIT_GARDEN`). Se eligió en la galería entre cuatro propuestas; las otras tres (aura, luciérnagas y gemas) siguen en `src/dev/levelFlair.ts` para verlas combinadas con él en la vista "Niveles".
+  - **Cañones:** la disparadora tiene una textura por número de cañones (`shooterTexture(1 | 2 | 3)`). En Brote cada cañón es un brote que sale del hombro del bulbo, sube, se dobla hacia los gusanos y termina en un capullo abierto (copa de hoja con dos pétalos hacia fuera y la boca en el centro); van de arriba abajo y abiertos en abanico. Sus medidas están en `SHOOTER_BARRELS` (los `barrels` de la forma), de donde sale también la boca de cada uno. Al fusionarse crece un poco: el bulbo engorda, le sale otro brote y una hoja más en la base y en la punta. La de 3 cañones lleva además una flor en la punta y una ceja decidida.
+  - **Marcas:** una por cañón (`marks`). En Brote, el sitio del hombro por donde asoma cada brote; en la de antes, los puntos dorados del tallo. Al fusionarse destella la marca del cañón nuevo.
+  - **Carta (`CardIcon`):** un Brote en miniatura en SVG, con los colores de la textura. Si cambia la forma, se redibuja a mano.
   - **Medallita de nivel (T-003):** un sello redondo con el borde ondulado, contorno oscuro y el número en blanco con borde, prendido en la nuca (arriba a la izquierda de la cabeza, medio fuera).
     - Una textura por nivel, del 2 al 20 (`medalTexture`), pintada por `paintMedal`. Las de nivel 1 no llevan.
     - Color por tramos (`MEDAL_TIERS`): bronce (2 a 4), plata (5 a 9), oro (10 a 14), rubí (15 a 19) y cristal irisado con dos destellos en el 20. El panel de React repite los mismos colores en CSS (`.medal-tier-N`).
     - El contorno oscuro hace que se lea sobre la cabeza normal, la de fuego y la azul clarita del hielo. Tamaño pensado para leerse en el carril del fondo.
-    - `levelMedal.test.ts` comprueba que no tapa los puntos del tallo, el ojo ni los cañones con 1, 2 y 3 cañones. Si cambia la forma de la cabeza, se cambia en `shooterShape.ts` y el test lo vigila.
+    - `shooters/designs.test.ts` comprueba, para cada forma, que va en la nuca (arriba a la izquierda del ojo), dentro de su textura y sin tapar las marcas, el ojo ni los cañones, con 1, 2 y 3 cañones. Si cambia una forma, se cambia en su archivo de `shooters/` y el test lo vigila.
   - Las variantes de fuego y hielo (T-004, T-005) deben conservar los cañones y los puntos de cada textura.
-  - **Variantes:** `paintShooter` recibe una paleta (`SHOOTER_PALETTES`). Tallo y hojas de la base son siempre verdes; cambian cabeza, cañones, boca, brillo del fondo del cañón, brote, flor y mejilla. `shooterTexture(cañones, elemento)` da la textura.
+  - **Variantes:** el pintor de cada forma recibe la variante y toma sus colores (Brote y las otras propuestas, de `SHOOTER_COLORS` en `kit.ts`; la de antes, de su copia en `legacy.ts`). Las hojas de la base son siempre verdes (y las raicillas de Brote, de tierra); cambian el cuerpo, los cañones, la boca, el brillo del fondo del cañón, el brote, la flor y la mejilla. `shooterTexture(cañones, elemento)` da la textura.
   - **Mina:** bulbo medio enterrado con un rabito de mecha (`MINE_SIZE` guarda pies, bulbo y punta de la mecha). `paintMine` recibe una paleta (`MINE_PALETTES`): guindilla con chispa (fuego) o bulbo escarchado con gorro de nieve y un copo (hielo). Una textura dormida y otra armada por elemento (`mineTexture`).
 - **Escala de arte (obligatorio):** las texturas se pintan a la resolución del nivel gráfico.
   - Al crear una imagen, su escala se multiplica por `artInv()`.
@@ -367,7 +380,7 @@ Detalle y porqué en el ADR-0013. El arte se pinta con código; el sonido sale d
 
 | Momento | Efecto |
 |---|---|
-| Sembrar, infundir fuego o hielo, fusionar, subir de nivel | `sow`, `infuseFire`, `infuseIce`, `fuse`, `levelUp` |
+| Sembrar, infundir fuego o hielo, fusionar, subir de nivel | `sow`, `infuseFire`, `infuseIce`, `fuse`, `levelUp`; subir a un nivel con premio (5, 10, 15 y 20, T-027), `unlock` |
 | `shot` (uno por planta) y `hit` | `shot`, `shotFire`, `shotIce`; `hit`, `hitFire`, `hitIce` y `hitArmor` (semilla normal en un acorazado) |
 | `bite`, `spat`, `spitHit`, `plantDestroyed` | `bite`, `spit`, `spitHit`, `plantDestroyed` |
 | `enemyKilled`, `enemyEscaped` | `enemyKilled` (más bajo que el disparo), `enemyEscaped`; el Creeper, `creeperDefeated` |
@@ -395,15 +408,15 @@ Ejemplos: el acorazado y el escupidor de T-007, en `wormView.ts` (`KIND_LOOK`).
 - [ ] Suena: sus ataques y su muerte siguen la lista "Sonido nuevo" (si muerde o escupe como los de ahora, ya suena).
 
 ### Variante de planta nueva (fuego, hielo...)
-- [ ] Una textura por número de cañones (1, 2 y 3), con los tubos de `SHOOTER_BARRELS` y los puntos del tallo de `SHOOTER_DOTS`. Se distingue de la normal por el color (paleta de la sección 10), no por la forma.
+- [ ] Una textura por número de cañones (1, 2 y 3) en cada forma de `shooters/`, con sus cañones (`barrels`) y sus marcas (`marks`). Se distingue de la normal por el color (paleta de la sección 10), no por la forma.
 - [ ] Sus semillas salen de la boca de su cañón (`barrelMuzzle`) y se distinguen de las normales.
 - [ ] Al fusionarse, `PlantView.fuse` pasa a la textura de su variante con los cañones nuevos.
 - [ ] Se sigue leyendo marchita, oscurecida (mientras se arrastra otra planta) y medio transparente (mientras se arrastra ella).
-- [ ] La medallita de nivel (T-003) no tapa los puntos del tallo (`levelMedal.test.ts`) y se lee sobre su cabeza.
+- [ ] La medallita de nivel (T-003) no tapa las marcas, el ojo ni los cañones (`shooters/designs.test.ts`) y se lee sobre su cabeza.
 - [ ] Su ficha (T-010) dice su nombre y lo que hace su elemento, y su foto sale con su textura (`entityInfo.ts`, `portrait.ts`).
 
 ### Elemento nuevo (mina e infusión, como el fuego de T-004)
-- [ ] Paleta en `SHOOTER_PALETTES` y colores de efecto en `VARIANT_FX`; `shooterVariant` y `mineTexture` dejan de caer en la normal.
+- [ ] Colores en la paleta de cada forma de `shooters/` (la de siempre en `legacy.ts`, las propuestas en `SHOOTER_COLORS`) y colores de efecto en `VARIANT_FX`; `shooterVariant` y `mineTexture` dejan de caer en la normal.
 - [ ] Texturas de su mina dormida y armada, con la mecha en `MINE_SIZE.tipX/tipY`.
 - [ ] Semilla propia (`seedTexture`) e impacto propio en `BulletView`.
 - [ ] Su efecto en el enemigo se ve a simple vista y sale del estado en `sync` (como `burn` en `WormView`).

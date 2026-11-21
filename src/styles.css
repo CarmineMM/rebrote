@@ -137,19 +137,8 @@ body {
 @keyframes card-float { 0%, 100% { transform: translateY(-3px); } 50% { transform: translateY(-7px); } }
 
 .card-icon { grid-row: span 2; position: relative; width: 40px; height: 36px; zoom: var(--card-icon-zoom); }
-.card-icon-head {
-  position: absolute; left: 2px; top: 2px; width: 30px; height: 30px; border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, #d0f59a 0%, #80d153 45%, #4aa236 100%);
-  border: 2px solid #2a6b22;
-}
-.card-icon-head::after {
-  content: ''; position: absolute; left: 11px; top: 7px; width: 9px; height: 10px; border-radius: 50%;
-  background: radial-gradient(circle at 70% 55%, #1a2614 0 3px, #fff 3.5px);
-}
-.card-icon-tube {
-  position: absolute; left: 22px; top: 11px; width: 17px; height: 13px; border-radius: 4px;
-  background: linear-gradient(180deg, #9be36c, #3f9a35); border: 2px solid #2a6b22;
-}
+/* La disparadora de la carta es un "Brote" en miniatura en SVG (`CardIcon`, T-016). */
+.card-icon-shooter { position: absolute; inset: 0; display: block; overflow: visible; }
 .card[aria-pressed='true'] .card-icon { animation: icon-wiggle 0.9s ease-in-out infinite; }
 @keyframes icon-wiggle { 0%, 100% { transform: rotate(-4deg); } 50% { transform: rotate(4deg); } }
 .card-label { font-size: 0.78rem; font-weight: 700; line-height: 1.15; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -450,6 +439,14 @@ body {
 .level-panel-stats { margin: 0; font-size: 0.78rem; font-weight: 700; color: #cfe8c2; white-space: nowrap; }
 /* En el tope de la ronda (T-009): hasta cuando. */
 .level-panel-cap { margin: 0; font-size: 0.75rem; font-weight: 800; color: #ffe066; white-space: nowrap; }
+/* El siguiente nivel da premio (5, 10, 15 y 20): titulo dorado que late y lo que suma debajo. */
+.level-panel-milestone { display: grid; margin: 1px 0 0; font-size: 0.72rem; font-weight: 800; color: #ffe066; white-space: nowrap; }
+.level-panel-milestone-title { justify-self: start; color: #fff3a0; text-shadow: 0 1px 0 #6b4505; transform-origin: left center; animation: milestone-pulse 1.4s ease-in-out infinite; }
+@keyframes milestone-pulse { 50% { transform: scale(1.06); filter: brightness(1.2); } }
+/* En pantallas bajas (un movil en horizontal) solo el titulo: el panel no crece hasta la bandeja. Lo que suma se ve al subir. */
+@media (max-height: 560px) {
+  .level-panel-milestone > span:last-child { display: none; }
+}
 
 /* La misma medallita que en la planta: disco con borde ondulado, color por tramo de 5 niveles. */
 .medal {

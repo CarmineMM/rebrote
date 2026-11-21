@@ -478,6 +478,12 @@ export const LEVELING = {
   damagePerLevel: 0.1,
   /** Cadencia que suma cada nivel sobre la de nivel 1. PROVISIONAL. */
   fireRatePerLevel: 0.03,
+  /**
+   * Premio de algunos niveles (21 nov 2026): llegar a ellos suma mas dano y cadencia que un nivel normal, y lo ganado
+   * se queda. En el 5 y el 15, un 50 % mas que un nivel normal (x1,5); en el 10 y el 20, el doble (x2). Son los niveles
+   * en los que la medallita cambia de color. PROVISIONAL.
+   */
+  milestones: { 5: 1.5, 10: 2, 15: 1.5, 20: 2 } as Readonly<Record<number, number>>,
   /** Subir de nivel 1 a 2 una disparadora de un canon. PROVISIONAL. */
   baseCost: 75,
   /** Cuanto mas cuesta cada nivel que el anterior, por canon. PROVISIONAL. */

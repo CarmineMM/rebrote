@@ -1594,7 +1594,7 @@ export class BoardScene extends Phaser.Scene {
     const plant = plantAt(this.match, cell) as Plant;
     this.plantViews.get(cellKey(cell))?.levelUp(plant.shooter.level);
     this.emitBalance();
-    this.emitAction({ type: 'levelUp' }, cell);
+    this.emitAction({ type: 'levelUp', level: plant.shooter.level }, cell);
   }
 
   /** Avisa al HUD de como esta el panel de la planta seleccionada (o de que se cerro), solo si cambia. */

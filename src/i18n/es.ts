@@ -155,7 +155,9 @@ export const es = {
     capUntil: (cap: number, round: number) => `Tope ${cap}: sube en la ronda ${round}`,
     atMax: (cap: number) => `Ya está en el nivel máximo (${cap})`,
     capTitle: (cap: number, round: number) => `Tope de nivel ${cap} hasta la ronda ${round}`,
-    perLevel: (damage: string, rate: string) => `Cada nivel: +${damage} de daño y +${rate} de cadencia`,
+    nextLevel: (damage: string, rate: string) => `Siguiente nivel: +${damage} de daño y +${rate} de cadencia`,
+    /** El siguiente nivel da premio (5, 10, 15 y 20): debajo va lo que suma, con `bonus`. */
+    milestone: (level: number) => `¡Premio en el nivel ${level}!`,
     noFunds: 'Saldo insuficiente',
     maxButton: 'Máximo',
     up: 'Subir',

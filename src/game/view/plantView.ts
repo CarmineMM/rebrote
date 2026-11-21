@@ -4,20 +4,12 @@ import type { CannonCount, ElementType, Shooter } from '../core/plants';
 import type { ScreenPoint } from './perspective';
 import { type Effects, mixColor } from './effects';
 import { entityDepth, perspective } from './layout';
-import { MEDAL_TIERS, medalCenter, medalTier, showsMedal } from './levelMedal';
-import { shooterHead } from './shooterShape';
+import { gardenTier } from './gardenArt';
+import { LevelGarden } from './levelGarden';
+import { MEDAL_TIERS, medalTier, showsMedal } from './levelMedal';
+import { SHOOTER, type ShooterDesign } from './shooterShape';
 import { text } from '../../i18n';
-import {
-  SHOOTER_BARRELS,
-  SHOOTER_DOTS,
-  SHOOTER_SIZE,
-  TEX,
-  artInv,
-  medalTexture,
-  shooterTexture,
-  shooterVariant,
-  type ShooterVariant,
-} from './textures';
+import { TEX, artInv, medalTexture, shooterTexture, shooterVariant, type ShooterVariant } from './textures';
 
 /** Como se coloca y se ve la disparadora. Son medidas de aspecto, en anchos de casilla. */
 export const PLANT_LOOK = {
@@ -60,24 +52,32 @@ export interface Muzzle {
   up: number;
 }
 
-/** Boca del canon `cannon` (0 es el de arriba) de una disparadora con `cannons` canones. De ahi salen sus semillas. */
-export function barrelMuzzle(cannons: CannonCount, cannon = 0): Muzzle {
-  const barrels = SHOOTER_BARRELS[cannons];
+/**
+ * Boca del canon `cannon` (0 es el de arriba) de una disparadora con `cannons` canones y forma `design` (la del juego si
+ * no se dice). De ahi salen sus semillas.
+ */
+export function barrelMuzzle(cannons: CannonCount, cannon = 0, design: ShooterDesign = SHOOTER): Muzzle {
+  const barrels = design.barrels[cannons];
   const barrel = barrels[Math.min(cannon, barrels.length - 1)];
-  return {
-    x: (barrel.mouthX + 2 - SHOOTER_SIZE.footX) / SHOOTER_SIZE.width,
-    up: (SHOOTER_SIZE.footY - barrel.y) / SHOOTER_SIZE.width,
-  };
+  const { footX, footY, width } = design.size;
+  return { x: (barrel.mouthX + 2 - footX) / width, up: (footY - barrel.y) / width };
+}
+
+/** Donde se pinta una disparadora: sus pies en pantalla, el ancho de casilla que le toca y la escala de su textura. */
+export interface PlantPlacement {
+  screen: ScreenPoint;
+  cellWidth: number;
+  scale: number;
 }
 
 /** Donde y a que escala se pinta la disparadora de una casilla. */
-export function plantPlacement(cell: Cell) {
+export function plantPlacement(cell: Cell, design: ShooterDesign = SHOOTER): PlantPlacement {
   const foot = { x: cell.col + 0.5, y: cell.lane + PLANT_LOOK.footY };
   const cellWidth = perspective.cellWidthAt(foot);
   return {
     screen: perspective.toScreen(foot),
     cellWidth,
-    scale: ((cellWidth * PLANT_LOOK.width) / SHOOTER_SIZE.width) * artInv(),
+    scale: ((cellWidth * PLANT_LOOK.width) / design.size.width) * artInv(),
   };
 }
 
@@ -88,6 +88,11 @@ const medalColor = (level: number): number => Number.parseInt(MEDAL_TIERS[medalT
  * Disparadora en pantalla. No decide nada: la escena le cuenta lo que paso (disparo, mordisco, fusion, nivel, muerte)
  * y ella lo anima. Tres capas: las reacciones mueven el contenedor (`holder`); dentro, la figura (`figure`) respira,
  * brota y rebota al cambiar de aspecto, y lleva el cuerpo y la medallita de nivel, que asi no se despega de la cabeza.
+ *
+ * Se pinta con la forma del juego (`SHOOTER`); la galeria de propuestas (T-016) le pasa otra (`design`) y, fuera del
+ * tablero, el sitio donde va (`placement`).
+ *
+ * En los niveles con premio (5, 10, 15 y 20) lleva su jardincito a los pies (`LevelGarden`), que se queda en el suelo.
  */
 export class PlantView {
   private readonly holder: Phaser.GameObjects.Container;
@@ -102,6 +107,8 @@ export class PlantView {
   private level: number;
   /** Medallita de nivel (T-003), en la nuca. No la llevan las de nivel 1. */
   private medal?: Phaser.GameObjects.Image;
+  /** Matas y flores de los niveles con premio, a los pies. */
+  private readonly garden: LevelGarden;
   private wiltTint = 0xffffff;
   /** Brasas (fuego) o copos (hielo) que suelta en reposo la planta infundida. */
   private aura?: Phaser.Time.TimerEvent;
@@ -117,8 +124,10 @@ export class PlantView {
     shooter: Shooter,
     hpRatio: number,
     sprout: boolean,
+    private readonly design: ShooterDesign = SHOOTER,
+    placement: PlantPlacement = plantPlacement(cell, design),
   ) {
-    const { screen, cellWidth, scale } = plantPlacement(cell);
+    const { screen, cellWidth, scale } = placement;
     this.base = screen;
     this.cellWidth = cellWidth;
     this.scale = scale;
@@ -133,14 +142,17 @@ export class PlantView {
       .setAlpha(sprout ? 0 : 1)
       .setDepth(depth - 0.5);
     this.body = scene.add
-      .image(0, 0, shooterTexture(this.cannons, this.element))
-      .setOrigin(0.5, SHOOTER_SIZE.footY / SHOOTER_SIZE.height)
+      .image(0, 0, shooterTexture(this.cannons, this.element, design))
+      .setOrigin(design.size.footX / design.size.width, design.size.footY / design.size.height)
       .setScale(scale);
     this.figure = scene.add.container(0, 0, [this.body]);
     this.holder = scene.add.container(screen.x, screen.y, [this.figure]).setDepth(depth);
     this.setWilt(hpRatio);
     this.syncMedal();
     this.startAura();
+    // El jardincito brota despues que la planta.
+    this.garden = new LevelGarden(scene, fx, screen, cellWidth, depth);
+    this.garden.set(gardenTier(this.level), sprout, 380);
 
     if (!sprout) {
       this.breathe();
@@ -168,16 +180,16 @@ export class PlantView {
 
   /** Boca del canon `cannon` en pantalla: de ahi salen las balas. */
   muzzle(cannon = 0): ScreenPoint {
-    const m = barrelMuzzle(this.cannons, cannon);
+    const m = barrelMuzzle(this.cannons, cannon, this.design);
     return { x: this.base.x + m.x * this.cellWidth, y: this.base.y - m.up * this.cellWidth };
   }
 
   /** Boca del canon `cannon` respecto a los pies, en anchos de casilla (para la semilla). */
   muzzleOffset(cannon = 0): Muzzle {
-    return barrelMuzzle(this.cannons, cannon);
+    return barrelMuzzle(this.cannons, cannon, this.design);
   }
 
-  /** ¿Cae el punto de pantalla sobre la planta? Una caja algo holgada alrededor de cabeza, tallo y canones. */
+  /** ¿Cae el punto de pantalla sobre la planta? Una caja algo holgada alrededor del cuerpo y los canones (vale para Brote y legacy). */
   contains(x: number, y: number): boolean {
     const w = this.cellWidth;
     return x >= this.base.x - 0.42 * w && x <= this.base.x + 0.5 * w && y >= this.base.y - 0.98 * w && y <= this.base.y + 0.06 * w;
@@ -220,6 +232,7 @@ export class PlantView {
     this.dimmed = dimmed;
     if (!this.flashTimer) this.body.setTint(this.restingTint());
     this.medal?.setTint(this.medalTint());
+    this.garden.setTint(this.medalTint());
   }
 
   /** Se esta arrastrando: sigue en su casilla a efectos de combate, pero medio transparente. Al soltar vuelve con un saltito. */
@@ -227,6 +240,7 @@ export class PlantView {
     this.lifted = lifted;
     this.liftTween?.stop();
     this.liftTween = this.scene.tweens.add({ targets: this.figure, alpha: lifted ? PLANT_LOOK.liftedAlpha : 1, duration: lifted ? 120 : 160 });
+    this.garden.setAlpha(lifted ? PLANT_LOOK.liftedAlpha : 1, lifted ? 120 : 160);
     if (lifted) return;
     this.resetPose();
     this.holder.setScale(1.12, 0.86);
@@ -257,8 +271,9 @@ export class PlantView {
     this.cannons = cannons;
     this.level = level;
     this.morph(hpRatio);
-    // La cabeza crece con los canones: la medallita se recoloca (y cambia si el nivel bajo).
+    // La cabeza crece con los canones: la medallita se recoloca (y cambia si el nivel bajo), y el jardincito tambien.
     this.syncMedal();
+    this.garden.set(gardenTier(level), true, 160);
 
     const w = this.cellWidth;
     const depth = this.holder.depth + 0.7;
@@ -268,12 +283,11 @@ export class PlantView {
     this.fx.glow(middle.x, middle.y, w * 1.4, colors.burstGlow, depth, 420);
     this.fx.sparkles(middle.x, middle.y, 16);
     this.fx.leaves(middle.x, this.base.y - w * 0.25, 8);
-    // El punto nuevo del tallo destella.
-    const dot = SHOOTER_DOTS[cannons - 1];
-    const dotX = this.base.x + ((dot.x - SHOOTER_SIZE.footX) / SHOOTER_SIZE.width) * w;
-    const dotY = this.base.y - ((SHOOTER_SIZE.footY - dot.y) / SHOOTER_SIZE.width) * w;
-    this.fx.ring(dotX, dotY, w * 0.32, 0xffe36b, depth, 360, 0.95);
-    this.fx.sparkles(dotX, dotY, 6);
+    // La marca del canon nuevo (el punto del tallo, en la de siempre) destella.
+    const marks = this.design.marks(cannons);
+    const mark = this.texturePoint(marks[marks.length - 1]);
+    this.fx.ring(mark.x, mark.y, w * 0.32, 0xffe36b, depth, 360, 0.95);
+    this.fx.sparkles(mark.x, mark.y, 6);
   }
 
   /**
@@ -313,6 +327,8 @@ export class PlantView {
     const newTier = !showsMedal(this.level) || medalTier(level) !== medalTier(this.level);
     this.level = level;
     this.syncMedal();
+    // En los niveles con premio (5, 10, 15 y 20) le brota su jardincito, o crece.
+    this.garden.set(gardenTier(level), true, 120);
 
     // Estiron hacia arriba y rebote.
     this.scene.tweens.killTweensOf(this.figure);
@@ -353,6 +369,7 @@ export class PlantView {
   uproot(): void {
     this.aura?.remove();
     this.flashTimer?.remove();
+    this.garden.remove();
     this.scene.tweens.killTweensOf(this.parts());
     this.fx.dirt(this.base.x, this.base.y, 10);
     this.scene.tweens.add({
@@ -372,6 +389,7 @@ export class PlantView {
   die(): void {
     this.aura?.remove();
     this.flashTimer?.remove();
+    this.garden.remove();
     this.scene.tweens.killTweensOf(this.parts());
     this.body.setTintMode(Phaser.TintModes.MULTIPLY).setTint(this.wiltTint);
     this.fx.leaves(this.base.x, this.base.y - this.cellWidth * 0.4, 12);
@@ -396,7 +414,7 @@ export class PlantView {
     this.flashTimer?.remove();
     this.liftTween?.stop();
     this.scene.tweens.killTweensOf(this.figure);
-    this.body.setTexture(shooterTexture(this.cannons, this.element));
+    this.body.setTexture(shooterTexture(this.cannons, this.element, this.design));
     this.lifted = false;
     this.figure.setAlpha(1).setAngle(0).setScale(1.3, 0.62);
     if (hpRatio !== undefined) this.setWilt(hpRatio);
@@ -475,17 +493,27 @@ export class PlantView {
     return this.dimmed ? mixColor(0xffffff, PLANT_LOOK.dimTint, PLANT_LOOK.dimAmount) : 0xffffff;
   }
 
+  /** Un punto de la textura respecto a los pies, en pantalla y sin la escala de la figura. */
+  private textureOffset(point: { x: number; y: number }): { x: number; y: number } {
+    const { footX, footY, width } = this.design.size;
+    const w = this.cellWidth / width;
+    return { x: (point.x - footX) * w, y: (point.y - footY) * w };
+  }
+
+  /** Un punto de la textura en pantalla, con la planta en reposo. */
+  private texturePoint(point: { x: number; y: number }): ScreenPoint {
+    const offset = this.textureOffset(point);
+    return { x: this.base.x + offset.x, y: this.base.y + offset.y };
+  }
+
   /** Centro de la medallita respecto a los pies, en pantalla y sin la escala de la figura. */
   private medalOffset(): { x: number; y: number } {
-    const center = medalCenter(shooterHead(this.cannons));
-    const w = this.cellWidth / SHOOTER_SIZE.width;
-    return { x: (center.x - SHOOTER_SIZE.footX) * w, y: (center.y - SHOOTER_SIZE.footY) * w };
+    return this.textureOffset(this.design.medal(this.cannons));
   }
 
   /** Centro de la medallita en pantalla (para los destellos). */
   private medalPoint(): ScreenPoint {
-    const offset = this.medalOffset();
-    return { x: this.base.x + offset.x, y: this.base.y + offset.y };
+    return this.texturePoint(this.design.medal(this.cannons));
   }
 
   /** Pone, cambia o quita la medallita segun el nivel, en la nuca de la cabeza de sus canones. */
