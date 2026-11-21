@@ -235,7 +235,7 @@ Decisiones PF-01 a PF-07 cerradas el 21 nov 2026 con la recomendación. Cómo se
 - **La portada dice quién juega**, arriba del menú, con su avatar (un brote en un círculo de su color) y el botón "Cambiar". Solo se cambia de jugador desde la portada, nunca en mitad de una partida.
 - **La pantalla de jugadores**, en el panel de la portada, lista a cada uno con su avatar, su nombre, sus jefes vencidos y la última vez que jugó ("Aún sin estrenar" si nunca guardó nada); el activo, con borde dorado y "Jugando". Elegir uno lo deja activo y vuelve al menú: cambian la partida, el progreso, el Invernadero, la ruta y los tours vistos.
 - **Nuevo jugador** empieza desde cero (sin progreso, sin partida y con los tours sin ver) y queda activo. Con 3 jugadores el botón se apaga y dice "Máximo de jugadores".
-- **Nombre (PF-05):** mientras no elija uno (T-033), "Jugador 1", "Jugador 2"... (el menor número libre), en el idioma del juego. Los nombres se pueden repetir (PF-07).
+- **Nombre (PF-05):** mientras no elija uno (T-033), "Jugador 1", "Jugador 2"... (el menor número libre), en el idioma del juego. Los nombres se pueden repetir (PF-07). Cómo se elige: "Nombre del jugador (T-033)".
 - **Borrar jugador (PF-06):** la papelera de cada fila pide confirmar y dice qué se pierde para siempre (jefes vencidos, partida guardada y tours vistos) o que no tiene nada guardado; los demás jugadores y los ajustes no cambian. Si era el activo, pasa a serlo el que jugó por última vez; si era el último, queda uno nuevo y vacío. El único jugador, sin nada guardado, no se puede borrar: no cambiaría nada.
 - **Lo guardado antes de T-034** (progreso, partida a medias y tours vistos) se descarta y se borra del navegador, sin convertirlo: se empieza como "Jugador 1". Los ajustes se conservan.
 - **Para el futuro:** cada jugador tiene un identificador que no cambia aunque cambie su nombre y la fecha de su último guardado. No son cuentas: no se sincronizan ni se protegen.
@@ -258,8 +258,20 @@ Decisiones Y-01 a Y-07 cerradas el 21 nov 2026: Boxer, un informático moderno (
 - **El texto sale letra a letra** con la voz de quien habla; un toque, un clic, Espacio o Intro lo completa, y el siguiente pasa de viñeta (Y-07). "Saltar" o Esc cierran la secuencia entera y cuenta como vista.
 - **El juego espera:** mientras hay una viñeta no avanza nada ni corre la cuenta atrás. La pausa, el aviso de girar la pantalla y el cambio de idioma no la rompen: sigue donde iba.
 - **Una secuencia vista no vuelve a salir sola,** tampoco tras recargar ni en otra partida: va en el progreso permanente del jugador y se borra con él. Se vuelven a ver desde "Historia" en el Invernadero (Y-05).
-- **El nombre (T-033):** la viñeta en la que Boxer lo pregunta se salta mientras no exista esa task, y la frase siguiente va sin nombre.
+- **El nombre (T-033):** Boxer lo pregunta en la viñeta 4 de la caída de Creeper (ver "Nombre del jugador"). Al volver a ver esa secuencia no lo pregunta.
 - **La historia no explica controles:** eso es de los tours. Quien la salte entiende el juego igual.
+
+### Nombre del jugador (T-033)
+Decisiones NJ-01 a NJ-06 cerradas el 21 nov 2026 (NJ-03 y NJ-06 cambiadas por Carmine al empezar la task). Reglas en `src/game/playerName.ts`.
+- **Cuándo se pregunta (NJ-01):** tras vencer a Creeper, en la viñeta 4 de Boxer ("¿Cómo te llamas?"), después de explicar el mundo. Al acabar el texto sale el campo, con el nombre que ya tuviera (de Opciones) o vacío.
+- **Cómo se contesta:** se escribe y se confirma con "¡Listo!" o con Intro; vacío o solo con espacios, el botón está apagado. "Prefiero no decirlo" pone el apodo (NJ-02). Saltar la secuencia (con "Saltar" o Esc) sin haber dado un nombre también pone el apodo: nunca queda un jugador sin nombre.
+- **El apodo (NJ-03):** "Rookie", el mismo en todos los idiomas. Se guarda como un nombre más.
+- **Cómo es un nombre (NJ-04):** de 1 a 12 letras, contadas como las ve el jugador (una eñe o un emoji cuentan como una). Se quitan los espacios de los lados y se deja uno solo entre palabras; no entran saltos de línea ni caracteres invisibles. Se aceptan tildes, eñes, otros alfabetos y emojis. Se muestra siempre como texto.
+- **Dónde va (NJ-05):** en el perfil del jugador activo (T-034): se conserva al recargar y en partidas nuevas, y se borra al borrar el jugador.
+- **Dónde se ve:** en las viñetas siguientes (Boxer y Patty le llaman por su nombre), en la portada ("Continuar · Carmine", cortado con puntos si no cabe), bajo el título del Invernadero ("¡Hola, Carmine!"), y en la fila del jugador y la lista de jugadores. Sin nombre, "Jugador N".
+- **Cambiarlo:** en Opciones de la portada, sección "Jugador". No en los Ajustes de la pausa.
+- **Quien vio la historia antes (NJ-06):** sin caso especial. Sigue como "Jugador N" hasta que se ponga un nombre en Opciones.
+- **Teclado en pantalla:** en un móvil en horizontal, mientras se escribe, la viñeta y el panel del menú se meten en lo que deja ver el teclado: se ve lo que se escribe y el botón de confirmar.
 
 ## Decisiones pendientes
 
@@ -297,5 +309,7 @@ T-013: los tours de ayuda no son reglas. Qué señalar en el tablero lo elige `s
 T-009: el nivel de los enemigos está en `combat.ts` (`Enemy.level`, `enemyLevelFactor`, `enemyMaxHp`, `enemyDamage`, `rollEnemyLevel`) y las copias del Creeper, en `rollCopyKind`; `enemyKilled` lleva el tipo para pagar lo suyo (`ENEMIES[kind].reward`). En `rounds.ts`, el tope de nivel (`levelCapAt`, `levelCap`, `levelCapRaisedAfter`), lo nuevo de cada ronda para el aviso (`roundUnlocks`), los grupos con nivel y paso propios (`RoundGroup.level`, `haste`) y el grito (`shout`, evento `shout`). Infundir con una mina, en `match.ts` (`mineDragBlocker`, `mineInfusion`, `mineInfusionTargets`, `infuseWithMine`), y el tope en `levelUpOffer` (`cap`, `capRaisedAt`). Los valores están en `ENEMY_LEVELS`, `CREEPER`, `ENEMIES` y `OUTBREAKS` de `balance.ts`.
 
 T-034: los jugadores están en `src/game/profiles.ts` (reglas `addProfile`, `selectProfile`, `removeProfile`, `touchProfile`, `freeNumber` y `decodeProfiles`; `ProfileKeeper` y su instancia `profiles`, con el almacén de cada jugador en `store()` y `storeOf()`), con tests en `profiles.test.ts`; el almacén que nunca falla (`SessionStore`), en `src/game/storage.ts`. `save.ts`, `progress.ts` y `tourProgress.ts` escriben por defecto en el almacén del jugador activo. Lo que la pantalla de jugadores cuenta de cada uno (nombre, lo que se pierde al borrarlo) está en `src/ui/playerCards.ts`, con tests en `playerCards.test.ts`.
+
+T-033: las reglas del nombre (`NAME_MAX_LENGTH`, `NICKNAME`, `limitName`, `cleanName`, `isValidName`, `nameLength`) están en `src/game/playerName.ts`, con tests en `playerName.test.ts`; ponerlo en el perfil, en `renameProfile` y `ProfileKeeper.rename` (`profiles.ts`). Qué secuencia lo pregunta y el apodo al acabarla sin nombre, en `asksName` y `nameAfterStory` de `src/ui/story/stories.ts`. Lo que se ve con el teclado en pantalla abierto, en `keyboardArea` (`src/ui/keyboardArea.ts`, con test).
 
 T-031: la historia vista va en el progreso permanente (`Progress.story`, con `hasSeenStory` y `recordStory` en `src/game/progress.ts`; `PROGRESS_VERSION` 2). Las viñetas no son reglas: qué secuencias hay, quién habla y cuándo salen está en `src/ui/story/stories.ts` (`STORIES`, `storiesAt`, `storySteps`, `replayableStories`), el texto letra a letra en `typewriter.ts`, los dos con test en `stories.test.ts`; la voz al hablar, en `voiceCue` de `src/game/audio/cues.ts`. Los personajes (Boxer y Patty) se pintan en `src/game/view/characters/`.

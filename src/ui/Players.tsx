@@ -1,6 +1,8 @@
-import type { RefObject } from 'react';
+import { useState, type RefObject } from 'react';
+import { cleanName, isValidName } from '../game/playerName';
 import { MAX_PROFILES, type Profile } from '../game/profiles';
 import { formatSavedAt } from '../i18n';
+import { NameField } from './NameField';
 import { hasPlayed, lostLines, playerName, type PlayerCard } from './playerCards';
 import { useLanguage, useText } from './useText';
 
@@ -96,8 +98,8 @@ export function PlayersPanel({ titleId, firstButton, players, active, removed, o
           const { profile } = card;
           const name = playerName(t, profile);
           const current = profile.id === active;
-          // El unico jugador, sin nada guardado: borrarlo no cambiaria nada.
-          const removable = !alone || lostLines(t, card).length > 0;
+          // El unico jugador, sin nada guardado ni nombre (T-033): borrarlo no cambiaria nada.
+          const removable = !alone || lostLines(t, card).length > 0 || profile.name !== null;
           return (
             <li key={profile.id} className="player-row" style={{ animationDelay: `${0.05 + 0.07 * i}s` }}>
               <button
@@ -195,5 +197,58 @@ export function RemovePlayer({ titleId, firstButton, card, last, onCancel, onCon
         </button>
       </div>
     </div>
+  );
+}
+
+interface PlayerNameSettingProps {
+  profile: Profile;
+  /** Ya limpio y distinto del que tenia. */
+  onRename: (name: string) => void;
+}
+
+/**
+ * El nombre del jugador activo en Opciones de la portada (T-033): el campo con el que tiene y "Guardar", apagado mientras
+ * no haya un nombre nuevo. Con el campo vacio se ve su nombre provisional ("Jugador 1"). Intro tambien guarda.
+ */
+export function PlayerNameSetting({ profile, onRename }: PlayerNameSettingProps) {
+  const t = useText();
+  const [value, setValue] = useState(profile.name ?? '');
+  /** El nombre que se acaba de guardar, para decirlo hasta que se vuelva a escribir. */
+  const [saved, setSaved] = useState<string | null>(null);
+  const clean = cleanName(value);
+  const changed = isValidName(value) && clean !== profile.name;
+  return (
+    <section className="settings-section">
+      <h3>{t.name.section}</h3>
+      <form
+        className="name-setting"
+        onSubmit={(event) => {
+          event.preventDefault();
+          if (!changed) return;
+          onRename(clean);
+          setValue(clean);
+          setSaved(clean);
+        }}
+      >
+        <NameField
+          value={value}
+          onChange={(next) => {
+            setValue(next);
+            setSaved(null);
+          }}
+          placeholder={t.players.defaultName(profile.number)}
+        />
+        <button type="submit" className="btn name-save" disabled={!changed} title={isValidName(value) ? undefined : t.name.empty}>
+          {t.name.save}
+        </button>
+      </form>
+      {saved ? (
+        <p className="settings-note is-done" role="status">
+          {t.name.saved(saved)}
+        </p>
+      ) : (
+        <p className="settings-note">{t.name.help}</p>
+      )}
+    </section>
   );
 }

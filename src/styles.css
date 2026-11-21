@@ -860,7 +860,7 @@ body {
 @keyframes sprout-pop { from { transform: scale(0); } to { transform: none; } }
 @keyframes sprout-sway { 0%, 100% { transform: rotate(-7deg); } 50% { transform: rotate(7deg); } }
 .title-tagline {
-  margin: 0 0 0 0.6em; padding: 5px 16px; border-radius: 12px;
+  margin: 0 0 0 0.6em; padding: 5px 16px; border-radius: 12px; overflow-wrap: anywhere;
   font-size: clamp(0.85rem, 1.45vw, 1.2rem); font-weight: 900; color: #fff6dc; letter-spacing: 0.02em;
   background: linear-gradient(180deg, rgba(110, 72, 40, 0.94), rgba(72, 45, 24, 0.94)); border: 2px solid rgba(255, 220, 160, 0.4);
   box-shadow: 0 6px 14px rgba(0, 0, 0, 0.3), inset 0 2px 0 rgba(255, 255, 255, 0.15);
@@ -876,7 +876,8 @@ body {
 }
 @keyframes title-panel-in { from { opacity: 0; transform: translateX(48px) scale(0.94); } to { opacity: 1; transform: none; } }
 .title-panel .pause-kicker { margin-bottom: 12px; }
-.title-actions { gap: 10px; }
+/* La columna mide lo que el panel: un nombre muy ancho en "Continuar" (T-033) se corta en vez de ensanchar el menu. */
+.title-actions { gap: 10px; grid-template-columns: minmax(0, 1fr); }
 .btn.has-detail { flex-direction: column; gap: 1px; padding-top: 9px; padding-bottom: 9px; }
 .btn-line { display: inline-flex; align-items: center; gap: 10px; }
 .btn-detail { font-size: 0.74rem; font-weight: 700; opacity: 0.85; }
@@ -1740,6 +1741,82 @@ button.route-stop-body:focus-visible .route-ring { outline-color: #ffe066; }
   .story-bubble::before { border-width: 2px; }
   .story-name { border-width: 1.5px; }
 }
+
+/* Boxer pregunta el nombre (T-033): el campo y "¡Listo!" dentro del bocadillo cuando el texto ya salio entero, y
+   "Prefiero no decirlo" al pie, junto a "Saltar". Un toque fuera del campo no pasa de viñeta. */
+.story.is-asking { cursor: default; }
+.story-ask {
+  display: flex; align-items: stretch; gap: clamp(6px, 1.2cqw, 10px); margin-top: clamp(6px, 1.6cqh, 14px);
+  animation: bubble-in 0.34s cubic-bezier(0.2, 1.4, 0.4, 1) both;
+}
+.story-ask .name-field { flex: 1; }
+.story-ask .btn.story-confirm {
+  width: auto; flex: none; padding: 0.3em 1em; border-radius: 12px; font-size: clamp(0.9rem, 2.6cqh, 1.15rem); white-space: nowrap;
+}
+.story-decline {
+  margin-left: auto; padding: 2px 6px; border: 0; border-radius: 8px; background: none; color: var(--tone-dark);
+  font: inherit; font-size: clamp(0.78rem, 2.2cqh, 1rem); font-weight: 900; cursor: pointer;
+  text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 3px;
+}
+.story-decline:hover { filter: brightness(1.2); }
+.story-decline:focus-visible { outline: 3px solid #e0a92a; outline-offset: 1px; }
+.story-dots + .story-decline { margin-left: 0; }
+
+/* Muy poco alto: el teclado en pantalla abierto en un movil en horizontal (T-033). Sin busto, el bocadillo a lo ancho y
+   apretado, para que se vea lo que se escribe y "¡Listo!" justo encima del teclado. */
+@container (max-height: 260px) {
+  .story-portrait { display: none; }
+  .story-stage { padding: 0 max(8px, env(safe-area-inset-right)) 0 max(8px, env(safe-area-inset-left)); }
+  .story-bubble { width: min(780px, 100%); margin-bottom: 6px; padding: 13px 12px 3px; border-radius: 14px; }
+  .story-bubble::before { display: none; }
+  .story-name { font-size: 0.78rem; }
+  .story-text { font-size: 15px; line-height: 1.25; }
+  .story-ask { margin-top: 6px; }
+  .story-ask .btn.story-confirm { font-size: 0.9rem; }
+  .story-foot { min-height: 1.3em; margin-top: 2px; }
+}
+@container (max-height: 170px) {
+  .story-text { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; font-size: 14px; }
+  .story-bubble { margin-bottom: 4px; padding-top: 11px; }
+  .story-dots { display: none; }
+}
+
+/* Campo del nombre del jugador (T-033): en el panel de los menus (oscuro) y en el bocadillo (claro). La letra nunca baja
+   de 16 px: con menos, el iPhone amplia la pagina al tocarlo. El contador va dentro, a la derecha. */
+.name-field { position: relative; display: flex; align-items: center; min-width: 0; }
+.name-field input {
+  width: 100%; min-width: 0; box-sizing: border-box; margin: 0; padding: 0.42em 3.7em 0.42em 0.75em;
+  border-radius: 12px; border: 2px solid #5fa54f; background: #142619; color: #fff6c0;
+  font: inherit; font-size: 16px; font-weight: 800; outline: none; transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.name-field input::placeholder { color: inherit; opacity: 0.45; font-weight: 700; }
+.name-field input:focus { border-color: #ffe066; box-shadow: 0 0 0 3px rgba(255, 224, 102, 0.28); }
+.name-count {
+  position: absolute; right: 0.75em; font-size: 0.72rem; font-weight: 800; opacity: 0.6; pointer-events: none;
+  font-variant-numeric: tabular-nums;
+}
+.name-count.is-full { opacity: 1; color: #ffb347; }
+.name-field.is-light input {
+  border-color: var(--tone-dark); background: #fff; color: #2b2418; font-size: clamp(16px, calc(2.4cqh + 4px), 24px);
+  box-shadow: inset 0 2px 0 rgba(120, 90, 40, 0.12);
+}
+.name-field.is-light input:focus { border-color: #e0a92a; box-shadow: 0 0 0 3px rgba(224, 169, 42, 0.35); }
+.name-field.is-light .name-count { color: #6b5a3c; font-size: clamp(0.7rem, 2cqh, 0.9rem); }
+.name-field.is-light .name-count.is-full { color: #b5541c; }
+/* En Opciones: el campo y "Guardar" en una fila. */
+.name-setting { display: flex; gap: 8px; }
+.name-setting .name-field { flex: 1; }
+.btn.name-save { width: auto; flex: none; padding: 8px 14px; font-size: 0.95rem; }
+/* "Continuar · Carmine" en la portada: un nombre muy ancho se corta con puntos suspensivos y no rompe el boton. */
+.btn-line { max-width: 100%; }
+.btn-who { min-width: 0; margin-left: -0.25em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #fff6c0; }
+.btn-primary .btn-who { color: inherit; }
+.btn-who::before { content: '·'; margin-right: 0.45em; opacity: 0.7; }
+
+/* Con el teclado en pantalla abierto (T-033, `useKeyboardArea`), lo que flota encima del juego se mete en el trozo que se
+   ve: la viñeta que pregunta el nombre y el panel del menu (Opciones), que se desplaza para dejar a la vista el campo. */
+.app.has-keyboard .story { top: var(--keyboard-top); bottom: auto; height: var(--keyboard-height); }
+.app.has-keyboard .title-panel { top: calc(var(--keyboard-top) + 8px); translate: none; max-height: calc(var(--keyboard-height) - 16px); }
 
 /* Invernadero: lista de la historia vista para volver a verla (T-031, Y-05). */
 .story-list { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }

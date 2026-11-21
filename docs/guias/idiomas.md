@@ -52,7 +52,8 @@ Cómo se escriben los textos de Rebrote para que salgan en español y en inglés
   | Ficha | Info card |
 
 - Creeper habla en mayúsculas, como en su terminal. En inglés su frase de entrada es la del original de 1971: "I'M THE CREEPER: CATCH ME IF YOU CAN!".
-- No se traducen: "Rebrote", Creeper, Boxer, Patty, los nombres de tecnologías y el nombre de cada idioma en el selector.
+- No se traducen: "Rebrote", Creeper, Boxer, Patty, los nombres de tecnologías, el nombre de cada idioma en el selector y el apodo que pone Boxer, "Rookie" (T-033, NJ-03), que vive en `src/game/playerName.ts` porque se guarda en el perfil como un nombre más.
+- El nombre del jugador (T-033) es un dato: nunca se traduce y siempre va como argumento dentro de la frase (`story.lines`, `greenhouse.hello`, `name.saved`).
 - La IA de la historia es "ella" en español y "she" en inglés (T-031).
 - Un texto en inglés puede ser más largo: hay que comprobar que cabe donde va (cartas de tamaño fijo, botones del menú, rótulos del tablero) en los dos idiomas.
 

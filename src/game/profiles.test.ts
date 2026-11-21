@@ -17,10 +17,12 @@ import {
   profileOfKey,
   randomId,
   removeProfile,
+  renameProfile,
   selectProfile,
   touchProfile,
   type ProfileList,
 } from './profiles';
+import { NAME_MAX_LENGTH, NICKNAME } from './playerName';
 import { PROGRESS_KEY, ProgressKeeper, encodeProgress, recordDefeat, emptyProgress } from './progress';
 import { SAVE_KEY, readSave, writeSave } from './save';
 import { SessionStore, storedKeys, type SaveStore } from './storage';
@@ -433,5 +435,78 @@ describe('almacen de la sesion (T-034)', () => {
     expect(session.keys()).toEqual([]);
     session.setItem('y', '2');
     expect(session.keys()).toEqual(['y']);
+  });
+});
+
+describe('perfiles: el nombre del jugador (T-033)', () => {
+  it('se guarda limpio, en ese jugador y con la fecha del cambio', () => {
+    const list = addProfile(firstList('a', 1), 'b', 2);
+    const renamed = renameProfile(list, 'a', '   Ana  ', 9);
+    expect(renamed.profiles[0]).toEqual({ id: 'a', name: 'Ana', number: 1, createdAt: 1, updatedAt: 9 });
+    expect(renamed.profiles[1]).toBe(list.profiles[1]);
+    expect(renamed.active).toBe('b');
+  });
+
+  it('un nombre vacio, el mismo nombre o un jugador que no esta no cambian nada', () => {
+    const list = renameProfile(firstList('a', 1), 'a', 'Ana', 2);
+    expect(renameProfile(list, 'a', '    ', 3)).toBe(list);
+    expect(renameProfile(list, 'a', ' Ana ', 3)).toBe(list);
+    expect(renameProfile(list, 'nadie', 'Luis', 3)).toBe(list);
+  });
+
+  it(`no pasa de ${NAME_MAX_LENGTH} letras`, () => {
+    const list = renameProfile(firstList('a', 1), 'a', 'M'.repeat(20), 2);
+    expect(list.profiles[0].name).toBe('M'.repeat(NAME_MAX_LENGTH));
+  });
+
+  it('el apodo de Boxer se guarda como un nombre mas (NJ-03)', () => {
+    expect(renameProfile(firstList('a', 1), 'a', NICKNAME, 2).profiles[0].name).toBe('Rookie');
+  });
+
+  it('lo guardado se lee limpio; uno que no vale se lee sin nombre (y se le llama "Jugador N")', () => {
+    const raw = JSON.stringify({
+      version: PROFILES_VERSION,
+      active: 'a',
+      profiles: [
+        { id: 'a', name: '  Ana  ', number: 1, createdAt: 0, updatedAt: 0 },
+        { id: 'b', name: '   ', number: 2, createdAt: 0, updatedAt: 0 },
+        { id: 'c', name: 'M'.repeat(30), number: 3, createdAt: 0, updatedAt: 0 },
+      ],
+    });
+    expect(decodeProfiles(raw)?.profiles.map((profile) => profile.name)).toEqual(['Ana', null, 'M'.repeat(NAME_MAX_LENGTH)]);
+  });
+
+  it('se conserva al recargar y al empezar partidas nuevas', () => {
+    const store = memoryStore();
+    const { keeper, clock } = keeperOn(store);
+    const id = keeper.read().active;
+    clock.now = 2000;
+    expect(keeper.rename(id, 'Carmine').profiles[0].name).toBe('Carmine');
+    writeSave(createMatch(), null, keeper.store(), 3000);
+    keeper.store().removeItem(SAVE_KEY);
+    const reloaded = keeperOn(store).keeper;
+    expect(reloaded.active()).toMatchObject({ id, name: 'Carmine', updatedAt: 2000 });
+  });
+
+  it('cambiar el nombre no cambia el activo que se recuerda (el de la ultima pestana que cambio de jugador)', () => {
+    const store = memoryStore();
+    const a = keeperOn(store).keeper;
+    const first = a.read().active;
+    const tabB = new ProfileKeeper(() => store, () => 1500, () => 'deB');
+    tabB.create();
+    a.rename(first, 'Ana');
+    const stored = decodeProfiles(store.data.get(PROFILES_KEY) ?? null);
+    expect(stored?.active).toBe('deB');
+    expect(stored?.profiles.find((profile) => profile.id === first)?.name).toBe('Ana');
+    expect(a.active().name).toBe('Ana');
+  });
+
+  it('borrar al jugador borra su nombre: si era el ultimo, el nuevo no tiene', () => {
+    const { keeper } = keeperOn(memoryStore());
+    const id = keeper.read().active;
+    keeper.rename(id, 'Ana');
+    const fresh = keeper.remove(id);
+    expect(fresh.profiles).toHaveLength(1);
+    expect(fresh.profiles[0].name).toBeNull();
   });
 });

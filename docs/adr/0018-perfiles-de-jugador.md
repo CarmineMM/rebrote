@@ -38,7 +38,7 @@ Un hueco por jugador y por cosa, con el jugador activo en memoria en cada pesta�
 
 - **Lista de jugadores:** `rebrote.perfiles` = `{ version: 1, active, profiles: [{ id, name, number, createdAt, updatedAt }] }`, en el orden en que se crearon. `PROFILES_VERSION` sube si cambia su forma; una lista de otra versión se descarta con lo de sus jugadores.
   - `id`: identificador al azar (`crypto.randomUUID`, o a mano en http), que no cambia aunque cambie el nombre. Es el que algún día enlazará el perfil con una cuenta.
-  - `name`: el que elija el jugador (T-033), o null; entonces se le llama "Jugador N" en el idioma del juego, con `number` el menor libre al crearlo (PF-05).
+  - `name`: el que elija el jugador (T-033, reglas en `src/game/playerName.ts`), o null; entonces se le llama "Jugador N" en el idioma del juego, con `number` el menor libre al crearlo (PF-05). Al leer la lista, un nombre que no vale se lee como null.
   - `updatedAt`: la última vez que se escribió algo suyo que cambiaba (partida, progreso o tours). Escribir lo mismo que había no cuenta, así abrir el juego no es "jugar".
   - `active`: el que se recuerda al recargar.
 - **Lo de cada jugador:** `rebrote.perfil.<id>.partida` (ADR-0010), `.progreso` (ADR-0014) y `.tours` (ADR-0012). `save.ts`, `progress.ts` y `tourProgress.ts` leen y escriben con la clave corta (`partida`, `progreso`, `tours`) en el almacén que reciben; por defecto, el del jugador activo (`profiles.store()`). La escena no cambia: sigue llamando a `writeSave`, `clearSave` y `playerProgress`.

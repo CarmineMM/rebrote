@@ -21,13 +21,16 @@ interface SettingsPanelProps {
   onBack: () => void;
   /** Botones de abajo (en la pausa, "Continuar"). */
   footer?: ReactNode;
+  /** Lo que va antes de los ajustes del aparato: en Opciones de la portada, el nombre del jugador (T-033). */
+  children?: ReactNode;
 }
 
 /**
  * Ajustes del jugador (ADR-0006, ADR-0007, T-011, T-013 y T-014): idioma, volumen de los efectos, pantalla completa,
- * calidad grafica, tours de ayuda y FPS. Los mismos en el menu de inicio ("Opciones") y en el de pausa ("Ajustes").
+ * calidad grafica, tours de ayuda y FPS. Los mismos en el menu de inicio ("Opciones") y en el de pausa ("Ajustes"). En
+ * Opciones van primero los del jugador (su nombre, T-033), que no son del aparato.
  */
-export function SettingsPanel({ titleId, firstButton, title, backLabel, settings, autoLevel, fullscreenSupported, onChange, onBack, footer }: SettingsPanelProps) {
+export function SettingsPanel({ titleId, firstButton, title, backLabel, settings, autoLevel, fullscreenSupported, onChange, onBack, footer, children }: SettingsPanelProps) {
   const t = useText();
   const levels = t.settings.levels;
   const options: Array<{ value: QualitySetting; label: string; description: string }> = [
@@ -45,6 +48,8 @@ export function SettingsPanel({ titleId, firstButton, title, backLabel, settings
           {title}
         </h2>
       </div>
+
+      {children}
 
       <section className="settings-section">
         <h3>{t.settings.language}</h3>

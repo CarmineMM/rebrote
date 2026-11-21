@@ -14,8 +14,11 @@ interface UseStoryOptions {
   wonOutbreak: OutbreakId | null;
   /** Se esta en el Invernadero, con estos brotes vencidos, o null. */
   greenhouse: readonly string[] | null;
-  /** Una secuencia vista quedo apuntada: quien guarda el progreso lo vuelve a leer. */
-  onSeen: () => void;
+  /**
+   * Una secuencia vista quedo apuntada (acabada o saltada, no al volver a verla): quien guarda el progreso lo vuelve a
+   * leer, y si es la que pregunta el nombre, comprueba que el jugador ya tiene uno (T-033).
+   */
+  onSeen: (id: StoryId) => void;
 }
 
 /** Una secuencia en cola: las que se vuelven a ver desde el Invernadero no se apuntan otra vez. */
@@ -112,7 +115,7 @@ export function useStory({ player, onBoard, round, wonOutbreak, greenhouse, onSe
     if (!done) return;
     if (!done.replay) {
       playerProgress.recordStory(done.id);
-      onSeen();
+      onSeen(done.id);
     }
     setStepIndex(0);
     setQueue((list) => list.filter((queued) => queued.key !== done.key));
@@ -131,6 +134,8 @@ export function useStory({ player, onBoard, round, wonOutbreak, greenhouse, onSe
 
   return {
     story: current && step ? current.id : null,
+    /** La secuencia en curso se esta volviendo a ver (Y-05): no pregunta nada (T-033). */
+    replaying: current?.replay ?? false,
     /** Cambia con cada secuencia que empieza, aunque se repita la misma. */
     storyKey: current?.key ?? 0,
     step,

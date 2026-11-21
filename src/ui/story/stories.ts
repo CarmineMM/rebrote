@@ -1,6 +1,7 @@
 import { FIRST_OUTBREAK, type OutbreakId } from '../../game/core/outbreaks';
 import { isGreenhouseOpen } from '../../game/core/route';
 import type { RoundPhase } from '../../game/core/rounds';
+import { NICKNAME } from '../../game/playerName';
 import type { CharacterId, Expression } from '../../game/view/characters/design';
 import type { Dictionary } from '../../i18n';
 
@@ -14,7 +15,7 @@ import type { Dictionary } from '../../i18n';
 export type StoryId = 'opening' | 'creeperDown' | 'pattyGreenhouse';
 
 /**
- * Algo que una viñeta pide al jugador y que llega con otra task: su nombre (T-033). Mientras nadie lo pida, la viñeta se
+ * Algo que una viñeta pide al jugador: su nombre (T-033). Una viñeta que pide algo que nadie atiende (`STORY_PROMPTS`) se
  * salta y la secuencia sigue sin preguntar.
  */
 export type StoryPrompt = 'name';
@@ -89,10 +90,28 @@ export function replayableStories(seen: readonly string[]): StoryId[] {
   return STORY_ORDER.filter((id) => seen.includes(id));
 }
 
-/** Lo que pide la viñeta en curso que el jugador aun no dio. Hoy ninguna: T-033 anadira el nombre. */
-export const STORY_PROMPTS: readonly StoryPrompt[] = [];
+/** Lo que las viñetas pueden pedir al jugador: su nombre (T-033). */
+export const STORY_PROMPTS: readonly StoryPrompt[] = ['name'];
 
-/** Texto de una viñeta en el idioma de `t`. `name` es el nombre que eligio el jugador (T-033) o null (trato neutro). */
+/** La secuencia pregunta el nombre (la de Creeper, NJ-01). */
+export function asksName(id: StoryId): boolean {
+  const steps: readonly StoryStep[] = STORIES[id];
+  return steps.some((step) => step.prompt === 'name');
+}
+
+/**
+ * El nombre que hay que ponerle al jugador al acabar (o saltar) una secuencia que lo pregunta, si aun no tiene: el apodo de
+ * Boxer (NJ-02, NJ-03). Nunca queda un jugador sin nombre. Null si no hay que cambiar nada: ya tenia uno (lo escribio en la
+ * viñeta o en Opciones) o la secuencia no lo pregunta.
+ */
+export function nameAfterStory(id: StoryId, name: string | null): string | null {
+  return asksName(id) && name === null ? NICKNAME : null;
+}
+
+/**
+ * Texto de una viñeta en el idioma de `t`. `name` es el nombre que eligio el jugador (T-033), el apodo de Boxer o null
+ * (trato neutro: quien vio la historia antes de T-033 y aun no tiene nombre).
+ */
 export function stepText(t: Dictionary, story: StoryId, step: StoryStep, name: string | null): string {
   const lines = t.story.lines[story] as Readonly<Record<string, string | ((name: string | null) => string)>>;
   const line = lines[step.id];

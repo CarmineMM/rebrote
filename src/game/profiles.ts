@@ -1,3 +1,4 @@
+import { cleanName, isValidName } from './playerName';
 import { SessionStore, browserStore, type SaveStore } from './storage';
 
 /**
@@ -29,7 +30,10 @@ export const MAX_PROFILES = 3;
 export interface Profile {
   /** Identificador estable: no cambia aunque cambie el nombre. Es el que algun dia lo enlazara con una cuenta. */
   readonly id: string;
-  /** Nombre que eligio el jugador (T-033), o null: se le llama "Jugador N" (PF-05). Se pueden repetir (PF-07). */
+  /**
+   * Nombre que eligio el jugador (T-033, reglas en `playerName.ts`), o null mientras no elija: se le llama "Jugador N"
+   * (PF-05). Se pueden repetir (PF-07).
+   */
   readonly name: string | null;
   /** La N de "Jugador N": la menor libre al crearlo. */
   readonly number: number;
@@ -103,6 +107,19 @@ export function removeProfile(list: ProfileList, id: string, freshId: string, no
   return { active: latest.id, profiles };
 }
 
+/**
+ * Le pone nombre a un jugador (T-033): el que escribio, sin los espacios de los lados, o el apodo de Boxer. Un nombre que
+ * no vale, un jugador que no esta o el mismo nombre devuelven la misma lista. Cuenta como un cambio suyo: apunta la fecha.
+ */
+export function renameProfile(list: ProfileList, id: string, name: string, now: number): ProfileList {
+  const profile = findProfile(list, id);
+  if (!profile || !isValidName(name)) return list;
+  const clean = cleanName(name);
+  if (profile.name === clean) return list;
+  const renamed: Profile = { ...profile, name: clean, updatedAt: Math.max(profile.updatedAt, now) };
+  return { ...list, profiles: list.profiles.map((item) => (item.id === id ? renamed : item)) };
+}
+
 /** Apunta que el perfil se acaba de guardar. Si no esta o ya tiene esa fecha, devuelve la misma lista. */
 export function touchProfile(list: ProfileList, id: string, now: number): ProfileList {
   const profile = findProfile(list, id);
@@ -154,7 +171,8 @@ function sanitizeProfile(value: unknown, taken: readonly Profile[]): Profile | n
   const createdAt = isTime(value.createdAt) ? value.createdAt : 0;
   const updatedAt = isTime(value.updatedAt) ? Math.max(value.updatedAt, createdAt) : createdAt;
   const number = Number.isInteger(value.number) && (value.number as number) >= 1 && !taken.some((profile) => profile.number === value.number) ? (value.number as number) : freeNumber(taken);
-  return { id: value.id, name: isName(value.name) ? value.name : null, number, createdAt, updatedAt };
+  const name = typeof value.name === 'string' && isValidName(value.name) ? cleanName(value.name) : null;
+  return { id: value.id, name, number, createdAt, updatedAt };
 }
 
 function parse(raw: string | null): Record<string, unknown> | null {
@@ -169,7 +187,6 @@ function parse(raw: string | null): Record<string, unknown> | null {
 
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null && !Array.isArray(value);
 const isTime = (value: unknown): value is number => typeof value === 'number' && Number.isFinite(value) && value >= 0;
-const isName = (value: unknown): value is string => typeof value === 'string' && value.length > 0 && value.length <= 64;
 /** Va dentro de las claves del navegador: sin puntos, que separan el perfil de su hueco. */
 export const isProfileId = (value: unknown): value is string => typeof value === 'string' && /^[A-Za-z0-9_-]{1,64}$/.test(value);
 
@@ -259,6 +276,22 @@ export class ProfileKeeper {
     const list = this.read();
     const next = addProfile(list, this.freshId(list.profiles), this.now());
     return next === list ? list : this.commit(next);
+  }
+
+  /**
+   * Le pone nombre a un jugador (T-033): desde la viñeta en la que Boxer lo pregunta o desde Opciones. Se escribe sobre lo
+   * guardado, como la fecha del ultimo guardado: el activo que se recuerda no cambia.
+   */
+  rename(id: string, name: string): ProfileList {
+    const list = this.read();
+    const next = renameProfile(list, id, name, this.now());
+    if (next === list) return list;
+    const stored = this.stored();
+    const renamed = stored ? renameProfile(stored, id, name, this.now()) : null;
+    if (stored && renamed && renamed !== stored) this.storage.setItem(PROFILES_KEY, encodeProfiles(renamed));
+    // Si otra pestana lo borro mientras se jugaba, sigue con su copia, ya con el nombre nuevo.
+    if (this.activeCopy?.id === id) this.activeCopy = findProfile(next, id);
+    return this.read();
   }
 
   /** Cambia de jugador (solo desde la portada: nunca en mitad de una partida). */

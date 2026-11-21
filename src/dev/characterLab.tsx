@@ -92,9 +92,15 @@ function VignetteFrame({ width, height, scale, story, cast, restart }: { width: 
   const steps = storySteps(story, STORY_PROMPTS);
   const [index, setIndex] = useState(0);
   const [round, setRound] = useState(0);
-  useEffect(() => setIndex(0), [story, restart]);
+  /** El nombre que se escribe en la viñeta que lo pregunta (T-033): las siguientes lo usan. */
+  const [name, setName] = useState<string | null>(null);
+  useEffect(() => {
+    setIndex(0);
+    setName(null);
+  }, [story, restart]);
   const again = () => {
     setIndex(0);
+    setName(null);
     setRound((r) => r + 1);
   };
   const step = steps[Math.min(index, steps.length - 1)];
@@ -113,7 +119,11 @@ function VignetteFrame({ width, height, scale, story, cast, restart }: { width: 
             step={step}
             index={index}
             count={steps.length}
-            name={null}
+            name={name}
+            onAnswer={(given) => {
+              setName(given);
+              setIndex(index + 1);
+            }}
             cast={cast}
             onNext={() => (index + 1 < steps.length ? setIndex(index + 1) : again())}
             onSkip={again}

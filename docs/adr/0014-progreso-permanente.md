@@ -39,7 +39,7 @@ Un hueco propio, `rebrote.progreso`, en `src/game/progress.ts`, con tests en `pr
 ## Consecuencias
 
 - **Si cambia la forma del progreso** (un campo nuevo como las semillas de T-020, otro significado), se sube `PROGRESS_VERSION` y lo guardado con la versión anterior se descarta (regla 11 de `CLAUDE.md`). Durante el desarrollo no se escribe migración.
-- Las tasks que guardan algo permanente (T-020, T-022, T-023, T-031, T-033) amplían `Progress`, sin migración, en vez de abrir otro hueco.
+- Las tasks que guardan algo permanente (T-020, T-022, T-023, T-031) amplían `Progress`, sin migración, en vez de abrir otro hueco. El nombre del jugador (T-033) no: va en el perfil (`Profile.name`, ADR-0018).
 - **Quien juega la versión publicada pierde su progreso cada vez que cambia la forma de lo guardado.** Es el precio aceptado de no migrar mientras el juego cambia tanto.
 - Con dos pestañas abiertas gana la última que escribe. Se acepta.
 - Cualquiera puede editar `localStorage`. No importa mientras no haya ranking ni pagos.

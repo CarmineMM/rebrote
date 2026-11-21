@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { LANGUAGES, text } from '../../i18n';
-import { STORIES, STORY_ORDER, replayableStories, stepText, storiesAt, storySteps, type StoryId } from './stories';
+import { NICKNAME } from '../../game/playerName';
+import { STORIES, STORY_ORDER, STORY_PROMPTS, asksName, nameAfterStory, replayableStories, stepText, storiesAt, storySteps, type StoryId } from './stories';
 import { glyphs, revealTimes, typedLength, typingDuration, TYPEWRITER } from './typewriter';
 
 describe('cuando salen las viñetas (T-031)', () => {
@@ -50,6 +51,42 @@ describe('las viñetas de cada secuencia (T-031)', () => {
     expect(replayableStories(['pattyGreenhouse', 'opening', 'otra'])).toEqual(['opening', 'pattyGreenhouse']);
     const all: StoryId[] = [...STORY_ORDER];
     expect(replayableStories(all)).toEqual(all);
+  });
+});
+
+describe('Boxer pregunta el nombre (T-033)', () => {
+  it('lo pregunta en la viñeta 4 de la caida de Creeper, despues de explicar el mundo (NJ-01)', () => {
+    expect(storySteps('creeperDown', STORY_PROMPTS).map((step) => step.id)).toEqual(['creeper', 'ai', 'chips', 'name', 'onward']);
+    expect(storySteps('creeperDown', STORY_PROMPTS).find((step) => step.prompt === 'name')?.id).toBe('name');
+    expect(STORY_ORDER.filter(asksName)).toEqual(['creeperDown']);
+  });
+
+  it('al acabar o saltar esa secuencia sin nombre, Boxer le pone el apodo: nunca queda sin nombre (NJ-02)', () => {
+    expect(nameAfterStory('creeperDown', null)).toBe(NICKNAME);
+  });
+
+  it('con nombre (escrito en la viñeta o en Opciones) no se cambia; las demas secuencias no tocan el nombre', () => {
+    expect(nameAfterStory('creeperDown', 'Ana')).toBeNull();
+    expect(nameAfterStory('opening', null)).toBeNull();
+    expect(nameAfterStory('pattyGreenhouse', null)).toBeNull();
+  });
+
+  it('las viñetas siguientes le llaman por su nombre, tambien por el apodo', () => {
+    const onward = STORIES.creeperDown.find((step) => step.id === 'onward');
+    const hello = STORIES.pattyGreenhouse[0];
+    if (!onward) throw new Error('falta la viñeta 5');
+    expect(stepText(text('es'), 'creeperDown', onward, 'Carmine')).toMatch(/^Pues esto no ha terminado, Carmine\. /);
+    expect(stepText(text('es'), 'creeperDown', onward, NICKNAME)).toMatch(/^Pues esto no ha terminado, Rookie\. /);
+    expect(stepText(text('en'), 'creeperDown', onward, NICKNAME)).toMatch(/^Well, this isn't over, Rookie\. /);
+    expect(stepText(text('es'), 'pattyGreenhouse', hello, 'Carmine')).toMatch(/^¿Así que tú eres quien ha parado a Creeper, Carmine\? Soy Patty\./);
+    expect(stepText(text('en'), 'pattyGreenhouse', hello, 'Carmine')).toMatch(/^So you're the one who stopped Creeper, Carmine\? I'm Patty\./);
+    expect(stepText(text('es'), 'pattyGreenhouse', hello, null)).toMatch(/^¿Así que tú eres quien ha parado a Creeper\? Soy Patty\./);
+  });
+
+  it('el nombre va como dato dentro de la frase: nada se interpreta', () => {
+    const onward = STORIES.creeperDown.find((step) => step.id === 'onward');
+    if (!onward) throw new Error('falta la viñeta 5');
+    expect(stepText(text('es'), 'creeperDown', onward, '<b>$&</b>')).toContain(', <b>$&</b>. ');
   });
 });
 

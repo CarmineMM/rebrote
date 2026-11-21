@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import type { CardId } from './game/core/match';
 import { FIRST_OUTBREAK, type OutbreakId } from './game/core/outbreaks';
 import { isGreenhouseOpen } from './game/core/route';
@@ -30,12 +30,13 @@ import { InfoPanel } from './ui/InfoPanel';
 import { LevelPanel } from './ui/LevelPanel';
 import { Lives } from './ui/Lives';
 import { PauseMenu } from './ui/PauseMenu';
-import { describePlayer } from './ui/playerCards';
+import { describePlayer, playerName } from './ui/playerCards';
 import { RotateNotice } from './ui/RotateNotice';
 import { RoundHud } from './ui/RoundHud';
 import { TitleMenu, TitleScreen } from './ui/TitleScreen';
 import { UnlockModal } from './ui/UnlockModal';
 import { NO_AUTO_FULLSCREEN, useFullscreen } from './ui/useFullscreen';
+import { useKeyboardArea } from './ui/useKeyboardArea';
 import { useNeedsLandscape } from './ui/useLandscapeOnly';
 import { sfx } from './game/audio/sfx';
 import { useButtonSounds } from './ui/useButtonSounds';
@@ -45,6 +46,7 @@ import { VictoryScreen } from './ui/VictoryScreen';
 import { CoinHint } from './ui/tour/CoinHint';
 import { TourOverlay } from './ui/tour/TourOverlay';
 import { useTours } from './ui/tour/useTours';
+import { nameAfterStory, type StoryId } from './ui/story/stories';
 import { StoryOverlay } from './ui/story/StoryOverlay';
 import { useStory } from './ui/story/useStory';
 
@@ -67,6 +69,9 @@ const SCENE_OF: Record<GameScreen, string> = { title: SCENES.title, board: SCENE
  * Todo lo guardado (partida, progreso y tours vistos) es del jugador activo (T-034, ADR-0018), que solo se cambia en la
  * portada. Las viñetas de la historia (T-031, ADR-0019) salen al empezar el brote 1, al vencer a Creeper y al llegar al
  * Invernadero: mientras hay una, el juego espera en pausa, los tours esperan debajo y la victoria espera a que acabe.
+ * En la de Creeper, Boxer pregunta el nombre del jugador (T-033), que va en su perfil y se cambia en Opciones; quien no lo
+ * dice o salta las viñetas se queda con el apodo de Boxer. Con el teclado en pantalla abierto, la viñeta y el panel del
+ * menu se meten en lo que se ve (`useKeyboardArea`).
  */
 export function App() {
   const t = useText();
@@ -116,7 +121,13 @@ export function App() {
   const over = lost || won;
   /** Se vencio al jefe del brote: lo que Boxer cuenta de el sale antes de la victoria (T-031). */
   const wonOutbreak = onBoard && won && !lost ? (round?.outbreak ?? FIRST_OUTBREAK) : null;
-  const refreshProgress = useCallback(() => setProgress(playerProgress.read()), []);
+  /** Una secuencia vista: el progreso cambio y, si preguntaba el nombre y no lo dio, Boxer le pone el apodo (T-033). */
+  const storySeen = useCallback((id: StoryId) => {
+    setProgress(playerProgress.read());
+    const player = profiles.active();
+    const fallback = nameAfterStory(id, player.name);
+    if (fallback) setPlayerList(profiles.rename(player.id, fallback));
+  }, []);
   // Viñetas de la historia (T-031): la apertura, lo que cuenta Boxer al caer Creeper y Patty en el Invernadero.
   const story = useStory({
     player: playerList.active,
@@ -124,8 +135,22 @@ export function App() {
     round,
     wonOutbreak,
     greenhouse: screen === 'title' && inGreenhouse ? progress.defeated : null,
-    onSeen: refreshProgress,
+    onSeen: storySeen,
   });
+  const nextStoryStep = story.next;
+  /** El nombre que escribio en la viñeta, o el apodo (T-033): va a su perfil y la viñeta siguiente ya le llama asi. */
+  const answerName = useCallback(
+    (name: string) => {
+      setPlayerList(profiles.rename(profiles.active().id, name));
+      nextStoryStep();
+    },
+    [nextStoryStep],
+  );
+  /** Desde Opciones de la portada (T-033). */
+  const renamePlayer = useCallback((name: string) => setPlayerList(profiles.rename(profiles.active().id, name)), []);
+  const player = activeProfile(playerList);
+  /** El trozo que se ve con el teclado en pantalla abierto, o null (T-033). */
+  const keyboard = useKeyboardArea();
   const storyOn = story.story !== null;
   /** El juego espera: menu de pausa, aviso de lo desbloqueado, ficha o una viñeta de la historia. */
   const halted = onBoard && (paused || unlock !== null || info !== null || storyOn);
@@ -381,11 +406,14 @@ export function App() {
 
   return (
     // Con la pausa (o el aviso de lo desbloqueado, o una ficha) se congelan tambien las animaciones CSS que cuentan tiempo (el aviso de la ronda).
-    <main className={`app${halted ? ' is-paused' : ''}`}>
+    <main
+      className={`app${halted ? ' is-paused' : ''}${keyboard ? ' has-keyboard' : ''}`}
+      style={keyboard ? ({ '--keyboard-top': `${keyboard.top}px`, '--keyboard-height': `${keyboard.height}px` } as CSSProperties) : undefined}
+    >
       <GameCanvas quality={level} language={settings.language} screen={screen} place={scenePlace} paused={halted} asleep={needsLandscape} />
 
       {screen === 'title' && (
-        <TitleScreen greenhouse={inGreenhouse} inert={storyOn}>
+        <TitleScreen greenhouse={inGreenhouse} player={playerName(t, player)} inert={storyOn}>
           {inGreenhouse ? (
             <Greenhouse
               saved={saved}
@@ -411,6 +439,7 @@ export function App() {
               onSelectPlayer={selectPlayer}
               onCreatePlayer={createPlayer}
               onRemovePlayer={removePlayer}
+              onRenamePlayer={renamePlayer}
             />
           )}
         </TitleScreen>
@@ -477,7 +506,9 @@ export function App() {
           step={story.step}
           index={story.stepIndex}
           count={story.stepCount}
-          name={activeProfile(playerList).name}
+          name={player.name}
+          onAnswer={story.replaying ? undefined : answerName}
+          initialName={player.name ?? ''}
           hidden={(onBoard && paused && !over) || needsLandscape}
           onNext={story.next}
           onSkip={story.skip}

@@ -7,7 +7,7 @@ import type { QualityLevel } from '../game/view/quality';
 import { formatSavedAt, type Dictionary } from '../i18n';
 import { Credits } from './Credits';
 import { outbreakTitle } from './outbreakName';
-import { PlayerChip, PlayersPanel, RemovePlayer } from './Players';
+import { PlayerChip, PlayerNameSetting, PlayersPanel, RemovePlayer } from './Players';
 import { playerName, type PlayerCard } from './playerCards';
 import { LanguagePicker, SettingsPanel } from './SettingsPanel';
 import { NO_AUTO_FULLSCREEN } from './useFullscreen';
@@ -36,6 +36,8 @@ interface TitleMenuProps {
   onCreatePlayer: () => void;
   /** Borra un jugador con todo lo suyo (PF-06), ya confirmado. */
   onRemovePlayer: (id: string) => void;
+  /** Cambia el nombre del jugador activo, desde Opciones (T-033). */
+  onRenamePlayer: (name: string) => void;
 }
 
 type View = 'main' | 'options' | 'credits' | 'confirm' | 'players' | 'remove';
@@ -60,11 +62,13 @@ const FIT_LETTERS = 8.5;
  * Menu de inicio (T-011): el titulo arriba a la izquierda, con la portada animada debajo (la pinta Phaser, `TitleScene`),
  * y a la derecha el panel que toque: el menu de la portada (`TitleMenu`) o el Invernadero (`Greenhouse`, T-019). En el
  * Invernadero el titulo dice "INVERNADERO" en vez de "REBROTE": sus letras vuelven a caer al cambiar, y encoge si la
- * palabra es larga. El brote sale de su primera "O".
+ * palabra es larga. El brote sale de su primera "O". Debajo, el lema o, en el Invernadero, el saludo al jugador por su
+ * nombre (T-033).
  */
-export function TitleScreen({ greenhouse = false, inert = false, children }: { greenhouse?: boolean; inert?: boolean; children: ReactNode }) {
+export function TitleScreen({ greenhouse = false, player, inert = false, children }: { greenhouse?: boolean; player: string; inert?: boolean; children: ReactNode }) {
   const t = useText();
   const word = greenhouse ? t.greenhouse.logo : NAME;
+  const tagline = greenhouse ? t.greenhouse.hello(player) : t.title.tagline;
   const sprout = word.indexOf('O');
   const fit = Math.min(1, FIT_LETTERS / word.length);
   return (
@@ -79,7 +83,9 @@ export function TitleScreen({ greenhouse = false, inert = false, children }: { g
             </span>
           ))}
         </h1>
-        <p className="title-tagline">{t.title.tagline}</p>
+        <p key={tagline} className="title-tagline">
+          {tagline}
+        </p>
       </header>
       {children}
     </div>
@@ -93,7 +99,8 @@ export function TitleScreen({ greenhouse = false, inert = false, children }: { g
  * Despues, opciones y creditos. Arriba del todo, quien juega y el boton para cambiar de jugador (T-034), que abre la
  * pantalla de jugadores: elegir, crear y borrar (con confirmacion). Solo aqui se cambia de jugador, nunca en mitad de una
  * partida. Las opciones, los creditos, los jugadores y las confirmaciones (partida nueva y borrar un jugador) salen en el
- * mismo panel. Esc vuelve atras: al menu, o a los jugadores desde la confirmacion de borrar.
+ * mismo panel. Esc vuelve atras: al menu, o a los jugadores desde la confirmacion de borrar. Con nombre (T-033),
+ * "Continuar" lo lleva al lado ("Continuar · Carmine") y Opciones empieza por el campo para cambiarlo.
  */
 export function TitleMenu({
   saved,
@@ -109,6 +116,7 @@ export function TitleMenu({
   onSelectPlayer,
   onCreatePlayer,
   onRemovePlayer,
+  onRenamePlayer,
 }: TitleMenuProps) {
   const t = useText();
   const language = useLanguage();
@@ -125,6 +133,9 @@ export function TitleMenu({
   const greenhouse = isGreenhouseOpen(progress.defeated);
   const current = players.find((card) => card.profile.id === player) ?? players[0];
   const doomed = players.find((card) => card.profile.id === removing) ?? null;
+  /** El nombre que eligio (T-033), al lado de "Continuar". Mientras no tenga, el chip de arriba dice "Jugador N". */
+  const named = current?.profile.name ?? null;
+  const who = named && <span className="btn-who">{named}</span>;
 
   useEffect(() => {
     const from = lastView.current;
@@ -185,6 +196,7 @@ export function TitleMenu({
               <button ref={firstButton} type="button" className="btn btn-primary has-detail" onClick={onContinue}>
                 <span className="btn-line">
                   <span aria-hidden="true">▶</span> {t.title.continue}
+                  {who}
                 </span>
                 <small className="btn-detail">{t.title.toGreenhouse}</small>
                 {summary && <small className="btn-detail is-soft">{t.title.waiting(outbreakTitle(t, summary.outbreak), summary.round)}</small>}
@@ -202,6 +214,7 @@ export function TitleMenu({
                 <button type="button" className="btn has-detail" onClick={onContinue} disabled={!summary}>
                   <span className="btn-line">
                     <span aria-hidden="true">⟳</span> {t.title.continue}
+                    {who}
                   </span>
                   <small className="btn-detail">
                     {summary ? t.title.saveSummary(summary.round, summary.total, summary.lives, summary.balance) : t.title.noSave}
@@ -230,7 +243,9 @@ export function TitleMenu({
           fullscreenSupported={fullscreenSupported}
           onChange={onChange}
           onBack={() => setView('main')}
-        />
+        >
+          {current && <PlayerNameSetting key={current.profile.id} profile={current.profile} onRename={onRenamePlayer} />}
+        </SettingsPanel>
       )}
 
       {view === 'credits' && <Credits titleId={titleId} firstButton={firstButton} onBack={() => setView('main')} />}

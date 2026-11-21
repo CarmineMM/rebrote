@@ -22,7 +22,7 @@ Aventura de dibujos animados: hay peligro y hay prisa, pero no se ve morir a nad
 - Es quien juega. No tiene cara ni se le muestra nunca.
 - Fue rescatado de la IA al principio de la historia.
 - No sabe nada de plantas ni de virus: aprende a la vez que quien juega.
-- Elige su nombre: Boxer se lo pregunta después de explicarle el mundo, tras vencer a Creeper, y el jugador lo escribe (T-033). Si prefiere no decirlo, Boxer le llama "Recluta".
+- Elige su nombre: Boxer se lo pregunta después de explicarle el mundo, tras vencer a Creeper, y el jugador lo escribe (T-033). Si prefiere no decirlo (o salta las viñetas), Boxer le llama "Rookie", en todos los idiomas.
 - Puede haber varios jugadores en el mismo navegador, cada uno con su nombre y su progreso (T-034).
 
 ### Boxer, el mentor (decidido)
@@ -87,11 +87,12 @@ Y empieza la ronda 1, con los tours.
 
 Al llegar al Invernadero:
 
-6. PATTY: "¿Así que tú eres quien ha parado a Creeper? Soy Patty. Las plantas son cosa mía. Vuelve cuando quieras: siempre estoy creando algo nuevo."
+6. PATTY: "¿Así que tú eres quien ha parado a Creeper, [nombre]? Soy Patty. Las plantas son cosa mía. Vuelve cuando quieras: siempre estoy creando algo nuevo."
 
 Notas:
 - La viñeta 2 afirma que la IA se creó para proteger de los virus. Si eso cambia (H-15), cambia la frase.
 - Las viñetas 4 y 6 son nuevas respecto al borrador aprobado: una pide el nombre y la otra presenta a Patty.
+- T-033 añadió el nombre al final de la pregunta de Patty, para que las viñetas que siguen a la 4 llamen al jugador por su nombre. Sin nombre (quien vio la historia antes de T-033), la frase va sin él.
 
 ## El giro, tras el cuarto brote (anotado, sin task)
 

@@ -85,9 +85,24 @@ export const en: Dictionary = {
     confirmNo: 'Never mind',
   },
 
+  name: {
+    label: 'Your name',
+    placeholder: 'Type your name',
+    count: (used, max) => `${used}/${max}`,
+    countLabel: (used, max) => `${used} of ${max} characters`,
+    confirm: 'Done!',
+    decline: "I'd rather not say",
+    empty: 'Type at least one letter',
+    section: 'Player',
+    help: 'This is what Boxer and Patty call you.',
+    save: 'Save',
+    saved: (name) => `You're now ${name}.`,
+  },
+
   greenhouse: {
     title: 'Greenhouse',
     logo: 'GREENHOUSE',
+    hello: (name) => `Hi, ${name}!`,
     resume: 'Resume',
     resumeDetail: (outbreak, round, total) => `${outbreak} · round ${round} of ${total}`,
     next: 'Next outbreak',
@@ -325,7 +340,8 @@ export const en: Dictionary = {
           `Well, this isn't over${name ? `, ${name}` : ''}. She started with the oldest, clumsiest one. The next ones will be worse. Come on, I'll show you the Greenhouse.`,
       },
       pattyGreenhouse: {
-        hello: "So you're the one who stopped Creeper? I'm Patty. The plants are my thing. Come back anytime: I'm always making something new.",
+        hello: (name) =>
+          `So you're the one who stopped Creeper${name ? `, ${name}` : ''}? I'm Patty. The plants are my thing. Come back anytime: I'm always making something new.`,
       },
     },
   },

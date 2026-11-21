@@ -38,7 +38,7 @@ Viñetas hechas en React encima del juego, con retratos que pinta un pintor de C
 - **Qué secuencias hay y cuándo salen** es una tabla pura (`src/ui/story/stories.ts`): el guion de viñetas con quién habla y con qué cara, y `storiesAt`, que dice qué toca en cada momento (la partida, la victoria, el Invernadero) sin lo ya visto. Los textos están en `story.lines` de `src/i18n/`.
 - **La viñeta** (`StoryOverlay`) va encima del HUD y de los tours y debajo de la pausa, la carga y el aviso de girar. En el tablero el juego queda en pausa mientras dura (como con la ficha); los tours y la victoria esperan a que acabe. El texto sale letra a letra (`typewriter.ts`) con la voz del personaje (`voiceCue` en `cues.ts`, ADR-0013). Mide su tamaño con consultas de contenedor, así la galería la enseña de verdad a 568 × 320 dentro de un marco.
 - **Lo visto** va en el progreso permanente del jugador (`Progress.story`, `PROGRESS_VERSION` 2): una secuencia cuenta como vista al acabarla o al saltarla y no vuelve a salir sola. Se vuelve a ver desde el Invernadero sin apuntarla otra vez.
-- **Lo que una viñeta pide al jugador** (su nombre, T-033) es un dato del paso (`prompt`): mientras nadie lo pida, el paso se salta y la frase siguiente usa un trato neutro.
+- **Lo que una viñeta pide al jugador** (su nombre, T-033) es un dato del paso (`prompt`): mientras nadie lo pida, el paso se salta y la frase siguiente usa un trato neutro. Desde T-033 el nombre se pide (`STORY_PROMPTS`): la viñeta enseña el campo al acabar el texto y no sigue hasta que el jugador contesta; al volver a verla, no pregunta.
 
 ## Consecuencias
 

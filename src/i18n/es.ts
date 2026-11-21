@@ -105,6 +105,28 @@ export const es = {
   },
 
   /**
+   * El nombre del jugador (T-033): Boxer lo pregunta tras vencer a Creeper y se cambia en Opciones. El apodo que pone Boxer
+   * a quien no lo dice ("Rookie", NJ-03) es el mismo en todos los idiomas y esta en `src/game/playerName.ts`.
+   */
+  name: {
+    label: 'Tu nombre',
+    placeholder: 'Escribe tu nombre',
+    /** Junto al campo: cuantas letras lleva y cuantas caben. */
+    count: (used: number, max: number) => `${used}/${max}`,
+    countLabel: (used: number, max: number) => `${used} de ${max} caracteres`,
+    confirm: '¡Listo!',
+    /** Boxer le pone un apodo (NJ-02). */
+    decline: 'Prefiero no decirlo',
+    /** El boton de confirmar, apagado con el campo vacio. */
+    empty: 'Escribe al menos una letra',
+    /** En Opciones de la portada. */
+    section: 'Jugador',
+    help: 'Así te llaman Boxer y Patty.',
+    save: 'Guardar',
+    saved: (name: string) => `Ahora te llamas ${name}.`,
+  },
+
+  /**
    * Invernadero (T-019): el sitio entre brotes, con todo lo que se hace fuera de la partida. Se abre al vencer a Creeper
    * (R-01). La tienda (T-022) y las plantas (T-023) esperan con candado.
    */
@@ -112,6 +134,8 @@ export const es = {
     title: 'Invernadero',
     /** El titulo grande de arriba a la izquierda en el Invernadero, en lugar de "REBROTE". */
     logo: 'INVERNADERO',
+    /** Bajo el titulo grande, en lugar del lema: el nombre del jugador (T-033). */
+    hello: (name: string) => `¡Hola, ${name}!`,
     resume: 'Reanudar',
     resumeDetail: (outbreak: string, round: number, total: number) => `${outbreak} · ronda ${round} de ${total}`,
     next: 'Siguiente brote',
@@ -333,7 +357,7 @@ export const es = {
 
   /**
    * Viñetas de la historia (T-031, ADR-0019). El guion es el de `docs/specs/04-historia.md`. Los nombres de los personajes
-   * no se traducen. `onward` recibe el nombre del jugador (T-033) o null: sin nombre, la frase va sin el.
+   * no se traducen. `onward` y `hello` reciben el nombre del jugador (T-033) o null: sin nombre, la frase va sin el.
    */
   story: {
     label: 'Historia',
@@ -365,7 +389,8 @@ export const es = {
           `Pues esto no ha terminado${name ? `, ${name}` : ''}. Ha empezado por el más viejo y el más torpe. Los siguientes serán peores. Ven, te enseño el Invernadero.`,
       },
       pattyGreenhouse: {
-        hello: '¿Así que tú eres quien ha parado a Creeper? Soy Patty. Las plantas son cosa mía. Vuelve cuando quieras: siempre estoy creando algo nuevo.',
+        hello: (name: string | null) =>
+          `¿Así que tú eres quien ha parado a Creeper${name ? `, ${name}` : ''}? Soy Patty. Las plantas son cosa mía. Vuelve cuando quieras: siempre estoy creando algo nuevo.`,
       },
     },
   },
