@@ -7,6 +7,7 @@ import { GARDEN, gardenSpots, gardenTier } from './gardenArt';
 import { MEDAL, showsMedal } from './levelMedal';
 import { SHOOTER } from './shooterShape';
 import { HASTE_STREAK_SIZE, MINE_SIZE, SHOOTER_SIZE, TEX, WORM_SIZE, levelGardenTexture, medalTexture, mineTexture, shooterTexture } from './textures';
+import { AURA_LOOK, auraTier, veilSize, veilStrength } from './wormAuraArt';
 import { WORM_LOOK } from './wormView';
 
 /**
@@ -60,6 +61,8 @@ interface Piece {
   loose?: boolean;
   /** Volteada en horizontal. */
   flipX?: boolean;
+  /** Opacidad (el aura de los gusanos, T-030); sin ella, opaca. */
+  alpha?: number;
 }
 
 /**
@@ -205,6 +208,25 @@ function wormPieces(subject: Extract<PortraitSubject, { kind: 'enemy' }>): Piece
   const art = ENEMY_ART[subject.enemy];
   const { head, segment } = WORM_SIZE;
   const pieces: Piece[] = [];
+  // Aura de los tramos de nivel (T-030, Z-03): un velo quieto detras del cuerpo, como en el tablero en lo mas alto.
+  const tier = auraTier(subject.enemy, subject.level);
+  if (tier > 0) {
+    const size = veilSize(tier);
+    // La textura se estira a lo ancho y a lo alto por separado; aqui se aplica una sola escala: el alto se ajusta.
+    const { width } = AURA_LOOK.veil;
+    pieces.push({
+      key: TEX.auraVeils[tier],
+      x: 3,
+      y: 3,
+      scale: (size.width * WORM_LOOK.unitsPerCell) / width,
+      ox: 0.5,
+      oy: 1,
+      width,
+      height: (width * size.height) / size.width,
+      loose: true,
+      alpha: veilStrength(tier) * 0.9,
+    });
+  }
   if (subject.hasted) {
     const { streak } = WORM_LOOK;
     pieces.push({ key: TEX.hasteStreak, x: streak.x, y: streak.y, scale: streak.scale, ox: 0, oy: 0.5, ...HASTE_STREAK_SIZE, loose: true });
@@ -278,6 +300,7 @@ function drawPiece(ctx: CanvasRenderingContext2D, scene: Phaser.Scene, piece: Pi
   const image = scene.textures.get(piece.key).getSourceImage() as CanvasImageSource;
   const w = piece.width * piece.scale;
   const h = piece.height * piece.scale;
+  ctx.globalAlpha = piece.alpha ?? 1;
   if (!piece.flipX) {
     ctx.drawImage(image, piece.x - piece.ox * w, piece.y - piece.oy * h, w, h);
     return;

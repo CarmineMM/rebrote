@@ -4,6 +4,8 @@ import { hpFraction, isEnraged, type Enemy, type EnemyKind } from '../core/comba
 import type { Effects } from './effects';
 import { entityDepth, perspective } from './layout';
 import { FLAME_SIZE, FROST_SIZE, TEX, WORM_SIZE, artInv, medalTexture } from './textures';
+import { WormAura } from './wormAura';
+import { auraTier } from './wormAuraArt';
 
 /**
  * Aspecto del gusano. Las medidas locales son pixeles de diseno con 160 por casilla, como la disparadora.
@@ -195,6 +197,10 @@ export class WormView implements EnemyView {
   private chillTimer?: Phaser.Time.TimerEvent;
   /** Ya se pinto una vez: desde entonces, lo que cambia en el estado se anima. */
   private synced = false;
+  /** Aura de los tramos de nivel (T-030), o null por debajo del 5, en Creeper o en el nivel grafico Bajo. */
+  private readonly aura: WormAura | null = null;
+  /** Reloj de la escena en el ultimo `sync`: el aura avanza lo que paso desde entonces (y nada durante la pausa). */
+  private lastSync = 0;
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -259,6 +265,10 @@ export class WormView implements EnemyView {
     const body = this.segments.flatMap((segment, i) => (armor ? [segment, armor.plates[i]] : [segment]));
     const top = [this.head, ...(armor ? [armor.helmet] : []), ...(this.medal ? [this.medal] : [])];
     this.holder = scene.add.container(ground.x, ground.y, [this.streak, ...body, ...top, ...this.frost, ...this.flames]).setDepth(depth);
+    // Aura de los tramos de nivel (T-030): detras y alrededor del cuerpo, sin tocar su dibujo.
+    const tier = auraTier(enemy.kind, enemy.level);
+    if (tier > 0 && fx.quality.auras > 0) this.aura = new WormAura(scene, fx, tier, this, emerge ? emergeDelayMs : 0);
+    this.lastSync = scene.time.now;
 
     if (emerge && emergeDelayMs > 0) {
       this.rise.v = 0;
@@ -354,6 +364,10 @@ export class WormView implements EnemyView {
       this.frost[0].setPosition(this.head.x + onNape.x, this.head.y + onNape.y);
       this.frost[1].setPosition(this.segments[0].x + onTail.x, this.segments[0].y + onTail.y);
     }
+    // El aura avanza lo que paso desde el ultimo fotograma, sin saltos tras una pausa larga.
+    const now = this.scene.time.now;
+    this.aura?.sync(Math.min(100, Math.max(0, now - this.lastSync)));
+    this.lastSync = now;
   }
 
   /** Mordisco: la cabeza se lanza hacia delante y cierra la boca. */
@@ -395,6 +409,23 @@ export class WormView implements EnemyView {
       x: this.holder.x + (this.head.x + dx) * this.holder.scaleX,
       y: this.holder.y + (this.head.y + dy) * this.holder.scaleY,
     };
+  }
+
+  /**
+   * Punto de un anillo en pantalla (0 es la cola), en pixeles de diseno respecto a su centro: sigue la joroba al
+   * andar. Lo usa la galeria de propuestas de adornos de nivel (`/gusanos.html`) para clavar algo en la cola.
+   */
+  segmentPoint(index: number, dx = 0, dy = 0): { x: number; y: number } {
+    const segment = this.segments[Math.max(0, Math.min(this.segments.length - 1, index))];
+    return {
+      x: this.holder.x + (segment.x + dx) * this.holder.scaleX,
+      y: this.holder.y + (segment.y + dy) * this.holder.scaleY,
+    };
+  }
+
+  /** Escala del cuerpo en pantalla (pixeles de pantalla por pixel de diseno), con su tamano y su postura. */
+  bodyScale(): number {
+    return Math.abs(this.holder.scaleX);
   }
 
   /**
@@ -450,6 +481,7 @@ export class WormView implements EnemyView {
     const charred = this.burning;
     const frozen = this.chilled && !charred;
     this.stopReactions();
+    this.aura?.fadeOut(300);
     // Al acorazado le sale volando el casco.
     if (this.armor) this.fling(this.armor.helmet, -1, 1.4);
     const parts = this.bodyParts();
@@ -499,6 +531,7 @@ export class WormView implements EnemyView {
   /** Cruzo el borde izquierdo: sigue un poco por el camino y se mete bajo tierra. */
   escape(): void {
     this.stopReactions();
+    this.aura?.fadeOut(650);
     const dx = -this.cellWidth * 0.7;
     this.fx.dirt(this.holder.x, this.holder.y, 8);
     this.scene.tweens.add({

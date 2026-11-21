@@ -27,6 +27,11 @@ export interface QualityProfile {
   extras: boolean;
   /** Filtros de camara: color mas vivo y vineta suave. */
   postFx: boolean;
+  /**
+   * Aura de los gusanos de nivel alto (T-030, Z-04): 0 sin aura, 1 solo los velos de detras y el halo (sin motas ni
+   * velo delantero), 2 entera.
+   */
+  auras: 0 | 1 | 2;
 }
 
 export const QUALITY_PROFILES: Record<QualityLevel, QualityProfile> = {
@@ -40,6 +45,7 @@ export const QUALITY_PROFILES: Record<QualityLevel, QualityProfile> = {
     glows: false,
     extras: false,
     postFx: false,
+    auras: 0,
   },
   medium: {
     renderScale: 1,
@@ -51,6 +57,7 @@ export const QUALITY_PROFILES: Record<QualityLevel, QualityProfile> = {
     glows: true,
     extras: false,
     postFx: false,
+    auras: 1,
   },
   high: {
     renderScale: 1.25,
@@ -62,6 +69,7 @@ export const QUALITY_PROFILES: Record<QualityLevel, QualityProfile> = {
     glows: true,
     extras: true,
     postFx: false,
+    auras: 2,
   },
   ultra: {
     renderScale: 2,
@@ -73,6 +81,7 @@ export const QUALITY_PROFILES: Record<QualityLevel, QualityProfile> = {
     glows: true,
     extras: true,
     postFx: true,
+    auras: 2,
   },
 };
 

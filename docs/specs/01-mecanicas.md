@@ -83,6 +83,7 @@ Decidido el 20 nov 2026 (P-04 y P-05).
 - No cuentan para estas tablas Creeper (no tiene nivel), sus copias (nivel 10) ni su escolta (nivel 10 desde T-010).
 - Lo que da cada enemigo no cambia con el nivel.
 - Desde el nivel 2 llevan en la nuca la misma medallita que las disparadoras y son un poco más grandes.
+- **Aura (T-030, Z-01 a Z-04, 21 nov 2026):** desde el nivel 5, donde empieza su salto de fuerza, llevan un aura muy suave del color de su medallita que sube del suelo por detrás: plata del 5 al 9, oro del 10 al 14, rubí del 15 al 19 y cristal en el 20. También las copias de Creeper; Creeper no. Sale en el tablero, la portada y la foto de la ficha. En gráficos Bajo no se ve, y en Medio va sin motas.
 - Los valores están como PROVISIONAL en `ENEMY_LEVELS` de `balance.ts`; cada ronda dice su tabla en `levels` de su guion en `OUTBREAKS`.
 
 ### Fuerza de los enemigos (T-010)

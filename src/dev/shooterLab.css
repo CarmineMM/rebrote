@@ -106,3 +106,10 @@ body,
 .lab-notes[hidden] {
   display: none;
 }
+
+/* Movil en horizontal: las notas se comen la pantalla; sin ellas se ve el juego entero. */
+@media (max-height: 520px) {
+  .lab-notes {
+    display: none;
+  }
+}

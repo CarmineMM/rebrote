@@ -9,10 +9,18 @@ describe('niveles de calidad', () => {
       expect(higher.renderScale).toBeGreaterThanOrEqual(lower.renderScale);
       expect(higher.particles).toBeGreaterThan(lower.particles);
       expect(higher.life).toBeGreaterThanOrEqual(lower.life);
+      expect(higher.auras).toBeGreaterThanOrEqual(lower.auras);
       for (const flag of ['sunRays', 'wind', 'cloudShadows', 'glows', 'extras', 'postFx'] as const) {
         if (lower[flag]) expect(higher[flag]).toBe(true);
       }
     }
+  });
+
+  it('el aura de los gusanos (T-030, Z-04): nada en Bajo, sin motas ni velo delantero en Medio, entera en Alto y Ultra', () => {
+    expect(QUALITY_PROFILES.low.auras).toBe(0);
+    expect(QUALITY_PROFILES.medium.auras).toBe(1);
+    expect(QUALITY_PROFILES.high.auras).toBe(2);
+    expect(QUALITY_PROFILES.ultra.auras).toBe(2);
   });
 
   it('la resolucion de Ultra cabe en una textura WebGL de 4096', () => {

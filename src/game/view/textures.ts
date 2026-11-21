@@ -6,6 +6,7 @@ import type { ScreenPoint } from './perspective';
 import { SCENERY, VIEW, WORLD, perspective } from './layout';
 import { GARDEN, GARDEN_PARTS, GARDEN_TIERS, paintGardenPiece, type GardenPart } from './gardenArt';
 import { MEDAL, MEDAL_TIERS, medalTier } from './levelMedal';
+import { AURA_LOOK, AURA_TIERS, paintAuraVeil } from './wormAuraArt';
 import { text } from '../../i18n';
 import { type Ctx, circle, ellipse, leafShape, smallFlower } from './canvasKit';
 import { SHOOTER, type ShooterCannons, type ShooterDesign, type ShooterVariant } from './shooterShape';
@@ -22,6 +23,8 @@ export const TEX = {
   gardenLand: 'scene-garden-land',
   /** Tierra removida al pie de cada planta del jardin del Invernadero: sembrada a mano en el cesped. */
   soilPatch: 'fx-soil-patch',
+  /** Velo del aura de los gusanos de nivel alto (T-030), uno por tramo (plata, oro, rubi y cristal); el 0 no se usa. */
+  auraVeils: ['', 'fx-aura-veil-1', 'fx-aura-veil-2', 'fx-aura-veil-3', 'fx-aura-veil-4'],
   corruptionGlow: 'scene-corruption-glow',
   canopy: 'scene-canopy',
   sunCore: 'fx-sun-core',
@@ -255,6 +258,7 @@ export function registerTextures(scene: Phaser.Scene, scale = 1): void {
   paint(TEX.pixel, 8, 8, paintPixel);
   paint(TEX.dirt, 18, 18, paintDirt);
   paint(TEX.soilPatch, 100, 44, paintSoilPatch);
+  for (let tier = 1; tier <= AURA_TIERS; tier++) paint(TEX.auraVeils[tier], AURA_LOOK.veil.width, AURA_LOOK.veil.height, (ctx) => paintAuraVeil(ctx, tier));
   paint(TEX.bird, 40, 18, paintBird);
   paint(TEX.butterfly, 44, 34, paintButterfly);
   TEX.tufts.forEach((key, i) => paint(key, 130, 80, (ctx, w, h) => paintTuft(ctx, w, h, 3 + i * 5)));

@@ -33,6 +33,7 @@ Una task por archivo. El tamaño es orientativo.
 | T-027 | [Plantas] Premio en los niveles 5, 10, 15 y 20 y jardincito | Completada (21 nov 2026) | M | T-003 | Ninguna (Q-01 a Q-03 cerradas) |
 | T-028 | [Web] Icono del juego y favicon | Pendiente | S | Ninguna | W-01 a W-03 |
 | T-029 | [Web] Instalar el juego como aplicación (PWA) | Pendiente | M | T-028 | V-02 a V-05 |
+| T-030 | [Enemigos] Aura en los tramos de nivel de los gusanos | Completada (21 nov 2026) | M | T-027 | Ninguna (Z-01 a Z-04 cerradas) |
 
 ## Estados
 
@@ -60,6 +61,7 @@ Después, para progresión, audio y brote 2 (planificado el 20 nov 2026):
 8. T-015: música, en cuanto Carmine elija las pistas.
 
 9. T-028 y T-029: icono e instalación. No dependen del resto y se pueden hacer en cualquier momento.
+10. T-030: aura de los gusanos (elegida en `/gusanos.html`). Solo depende de lo que ya está hecho.
 
 La lista de jefes está en `../specs/03-ruta-de-brotes.md` y la historia en `../specs/04-historia.md` (sin tasks todavía).
 
