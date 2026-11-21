@@ -243,6 +243,16 @@ export const MANIFEST: Readonly<Record<SfxId, SoundEntry>> = {
     pick: jingle('jingles_STEEL10'),
     alternatives: [jingle('jingles_SAX10'), jingle('jingles_STEEL16')],
   },
+  voiceBoxer: {
+    about: 'Boxer habla en una viñeta (T-031): un pluc grave por cada pocas letras',
+    pick: ui('pluck_001', { rate: 0.78, fadeOutMs: 40 }),
+    alternatives: [sfxr('voiceLow'), ui('drop_001', { rate: 0.85, lengthMs: 110, fadeOutMs: 50 })],
+  },
+  voicePatty: {
+    about: 'Patty habla en una viñeta (T-031): un pluc agudo por cada pocas letras',
+    pick: ui('pluck_001', { rate: 1.22, fadeOutMs: 30 }),
+    alternatives: [sfxr('voiceHigh'), ui('pluck_002', { rate: 1.3, lengthMs: 110, fadeOutMs: 50 })],
+  },
   button: {
     about: 'Botón de un menú',
     pick: ui('select_001'),

@@ -7,6 +7,7 @@ import { summarizeSave, type SavedGame } from '../game/save';
 import { formatSavedAt } from '../i18n';
 import { outbreakTitle } from './outbreakName';
 import { RouteMap } from './RouteMap';
+import { replayableStories, type StoryId } from './story/stories';
 import { NO_AUTO_FULLSCREEN } from './useFullscreen';
 import { useLanguage, useText } from './useText';
 
@@ -20,11 +21,17 @@ interface GreenhouseProps {
   onResume: () => void;
   /** Empieza el brote desde la ronda 1, pisando la partida a medias (ya confirmado). */
   onPlay: (outbreak: OutbreakId) => void;
+  /** Vuelve a ver una secuencia de la historia ya vista (T-031, Y-05). */
+  onReplay: (story: StoryId) => void;
   /** Vuelve a la portada. */
   onBack: () => void;
 }
 
-type View = { readonly name: 'main' } | { readonly name: 'route' } | { readonly name: 'confirm'; readonly outbreak: OutbreakId };
+type View =
+  | { readonly name: 'main' }
+  | { readonly name: 'route' }
+  | { readonly name: 'story' }
+  | { readonly name: 'confirm'; readonly outbreak: OutbreakId };
 
 const MAIN: View = { name: 'main' };
 
@@ -44,10 +51,11 @@ function LockedButton({ label, detail }: { label: string; detail: string }) {
  * Invernadero (T-019): el sitio entre un brote y el siguiente, con todo lo que se hace fuera de la partida. Se abre al
  * vencer a Creeper (R-01) y se llega desde "Continuar" en la portada o desde la victoria. Va en el panel de la derecha,
  * como el menu de la portada: reanudar la partida a medias (con su brote y su ronda), jugar el siguiente brote, abrir la
- * ruta de brotes, la tienda y las plantas (con candado hasta T-022 y T-023) y volver a la portada. Empezar un brote con
- * una partida a medias pide confirmacion. Esc vuelve atras: de la confirmacion al Invernadero y de ahi a la portada.
+ * ruta de brotes, la historia vista para volver a verla (T-031), la tienda y las plantas (con candado hasta T-022 y T-023)
+ * y volver a la portada. Empezar un brote con una partida a medias pide confirmacion. Esc vuelve atras: de la confirmacion
+ * o de la historia al Invernadero y de ahi a la portada.
  */
-export function Greenhouse({ saved, progress, art, onResume, onPlay, onBack }: GreenhouseProps) {
+export function Greenhouse({ saved, progress, art, onResume, onPlay, onReplay, onBack }: GreenhouseProps) {
   const t = useText();
   const language = useLanguage();
   const [view, setView] = useState<View>(MAIN);
@@ -58,13 +66,16 @@ export function Greenhouse({ saved, progress, art, onResume, onPlay, onBack }: G
   const summary = saved ? summarizeSave(saved) : null;
   const current = currentOutbreak(progress.defeated);
   const defeated = useMemo(() => routeStops(progress.defeated).filter((stop) => stop.kind === 'outbreak' && stop.standing === 'defeated').length, [progress.defeated]);
+  const stories = replayableStories(progress.story);
+  const storyButton = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     const from = lastView.current;
     lastView.current = view.name;
     if (view.name === 'route') return;
-    // Al cerrar la ruta, el foco vuelve a su boton; si no, al primero del panel.
+    // Al cerrar la ruta o la historia, el foco vuelve a su boton; si no, al primero del panel.
     if (view.name === 'main' && from === 'route') routeButton.current?.focus({ preventScroll: true });
+    else if (view.name === 'main' && from === 'story') storyButton.current?.focus({ preventScroll: true });
     else firstButton.current?.focus({ preventScroll: true });
   }, [view]);
 
@@ -73,7 +84,7 @@ export function Greenhouse({ saved, progress, art, onResume, onPlay, onBack }: G
     if (view.name === 'route') return;
     const onKey = (event: KeyboardEvent) => {
       if (event.key !== 'Escape' || event.repeat) return;
-      if (view.name === 'confirm') setView(MAIN);
+      if (view.name === 'confirm' || view.name === 'story') setView(MAIN);
       else onBack();
     };
     window.addEventListener('keydown', onKey);
@@ -134,7 +145,13 @@ export function Greenhouse({ saved, progress, art, onResume, onPlay, onBack }: G
               </span>
               <small className="btn-detail">{t.greenhouse.routeDetail(defeated)}</small>
             </button>
-            <div className="greenhouse-locked">
+            {/* La historia vista va en la fila de la tienda y las plantas: asi el panel cabe en un movil en horizontal. */}
+            <div className={`greenhouse-locked${stories.length > 0 ? ' has-story' : ''}`}>
+              {stories.length > 0 && (
+                <button ref={storyButton} type="button" className="btn" title={t.story.replayDetail} onClick={() => setView({ name: 'story' })}>
+                  <span aria-hidden="true">✎</span> {t.story.replay}
+                </button>
+              )}
               <LockedButton label={t.greenhouse.shop} detail={t.common.soon} />
               <LockedButton label={t.greenhouse.plants} detail={t.common.soon} />
             </div>
@@ -142,6 +159,31 @@ export function Greenhouse({ saved, progress, art, onResume, onPlay, onBack }: G
               <span aria-hidden="true">⌂</span> {t.greenhouse.back}
             </button>
           </div>
+        </>
+      )}
+
+      {view.name === 'story' && (
+        <>
+          <div className="settings-header">
+            <button ref={firstButton} type="button" className="btn btn-ghost" onClick={() => setView(MAIN)} aria-label={t.common.back} title={t.common.back}>
+              <span aria-hidden="true">←</span>
+            </button>
+            <h2 id={titleId} className="pause-title is-small">
+              {t.story.replayTitle}
+            </h2>
+          </div>
+          <ol className="story-list">
+            {stories.map((id, i) => (
+              <li key={id}>
+                <button type="button" className="btn" onClick={() => onReplay(id)}>
+                  <span className="story-list-index" aria-hidden="true">
+                    {i + 1}
+                  </span>
+                  {t.story.titles[id]}
+                </button>
+              </li>
+            ))}
+          </ol>
         </>
       )}
 

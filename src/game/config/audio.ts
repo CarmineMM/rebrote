@@ -46,6 +46,9 @@ export type SfxId =
   | 'unlock'
   | 'defeat'
   | 'victory'
+  // Viñetas de la historia (T-031)
+  | 'voiceBoxer'
+  | 'voicePatty'
   // Menus
   | 'button';
 
@@ -81,6 +84,12 @@ const world = (volume: number, maxVoices: number, minGapMs: number, pitchJitter:
 
 /** Los de los menus no se escalonan: un clic que llega dos veces (etiqueta y casilla) suena una. */
 const ui = (volume: number, maxVoices = 1, minGapMs = 0): SfxSpec => ({ bus: 'ui', volume, maxVoices, minGapMs, burst: 0, pitchJitter: 0, variants: 1 });
+
+/**
+ * Voz de un personaje en las viñetas (T-031): suena con el juego en pausa detras (va por el canal de los menus), corta,
+ * de una en una y con algo de variacion de tono para que parezca que habla.
+ */
+const voice = (volume: number): SfxSpec => ({ bus: 'ui', volume, maxVoices: 1, minGapMs: 70, burst: 0, pitchJitter: 1.5, variants: 1 });
 
 /**
  * Lo que mas se repite (disparos e impactos) va bajo, corto y con pocas voces; lo que pasa de vez en cuando (explosiones,
@@ -120,6 +129,8 @@ export const SFX: Readonly<Record<SfxId, SfxSpec>> = {
   unlock: ui(0.6),
   defeat: ui(0.7),
   victory: ui(0.7),
+  voiceBoxer: voice(0.4),
+  voicePatty: voice(0.36),
   button: ui(0.45, 2, 40),
 };
 

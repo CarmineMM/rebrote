@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { createMatch } from '../game/core/match';
 import { firstList, type Profile } from '../game/profiles';
-import { PROGRESS_KEY, emptyProgress, encodeProgress, recordDefeat } from '../game/progress';
+import { PROGRESS_KEY, emptyProgress, encodeProgress, recordDefeat, recordStory } from '../game/progress';
 import { writeSave, type SaveStore } from '../game/save';
 import { setLanguage, text } from '../i18n';
 import { describePlayer, hasPlayed, lostLines, playerName } from './playerCards';
@@ -37,14 +37,21 @@ describe('pantalla de jugadores (T-034)', () => {
 
   it('al borrarlo se pierden sus jefes vencidos, su partida y sus tours vistos', () => {
     const store = memoryStore();
-    store.setItem(PROGRESS_KEY, encodeProgress(recordDefeat(emptyProgress(), 'creeper')));
+    store.setItem(PROGRESS_KEY, encodeProgress(recordStory(recordDefeat(emptyProgress(), 'creeper'), 'opening')));
     writeSave(createMatch(), null, store, 1);
     store.setItem(TOUR_STORAGE_KEY, JSON.stringify(markTourDone(noTours(), 'basics')));
     expect(lostLines(text('es'), describePlayer(profile, store))).toEqual([
       'Jefes vencidos: Creeper',
       'Partida guardada en la ronda 1',
+      'Las viñetas de la historia vistas',
       'Los tours de ayuda vistos',
     ]);
+  });
+
+  it('quien solo vio la historia tambien tiene algo que perder (T-031)', () => {
+    const store = memoryStore();
+    store.setItem(PROGRESS_KEY, encodeProgress(recordStory(emptyProgress(), 'opening')));
+    expect(lostLines(text('es'), describePlayer(profile, store))).toEqual(['Las viñetas de la historia vistas']);
   });
 
   it('cuenta como tours vistos tambien una pista que ya salio', () => {

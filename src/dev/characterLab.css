@@ -1,0 +1,240 @@
+/* Galeria de personajes (T-031): solo en desarrollo. Los estilos del juego (`styles.css`) se cargan para la viñeta, asi
+   que aqui nada toca sus botones: solo los de la barra y los de la galeria. */
+html,
+body,
+#root {
+  height: auto;
+  min-height: 100%;
+  overflow: auto;
+  background: #1d2b1f;
+  color: #f4ffe9;
+}
+
+.char-lab {
+  min-height: 100%;
+  font-family: ui-rounded, 'Nunito', system-ui, sans-serif;
+}
+
+.char-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 18px;
+  padding: 10px 16px;
+  background: #24361f;
+  border-bottom: 2px solid #3f5a2f;
+}
+
+.char-bar h1 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.char-bar h1 span {
+  margin-left: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #b9d99a;
+}
+
+.char-tabs,
+.char-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.char-tools {
+  margin-left: auto;
+}
+
+.char-bar button,
+.char-bar select,
+.char-controls button,
+.char-controls select {
+  font: inherit;
+  font-size: 14px;
+  font-weight: 800;
+  color: #1d2b1f;
+  background: #e9f7d8;
+  border: 2px solid #2a6b22;
+  border-radius: 999px;
+  padding: 5px 12px;
+  cursor: pointer;
+}
+
+.char-bar button.is-on {
+  background: #80d153;
+}
+
+.char-main {
+  padding: 16px;
+}
+
+.char-rows {
+  display: grid;
+  gap: 22px;
+}
+
+.char-rows h2 {
+  margin: 0 0 10px;
+  font-size: 22px;
+  font-weight: 900;
+}
+
+.char-rows h2 small {
+  margin-left: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #b9d99a;
+}
+
+.char-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(260px, 1fr));
+  gap: 14px;
+}
+
+.char-card {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 16px;
+  border: 2px solid #3f5a2f;
+  background: #24361f;
+}
+
+.char-card.is-chosen {
+  border-color: #ffd23f;
+}
+
+.char-card header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.char-card h3 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.char-badge {
+  margin-left: auto;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #ffd23f;
+  color: #3a2a00;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.char-card p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.35;
+  color: #d8ecc8;
+}
+
+.char-stage {
+  display: grid;
+  place-items: end center;
+  height: 300px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: radial-gradient(120% 90% at 50% 110%, #16301b 0%, #2f5a35 70%, #3d6b45 100%);
+}
+
+.char-portrait {
+  display: block;
+  width: auto;
+}
+
+.char-thumbs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
+.char-thumbs button {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  padding: 4px;
+  border-radius: 10px;
+  border: 2px solid transparent;
+  background: #1d2b1f;
+  color: inherit;
+  cursor: pointer;
+}
+
+.char-thumbs button.is-on {
+  border-color: #ffd23f;
+}
+
+.char-thumbs img {
+  height: 90px;
+}
+
+.char-thumbs span {
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.char-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 16px;
+  margin-bottom: 14px;
+}
+
+.char-tip {
+  font-size: 13px;
+  color: #b9d99a;
+}
+
+.char-frames {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 18px;
+}
+
+.char-frame {
+  margin: 0;
+}
+
+.char-frame figcaption {
+  margin-bottom: 6px;
+  font-weight: 800;
+}
+
+.char-frame figcaption small {
+  font-weight: 600;
+  color: #b9d99a;
+}
+
+.char-screen {
+  position: relative;
+  overflow: hidden;
+  border-radius: 10px;
+  border: 2px solid #3f5a2f;
+}
+
+.char-screen-inner {
+  position: relative;
+  overflow: hidden;
+  transform-origin: 0 0;
+}
+
+/* Un jardin de mentira detras de la viñeta: lo justo para ver que la escena se oscurece. */
+.char-backdrop {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(40% 30% at 80% 15%, #fff6c0 0%, transparent 60%),
+    linear-gradient(180deg, #8fd0ff 0%, #c8ecff 42%, #7fcf5a 43%, #5aa83f 100%);
+}

@@ -49,6 +49,8 @@ Cada efecto va en OGG Vorbis y en MP3, en mono, con el volumen igualado y sin si
 | `unlock` | Kenney Music Jingles: `jingles_PIZZI02.ogg` | CC0 1.0 (Kenney, www.kenney.nl) |
 | `defeat` | Kenney Music Jingles: `jingles_PIZZI07.ogg` | CC0 1.0 (Kenney, www.kenney.nl) |
 | `victory` | Kenney Music Jingles: `jingles_STEEL10.ogg` | CC0 1.0 (Kenney, www.kenney.nl) |
+| `voiceBoxer` | Kenney Interface Sounds: `pluck_001.ogg` (velocidad 0.78) | CC0 1.0 (Kenney, www.kenney.nl) |
+| `voicePatty` | Kenney Interface Sounds: `pluck_001.ogg` (velocidad 1.22) | CC0 1.0 (Kenney, www.kenney.nl) |
 | `button` | Kenney Interface Sounds: `select_001.ogg` | CC0 1.0 (Kenney, www.kenney.nl) |
 
 ## Recetas de jsfxr

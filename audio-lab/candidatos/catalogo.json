@@ -1225,6 +1225,84 @@
       ]
     },
     {
+      "id": "voiceBoxer",
+      "about": "Boxer habla en una viñeta (T-031): un pluc grave por cada pocas letras",
+      "spec": {
+        "bus": "ui",
+        "volume": 0.4,
+        "maxVoices": 1,
+        "minGapMs": 70,
+        "burst": 0,
+        "pitchJitter": 1.5,
+        "variants": 1
+      },
+      "pick": [
+        {
+          "url": "audio/voiceBoxer",
+          "source": "Kenney Interface Sounds: `pluck_001.ogg` (velocidad 0.78)",
+          "seconds": 0.107
+        }
+      ],
+      "alternatives": [
+        {
+          "url": "audio-lab/candidatos/voiceBoxer/1",
+          "source": "jsfxr: receta `voiceLow`",
+          "seconds": 0.024,
+          "recipes": [
+            {
+              "name": "voiceLow",
+              "code": "11111FbzaGaWTV8VtE5LKhXvj5aeRc3J1ZqttyvUp8zDixnk73LSA8AMXHoTCTQsSi6t15w7cFpRDDvoGqP62GuLZ3Af98FDbUGeHYdnwy2dDG4VH8LJqWfZ"
+            }
+          ]
+        },
+        {
+          "url": "audio-lab/candidatos/voiceBoxer/2",
+          "source": "Kenney Interface Sounds: `drop_001.ogg` (recortado 0-110 ms, velocidad 0.85)",
+          "seconds": 0.118,
+          "recipes": []
+        }
+      ]
+    },
+    {
+      "id": "voicePatty",
+      "about": "Patty habla en una viñeta (T-031): un pluc agudo por cada pocas letras",
+      "spec": {
+        "bus": "ui",
+        "volume": 0.36,
+        "maxVoices": 1,
+        "minGapMs": 70,
+        "burst": 0,
+        "pitchJitter": 1.5,
+        "variants": 1
+      },
+      "pick": [
+        {
+          "url": "audio/voicePatty",
+          "source": "Kenney Interface Sounds: `pluck_001.ogg` (velocidad 1.22)",
+          "seconds": 0.067
+        }
+      ],
+      "alternatives": [
+        {
+          "url": "audio-lab/candidatos/voicePatty/1",
+          "source": "jsfxr: receta `voiceHigh`",
+          "seconds": 0.018,
+          "recipes": [
+            {
+              "name": "voiceHigh",
+              "code": "11111mqKRf3EAoyvf7qWVqUPhGaTE2wFFvMPBhr2Xqn7H1f3LTy3jqriTpjR5FB7gHrt9YF1UhSSUkJ3bKNGwVyTtSDX3B6S1dPNrp5twRFuDNhj3eBcjBV"
+            }
+          ]
+        },
+        {
+          "url": "audio-lab/candidatos/voicePatty/2",
+          "source": "Kenney Interface Sounds: `pluck_002.ogg` (recortado 0-110 ms, velocidad 1.3)",
+          "seconds": 0.072,
+          "recipes": []
+        }
+      ]
+    },
+    {
       "id": "button",
       "about": "Botón de un menú",
       "spec": {

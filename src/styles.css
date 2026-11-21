@@ -1078,6 +1078,9 @@ body {
 .greenhouse-sprout { transform-box: fill-box; transform-origin: 50% 100%; animation: sprout-sway 2.6s ease-in-out infinite; }
 /* Tienda y plantas, con candado hasta T-022 y T-023: en una fila, la mitad cada una. */
 .greenhouse-locked { display: grid; grid-template-columns: 1fr 1fr; gap: inherit; }
+/* Con la historia vista (T-031), tres en fila: "Historia", la tienda y las plantas. */
+.greenhouse-locked.has-story { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.greenhouse-locked.has-story .btn { gap: 6px; padding-left: 8px; padding-right: 8px; }
 
 /* ---------- Ruta de brotes (T-019): un mapa ancho sobre el jardin, con el camino, sus lugares y la ficha del elegido ---------- */
 .route-overlay {
@@ -1646,6 +1649,104 @@ button.route-stop-body:focus-visible .route-ring { outline-color: #ffe066; }
   .tour-buddy { left: -12px; top: -20px; width: 32px; height: 35px; }
   .tour-gesture { --hand: 46px; }
   .coin-hint-label { font-size: 0.82rem; padding: 4px 10px 4px 6px; }
+}
+
+/* Viñetas de la historia (T-031, ADR-0019): el busto de quien habla, su nombre y un bocadillo de tebeo sobre la escena
+   oscurecida. Todo se mide con el sitio que tiene (consultas de contenedor, cqh y cqw): en el juego es la pantalla y en la
+   galeria de desarrollo, un marco de 568 x 320 o de 812 x 375. Encima del HUD y de los tours; debajo de la pausa, la
+   carga y el aviso de girar. */
+.story {
+  position: absolute; inset: 0; z-index: 3; overflow: hidden; container-type: size;
+  pointer-events: auto; cursor: pointer; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent;
+  animation: story-in 0.3s ease both;
+}
+.story.is-hidden { visibility: hidden; pointer-events: none; }
+.story.is-leaving { animation: story-out 0.22s ease both; pointer-events: none; }
+@keyframes story-in { from { opacity: 0; } }
+@keyframes story-out { to { opacity: 0; } }
+.story-veil {
+  position: absolute; inset: 0;
+  background: radial-gradient(130% 95% at 50% 115%, rgba(6, 14, 8, 0.92) 0%, rgba(8, 18, 10, 0.72) 55%, rgba(8, 18, 10, 0.56) 100%);
+}
+.story-stage {
+  --portrait-h: clamp(140px, 52cqh, 420px);
+  position: absolute; left: 0; right: 0; bottom: 0; display: flex; align-items: flex-end; justify-content: center;
+  padding: 0 max(10px, 3cqw, env(safe-area-inset-right)) 0 max(6px, 2cqw, env(safe-area-inset-left));
+}
+.story-portrait {
+  position: relative; z-index: 1; flex: none; height: var(--portrait-h); aspect-ratio: 320 / 360;
+  margin-right: calc(var(--portrait-h) * -0.05); filter: drop-shadow(0 10px 18px rgba(0, 0, 0, 0.45));
+  animation: portrait-in 0.55s cubic-bezier(0.2, 1.3, 0.4, 1) both;
+}
+@keyframes portrait-in { from { opacity: 0; transform: translateY(45%); } }
+.story-figure {
+  position: absolute; inset: 0; transform-origin: 50% 100%;
+  animation: portrait-hop 0.42s cubic-bezier(0.2, 1.6, 0.4, 1) both, portrait-breathe 3.4s 0.42s ease-in-out infinite;
+}
+@keyframes portrait-hop { 0% { transform: scale(1.02, 0.95); } 55% { transform: scale(0.99, 1.03); } 100% { transform: none; } }
+@keyframes portrait-breathe { 0%, 100% { transform: none; } 50% { transform: scale(1.008, 1.018); } }
+.story-frame { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; pointer-events: none; }
+.story-frame.is-on { opacity: 1; }
+.story-bubble {
+  position: relative; flex: 0 1 auto; box-sizing: border-box;
+  width: min(780px, calc(100cqw - var(--portrait-h) * 0.85 - 5cqw));
+  margin-bottom: max(12px, 4.5cqh);
+  padding: clamp(14px, 3cqh, 26px) clamp(14px, 2.8cqh, 30px) clamp(6px, 1.4cqh, 14px);
+  border-radius: clamp(14px, 3cqh, 26px); border: 3px solid var(--tone-dark);
+  background: linear-gradient(180deg, #fffdf4 0%, #f4ecd4 100%); color: #2b2418;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.45), 0 0 0 5px color-mix(in srgb, var(--tone-mid) 35%, transparent), inset 0 -3px 0 rgba(120, 90, 40, 0.12);
+  animation: bubble-in 0.34s cubic-bezier(0.2, 1.4, 0.4, 1) both;
+}
+/* Pico del bocadillo hacia la boca de quien habla. */
+.story-bubble::before {
+  content: ''; position: absolute; left: -12px; bottom: clamp(18px, 7cqh, 64px); width: 20px; height: 20px;
+  background: #f8f2de; border-left: 3px solid var(--tone-dark); border-bottom: 3px solid var(--tone-dark);
+  transform: rotate(45deg) skew(12deg, 12deg); border-bottom-left-radius: 4px;
+}
+.story-name {
+  position: absolute; top: 0; left: clamp(12px, 2.6cqh, 26px); margin: 0; transform: translateY(-58%);
+  padding: 0.12em 0.85em 0.18em; border-radius: 999px; border: 2px solid var(--tone-dark);
+  background: linear-gradient(180deg, var(--tone-mid), var(--tone-dark)); color: #fff;
+  font-size: clamp(0.85rem, 2.8cqh, 1.4rem); font-weight: 900; letter-spacing: 0.04em; text-shadow: 0 2px 0 rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.25), inset 0 2px 0 rgba(255, 255, 255, 0.35);
+}
+.story-text { margin: 0; font-size: clamp(14px, calc(2.4cqh + 4px), 26px); font-weight: 800; line-height: 1.32; overflow-wrap: anywhere; }
+/* Lo que aun no ha salido ocupa su sitio: el bocadillo no crece ni salta mientras se escribe. */
+.story-rest { visibility: hidden; }
+.story-foot { display: flex; align-items: center; justify-content: flex-end; gap: 10px; min-height: 1.6em; margin-top: clamp(2px, 0.8cqh, 8px); }
+.story-dots { display: flex; gap: 6px; margin-right: auto; }
+.story-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(43, 36, 24, 0.2); transition: transform 0.2s ease, background 0.2s ease; }
+.story-dot.is-done { background: var(--tone-mid); }
+.story-dot.is-current { background: var(--tone-dark); transform: scale(1.35); }
+.story-skip {
+  padding: 2px 6px; border: 0; border-radius: 8px; background: none; color: #6b5a3c; opacity: 0.85;
+  font: inherit; font-size: clamp(0.75rem, 2.1cqh, 0.98rem); font-weight: 800; cursor: pointer;
+  text-decoration: underline dotted; text-underline-offset: 3px;
+}
+.story-skip:hover { opacity: 1; color: #2b2418; }
+.story-skip:focus-visible { outline: 3px solid #e0a92a; outline-offset: 1px; }
+.story-next {
+  padding: 2px 6px; border: 0; border-radius: 8px; background: none; color: var(--tone-dark);
+  font: inherit; font-size: clamp(0.8rem, 2.4cqh, 1.1rem); font-weight: 900; cursor: pointer; opacity: 0.4; transition: opacity 0.2s ease;
+}
+.story-next.is-ready { opacity: 1; }
+.story-arrow { display: inline-block; font-size: 1.3em; line-height: 0.6; }
+.story-next.is-ready .story-arrow { animation: story-nudge 0.9s ease-in-out infinite; }
+@keyframes story-nudge { 50% { transform: translateX(4px); } }
+.story-next:focus-visible { outline: 3px solid #e0a92a; outline-offset: 1px; }
+/* Pantallas bajas (un movil en horizontal): el bocadillo mas pegado al borde y sin el aro de color. */
+@container (max-height: 420px) {
+  .story-bubble { margin-bottom: 8px; border-width: 2px; box-shadow: 0 10px 24px rgba(0, 0, 0, 0.45); }
+  .story-bubble::before { border-width: 2px; }
+  .story-name { border-width: 1.5px; }
+}
+
+/* Invernadero: lista de la historia vista para volver a verla (T-031, Y-05). */
+.story-list { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.story-list .btn { justify-content: flex-start; }
+.story-list-index {
+  display: inline-grid; place-items: center; width: 1.7em; height: 1.7em; flex: none; border-radius: 50%;
+  background: rgba(255, 255, 255, 0.14); font-size: 0.85em; font-weight: 900;
 }
 
 @media (prefers-reduced-motion: reduce) {

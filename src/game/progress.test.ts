@@ -10,8 +10,10 @@ import {
   emptyProgress,
   encodeProgress,
   hasProgress,
+  hasSeenStory,
   isOutbreakDefeated,
   recordDefeat,
+  recordStory,
 } from './progress';
 import { clearSave, readSave, writeSave } from './save';
 import { SessionStore, type SaveStore } from './storage';
@@ -65,7 +67,7 @@ const sessionKeeperOn = (store: SaveStore | null) => keeperOn(new SessionStore((
 
 describe('progreso permanente: reglas (T-017)', () => {
   it('empieza sin nada vencido', () => {
-    expect(emptyProgress()).toEqual({ defeated: [] });
+    expect(emptyProgress()).toEqual({ defeated: [], story: [] });
     expect(hasProgress(emptyProgress())).toBe(false);
   });
 
@@ -88,7 +90,7 @@ describe('progreso permanente: guardar y recargar (T-017)', () => {
     keeperOn(store).recordDefeat(CREEPER);
     // Otra pagina: otro guardian con el mismo almacen.
     expect(isOutbreakDefeated(keeperOn(store).read(), CREEPER)).toBe(true);
-    expect(JSON.parse(store.data.get(PROGRESS_KEY) ?? '')).toEqual({ version: PROGRESS_VERSION, defeated: ['creeper'] });
+    expect(JSON.parse(store.data.get(PROGRESS_KEY) ?? '')).toEqual({ version: PROGRESS_VERSION, defeated: ['creeper'], story: [] });
   });
 
   it('volver a vencer al mismo jefe no vuelve a escribir', () => {
@@ -121,6 +123,28 @@ describe('progreso permanente: guardar y recargar (T-017)', () => {
   });
 });
 
+describe('progreso permanente: la historia vista (T-031)', () => {
+  it('una secuencia vista queda apuntada una vez, en el orden en que se vio', () => {
+    const seen = recordStory(recordStory(emptyProgress(), 'opening'), 'creeperDown');
+    expect(hasSeenStory(seen, 'opening')).toBe(true);
+    expect(hasSeenStory(seen, 'pattyGreenhouse')).toBe(false);
+    expect(recordStory(seen, 'opening')).toBe(seen);
+    expect(seen.story).toEqual(['opening', 'creeperDown']);
+  });
+
+  it('haber visto la historia cuenta como algo que se pierde al borrar el jugador', () => {
+    expect(hasProgress(emptyProgress())).toBe(false);
+    expect(hasProgress(recordStory(emptyProgress(), 'opening'))).toBe(true);
+  });
+
+  it('se guarda junto a los jefes vencidos, sin tocarlos, y se lee igual tras recargar', () => {
+    const store = memoryStore();
+    keeperOn(store).recordDefeat(CREEPER);
+    keeperOn(store).recordStory('creeperDown');
+    expect(keeperOn(store).read()).toEqual({ defeated: ['creeper'], story: ['creeperDown'] });
+  });
+});
+
 describe('progreso permanente: sin migraciones mientras el juego esta en desarrollo (ADR-0014)', () => {
   it.each([
     ['una version anterior', PROGRESS_VERSION - 1],
@@ -134,7 +158,7 @@ describe('progreso permanente: sin migraciones mientras el juego esta en desarro
   it('lo descartado se pisa con el progreso de esta version al vencer a un jefe', () => {
     const store = memoryStore({ [PROGRESS_KEY]: JSON.stringify({ version: PROGRESS_VERSION + 1, defeated: ['creeper'], seeds: 300 }) });
     keeperOn(store).recordDefeat(CREEPER);
-    expect(JSON.parse(store.data.get(PROGRESS_KEY) ?? '')).toEqual({ version: PROGRESS_VERSION, defeated: ['creeper'] });
+    expect(JSON.parse(store.data.get(PROGRESS_KEY) ?? '')).toEqual({ version: PROGRESS_VERSION, defeated: ['creeper'], story: [] });
   });
 });
 
@@ -156,8 +180,12 @@ describe('progreso permanente: datos rotos (T-017)', () => {
   });
 
   it('de lo que se entiende a medias, se queda con lo que vale', () => {
-    expect(decodeProgress('{"version":1,"defeated":"creeper"}')).toEqual(emptyProgress());
-    expect(decodeProgress('{"version":1,"defeated":["creeper", 7, "", null, "creeper", "elk-cloner"]}')).toEqual({ defeated: ['creeper', 'elk-cloner'] });
+    expect(decodeProgress(`{"version":${PROGRESS_VERSION},"defeated":"creeper"}`)).toEqual(emptyProgress());
+    expect(decodeProgress(`{"version":${PROGRESS_VERSION},"defeated":["creeper"],"story":["opening", 3, "opening", ""]}`)).toEqual({
+      defeated: ['creeper'],
+      story: ['opening'],
+    });
+    expect(decodeProgress(`{"version":${PROGRESS_VERSION},"defeated":["creeper", 7, "", null, "creeper", "elk-cloner"]}`)).toEqual({ defeated: ['creeper', 'elk-cloner'], story: [] });
   });
 
   it('un progreso ilegible no toca la partida en curso, y al vencer otro jefe se escribe de nuevo', () => {

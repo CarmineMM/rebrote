@@ -1,0 +1,242 @@
+import { useCallback, useEffect, useId, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { sfx } from '../../game/audio/sfx';
+import { voiceCue } from '../../game/audio/cues';
+import { CAST } from '../../game/view/characters/cast';
+import type { CharacterDesign, CharacterId, Expression } from '../../game/view/characters/design';
+import { portraitUrl } from '../../game/view/characters/portraitImage';
+import { NO_AUTO_FULLSCREEN } from '../useFullscreen';
+import { useText } from '../useText';
+import { stepText, type StoryId, type StoryStep } from './stories';
+import { glyphs, typedLength } from './typewriter';
+
+interface StoryOverlayProps {
+  story: StoryId;
+  step: StoryStep;
+  index: number;
+  count: number;
+  /** Nombre del jugador (T-033) o null: trato neutro. */
+  name: string | null;
+  /**
+   * Tapada por la pausa o el aviso de girar la pantalla: no se ve, el texto no avanza y no atiende teclas. Sigue montada,
+   * asi al volver continua donde iba.
+   */
+  hidden?: boolean;
+  /** Propuestas que se pintan; por defecto, las del juego. La galeria de desarrollo prueba otras. */
+  cast?: Readonly<Record<CharacterId, CharacterDesign>>;
+  onNext: () => void;
+  onSkip: () => void;
+}
+
+/** Ritmo de la boca al hablar y del parpadeo, en ms. */
+const LOOK = {
+  mouthMs: 115,
+  blinkEveryMs: 3400,
+  blinkMs: 150,
+  /** Lo que tarda en irse la viñeta al acabar la secuencia o saltarla. */
+  leaveMs: 220,
+} as const;
+
+const SPEAKING = /[\p{L}\p{N}]/u;
+
+const reducedMotion = () => typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true;
+
+/** Los cuatro fotogramas de una expresion (boca y ojos), apilados: cambiar de uno a otro no parpadea. */
+function PortraitFrames({ design, expression, open, blink }: { design: CharacterDesign; expression: Expression; open: boolean; blink: boolean }) {
+  const frames = useMemo(
+    () =>
+      [false, true].flatMap((b) =>
+        [false, true].map((o) => ({ key: `${b ? 1 : 0}${o ? 1 : 0}`, blink: b, open: o, url: portraitUrl(design, { expression, blink: b, open: o }) })),
+      ),
+    [design, expression],
+  );
+  return (
+    <>
+      {frames.map((frame) => (
+        <img
+          key={frame.key}
+          className={`story-frame${frame.blink === blink && frame.open === open ? ' is-on' : ''}`}
+          src={frame.url}
+          alt=""
+          draggable={false}
+        />
+      ))}
+    </>
+  );
+}
+
+/**
+ * Una viñeta de la historia (T-031, ADR-0019) sobre la escena oscurecida: el busto de quien habla, su nombre y el
+ * bocadillo. El texto sale letra a letra con la voz del personaje; un toque, un clic, Espacio o Intro lo completa y el
+ * siguiente pasa a la viñeta siguiente. "Saltar" (o Esc) cierra toda la secuencia. Mientras habla abre y cierra la boca,
+ * y parpadea cada pocos segundos. El tamano sale del sitio que tiene (consultas de contenedor): se lee igual a
+ * 1600 x 900 que en un movil en horizontal.
+ */
+export function StoryOverlay({ story, step, index, count, name, hidden = false, cast = CAST, onNext, onSkip }: StoryOverlayProps) {
+  const t = useText();
+  const titleId = useId();
+  const design = cast[step.speaker];
+  const text = stepText(t, story, step, name);
+  const total = glyphs(text).length;
+  /** Viñeta en curso: el texto de otra no cuenta (asi no asoma entero un fotograma al cambiar). */
+  const stepKey = `${story}:${step.id}`;
+  const [progress, setProgress] = useState({ key: stepKey, typed: reducedMotion() ? total : 0 });
+  const typed = progress.key === stepKey ? Math.min(progress.typed, total) : reducedMotion() ? total : 0;
+  const [open, setOpen] = useState(false);
+  const [blink, setBlink] = useState(false);
+  const [leaving, setLeaving] = useState(false);
+  const nextButton = useRef<HTMLButtonElement>(null);
+  /** Reloj de la viñeta: de cual es, cuantas letras van, lo que lleva el texto, lo que lleva en pantalla y el ultimo fotograma. */
+  const clock = useRef({ key: stepKey, text, typed, step: 0, life: 0, last: null as number | null });
+  const done = typed >= total;
+  const last = index + 1 >= count;
+
+  const show = useCallback((count: number) => {
+    clock.current.typed = count;
+    setProgress({ key: clock.current.key, typed: count });
+  }, []);
+
+  // Cada viñeta empieza su texto de cero. Si a mitad cambia el idioma, el texto nuevo sale entero.
+  useEffect(() => {
+    const c = clock.current;
+    if (c.key !== stepKey) {
+      c.key = stepKey;
+      c.text = text;
+      c.step = 0;
+      show(reducedMotion() ? total : 0);
+    } else if (c.text !== text) {
+      c.text = text;
+      show(total);
+    }
+  }, [stepKey, text, total, show]);
+
+  useEffect(() => {
+    if (hidden || leaving) return;
+    let frame = 0;
+    const chars = glyphs(text);
+    const tick = (now: number) => {
+      const c = clock.current;
+      const dt = c.last === null ? 0 : Math.min(100, now - c.last);
+      c.last = now;
+      c.life += dt;
+      c.step += dt;
+      const shown = Math.max(c.typed, typedLength(text, c.step));
+      if (shown !== c.typed) {
+        const cue = voiceCue(step.speaker, text, c.typed, shown);
+        if (cue) sfx.play(cue.id, cue.pan);
+        show(shown);
+      }
+      const talking = c.typed < total && SPEAKING.test(chars[c.typed - 1] ?? '');
+      setOpen(talking && Math.floor(c.step / LOOK.mouthMs) % 2 === 0);
+      setBlink(c.life % LOOK.blinkEveryMs > LOOK.blinkEveryMs - LOOK.blinkMs);
+      frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+    return () => {
+      cancelAnimationFrame(frame);
+      clock.current.last = null;
+    };
+  }, [hidden, leaving, text, total, step.speaker, show]);
+
+  // El boton de seguir tiene el foco: Espacio e Intro funcionan desde el principio.
+  useEffect(() => {
+    if (!hidden) nextButton.current?.focus({ preventScroll: true });
+  }, [hidden, story, step.id]);
+
+  const leave = useCallback(
+    (then: () => void) => {
+      if (leaving) return;
+      if (reducedMotion()) return then();
+      setLeaving(true);
+      window.setTimeout(then, LOOK.leaveMs);
+    },
+    [leaving],
+  );
+
+  /** Un toque: completa el texto si aun sale; si ya salio, la viñeta siguiente (o se acaba). */
+  const advance = useCallback(() => {
+    if (leaving || hidden) return;
+    if (clock.current.typed < total) {
+      show(total);
+      setOpen(false);
+      return;
+    }
+    if (last) leave(onNext);
+    else onNext();
+  }, [leaving, hidden, total, last, leave, onNext, show]);
+
+  const skip = useCallback(() => leave(onSkip), [leave, onSkip]);
+
+  // Teclado: Espacio e Intro siguen, Esc salta. Lo de detras (el menu, el Invernadero) no recibe las teclas mientras
+  // hay viñeta; la P sigue llegando al juego para pausar.
+  useEffect(() => {
+    if (hidden) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'p' || event.key === 'P') return;
+      event.stopPropagation();
+      if (event.repeat) return;
+      const onButton = event.target instanceof HTMLElement && event.target.closest('.story button') !== null;
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        skip();
+      } else if ((event.key === 'Enter' || event.key === ' ') && !onButton) {
+        event.preventDefault();
+        advance();
+      }
+    };
+    window.addEventListener('keydown', onKey, true);
+    return () => window.removeEventListener('keydown', onKey, true);
+  }, [hidden, advance, skip]);
+
+  const tone = { '--tone-light': design.tone.light, '--tone-mid': design.tone.mid, '--tone-dark': design.tone.dark } as CSSProperties;
+  const chars = glyphs(text);
+
+  return (
+    <div
+      className={`story is-${step.speaker}${leaving ? ' is-leaving' : ''}${hidden ? ' is-hidden' : ''}`}
+      style={tone}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby={titleId}
+      onClick={(event) => {
+        if (!(event.target instanceof HTMLElement && event.target.closest('button'))) advance();
+      }}
+      {...{ [NO_AUTO_FULLSCREEN]: '' }}
+    >
+      <div className="story-veil" />
+      <div className="story-stage">
+        <div key={`${story}:${step.speaker}`} className="story-portrait">
+          <div key={`${step.id}:${step.expression}`} className="story-figure">
+            <PortraitFrames design={design} expression={step.expression} open={open} blink={blink} />
+          </div>
+        </div>
+        <div key={`${story}:${step.id}`} className="story-bubble">
+          <p id={titleId} className="story-name">
+            {t.story.names[step.speaker]}
+          </p>
+          <p className="story-text" aria-hidden="true">
+            <span>{chars.slice(0, typed).join('')}</span>
+            <span className="story-rest">{chars.slice(typed).join('')}</span>
+          </p>
+          <p className="visually-hidden" aria-live="polite">
+            {text}
+          </p>
+          <div className="story-foot">
+            {count > 1 && (
+              <span className="story-dots" role="img" aria-label={t.story.stepOf(index + 1, count)}>
+                {Array.from({ length: count }, (_, i) => (
+                  <span key={i} className={`story-dot${i < index ? ' is-done' : i === index ? ' is-current' : ''}`} />
+                ))}
+              </span>
+            )}
+            <button type="button" className="story-skip" onClick={skip}>
+              {t.story.skip}
+            </button>
+            <button ref={nextButton} type="button" className={`story-next${done ? ' is-ready' : ''}`} onClick={advance}>
+              {t.story.next} <span className="story-arrow" aria-hidden="true">›</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

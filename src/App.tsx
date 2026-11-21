@@ -17,7 +17,7 @@ import {
   type RoundInfo,
   type UnlockInfo,
 } from './game/EventBus';
-import { profiles, type ProfileList } from './game/profiles';
+import { activeProfile, profiles, type ProfileList } from './game/profiles';
 import { playerProgress, type Progress } from './game/progress';
 import { readSave, type SavedGame } from './game/save';
 import { SCENES } from './game/scenes/keys';
@@ -45,6 +45,8 @@ import { VictoryScreen } from './ui/VictoryScreen';
 import { CoinHint } from './ui/tour/CoinHint';
 import { TourOverlay } from './ui/tour/TourOverlay';
 import { useTours } from './ui/tour/useTours';
+import { StoryOverlay } from './ui/story/StoryOverlay';
+import { useStory } from './ui/story/useStory';
 
 /** Cartas de la bandeja, en orden. Solo se ven las que la ronda ya desbloqueo (T-007). */
 const CARDS: readonly CardId[] = ['shooter', 'fire', 'ice'];
@@ -63,7 +65,8 @@ const SCENE_OF: Record<GameScreen, string> = { title: SCENES.title, board: SCENE
  * ADR-0012) ensenan lo nuevo de cada ronda encima del juego vivo, y esperan debajo de todo lo demas. Fuera de la partida
  * se esta en la portada o, si ya se vencio a Creeper, en el Invernadero (T-019, ADR-0016), al que lleva la victoria.
  * Todo lo guardado (partida, progreso y tours vistos) es del jugador activo (T-034, ADR-0018), que solo se cambia en la
- * portada.
+ * portada. Las viñetas de la historia (T-031, ADR-0019) salen al empezar el brote 1, al vencer a Creeper y al llegar al
+ * Invernadero: mientras hay una, el juego espera en pausa, los tours esperan debajo y la victoria espera a que acabe.
  */
 export function App() {
   const t = useText();
@@ -111,8 +114,21 @@ export function App() {
   const onBoard = screen === 'board';
   /** Partida acabada (perdida o ganada): solo queda jugar otra vez o volver al menu. */
   const over = lost || won;
-  /** El juego espera: menu de pausa, aviso de lo desbloqueado o ficha abiertos. */
-  const halted = onBoard && (paused || unlock !== null || info !== null);
+  /** Se vencio al jefe del brote: lo que Boxer cuenta de el sale antes de la victoria (T-031). */
+  const wonOutbreak = onBoard && won && !lost ? (round?.outbreak ?? FIRST_OUTBREAK) : null;
+  const refreshProgress = useCallback(() => setProgress(playerProgress.read()), []);
+  // Viñetas de la historia (T-031): la apertura, lo que cuenta Boxer al caer Creeper y Patty en el Invernadero.
+  const story = useStory({
+    player: playerList.active,
+    onBoard,
+    round,
+    wonOutbreak,
+    greenhouse: screen === 'title' && inGreenhouse ? progress.defeated : null,
+    onSeen: refreshProgress,
+  });
+  const storyOn = story.story !== null;
+  /** El juego espera: menu de pausa, aviso de lo desbloqueado, ficha o una viñeta de la historia. */
+  const halted = onBoard && (paused || unlock !== null || info !== null || storyOn);
   /** Con la partida en marcha (ni en el menu ni acabada) se puede pausar. */
   const pausable = useRef(false);
   pausable.current = onBoard && !over;
@@ -369,9 +385,17 @@ export function App() {
       <GameCanvas quality={level} language={settings.language} screen={screen} place={scenePlace} paused={halted} asleep={needsLandscape} />
 
       {screen === 'title' && (
-        <TitleScreen greenhouse={inGreenhouse}>
+        <TitleScreen greenhouse={inGreenhouse} inert={storyOn}>
           {inGreenhouse ? (
-            <Greenhouse saved={saved} progress={progress} art={routeArt} onResume={loadGame} onPlay={playOutbreak} onBack={() => setPlace('cover')} />
+            <Greenhouse
+              saved={saved}
+              progress={progress}
+              art={routeArt}
+              onResume={loadGame}
+              onPlay={playOutbreak}
+              onReplay={story.replay}
+              onBack={() => setPlace('cover')}
+            />
           ) : (
             <TitleMenu
               saved={saved}
@@ -393,7 +417,7 @@ export function App() {
       )}
 
       {onBoard && (
-        <header ref={hudRef} className="hud" aria-hidden={halted || over}>
+        <header ref={hudRef} className="hud" aria-hidden={halted || over} inert={storyOn}>
           <div className="seed-tray" aria-label={t.hud.cards} data-silent>
             {CARDS.filter((id) => (round?.cards ?? ['shooter']).includes(id)).map((id) => (
               // Cada carta nueva entra en la bandeja con un salto al desbloquearse.
@@ -446,6 +470,20 @@ export function App() {
 
       {tours.hintCoin && <CoinHint key={tours.hintCoin.id} coin={tours.hintCoin} />}
 
+      {story.story && story.step && (
+        <StoryOverlay
+          key={story.storyKey}
+          story={story.story}
+          step={story.step}
+          index={story.stepIndex}
+          count={story.stepCount}
+          name={activeProfile(playerList).name}
+          hidden={(onBoard && paused && !over) || needsLandscape}
+          onNext={story.next}
+          onSkip={story.skip}
+        />
+      )}
+
       {settings.showFps && fps !== null && <div className="fps">{fps} FPS</div>}
 
       {!ready && (
@@ -457,11 +495,11 @@ export function App() {
 
       {onBoard && lost && <DefeatScreen round={round} loss={loss} onRestart={restart} onMenu={exitToCover} />}
 
-      {onBoard && won && !lost && (
+      {onBoard && won && !lost && !storyOn && (
         <VictoryScreen outbreak={round?.outbreak ?? FIRST_OUTBREAK} rounds={round?.total ?? 0} onRestart={restart} onGreenhouse={exitToGreenhouse} />
       )}
 
-      {onBoard && unlock && !paused && !over && <UnlockModal unlock={unlock} onAccept={acceptUnlock} />}
+      {onBoard && unlock && !paused && !over && !storyOn && <UnlockModal unlock={unlock} onAccept={acceptUnlock} />}
 
       {onBoard && info && !paused && !over && !unlock && <InfoPanel info={info} onClose={closeInfo} />}
 

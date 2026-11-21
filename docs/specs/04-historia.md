@@ -26,7 +26,7 @@ Aventura de dibujos animados: hay peligro y hay prisa, pero no se ve morir a nad
 - Puede haber varios jugadores en el mismo navegador, cada uno con su nombre y su progreso (T-034).
 
 ### Boxer, el mentor (decidido)
-- Hombre de unos 50 años, complexión normal.
+- Hombre de complexión normal. Aspecto (T-031, Y-01, decidido): un informático moderno de pelo oscuro peinado con raya, barba completa con bigote y gafas de pasta negras; sudadera negra con cremallera y un portátil lleno de pegatinas. Ya no se le fija la edad en unos 50: aparenta treinta y tantos.
 - Era informático. Por eso sabe tanto de la IA y de los virus, y sabe cómo combatirlos.
 - Rescata al jugador y le enseña a luchar.
 - Es la voz de los tours de ayuda: cada cosa nueva la enseña él (T-032).
@@ -39,7 +39,9 @@ Propuesta: antes de cada jefe cuenta en una frase qué hizo el virus de verdad.
 - Creó las plantas que disparan, con biología y con la ayuda de Boxer.
 - Sigue creando: cuando el jugador avanza, llega con un "He creado algo nuevo" y aparecen plantas nuevas.
 
-Propuesta: es la cara de la tienda (T-022) y de las mejoras (T-023). Edad y aspecto, por decidir (T-031).
+Decidido (T-031, Y-02): joven, de unos 28 años, con media melena negra y un flequillo que le tapa parte de las cejas, una flor en el pelo, bata blanca con un pin de hoja y un tubo de ensayo con un brote.
+
+Propuesta: es la cara de la tienda (T-022) y de las mejoras (T-023).
 
 ## Por qué disparan las plantas (decidido en lo grueso)
 

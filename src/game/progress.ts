@@ -3,7 +3,8 @@ import type { SaveStore } from './storage';
 
 /**
  * Progreso permanente (T-017, ADR-0014): lo que el jugador no pierde al acabar una partida. Hoy, los brotes cuyo jefe ya
- * vencio; despues, la moneda secundaria (T-020), las compras (T-022) y las mejoras (T-023).
+ * vencio y las secuencias de la historia que ya vio (T-031); despues, la moneda secundaria (T-020), las compras (T-022) y
+ * las mejoras (T-023).
  *
  * Es de cada jugador (T-034, ADR-0018): va en el hueco `progreso` de su perfil, aparte de la partida guardada
  * (`save.ts`). Ganar, perder o empezar una partida nueva no lo toca; se pierde al borrar el jugador.
@@ -13,8 +14,11 @@ import type { SaveStore } from './storage';
  */
 export const PROGRESS_KEY = 'progreso';
 
-/** Sube cuando cambia la forma de `Progress` (un campo nuevo, otro significado). Lo de otra version se descarta. */
-export const PROGRESS_VERSION = 1;
+/**
+ * Sube cuando cambia la forma de `Progress` (un campo nuevo, otro significado). Lo de otra version se descarta.
+ * 2 (T-031): las secuencias de la historia vistas (`story`).
+ */
+export const PROGRESS_VERSION = 2;
 
 export interface Progress {
   /**
@@ -22,9 +26,14 @@ export interface Progress {
    * `OUTBREAKS`, T-018: el de su jefe).
    */
   readonly defeated: readonly string[];
+  /**
+   * Secuencias de viñetas de la historia que ya vio, acabadas o saltadas (T-031, ADR-0019), por su nombre (`StoryId` de
+   * `src/ui/story/stories.ts`), en el orden en que se vieron. Una vista no vuelve a salir sola.
+   */
+  readonly story: readonly string[];
 }
 
-export const emptyProgress = (): Progress => ({ defeated: [] });
+export const emptyProgress = (): Progress => ({ defeated: [], story: [] });
 
 // ---------------------------------------------------------------------------
 // Reglas
@@ -39,9 +48,19 @@ export function recordDefeat(progress: Progress, id: string): Progress {
   return isOutbreakDefeated(progress, id) ? progress : { ...progress, defeated: [...progress.defeated, id] };
 }
 
+/** Ya vio la secuencia `id` de la historia (T-031). */
+export function hasSeenStory(progress: Progress, id: string): boolean {
+  return progress.story.includes(id);
+}
+
+/** Apunta la secuencia `id` de la historia como vista. Si ya lo estaba, devuelve el mismo progreso. */
+export function recordStory(progress: Progress, id: string): Progress {
+  return hasSeenStory(progress, id) ? progress : { ...progress, story: [...progress.story, id] };
+}
+
 /** Hay algo que perder si se borra. */
 export function hasProgress(progress: Progress): boolean {
-  return progress.defeated.length > 0;
+  return progress.defeated.length > 0 || progress.story.length > 0;
 }
 
 // ---------------------------------------------------------------------------
@@ -70,13 +89,21 @@ function parse(raw: string | null): Record<string, unknown> | null {
 
 /** Se queda con lo que entiende de un progreso de esta version: lo que este roto se pierde, lo demas no. */
 function sanitize(data: Record<string, unknown>): Progress {
-  const listed: unknown[] = Array.isArray(data.defeated) ? data.defeated : [];
-  return { defeated: [...new Set(listed.filter(isOutbreakName))] };
+  return { defeated: names(data.defeated), story: names(data.story) };
+}
+
+/** Lista de nombres sin repetir; lo que no es un nombre se pierde. */
+function names(value: unknown): string[] {
+  const listed: unknown[] = Array.isArray(value) ? value : [];
+  return [...new Set(listed.filter(isName))];
 }
 
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null && !Array.isArray(value);
-/** Se guardan tambien los brotes que este juego no conoce: el guion de brotes cambia mientras se desarrolla. */
-const isOutbreakName = (value: unknown): value is string => typeof value === 'string' && value.length > 0 && value.length <= 64;
+/**
+ * Se guardan tambien los brotes y las secuencias que este juego no conoce: el guion de brotes y la historia cambian mientras
+ * se desarrolla.
+ */
+const isName = (value: unknown): value is string => typeof value === 'string' && value.length > 0 && value.length <= 64;
 
 // ---------------------------------------------------------------------------
 // Almacenamiento
@@ -107,8 +134,17 @@ export class ProgressKeeper {
 
   /** Apunta el jefe del brote `id` como vencido. Ya apuntado, no escribe nada. */
   recordDefeat(id: string): Progress {
+    return this.change((progress) => recordDefeat(progress, id));
+  }
+
+  /** Apunta la secuencia `id` de la historia como vista (T-031). Ya apuntada, no escribe nada. */
+  recordStory(id: string): Progress {
+    return this.change((progress) => recordStory(progress, id));
+  }
+
+  private change(rule: (progress: Progress) => Progress): Progress {
     const before = this.read();
-    const after = recordDefeat(before, id);
+    const after = rule(before);
     if (after !== before) this.write(after);
     return after;
   }

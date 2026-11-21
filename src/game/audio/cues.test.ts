@@ -5,7 +5,7 @@ import { spawnEnemy, stepCombat, type Bullet, type CombatEvent } from '../core/c
 import { createMatch, createMine, createPlant, type MatchState, type Mine } from '../core/match';
 import { createShooter, type ElementType } from '../core/plants';
 import { FIRST_OUTBREAK, roundCount } from '../core/outbreaks';
-import { actionCue, combatCues, mineTicks, roundCues } from './cues';
+import { VOICE_EVERY, actionCue, combatCues, mineTicks, roundCues, voiceCue } from './cues';
 
 const ids = (cues: ReadonlyArray<{ id: string }>) => cues.map((cue) => cue.id);
 
@@ -174,5 +174,29 @@ describe('actionCue', () => {
   it('subir a un nivel con premio (5, 10, 15 y 20) suena a premio', () => {
     for (const level of [5, 10, 15, 20]) expect(actionCue({ type: 'levelUp', level }, 2)?.id).toBe('unlock');
     for (const level of [2, 4, 6, 11]) expect(actionCue({ type: 'levelUp', level }, 2)?.id).toBe('levelUp');
+  });
+});
+
+describe('voz de las viñetas (T-031)', () => {
+  it('cada personaje suena con su voz, desde el centro', () => {
+    expect(voiceCue('boxer', 'Hola', 0, 1)).toEqual({ id: 'voiceBoxer', pan: 0 });
+    expect(voiceCue('patty', 'Hola', 0, 1)).toEqual({ id: 'voicePatty', pan: 0 });
+  });
+
+  it('suena una de cada pocas letras, y los espacios y signos van callados', () => {
+    const text = '¡No hay tiempo!';
+    const voiced: number[] = [];
+    for (let i = 0; i < Array.from(text).length; i++) if (voiceCue('boxer', text, i, i + 1)) voiced.push(i);
+    // Letras: N o h a y t i e m p o; suenan la 1.a (N), la 4.a (a), la 7.a (i) y la 10.a (p).
+    expect(voiced).toEqual([1, 5, 9, 12]);
+    expect(VOICE_EVERY).toBe(3);
+    expect(voiceCue('boxer', text, 0, 1)).toBeNull();
+    expect(voiceCue('boxer', text, 3, 4)).toBeNull();
+  });
+
+  it('un salto grande suena una sola vez, y sin letras nuevas no suena', () => {
+    expect(voiceCue('patty', 'Soy Patty. Las plantas son cosa mía.', 0, 30)).toEqual({ id: 'voicePatty', pan: 0 });
+    expect(voiceCue('patty', 'Hola', 4, 4)).toBeNull();
+    expect(voiceCue('patty', 'Hola', 4, 9)).toBeNull();
   });
 });

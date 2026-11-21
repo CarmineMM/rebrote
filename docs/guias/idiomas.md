@@ -52,7 +52,8 @@ Cómo se escriben los textos de Rebrote para que salgan en español y en inglés
   | Ficha | Info card |
 
 - Creeper habla en mayúsculas, como en su terminal. En inglés su frase de entrada es la del original de 1971: "I'M THE CREEPER: CATCH ME IF YOU CAN!".
-- No se traducen: "Rebrote", Creeper, los nombres de tecnologías y el nombre de cada idioma en el selector.
+- No se traducen: "Rebrote", Creeper, Boxer, Patty, los nombres de tecnologías y el nombre de cada idioma en el selector.
+- La IA de la historia es "ella" en español y "she" en inglés (T-031).
 - Un texto en inglés puede ser más largo: hay que comprobar que cabe donde va (cartas de tamaño fijo, botones del menú, rótulos del tablero) en los dos idiomas.
 
 ## 5. Lista de comprobación
@@ -75,6 +76,12 @@ Cómo se escriben los textos de Rebrote para que salgan en español y en inglés
 ### Paso de un tour de ayuda (T-013)
 - [ ] Su frase está en `tour.steps.<tour>.<paso>` en los dos idiomas, con la misma clave que el paso de `TOURS` (el test lo comprueba), y el tour tiene su nombre en `tour.names`.
 - [ ] Es corta (unas seis u ocho palabras): lo importante lo enseñan la mano y el dibujo. Cabe en el bocadillo a 568 × 320.
+
+### Viñeta nueva (T-031)
+- [ ] Su texto está en `story.lines.<secuencia>.<viñeta>` en los dos idiomas, con la misma clave que el paso de `STORIES` (el test lo comprueba), y la secuencia tiene su título en `story.titles`.
+- [ ] Es corta: dos o tres frases como mucho. Cabe en el bocadillo a 568 × 320 sin desplazarse.
+- [ ] Si nombra al jugador, es una función que recibe su nombre o null, y sin nombre se lee bien (trato neutro).
+- [ ] Los nombres de los personajes (Boxer, Patty) no se traducen.
 
 ### Idioma nuevo
 - [ ] `src/i18n/xx.ts` declarado como `Dictionary`, con su `locale` y `decimalComma`.

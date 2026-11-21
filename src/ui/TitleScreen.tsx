@@ -62,13 +62,14 @@ const FIT_LETTERS = 8.5;
  * Invernadero el titulo dice "INVERNADERO" en vez de "REBROTE": sus letras vuelven a caer al cambiar, y encoge si la
  * palabra es larga. El brote sale de su primera "O".
  */
-export function TitleScreen({ greenhouse = false, children }: { greenhouse?: boolean; children: ReactNode }) {
+export function TitleScreen({ greenhouse = false, inert = false, children }: { greenhouse?: boolean; inert?: boolean; children: ReactNode }) {
   const t = useText();
   const word = greenhouse ? t.greenhouse.logo : NAME;
   const sprout = word.indexOf('O');
   const fit = Math.min(1, FIT_LETTERS / word.length);
   return (
-    <div className="title-screen">
+    // Con una viñeta de la historia encima (T-031), el menu no recibe el foco ni los clics.
+    <div className="title-screen" inert={inert}>
       <header className="title-brand">
         <h1 key={word} className="title-logo" aria-label={greenhouse ? t.greenhouse.title : 'Rebrote'} style={{ '--logo-fit': fit } as CSSProperties}>
           {[...word].map((letter, i) => (

@@ -220,7 +220,7 @@ Decisiones R-01 a R-04 cerradas el 21 nov 2026 con la recomendación. Cómo se h
 
 ### Progreso permanente (T-017)
 Decisiones K-01 y K-02 cerradas el 21 nov 2026 con la recomendación. Cómo se hace: ADR-0014.
-- **Qué es:** lo que el jugador no pierde al acabar una partida. Es de cada jugador (T-034). Hoy, los jefes vencidos; después, las semillas (T-020), las compras (T-022) y las mejoras (T-023).
+- **Qué es:** lo que el jugador no pierde al acabar una partida. Es de cada jugador (T-034). Hoy, los jefes vencidos y la historia vista (T-031); después, las semillas (T-020), las compras (T-022) y las mejoras (T-023).
 - **Jefe vencido:** al vencer al jefe de un brote queda apuntado para siempre. Volver a vencerlo no cambia nada.
 - **No se pierde** al ganar, al perder ni al empezar una partida nueva. Mientras el juego esté en desarrollo, un progreso guardado con otra versión de su forma se descarta, sin convertirlo (ADR-0014).
 - **Se borra con el jugador:** "Borrar jugador" en la pantalla de jugadores (T-034). Hasta T-034 era "Borrar progreso", en Opciones.
@@ -250,6 +250,16 @@ Decisiones G-01 a G-10 cerradas el 20 nov 2026. Cómo se hace: ADR-0012.
 - **Pista de la moneda:** la primera moneda que cae al suelo lleva una mano que la toca y "¡Tócala! Vale más", sin parar el juego. Deja de salir al recoger una así, o tras salir tres veces.
 - **Ayuda:** opción en Opciones y en Ajustes, encendida por defecto. Apagada, no sale ningún tour ni la pista. Apagarla a mitad de un tour lo cierra sin darlo por visto.
 - **Una mecánica nueva llega con su tour** (regla 9 de `CLAUDE.md`).
+
+### Historia y viñetas (T-031)
+Decisiones Y-01 a Y-07 cerradas el 21 nov 2026: Boxer, un informático moderno (mezcla de dos propuestas de la galería); Patty, la de la bata con una flor en el pelo; lo demás, con la recomendación. Cómo se hace: ADR-0019. La historia está en `04-historia.md`.
+- **Viñeta:** el busto de quien habla (Y-03), su nombre y un bocadillo sobre la escena oscurecida. Cada personaje tiene tres caras: normal, apurado y contento (Y-04).
+- **Cuándo salen:** la frase de Boxer al empezar el brote 1 (en la preparación de la ronda 1, antes del tour); lo que cuenta Boxer la primera vez que cae Creeper (antes de la pantalla de victoria); y Patty la primera vez que se llega al Invernadero. Quien venció a Creeper sin ver lo de Boxer lo ve al entrar al Invernadero, antes de Patty (Y-06).
+- **El texto sale letra a letra** con la voz de quien habla; un toque, un clic, Espacio o Intro lo completa, y el siguiente pasa de viñeta (Y-07). "Saltar" o Esc cierran la secuencia entera y cuenta como vista.
+- **El juego espera:** mientras hay una viñeta no avanza nada ni corre la cuenta atrás. La pausa, el aviso de girar la pantalla y el cambio de idioma no la rompen: sigue donde iba.
+- **Una secuencia vista no vuelve a salir sola,** tampoco tras recargar ni en otra partida: va en el progreso permanente del jugador y se borra con él. Se vuelven a ver desde "Historia" en el Invernadero (Y-05).
+- **El nombre (T-033):** la viñeta en la que Boxer lo pregunta se salta mientras no exista esa task, y la frase siguiente va sin nombre.
+- **La historia no explica controles:** eso es de los tours. Quien la salte entiende el juego igual.
 
 ## Decisiones pendientes
 
@@ -287,3 +297,5 @@ T-013: los tours de ayuda no son reglas. Qué señalar en el tablero lo elige `s
 T-009: el nivel de los enemigos está en `combat.ts` (`Enemy.level`, `enemyLevelFactor`, `enemyMaxHp`, `enemyDamage`, `rollEnemyLevel`) y las copias del Creeper, en `rollCopyKind`; `enemyKilled` lleva el tipo para pagar lo suyo (`ENEMIES[kind].reward`). En `rounds.ts`, el tope de nivel (`levelCapAt`, `levelCap`, `levelCapRaisedAfter`), lo nuevo de cada ronda para el aviso (`roundUnlocks`), los grupos con nivel y paso propios (`RoundGroup.level`, `haste`) y el grito (`shout`, evento `shout`). Infundir con una mina, en `match.ts` (`mineDragBlocker`, `mineInfusion`, `mineInfusionTargets`, `infuseWithMine`), y el tope en `levelUpOffer` (`cap`, `capRaisedAt`). Los valores están en `ENEMY_LEVELS`, `CREEPER`, `ENEMIES` y `OUTBREAKS` de `balance.ts`.
 
 T-034: los jugadores están en `src/game/profiles.ts` (reglas `addProfile`, `selectProfile`, `removeProfile`, `touchProfile`, `freeNumber` y `decodeProfiles`; `ProfileKeeper` y su instancia `profiles`, con el almacén de cada jugador en `store()` y `storeOf()`), con tests en `profiles.test.ts`; el almacén que nunca falla (`SessionStore`), en `src/game/storage.ts`. `save.ts`, `progress.ts` y `tourProgress.ts` escriben por defecto en el almacén del jugador activo. Lo que la pantalla de jugadores cuenta de cada uno (nombre, lo que se pierde al borrarlo) está en `src/ui/playerCards.ts`, con tests en `playerCards.test.ts`.
+
+T-031: la historia vista va en el progreso permanente (`Progress.story`, con `hasSeenStory` y `recordStory` en `src/game/progress.ts`; `PROGRESS_VERSION` 2). Las viñetas no son reglas: qué secuencias hay, quién habla y cuándo salen está en `src/ui/story/stories.ts` (`STORIES`, `storiesAt`, `storySteps`, `replayableStories`), el texto letra a letra en `typewriter.ts`, los dos con test en `stories.test.ts`; la voz al hablar, en `voiceCue` de `src/game/audio/cues.ts`. Los personajes (Boxer y Patty) se pintan en `src/game/view/characters/`.

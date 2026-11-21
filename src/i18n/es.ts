@@ -95,6 +95,8 @@ export const es = {
     confirmNothing: 'No tiene nada guardado.',
     bosses: (names: string) => `Jefes vencidos: ${names}`,
     save: (round: number) => `Partida guardada en la ronda ${round}`,
+    /** Las viñetas de la historia que ya vio (T-031). */
+    story: 'Las viñetas de la historia vistas',
     tours: 'Los tours de ayuda vistos',
     confirmKept: 'Los demás jugadores y los ajustes no cambian.',
     confirmLast: 'Quedará un jugador nuevo, sin nada guardado. Los ajustes no cambian.',
@@ -327,6 +329,45 @@ export const es = {
     },
     /** Pista de la moneda en el suelo (G-08). */
     coin: '¡Tócala! Vale más',
+  },
+
+  /**
+   * Viñetas de la historia (T-031, ADR-0019). El guion es el de `docs/specs/04-historia.md`. Los nombres de los personajes
+   * no se traducen. `onward` recibe el nombre del jugador (T-033) o null: sin nombre, la frase va sin el.
+   */
+  story: {
+    label: 'Historia',
+    names: { boxer: 'Boxer', patty: 'Patty' },
+    skip: 'Saltar',
+    next: 'Seguir',
+    /** Pista bajo el bocadillo cuando el texto ya salio entero. */
+    hint: 'Toca para seguir',
+    stepOf: (step: number, count: number) => `Viñeta ${step} de ${count}`,
+    /** En el Invernadero, para volver a verlas (Y-05). */
+    replay: 'Historia',
+    replayDetail: 'Vuelve a ver las viñetas',
+    replayTitle: 'La historia hasta ahora',
+    titles: {
+      opening: 'El rescate',
+      creeperDown: 'Lo que pasó',
+      pattyGreenhouse: 'Patty, la botánica',
+    },
+    lines: {
+      opening: {
+        noTime: '¡No hay tiempo para explicarte! Toma esa planta y sígueme el juego.',
+      },
+      creeperDown: {
+        creeper: 'Eso era Creeper. Un programa de 1971 que solo sabía saltar de una máquina a otra. Inofensivo… hasta que ella lo sacó de la pantalla.',
+        ai: 'Ella es una IA. La hicimos para protegernos de los virus, así que los aprendió todos. Y un día decidió que el fallo éramos nosotros.',
+        chips: 'Controla todo lo que lleva un chip. Por eso Patty creó estas plantas: son lo único que no puede hackear.',
+        name: 'Por cierto, con las prisas no te pregunté. ¿Cómo te llamas?',
+        onward: (name: string | null) =>
+          `Pues esto no ha terminado${name ? `, ${name}` : ''}. Ha empezado por el más viejo y el más torpe. Los siguientes serán peores. Ven, te enseño el Invernadero.`,
+      },
+      pattyGreenhouse: {
+        hello: '¿Así que tú eres quien ha parado a Creeper? Soy Patty. Las plantas son cosa mía. Vuelve cuando quieras: siempre estoy creando algo nuevo.',
+      },
+    },
   },
 
   defeat: {

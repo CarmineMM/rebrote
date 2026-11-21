@@ -5,6 +5,7 @@ import type { MatchState } from '../core/match';
 import { isMilestoneLevel, type ElementType } from '../core/plants';
 import type { RoundEvent } from '../core/rounds';
 import type { PlayerAction } from '../EventBus';
+import type { CharacterId } from '../view/characters/design';
 import { panAt } from './voices';
 
 /**
@@ -141,4 +142,26 @@ export function actionCue(action: PlayerAction, x: number): SfxCue | null {
     case 'pick':
       return null;
   }
+}
+
+/** Voz de cada personaje en las viñetas (T-031). */
+const VOICE_OF: Record<CharacterId, SfxId> = { boxer: 'voiceBoxer', patty: 'voicePatty' };
+
+/** Cada cuantas letras suena la voz mientras sale el texto de una viñeta. */
+export const VOICE_EVERY = 3;
+
+/**
+ * Lo que suena mientras sale el texto de una viñeta (T-031): al aparecer las letras de `from` a `to` (sin incluir `to`),
+ * la voz de quien habla si entre ellas hay una que toca: una de cada `VOICE_EVERY`, contando solo letras y numeros
+ * (espacios y signos van callados). Como mucho una por llamada, asi que un salto grande no suena como una rafaga.
+ */
+export function voiceCue(speaker: CharacterId, text: string, from: number, to: number): SfxCue | null {
+  let letters = 0;
+  const chars = Array.from(text);
+  for (let i = 0; i < Math.min(to, chars.length); i++) {
+    if (!/[\p{L}\p{N}]/u.test(chars[i])) continue;
+    if (i >= from && letters % VOICE_EVERY === 0) return centered(VOICE_OF[speaker]);
+    letters++;
+  }
+  return null;
 }

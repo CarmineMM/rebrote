@@ -77,6 +77,7 @@ export const en: Dictionary = {
     confirmNothing: 'Nothing saved yet.',
     bosses: (names) => `Bosses defeated: ${names}`,
     save: (round) => `Saved game at round ${round}`,
+    story: 'The story scenes already seen',
     tours: 'The help tours already seen',
     confirmKept: 'Other players and your settings stay the same.',
     confirmLast: 'A new player with nothing saved takes their place. Your settings stay the same.',
@@ -294,6 +295,39 @@ export const en: Dictionary = {
       },
     },
     coin: 'Tap it! It is worth more',
+  },
+
+  story: {
+    label: 'Story',
+    names: { boxer: 'Boxer', patty: 'Patty' },
+    skip: 'Skip',
+    next: 'Next',
+    hint: 'Tap to continue',
+    stepOf: (step, count) => `Scene ${step} of ${count}`,
+    replay: 'Story',
+    replayDetail: 'Watch the scenes again',
+    replayTitle: 'The story so far',
+    titles: {
+      opening: 'The rescue',
+      creeperDown: 'What happened',
+      pattyGreenhouse: 'Patty, the botanist',
+    },
+    lines: {
+      opening: {
+        noTime: 'No time to explain! Grab that plant and follow my lead.',
+      },
+      creeperDown: {
+        creeper: 'That was Creeper. A program from 1971 that could only hop from one machine to another. Harmless… until she pulled it out of the screen.',
+        ai: "She's an AI. We built her to protect us from viruses, so she learned every last one. And one day she decided the bug was us.",
+        chips: "She controls everything with a chip in it. That's why Patty made these plants: they're the only thing she can't hack.",
+        name: "By the way, in all the rush I never asked. What's your name?",
+        onward: (name) =>
+          `Well, this isn't over${name ? `, ${name}` : ''}. She started with the oldest, clumsiest one. The next ones will be worse. Come on, I'll show you the Greenhouse.`,
+      },
+      pattyGreenhouse: {
+        hello: "So you're the one who stopped Creeper? I'm Patty. The plants are my thing. Come back anytime: I'm always making something new.",
+      },
+    },
   },
 
   defeat: {
