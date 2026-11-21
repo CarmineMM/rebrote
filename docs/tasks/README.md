@@ -26,11 +26,13 @@ Una task por archivo. El tamaño es orientativo.
 | T-020 | [Progresión] Moneda secundaria: semillas | Pendiente | S | T-017, T-018 | C-01 a C-05 |
 | T-021 | [Poderes] Tres poderes en la partida y panel izquierdo | Pendiente | L | T-018 | O-01 a O-07 |
 | T-022 | [Tienda] Tienda de poderes | Pendiente | M | T-019, T-020, T-021 | O-01, T-01 a T-04 |
-| T-023 | [Progresión] Nivel base permanente de la disparadora | Pendiente | M | T-019, T-020, T-022 | N-01 a N-04 |
+| T-023 | [Progresión] Nivel base permanente de la disparadora | Pendiente | M | T-019, T-020, T-022 | N-02 a N-06 (N-01 cerrada) |
 | T-024 | [Plantas] Escudo: muro e infusión | Pendiente | L | T-016, T-018 | E-01 a E-06 |
 | T-025 | [Enemigos] Tropas del brote 2 y francotirador | Pendiente | L | T-018, T-024 | F-01 a F-06 |
 | T-026 | [Jefe] Blaster y rondas del brote 2 | Pendiente | L | T-024, T-025 | L-01 a L-08 |
 | T-027 | [Plantas] Premio en los niveles 5, 10, 15 y 20 y jardincito | Completada (21 nov 2026) | M | T-003 | Ninguna (Q-01 a Q-03 cerradas) |
+| T-028 | [Web] Icono del juego y favicon | Pendiente | S | Ninguna | W-01 a W-03 |
+| T-029 | [Web] Instalar el juego como aplicación (PWA) | Pendiente | M | T-028 | V-02 a V-05 |
 
 ## Estados
 
@@ -57,7 +59,9 @@ Después, para progresión, audio y brote 2 (planificado el 20 nov 2026):
 7. T-023: nivel base permanente.
 8. T-015: música, en cuanto Carmine elija las pistas.
 
-La lista de jefes y las preguntas de la historia están en `../specs/03-ruta-de-brotes.md`.
+9. T-028 y T-029: icono e instalación. No dependen del resto y se pueden hacer en cualquier momento.
+
+La lista de jefes está en `../specs/03-ruta-de-brotes.md` y la historia en `../specs/04-historia.md` (sin tasks todavía).
 
 T-006 va antes que los elementos a propósito: fusionar es la mecánica que diferencia al juego. Si arrastrar una planta sobre otra no se siente bien, conviene saberlo cuanto antes.
 

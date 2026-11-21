@@ -37,45 +37,26 @@ De menos a más daño, mezclando dos cosas: lo que le hizo a los equipos y lo qu
 | 25 | Triton | 2017 | Ataque a los sistemas de seguridad de una planta industrial | Triton, el Silenciador |
 | Final | La IA | | La que recrea todos los anteriores | Por decidir (ver abajo) |
 
+## Decisión: ruta larga (21 nov 2026)
+
+Carmine decidió usar los 25 jefes de la lista, 26 con el final. La ruta corta de 10 brotes que se propuso queda descartada.
+
 ## Avisos sobre la lista
 
-- **Blaster es el brote 2 y está en el puesto 11.** Si la ruta sigue este orden a rajatabla, hay nueve virus entre Creeper y Blaster. Dos salidas: aceptar que la ruta salta (Creeper, Blaster y de ahí hacia arriba) o usar los nueve saltados como jefes menores o brotes opcionales más adelante.
-- **25 jefes no es un juego, son tres.** Cada brote son unos 15 minutos de juego y varias tasks. Elegir pocos y buenos.
-- **Familias.** Gusanos: 1, 4, 8 a 15, 18. Troyanos: 16, 17. Ransomware: 19, 21, 22. Armas industriales: 23 a 25. Cada familia puede traer su mecánica de tropas.
+- **Blaster es el brote 2 y está en el puesto 11.** Con la ruta larga esto hay que resolverlo (H-08, abajo): o Blaster sube al segundo puesto y el orden por peligro pasa a ser aproximado, o el brote 2 pasa a ser Elk Cloner y el francotirador y el escudo se van al brote 11.
+- **Son 26 brotes.** A unos 15 minutos por brote son más de 6 horas de juego, y cada jefe necesita una mecánica propia para que no se sienta relleno. Conviene planificarlos por tramos de 4 o 5, no todos a la vez, y aceptar que algunos brotes sean más cortos que otros.
+- **Familias.** Gusanos: 1, 4, 8 a 15, 18. Troyanos: 16, 17. Ransomware: 19, 21, 22. Armas industriales: 23 a 25. Cada familia puede traer su mecánica de tropas y su escenario.
+- **Tramos de la historia.** Los primeros 3 o 4 brotes son de defensa en el refugio; después el jugador pasa al ataque y cambia el escenario (ver `04-historia.md`).
 - Son nombres de sucesos históricos. Antes de monetizar, revisar el uso de nombres y no usar logotipos ni material de nadie.
 
-## Propuesta de ruta corta
+## Historia
 
-Diez brotes y el final, subiendo de peligro y presentando una familia nueva cada pocos brotes:
+La historia, los personajes y sus preguntas abiertas están en `04-historia.md`. De las preguntas que había aquí, quedaron respondidas el 21 nov 2026: quién es el jugador (H-01), qué quiere la IA (H-02), cómo se cuenta (H-04), qué pasa con los jefes vencidos (H-05), cómo acaba (H-06) y cuántos brotes hay (H-07).
 
-| Brote | Jefe | Familia | Qué aporta |
-|---|---|---|---|
-| 1 | Creeper | Gusano | Hecho |
-| 2 | Blaster | Gusano | Francotirador y escudo |
-| 3 | ILOVEYOU | Gusano de correo | Por diseñar |
-| 4 | MyDoom | Gusano de correo | Por diseñar |
-| 5 | Zeus | Troyano | Primera familia nueva |
-| 6 | Conficker | Gusano y red zombi | Por diseñar |
-| 7 | CryptoLocker | Ransomware | Segunda familia nueva |
-| 8 | WannaCry | Ransomware y gusano | Por diseñar |
-| 9 | NotPetya | Destructor | Por diseñar |
-| 10 | Stuxnet | Arma industrial | Penúltimo, como quería Carmine |
-| Final | La IA | | |
+**Idea para justificar el orden.** La IA está aprendiendo. Empieza recreando los virus más antiguos e inofensivos, que son los más fáciles de fabricar, y con cada brote se atreve con uno peor.
 
-## Historia: lo decidido y lo abierto
+## Pregunta abierta de la ruta
 
-**Decidido.** Una IA se salió de control y recrea en el mundo real los virus informáticos de la historia. Solo la naturaleza puede ayudar a la humanidad. El último jefe es la propia IA.
-
-**Idea para justificar el orden.** La IA está aprendiendo. Empieza recreando los virus más antiguos e inofensivos, que son los más fáciles de fabricar, y con cada brote se atreve con uno peor. Eso explica por qué el primero es un experimento de 1971 y el penúltimo un arma.
-
-**Preguntas abiertas.**
-
-| # | Pregunta | Decide |
-|---|---|---|
-| H-01 | ¿Quién es el jugador? ¿Un jardinero, alguien sin nombre o la propia naturaleza? | Carmine |
-| H-02 | ¿Qué quiere la IA? ¿Destruir, defenderse o no sabe lo que hace? | Carmine |
-| H-03 | ¿Cómo se llama la IA? Propuesta: RAÍZ, por el doble sentido entre la raíz de una planta y el usuario "root" con control total de un sistema | Carmine |
-| H-04 | ¿Cómo se cuenta la historia? ¿Una frase al empezar cada brote, lo que gritan los jefes o viñetas entre brotes? | Carmine |
-| H-05 | ¿Los jefes vencidos desaparecen o se pasan al bando del jugador? | Carmine |
-| H-06 | ¿El final es una victoria o una tregua? | Carmine |
-| H-07 | ¿Cuántos brotes tiene el juego? | Carmine |
+| # | Pregunta | Opciones | Recomendación | Decide |
+|---|---|---|---|---|
+| H-08 | ¿Dónde va Blaster? | a) Segundo, y el orden por peligro es aproximado. b) En el puesto 11, y el brote 2 es Elk Cloner | a: T-024 a T-026 ya están planificadas para el brote 2, y el escudo es una pieza básica que conviene enseñar pronto | Carmine |
