@@ -1,6 +1,6 @@
 # [Guardado] Progreso permanente separado de la partida en curso
 
-**Estado:** Pendiente · **Prioridad:** Alta · **Tamaño estimado:** M (orientativo) · **Depende de:** ninguna · **Bloquea a:** T-018, T-019, T-020 · **Origen:** conversación de diseño del 20 nov 2026
+**Estado:** Completada (21 nov 2026) · **Prioridad:** Alta · **Tamaño estimado:** M (orientativo) · **Depende de:** ninguna · **Bloquea a:** T-018, T-019, T-020 · **Origen:** conversación de diseño del 20 nov 2026
 
 ## Contexto
 Hoy solo se guarda la partida en curso: un hueco en `localStorage` con la clave `rebrote.partida`, que contiene el `MatchState` entero y se borra al ganar o perder (verificado en `src/game/save.ts` y ADR-0010). Una guardada de otra versión se ignora (`SAVE_VERSION`), lo cual está bien para una partida pero sería un desastre para monedas y desbloqueos. No queda constancia de que el jugador venció a Creeper.
@@ -16,29 +16,36 @@ Además, "Nueva partida" pide confirmación para pisar la guardada. Con progreso
 **Incluye:** módulo de progreso (sugerido `src/game/progress.ts`) con clave propia (sugerida `rebrote.progreso`), versión y migraciones, validación de forma, registro de brote vencido al ganar, opción "Borrar progreso" con confirmación, tests, ADR (sugerido ADR-0014), regla en `CLAUDE.md`.
 **No incluye:** moneda secundaria (T-020), tienda (T-022), cuentas o guardado en la nube.
 
-## Decisiones pendientes
-| # | Pregunta | Opciones | Recomendación | Decide |
-|---|---|---|---|---|
-| K-01 | Quien ya venció a Creeper antes de esta task, ¿lo tiene vencido? | a) No hay forma de saberlo: lo vence otra vez. b) Darlo por vencido a todos | a: es honesto y son pocos jugadores | Carmine |
-| K-02 | ¿Exportar e importar el progreso con un código? | Sí o no | No por ahora; anotarlo como mejora si el juego crece | Carmine |
+## Decisiones tomadas
+| # | Pregunta | Decisión (21 nov 2026, con la recomendación) | Decide |
+|---|---|---|---|
+| K-01 | Quien ya venció a Creeper antes de esta task, ¿lo tiene vencido? | a) No hay forma de saberlo: lo vence otra vez. Es honesto y son pocos jugadores | Carmine |
+| K-02 | ¿Exportar e importar el progreso con un código? | No por ahora; queda anotado como mejora si el juego crece | Carmine |
+
+Cómo quedó (ADR-0014): `src/game/progress.ts`, clave `rebrote.progreso`, versión 1 con `{ version: 1, defeated: ['creeper'] }`. El brote se apunta por el nombre de su jefe (`OUTBREAK_ID` en `rounds.ts`), no por su posición. Además de lo pedido:
+- Un progreso de una versión **más nueva** que el juego (alguien vuelve a una versión anterior) se ignora pero no se pisa.
+- "Borrar progreso" está solo en Opciones del menú de inicio, no en los ajustes de la pausa: ahí borraría la partida que se está jugando. Debajo del botón se ve lo que hay guardado ("Jefes vencidos: Creeper", "Partida guardada en la ronda 6"); sin nada, está desactivado.
 
 ## Criterios de aceptación
+
+Comprobados el 21 nov 2026 con Vitest (`progress.test.ts`) y en Chrome sin ventana sobre la RTX 4060, en Ultra: la última ronda despejada da la victoria por el camino de verdad (`stepRound`) y deja `{"version":1,"defeated":["creeper"]}`; tras recargar sigue ahí; salir al menú, "Nueva partida", perder y la partida nueva no lo tocan; "Borrar progreso" se lleva el progreso y la partida y deja `rebrote.ajustes` y `rebrote.tours` igual; un progreso corrupto deja la portada sin errores en consola y "Cargar partida" sigue activo. Confirmaciones en inglés a 812 × 375 y 568 × 320 sin salirse de la pantalla.
+
 ### Progreso
-- [ ] Al vencer al jefe de un brote, queda registrado y sigue ahí tras recargar la página.
-- [ ] Ganar, perder o empezar una partida nueva no borra el progreso.
-- [ ] "Nueva partida" sigue avisando de que pisa la partida en curso, y su texto deja claro que el progreso se conserva.
-- [ ] Un progreso de una versión anterior se migra a la actual sin perder datos.
-- [ ] Un progreso ilegible no rompe el juego: se parte de cero y la partida en curso no se toca.
+- [x] Al vencer al jefe de un brote, queda registrado y sigue ahí tras recargar la página.
+- [x] Ganar, perder o empezar una partida nueva no borra el progreso.
+- [x] "Nueva partida" sigue avisando de que pisa la partida en curso, y su texto deja claro que el progreso se conserva.
+- [x] Un progreso de una versión anterior se migra a la actual sin perder datos. Aún no hay versión anterior: se prueba la cadena de migraciones con una historia de mentira (v1 → v3), un test exige una migración por versión y otro lee a mano un progreso de la versión 1, que no se cambia nunca.
+- [x] Un progreso ilegible no rompe el juego: se parte de cero y la partida en curso no se toca.
 
 ### Borrado
-- [ ] Opciones tiene "Borrar progreso", con una confirmación que dice qué se pierde.
-- [ ] Tras confirmarlo, se borran el progreso y la partida en curso. Los ajustes y los tours vistos no.
+- [x] Opciones tiene "Borrar progreso", con una confirmación que dice qué se pierde.
+- [x] Tras confirmarlo, se borran el progreso y la partida en curso. Los ajustes y los tours vistos no.
 
 ### Calidad
-- [ ] Sin Phaser, con tests de migración, de datos rotos y de almacenamiento no disponible.
-- [ ] Textos en español e inglés.
-- [ ] ADR nuevo y regla en `CLAUDE.md`: si cambia la forma del progreso, se sube su versión y se escribe su migración.
-- [ ] `npm test` y `npm run build` pasan.
+- [x] Sin Phaser, con tests de migración, de datos rotos y de almacenamiento no disponible.
+- [x] Textos en español e inglés.
+- [x] ADR nuevo y regla en `CLAUDE.md`: si cambia la forma del progreso, se sube su versión y se escribe su migración.
+- [x] `npm test` y `npm run build` pasan.
 
 ## Casos límite y riesgos
 - Ventana privada o almacenamiento lleno: el juego funciona y el progreso dura lo que dure la sesión.

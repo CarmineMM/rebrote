@@ -44,9 +44,24 @@ export const en: Dictionary = {
     autosave: 'Your game saves itself.',
     confirmTitle: 'Start over?',
     confirmText: (round) => `Your saved game (round ${round}) will be deleted.`,
+    confirmKeeps: 'Your progress stays: defeated bosses stay defeated.',
     confirmYes: 'Yes, new game',
     confirmNo: 'Never mind',
     version: (version) => `Version ${version}`,
+  },
+
+  progress: {
+    section: 'Progress',
+    erase: 'Delete progress',
+    bosses: (names) => `Bosses defeated: ${names}`,
+    save: (round) => `Saved game at round ${round}`,
+    nothing: 'No saved progress.',
+    erased: 'Progress deleted.',
+    confirmTitle: 'Delete your progress?',
+    confirmLost: 'You will lose for good:',
+    confirmKept: 'Your settings, language and seen help tours stay.',
+    confirmYes: 'Yes, delete',
+    confirmNo: 'Never mind',
   },
 
   cover: {

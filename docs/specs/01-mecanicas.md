@@ -153,7 +153,7 @@ Decisiones J-01 a J-05 cerradas el 20 nov 2026.
 
 ### Nivel (T-003)
 - **Tope por ronda (T-009, P-01; T-010, A-05):** 5 desde la ronda 2 hasta el final del mundo 1 (hasta T-010 subía a 10 en la 7). En el tope, el panel dice "Máximo" y, si el tope fuera a subir en otra ronda, en cuál ("Tope 5: sube en la ronda 7"). El tope absoluto del juego es 20 (`LIMITS.maxLevel`), por encima del de cualquier ronda del mundo 1.
-- **Por partida (D-03, cerrada el 19 nov 2026 con la recomendación):** los niveles se pierden al acabar la partida. No hay progreso de una partida a otra. Lo que sí se guarda es la partida en curso, para seguirla otro día (T-011, ver "Menú de inicio y partida guardada").
+- **Por partida (D-03, cerrada el 19 nov 2026 con la recomendación):** los niveles se pierden al acabar la partida. Lo que sí se guarda es la partida en curso, para seguirla otro día (T-011, ver "Menú de inicio y partida guardada"). De una partida a otra solo pasa el progreso permanente (T-017): hoy, los jefes vencidos.
 - Se sube seleccionando la disparadora con un clic (sin arrastrarla) y pulsando "Subir" en su panel. Se cobra en el acto.
 - **Cuánto mejora:** cada nivel suma un 10 % de daño y un 3 % de cadencia sobre los de nivel 1 (decidido el 19 nov 2026). El daño es el del disparo entero: en una fusionada se multiplica con el de los cañones, y la quemadura de una de fuego crece igual.
 - **Premio en los niveles 5, 10, 15 y 20 (T-027, decidido el 21 nov 2026):** llegar a ellos suma más que un nivel normal, y lo ganado se queda. Al 5 y al 15, un 50 % más que un nivel normal (+15 % de daño y +4,5 % de cadencia); al 10 y al 20, el doble (+20 % y +6 %). Son los niveles en los que la medallita cambia de color, y a sus pies le brota un jardincito que crece con cada premio.
@@ -186,16 +186,26 @@ Decisiones J-01 a J-05 cerradas el 20 nov 2026.
 Decisiones I-01 a I-12 cerradas el 20 nov 2026.
 - **Al abrir el juego sale el menú de inicio:** el título "Rebrote" con su lema arriba a la izquierda, debajo una portada en movimiento (Creeper, gusanos y plantas en plena batalla, sin desplazarse) y a la derecha el menú: nueva partida, cargar partida, opciones, jefes (desactivado, "Próximamente") y créditos.
 - **Portada:** la batalla responde al clic (la planta dispara, el gusano se queja, Creeper habla y la mina explota y vuelve a brotar). Es solo aspecto: no cuenta para nada.
-- **Nueva partida** empieza en la preparación de la ronda 1. Si hay una partida guardada, antes pide confirmar que se borrará.
+- **Nueva partida** empieza en la preparación de la ronda 1. Si hay una partida guardada, antes pide confirmar que se borrará, y dice que el progreso permanente se conserva (T-017).
 - **Partida guardada:** una sola, en este navegador. Se guarda sola, sin botón:
   - al empezar la partida y al empezar cada ronda (con su aviso de lo desbloqueado, si aún no se aceptó);
   - en el momento exacto al salir al menú ("Salir al menú" en la pausa) y al ocultar o cerrar la pestaña.
 - **Cargar partida** la sigue donde estaba: ronda y fase, saldo, vidas, plantas, minas, enemigos, balas y escupitajos, y el aviso sin aceptar. El botón dice la ronda, las vidas, las monedas y cuándo se guardó; sin partida guardada está desactivado. Las monedas soltadas en el suelo no se guardan.
 - **Al perder o al ganar la partida guardada se borra** (I-04): perder sigue obligando a empezar desde la ronda 1, también si se cierra la pestaña antes de perder (se guardó el momento exacto). Las pantallas de derrota y de victoria ofrecen "Jugar otra vez" y "Menú principal".
-- **Opciones:** idioma, pantalla completa, calidad gráfica, tours de ayuda (T-013) y FPS, las mismas en el menú de inicio ("Opciones") y en la pausa ("Ajustes").
+- **Opciones:** idioma, pantalla completa, calidad gráfica, tours de ayuda (T-013) y FPS, las mismas en el menú de inicio ("Opciones") y en la pausa ("Ajustes"). Las del menú de inicio llevan además "Borrar progreso" (T-017).
 - **Idiomas:** español e inglés en todo el juego. Por defecto, el del navegador si es uno de los dos; si no, inglés. Cambiarlo recarga el escenario y la partida sigue. "Rebrote" no se traduce.
 - **Créditos:** autor (Carmine Maggio), desarrollo (Claude, con su logo), estética inspirada en Plants vs. Zombies, arte hecho con código, enemigos basados en virus reales y tecnología, con el aviso de marca de Plants vs. Zombies.
 - Una partida guardada con otra versión del juego, o en una ronda que ya no existe, no se carga.
+
+### Progreso permanente (T-017)
+Decisiones K-01 y K-02 cerradas el 21 nov 2026 con la recomendación. Cómo se hace: ADR-0014.
+- **Qué es:** lo que el jugador no pierde al acabar una partida, en este navegador. Hoy, los jefes vencidos; después, las semillas (T-020), las compras (T-022) y las mejoras (T-023).
+- **Jefe vencido:** al vencer al jefe de un brote queda apuntado para siempre. Volver a vencerlo no cambia nada.
+- **No se pierde** al ganar, al perder ni al empezar una partida nueva, ni al cambiar de versión del juego: un progreso de una versión anterior se actualiza a la actual.
+- **Borrar progreso:** en Opciones del menú de inicio, con lo que hay guardado debajo ("Jefes vencidos: Creeper", "Partida guardada en la ronda 6"). Sin nada guardado, está desactivado. Pide confirmar y dice qué se pierde para siempre y qué se conserva. Borra el progreso y la partida guardada; se quedan los ajustes, el idioma y los tours vistos. No está en los ajustes de la pausa.
+- **Si algo falla:** un progreso que no se entiende cuenta como vacío, sin error, y no toca la partida guardada. En una ventana privada o con el almacenamiento lleno, el progreso dura lo que dure la sesión. Con dos pestañas abiertas gana la última que escribe.
+- **Antes de T-017 (K-01):** quien venció a Creeper antes no lo tiene vencido, porque no quedó constancia: tiene que vencerlo otra vez.
+- **Exportar e importar (K-02):** no por ahora; se apunta como mejora si el juego crece.
 
 ### Tours de ayuda (T-013)
 Decisiones G-01 a G-10 cerradas el 20 nov 2026. Cómo se hace: ADR-0012.
@@ -233,6 +243,8 @@ Las rondas (T-007), en `src/game/core/rounds.ts`: preparación y ataque (`stepRo
 T-010: la fuerza de los enemigos está en `combat.ts` (`enemyTierBonus`, `enemyPower`, y la usan `enemyMaxHp`, `enemyDamage` y `slamDamage`), con sus valores en `ENEMY_POWER` de `balance.ts`. El goteo, en `economy.ts` (`stepIncome`, con su reloj en `MatchState.incomeMs`). La ronda que no avisa lleva `quiet` en `ROUNDS` y `roundUnlocks` la respeta. La ficha de información no es una regla: sus textos y números salen de las reglas en `src/game/view/entityInfo.ts`.
 
 T-011: la partida guardada (formato con versión, comprobación al cargar, guardar, leer y borrar) está en `src/game/save.ts`, con tests en `save.test.ts`; la escena guarda (`saveGame`) y borra al perder o ganar. Los textos de las reglas que se enseñan al jugador ya no están en `balance.ts`: el aviso de cada ronda está en `round.notices` y el grito de Creeper es una clave (`RoundGroup.shout`, `CreeperShout`) con su texto en `creeper.shouts`, en `src/i18n/` (ADR-0009).
+
+T-017: el progreso permanente (forma con versión, migraciones, comprobación al leer, jefe vencido y borrado) está en `src/game/progress.ts` (`recordDefeat`, `isOutbreakDefeated`, `hasProgress`, `MIGRATIONS`, `decodeProgress`, `ProgressKeeper`), con tests en `progress.test.ts`; el nombre del brote, en `OUTBREAK_ID` de `rounds.ts`. La escena lo apunta al ganar (`enterVictory`), antes de borrar la partida guardada.
 
 T-013: los tours de ayuda no son reglas. Qué señalar en el tablero lo elige `src/game/view/tourSpots.ts` (`tourCells`, con test) con las reglas de core; los tours, sus pasos y los vistos están en `src/ui/tour/` (`tours.ts`, `tourProgress.ts`, con test). La escena para la preparación con `tourHold` (en `advance`) y avisa de lo que hace el jugador con `playerAction`.
 

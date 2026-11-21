@@ -47,9 +47,25 @@ export const es = {
     autosave: 'Tu partida se guarda sola.',
     confirmTitle: '¿Empezar de cero?',
     confirmText: (round: number) => `Se borrará tu partida guardada (ronda ${round}).`,
+    confirmKeeps: 'Tu progreso se conserva: los jefes vencidos siguen vencidos.',
     confirmYes: 'Sí, nueva partida',
     confirmNo: 'Mejor no',
     version: (version: string) => `Versión ${version}`,
+  },
+
+  /** Progreso permanente (T-017): lo que no se pierde al acabar una partida. Se borra en Opciones. */
+  progress: {
+    section: 'Progreso',
+    erase: 'Borrar progreso',
+    bosses: (names: string) => `Jefes vencidos: ${names}`,
+    save: (round: number) => `Partida guardada en la ronda ${round}`,
+    nothing: 'No hay progreso guardado.',
+    erased: 'Progreso borrado.',
+    confirmTitle: '¿Borrar tu progreso?',
+    confirmLost: 'Se perderá para siempre:',
+    confirmKept: 'Se conservan los ajustes, el idioma y los tours de ayuda vistos.',
+    confirmYes: 'Sí, borrar',
+    confirmNo: 'Mejor no',
   },
 
   /** Lo que dice Creeper en la portada al hacerle clic (o cada tanto). */

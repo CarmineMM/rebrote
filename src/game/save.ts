@@ -9,6 +9,7 @@ import type { UnlockInfo } from './EventBus';
  * y en el momento exacto al salir al menu o al ocultar o cerrar la pestana. Al perder o ganar se borra (I-04).
  * Lo que se guarda es el estado entero de la partida (`MatchState`, ADR-0008), mas el aviso de desbloqueo que el
  * jugador aun no acepto. Una guardada que no se entiende, de otra version o con una ronda que ya no existe, se ignora.
+ * Lo que no se pierde al acabar la partida (jefes vencidos) va aparte, en `progress.ts` (T-017, ADR-0014).
  */
 export const SAVE_KEY = 'rebrote.partida';
 
@@ -38,7 +39,7 @@ export interface SaveSummary {
 export type SaveStore = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
 
 /** El `localStorage` del navegador, o null si no hay o no deja usarlo (ventana privada, permisos). */
-function browserStore(): SaveStore | null {
+export function browserStore(): SaveStore | null {
   try {
     return globalThis.localStorage ?? null;
   } catch {

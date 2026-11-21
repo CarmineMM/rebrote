@@ -23,6 +23,7 @@ Juego de defensa por carriles. Stack: Phaser 4 + React 19 + Vite + TypeScript. S
 8. La partida guardada es el `MatchState` entero (ADR-0010): si cambia su forma, se sube `SAVE_VERSION` y se ajusta la comprobación en `src/game/save.ts`.
 9. Una mecánica nueva llega con su tour de ayuda (ADR-0012): la mano enseña el gesto sobre el tablero de verdad la primera vez que sale. Cada `Feature` de `rounds.ts` tiene su tour en `TOUR_OF_FEATURE` (`src/ui/tour/tours.ts`; si falta, no compila), con sus pasos en `TOURS`, una frase corta por paso en `tour.steps` de `src/i18n/` y un dibujo animado en `TourPicture`. Lista en `docs/guias/graficos.md` ("Mecánica nueva").
 10. Una mecánica nueva llega también con su sonido (ADR-0013). Solo `src/game/audio/` reproduce (`sfx.play`); lo que suena con cada evento lo decide una regla pura de `cues.ts` con test, y cada efecto lleva su entrada en `SFX` (`src/game/config/audio.ts`) y su fuente en `scripts/audio/manifest.ts` (`npm run audio`). Lista en `docs/guias/graficos.md` ("Sonido nuevo").
+11. Lo que el jugador no pierde al acabar una partida (jefes vencidos y, después, semillas, compras y mejoras) va en el progreso permanente, `src/game/progress.ts` (ADR-0014), nunca en la partida guardada. Si cambia la forma de `Progress`, se sube `PROGRESS_VERSION` y se escribe su migración en `MIGRATIONS`, con test: un progreso viejo se migra, nunca se descarta.
 
 ## Comandos
 

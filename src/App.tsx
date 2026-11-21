@@ -13,6 +13,7 @@ import {
   type RoundInfo,
   type UnlockInfo,
 } from './game/EventBus';
+import { playerProgress, type Progress } from './game/progress';
 import { readSave, type SavedGame } from './game/save';
 import { SCENES } from './game/scenes/keys';
 import { Balance } from './ui/Balance';
@@ -62,6 +63,8 @@ export function App() {
   const ready = readyScene === SCENE_OF[screen];
   /** Partida guardada, para "Cargar partida" en el menu de inicio. */
   const [saved, setSaved] = useState<SavedGame | null>(() => readSave());
+  /** Progreso permanente (T-017), para "Borrar progreso" en Opciones. */
+  const [progress, setProgress] = useState<Progress>(() => playerProgress.read());
   const [balance, setBalance] = useState<number | null>(null);
   const [lives, setLives] = useState<number | null>(null);
   const [selected, setSelected] = useState<CardId | null>(null);
@@ -157,10 +160,20 @@ export function App() {
   // Cambiar la calidad o el idioma recrea el juego: se vuelve a mostrar la carga hasta que este listo.
   useEffect(() => setReadyScene(null), [level, settings.language]);
 
-  // Al volver al menu (o al abrirlo), "Cargar partida" mira lo que hay guardado.
+  // Al volver al menu (o al abrirlo), "Cargar partida" mira lo que hay guardado, y Opciones, el progreso (un jefe recien
+  // vencido ya esta apuntado).
   useEffect(() => {
-    if (screen === 'title') setSaved(readSave());
+    if (screen !== 'title') return;
+    setSaved(readSave());
+    setProgress(playerProgress.read());
   }, [screen]);
+
+  /** "Borrar progreso" (T-017): se van el progreso y la partida guardada; los ajustes y los tours vistos se quedan. */
+  const eraseProgress = useCallback(() => {
+    playerProgress.erase();
+    setSaved(readSave());
+    setProgress(playerProgress.read());
+  }, []);
 
   /** Todo el HUD vuelve a estar como al empezar: nada de la partida anterior debe asomar en la siguiente. */
   const resetHud = useCallback(() => {
@@ -290,12 +303,14 @@ export function App() {
       {screen === 'title' && (
         <TitleScreen
           saved={saved}
+          progress={progress}
           settings={settings}
           autoLevel={autoLevel}
           fullscreenSupported={fullscreen.supported}
           onChange={update}
           onNewGame={newGame}
           onLoadGame={loadGame}
+          onEraseProgress={eraseProgress}
         />
       )}
 

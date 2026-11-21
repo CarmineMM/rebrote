@@ -7,6 +7,7 @@ import {
   detectLanguage,
   formatNumber,
   formatPercent,
+  formatList,
   formatSavedAt,
   formatSeconds,
   getLanguage,
@@ -104,5 +105,11 @@ describe('idiomas (T-011)', () => {
     expect(formatSavedAt(now - 5 * 60_000, now, 'en')).toBe('5 minutes ago');
     expect(formatSavedAt(now - 3 * 3_600_000, now, 'en')).toBe('3 hours ago');
     expect(formatSavedAt(now - 3 * 86_400_000, now, 'en')).toMatch(/2026/);
+  });
+
+  it('listas con la conjuncion de cada idioma (T-017)', () => {
+    expect(formatList(['Creeper'], 'es')).toBe('Creeper');
+    expect(formatList(['Creeper', 'Blaster'], 'es')).toBe('Creeper y Blaster');
+    expect(formatList(['Creeper', 'Blaster'], 'en')).toBe('Creeper and Blaster');
   });
 });

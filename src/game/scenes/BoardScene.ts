@@ -34,6 +34,7 @@ import {
 } from '../core/match';
 import { plantMaxHp } from '../core/plants';
 import {
+  OUTBREAK_ID,
   ROUND_COUNT,
   availableCards,
   bossRoundIndex,
@@ -85,6 +86,7 @@ import { MINE_SIZE, SHOOTER_SIZE, TEX, registerTextures, shooterTexture, mineTex
 import { tourCells } from '../view/tourSpots';
 import { WormView, type EnemyView } from '../view/wormView';
 import { text } from '../../i18n';
+import { playerProgress } from '../progress';
 import { clearSave, writeSave } from '../save';
 import { SCENES } from './keys';
 import { FpsMeter, applyPostFx, fitCamera } from './sceneKit';
@@ -987,6 +989,9 @@ export class BoardScene extends Phaser.Scene {
   private enterVictory(delayMs: number): void {
     if (this.won) return;
     this.won = true;
+    // El jefe queda vencido para siempre (T-017). Antes de borrar la partida guardada: si la pestana se cierra justo
+    // ahora, no se pierde la victoria.
+    playerProgress.recordDefeat(OUTBREAK_ID);
     // La partida acabo (I-04): no queda nada que cargar.
     clearSave();
     this.cancelDrag();

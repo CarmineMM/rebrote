@@ -96,3 +96,8 @@ export function formatSavedAt(savedAt: number, now: number, language: Language =
   if (hours < 24) return relative.format(-hours, 'hour');
   return new Intl.DateTimeFormat(dictionary.locale, { dateStyle: 'medium', timeStyle: 'short' }).format(savedAt);
 }
+
+/** Lista con la conjuncion del idioma: "Creeper y Blaster" o "Creeper and Blaster". */
+export function formatList(items: readonly string[], language: Language = current): string {
+  return new Intl.ListFormat(text(language).locale, { style: 'long', type: 'conjunction' }).format(items);
+}

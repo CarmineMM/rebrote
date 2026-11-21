@@ -99,6 +99,12 @@ export interface RoundStep {
 /** Rondas del mundo. */
 export const ROUND_COUNT = ROUNDS.length;
 
+/**
+ * Brote al que pertenece el guion de `ROUNDS` (T-017): hasta T-018 hay uno solo. Es el nombre con el que el progreso
+ * permanente apunta su jefe vencido, asi que no cambia aunque cambie el orden de los brotes.
+ */
+export const OUTBREAK_ID = 'creeper';
+
 /** Ronda `index` (desde 0) al empezar: en su preparacion, sin enemigos fuera. */
 export function createRound(index = 0): RoundState {
   if (!Number.isInteger(index) || index < 0 || index >= ROUND_COUNT) {

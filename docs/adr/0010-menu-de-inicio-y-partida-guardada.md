@@ -50,6 +50,7 @@ Condiciones previas:
 ## Consecuencias
 
 - **Si cambia la forma de `MatchState`** (un campo nuevo, otro significado), se sube `SAVE_VERSION` y se ajusta `isMatchState` en `save.ts`. Las guardadas viejas dejan de cargarse; es lo esperado en el prototipo.
+- Lo que no se pierde al acabar una partida (jefes vencidos y lo que venga) no va aquí: va en el progreso permanente, con migraciones en vez de descartes (ADR-0014, T-017).
 - Si cambia el guion de rondas, una guardada puede quedar en una ronda que ya no existe: se ignora.
 - Todo lo que pase con el tiempo en la portada usa el reloj y los tweens de su escena, como en el tablero.
 - Las monedas soltadas en el suelo no se guardan: son de la vista.
