@@ -1,13 +1,13 @@
 # ADR-0015: Varios brotes como datos, con la partida atada a su brote
 
-- **Estado:** Aceptada
+- **Estado:** Aceptada. Modificada el 2026-11-21 (ver "Historial").
 - **Fecha:** 2026-11-21
 
 ## Contexto
 
 Hasta T-018 el juego tenía una sola campaña. Su guion era una lista única, `ROUNDS` en `balance.ts`, y de ella salían el total de rondas (`ROUND_COUNT`), los desbloqueos (`unlockedAt`), el tope de nivel, la ronda del jefe y la comprobación de la partida guardada. El nombre del jefe para el progreso permanente era una constante (`OUTBREAK_ID`, ADR-0014) y el título "Mundo 1: Gusanos" un texto fijo.
 
-Carmine decidió llamar **brote** a cada campaña que acaba en un jefe ("Brote 1: Creeper") y reservar "mundo" para el futuro. Vienen más brotes (Blaster, T-024 a T-026) y el menú para elegirlos (T-019), así que la estructura tiene que admitir varios antes de añadir contenido.
+Carmine decidió llamar **brote** a cada campaña que acaba en un jefe ("Brote 1: Creeper") y reservar "mundo" para el futuro. Vienen más brotes (el siguiente es el de Elk Cloner, T-024 a T-026) y el menú para elegirlos (T-019), así que la estructura tiene que admitir varios antes de añadir contenido.
 
 Decisiones de diseño (B-01 a B-04, cerradas el 21 nov 2026 con la recomendación): lo desbloqueado en los brotes anteriores llega desbloqueado; entre brotes no pasa nada de la partida; el jefe se nombra siempre; y para entrar en un brote hay que haber vencido al anterior.
 
@@ -46,3 +46,10 @@ Decisiones de diseño (B-01 a B-04, cerradas el 21 nov 2026 con la recomendació
 - Las reglas reciben el brote explícito: cualquier código nuevo que necesite una ronda necesita también su brote. Los tests de reglas comunes usan el brote 1; `outbreaks.test.ts` cambia la lista por dos brotes de prueba (`vi.mock` de `balance.ts`) para probar lo que depende de que haya varios.
 - El brote 1 se juega igual que antes: una simulación con azar fijo da el mismo estado, evento a evento, antes y después del cambio.
 - Lo que hace cada jefe (Creeper salta, se prepara, grita) sigue siendo suyo en `combat.ts` y en sus vistas; un jefe nuevo traerá lo suyo (T-026).
+- **El orden de los brotes** es el de la lista de `docs/specs/03-ruta-de-brotes.md`: 25 jefes y el final. El brote 2 es Elk Cloner; Blaster es el 11.
+- **Datos guardados durante el desarrollo:** una guardada o un progreso de otra versión se descarta (ADR-0010 y ADR-0014, modificado el 21 nov 2026). Añadir o reordenar brotes no obliga a migrar nada.
+
+## Historial
+
+- **2026-11-21, versión original (T-018):** el contexto daba a Blaster como siguiente brote.
+- **2026-11-21, modificación:** Carmine decidió usar los 25 jefes en el orden de la lista. El brote 2 pasa a ser Elk Cloner y Blaster se va al puesto 11. La decisión técnica no cambia.

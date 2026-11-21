@@ -37,26 +37,41 @@ De menos a más daño, mezclando dos cosas: lo que le hizo a los equipos y lo qu
 | 25 | Triton | 2017 | Ataque a los sistemas de seguridad de una planta industrial | Triton, el Silenciador |
 | Final | La IA | | La que recrea todos los anteriores | Por decidir (ver abajo) |
 
-## Decisión: ruta larga (21 nov 2026)
+## Decisiones de la ruta (21 nov 2026)
 
-Carmine decidió usar los 25 jefes de la lista, 26 con el final. La ruta corta de 10 brotes que se propuso queda descartada.
+- **Ruta larga.** Se usan los 25 jefes de la lista, 26 con el final. La ruta corta de 10 brotes queda descartada.
+- **El orden de la lista es el orden de los brotes.** Blaster se queda en el puesto 11 (H-08 cerrada). El brote 2 es Elk Cloner.
+- **El escudo no espera a Blaster.** Sale en el brote 2 para no dejar al jugador sin progreso, así que Elk Cloner necesita una mecánica que lo justifique (T-026).
 
-## Avisos sobre la lista
+## Primer tramo: la defensa del refugio
 
-- **Blaster es el brote 2 y está en el puesto 11.** Con la ruta larga esto hay que resolverlo (H-08, abajo): o Blaster sube al segundo puesto y el orden por peligro pasa a ser aproximado, o el brote 2 pasa a ser Elk Cloner y el francotirador y el escudo se van al brote 11.
-- **Son 26 brotes.** A unos 15 minutos por brote son más de 6 horas de juego, y cada jefe necesita una mecánica propia para que no se sienta relleno. Conviene planificarlos por tramos de 4 o 5, no todos a la vez, y aceptar que algunos brotes sean más cortos que otros.
-- **Familias.** Gusanos: 1, 4, 8 a 15, 18. Troyanos: 16, 17. Ransomware: 19, 21, 22. Armas industriales: 23 a 25. Cada familia puede traer su mecánica de tropas y su escenario.
-- **Tramos de la historia.** Los primeros 3 o 4 brotes son de defensa en el refugio; después el jugador pasa al ataque y cambia el escenario (ver `04-historia.md`).
+| Brote | Jefe | Estado | Qué aporta |
+|---|---|---|---|
+| 1 | Creeper, el Escurridizo | Hecho | Disparadora, fuego, hielo, infundir, fusionar y subir de nivel |
+| 2 | Elk Cloner, el Poeta | Planificado (T-024 a T-026), aprobado por Carmine | Escudo. Sus versos son ondas que cruzan el carril y solo un escudo las para |
+| 3 | Brain, el Cerebro | Sin diseñar | Idea suelta: el Brain real se escondía de quien lo buscaba. Enemigos que no se ven hasta que están cerca |
+| 4 | Morris, el Imparable | Sin diseñar | Idea suelta: el Morris real se copiaba tantas veces que tumbaba las máquinas. Enemigos en masa |
+
+Después de estos cuatro brotes, la historia pasa de la defensa al ataque y cambia el escenario (decidido el 21 nov 2026, ver `04-historia.md`). Por eso los cuatro tienen que dejar al jugador con todas las piezas básicas en la mano.
+
+Las ideas de los brotes 3 y 4 no están decididas: son un punto de partida para cuando les toque.
+
+## Lo que se guarda para Blaster (brote 11)
+
+Blaster iba a ser el brote 2 y ya tenía diseño. Se conserva para cuando llegue:
+- Es el jefe francotirador: ataca a larga distancia a la planta más valiosa.
+- Cuenta atrás: marca una planta y, al llegar a cero, la apaga un rato. El Blaster real forzaba un apagado con cuenta atrás de 60 segundos.
+- Sus tropas incluyen francotiradores que apuntan a la planta de más nivel del carril.
+
+## Avisos
+
+- **Son 26 brotes.** A unos 15 minutos por brote son más de 6 horas de juego, y cada jefe necesita una mecánica propia para que no se sienta relleno. Conviene planificarlos por tramos de 4 o 5 y aceptar que algunos brotes sean más cortos que otros.
+- **Familias.** Virus de arranque: 2, 3, 5, 7. Gusanos: 1, 4, 8 a 15, 18. Troyanos: 16, 17. Ransomware: 19, 21, 22. Armas industriales: 23 a 25. Cada familia puede traer su mecánica de tropas y su escenario.
+- **El orden por peligro es discutible** en los puestos intermedios. Si al diseñar un brote conviene intercambiar dos vecinos, se intercambian.
 - Son nombres de sucesos históricos. Antes de monetizar, revisar el uso de nombres y no usar logotipos ni material de nadie.
 
 ## Historia
 
-La historia, los personajes y sus preguntas abiertas están en `04-historia.md`. De las preguntas que había aquí, quedaron respondidas el 21 nov 2026: quién es el jugador (H-01), qué quiere la IA (H-02), cómo se cuenta (H-04), qué pasa con los jefes vencidos (H-05), cómo acaba (H-06) y cuántos brotes hay (H-07).
+La historia, los personajes y sus preguntas están en `04-historia.md`.
 
-**Idea para justificar el orden.** La IA está aprendiendo. Empieza recreando los virus más antiguos e inofensivos, que son los más fáciles de fabricar, y con cada brote se atreve con uno peor.
-
-## Pregunta abierta de la ruta
-
-| # | Pregunta | Opciones | Recomendación | Decide |
-|---|---|---|---|---|
-| H-08 | ¿Dónde va Blaster? | a) Segundo, y el orden por peligro es aproximado. b) En el puesto 11, y el brote 2 es Elk Cloner | a: T-024 a T-026 ya están planificadas para el brote 2, y el escudo es una pieza básica que conviene enseñar pronto | Carmine |
+**Por qué el orden va de menos a más.** La IA está aprendiendo. Empieza recreando los virus más antiguos e inofensivos, que son los más fáciles de fabricar, y con cada brote se atreve con uno peor.

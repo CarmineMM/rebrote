@@ -28,12 +28,16 @@ Una task por archivo. El tamaño es orientativo.
 | T-022 | [Tienda] Tienda de poderes | Pendiente | M | T-019, T-020, T-021 | O-01, T-01 a T-04 |
 | T-023 | [Progresión] Nivel base permanente de la disparadora | Pendiente | M | T-019, T-020, T-022 | N-02 a N-06 (N-01 cerrada) |
 | T-024 | [Plantas] Escudo: muro e infusión | Pendiente | L | T-016, T-018 | E-01 a E-06 |
-| T-025 | [Enemigos] Tropas del brote 2 y francotirador | Pendiente | L | T-018, T-024 | F-01 a F-06 |
-| T-026 | [Jefe] Blaster y rondas del brote 2 | Pendiente | L | T-024, T-025 | L-01 a L-08 |
+| T-025 | [Enemigos] Tropas del brote 2 y juglar | Pendiente | L | T-018, T-024 | F-01 a F-06 |
+| T-026 | [Jefe] Elk Cloner y rondas del brote 2 (antes Blaster, que pasó al brote 11) | Pendiente | L | T-024, T-025 | L-01, L-03 a L-09 (L-02 cerrada) |
 | T-027 | [Plantas] Premio en los niveles 5, 10, 15 y 20 y jardincito | Completada (21 nov 2026) | M | T-003 | Ninguna (Q-01 a Q-03 cerradas) |
 | T-028 | [Web] Icono del juego y favicon | Pendiente | S | Ninguna | W-01 a W-03 |
 | T-029 | [Web] Instalar el juego como aplicación (PWA) | Pendiente | M | T-028 | V-02 a V-05 |
 | T-030 | [Enemigos] Aura en los tramos de nivel de los gusanos | Completada (21 nov 2026) | M | T-027 | Ninguna (Z-01 a Z-04 cerradas) |
+| T-031 | [Historia] Viñetas, Boxer y Patty: el arranque de la historia | Pendiente | L | T-019 | Y-01 a Y-07 |
+| T-032 | [Historia] Boxer en los tours y Patty en lo nuevo | Pendiente | M | T-031 | VT-01 a VT-05 |
+| T-033 | [Historia] El jugador elige su nombre | Pendiente | S | T-031, T-034 | Ninguna (NJ-01 a NJ-06 cerradas) |
+| T-034 | [Guardado] Perfiles de jugador en el navegador | Pendiente | M | T-017, T-019 | PF-01 a PF-07 |
 
 ## Estados
 
@@ -49,21 +53,23 @@ El estado se escribe en dos sitios: en esta tabla y en la cabecera de la task (`
 
 T-001, T-002, T-006, T-004, T-005, T-003, T-007, T-008, T-009, T-010, T-011, T-012, T-013.
 
-Después, para progresión, audio y brote 2 (planificado el 20 nov 2026):
+Después de T-013 se hicieron T-014, T-016 a T-019, T-027 y T-030.
 
-1. T-014: efectos de sonido. No depende de nada y se nota al instante.
-2. T-016, fase 1: propuestas de la disparadora. Va pronto porque el escudo (T-024) se pinta sobre la forma nueva.
-3. T-017 y T-018: guardado permanente y estructura de brotes. Son los cimientos de todo lo demás.
-4. T-019 y T-020: Invernadero, ruta y semillas.
-5. T-021 y T-022: poderes y tienda.
-6. T-016, fase 2, y después T-024, T-025 y T-026: escudo, tropas y Blaster.
-7. T-023: nivel base permanente.
-8. T-015: música, en cuanto Carmine elija las pistas.
+Al cerrar una task se sube la versión del juego (ADR-0017). Mientras el juego esté en desarrollo, ninguna task migra datos guardados (ADR-0014).
 
-9. T-028 y T-029: icono e instalación. No dependen del resto y se pueden hacer en cualquier momento.
-10. T-030: aura de los gusanos (elegida en `/gusanos.html`). Solo depende de lo que ya está hecho.
+Orden sugerido para lo pendiente (revisado el 21 nov 2026):
 
-La lista de jefes está en `../specs/03-ruta-de-brotes.md` y la historia en `../specs/04-historia.md` (sin tasks todavía).
+1. T-028: icono y favicon. Pequeña, no depende de nada y se nota en cada pestaña.
+2. T-034: perfiles. Va antes que todo lo que guarda datos permanentes (T-020, T-022, T-023, T-031, T-033) para que nazcan dentro del perfil.
+3. T-031: viñetas, Boxer y Patty. Empieza por la galería de propuestas, que necesita la decisión de Carmine: conviene lanzarla pronto.
+4. T-033 y T-032: el nombre del jugador y Boxer en los tours.
+5. T-020: semillas. Pequeña, y así el brote 2 ya da recompensa.
+6. T-024, T-025 y T-026: escudo, tropas y Elk Cloner. Es el contenido nuevo: va antes que la tienda porque una tienda sin segundo brote vende ayuda para lo que ya se venció.
+7. T-021, T-022 y T-023: poderes, tienda y nivel base.
+8. T-029: instalable. Después de T-028 y de T-034.
+9. T-015: música, en cuanto Carmine elija las pistas.
+
+La lista de jefes está en `../specs/03-ruta-de-brotes.md` y la historia en `../specs/04-historia.md`.
 
 T-006 va antes que los elementos a propósito: fusionar es la mecánica que diferencia al juego. Si arrastrar una planta sobre otra no se siente bien, conviene saberlo cuanto antes.
 

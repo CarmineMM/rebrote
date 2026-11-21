@@ -15,7 +15,7 @@ Carmine quiere una mejora permanente y muy cara, con tope 5, para que las planta
 3. **Que sea opcional:** todos los jefes se vencen sin ella.
 
 ## Alcance
-**Incluye:** mejora de la disparadora comprable en el Invernadero, su efecto en la partida, precios en `balance.ts`, marca visual, progreso permanente con migración, textos, tests.
+**Incluye:** mejora de la disparadora comprable en el Invernadero, su efecto en la partida, precios en `balance.ts`, marca visual, progreso permanente (sin migración: ADR-0014), textos, tests.
 **No incluye:** mejoras permanentes de minas, escudo o poderes.
 
 ## Decisiones pendientes

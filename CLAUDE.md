@@ -9,7 +9,7 @@ Juego de defensa por carriles. Stack: Phaser 4 + React 19 + Vite + TypeScript. S
 - Si la task pinta o anima algo (enemigos, plantas, efectos, escenarios, HUD), lee `docs/guias/graficos.md` y sigue sus listas de comprobación. Si algo suena, su sección 16 y la lista "Sonido nuevo".
 - Si la task añade o cambia algún texto que ve el jugador, lee `docs/guias/idiomas.md`.
 - Si la task añade una mecánica o un gesto nuevo, lleva su tour de ayuda (regla 9) y su sonido (regla 10).
-- Al empezar una task, pon su estado en "En curso". Al cerrarla, marca sus criterios de aceptación y pon "Completada (fecha)". El estado se cambia en la cabecera de la task y en la tabla de `docs/tasks/README.md`, en el mismo commit.
+- Al empezar una task, pon su estado en "En curso". Al cerrarla, marca sus criterios de aceptación, sube la versión (regla 12) y pon "Completada (fecha, versión)". El estado se cambia en la cabecera de la task y en la tabla de `docs/tasks/README.md`, en el mismo commit.
 
 ## Reglas del proyecto
 
@@ -23,7 +23,8 @@ Juego de defensa por carriles. Stack: Phaser 4 + React 19 + Vite + TypeScript. S
 8. La partida guardada es el `MatchState` entero (ADR-0010): si cambia su forma, se sube `SAVE_VERSION` y se ajusta la comprobación en `src/game/save.ts`.
 9. Una mecánica nueva llega con su tour de ayuda (ADR-0012): la mano enseña el gesto sobre el tablero de verdad la primera vez que sale. Cada `Feature` de `rounds.ts` tiene su tour en `TOUR_OF_FEATURE` (`src/ui/tour/tours.ts`; si falta, no compila), con sus pasos en `TOURS`, una frase corta por paso en `tour.steps` de `src/i18n/` y un dibujo animado en `TourPicture`. Lista en `docs/guias/graficos.md` ("Mecánica nueva").
 10. Una mecánica nueva llega también con su sonido (ADR-0013). Solo `src/game/audio/` reproduce (`sfx.play`); lo que suena con cada evento lo decide una regla pura de `cues.ts` con test, y cada efecto lleva su entrada en `SFX` (`src/game/config/audio.ts`) y su fuente en `scripts/audio/manifest.ts` (`npm run audio`). Lista en `docs/guias/graficos.md` ("Sonido nuevo").
-11. Lo que el jugador no pierde al acabar una partida (jefes vencidos y, después, semillas, compras y mejoras) va en el progreso permanente, `src/game/progress.ts` (ADR-0014), nunca en la partida guardada. Si cambia la forma de `Progress`, se sube `PROGRESS_VERSION` y se escribe su migración en `MIGRATIONS`, con test: un progreso viejo se migra, nunca se descarta.
+11. Lo que el jugador no pierde al acabar una partida (jefes vencidos y, después, semillas, compras y mejoras) va en el progreso permanente, `src/game/progress.ts` (ADR-0014), nunca en la partida guardada. Mientras el juego esté en desarrollo (hasta la versión mayor 1) no se escriben migraciones, compatibilidad ni exportación de datos guardados: si cambia la forma de `Progress`, se sube `PROGRESS_VERSION` y lo guardado con otra versión se descarta.
+12. Versión del juego (ADR-0017), en `package.json`: se sube al cerrar una task, en el mismo commit. Menor: un brote, un personaje o una unidad nueva que cambie el modo de juego (el parche vuelve a 0). Parche: un cambio mínimo de diseño o un ajuste. La mayor solo la cambia Carmine. Lo que da al jugador algo nuevo que hacer (tienda, poderes, perfiles) también es menor. La versión se anota en la cabecera de la task al cerrarla y en una línea nueva al principio de `CHANGELOG.md` (versión, fecha, task y una frase); ese archivo no hace falta leerlo entero ni antes de empezar una task.
 
 ## Comandos
 

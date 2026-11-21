@@ -5,9 +5,9 @@
 ## Contexto
 Hoy hay dos elementos, fuego y hielo (`ElementType` en `src/game/core/plants.ts`). Sembrados solos son minas (`Mine` en `match.ts`); infundidos, cambian el disparo. Una disparadora admite un solo elemento (`canInfuse`).
 
-Los escupitajos ya chocan con lo primero sembrado que encuentran en el carril (`firstSownInPath` en `combat.ts`): hoy nada dispara por encima de una planta. El escudo cobra sentido con el francotirador del brote 2 (T-025), que sí lo hará.
+Los escupitajos ya chocan con lo primero sembrado que encuentran en el carril (`firstSownInPath` en `combat.ts`): hoy nada dispara por encima de una planta. El escudo cobra sentido con los ataques del brote 2 (T-025 y T-026), que sí lo harán: los versos de Elk Cloner y de sus tropas cruzan el carril entero.
 
-Decidido por Carmine: el escudo se gana en la ronda 2 del brote 2, ocupa el mismo hueco que fuego y hielo, no se puede disparar por detrás de un escudo ni saltar sobre él, y no existe la mezcla de fuego o hielo con escudo.
+Decidido por Carmine: el escudo se gana en la ronda 2 del brote 2 (el de Elk Cloner desde el 21 nov 2026, cuando Blaster pasó al brote 11; el escudo no se mueve), ocupa el mismo hueco que fuego y hielo, no se puede disparar por detrás de un escudo ni saltar sobre él, y no existe la mezcla de fuego o hielo con escudo.
 
 ## Objetivos
 1. **Escudo solo:** un muro que aguanta mucho y no ataca.
@@ -46,7 +46,7 @@ Decidido por Carmine: el escudo se gana en la ronda 2 del brote 2, ocupa el mism
 
 ### Desbloqueo
 - [ ] En el brote 1 la carta de escudo no existe.
-- [ ] En la ronda 2 del brote 2 se desbloquea, con su aviso y su tour.
+- [ ] En la ronda 2 del brote 2 se desbloquea, con su aviso y su tour. Según `docs/specs/04-historia.md`, lo presenta Patty ("He creado algo nuevo") y lo enseña Boxer; si T-032 aún no está hecha, sale como los avisos de hoy.
 
 ### Calidad
 - [ ] Reglas puras con tests; valores en `balance.ts`.

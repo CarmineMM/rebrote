@@ -49,7 +49,7 @@ Hechos de la plataforma que condicionan la task:
 ### Versiones
 - [ ] Tras publicar una versión nueva, el jugador la recibe según V-03 sin tener que borrar nada.
 - [ ] Una versión nueva nunca se aplica en mitad de una partida.
-- [ ] El número de versión de la portada coincide con lo publicado.
+- [ ] El número de versión de la portada coincide con lo publicado (ADR-0017).
 
 ### Calidad
 - [ ] El service worker solo actúa en la versión publicada, no en `npm run dev`.
@@ -60,10 +60,10 @@ Hechos de la plataforma que condicionan la task:
 
 ## Casos límite y riesgos
 - **El mayor riesgo: quedarse pegado en una versión vieja.** Un service worker mal configurado sirve el juego antiguo para siempre. Hay que probar el ciclo completo: publicar, abrir, publicar otra vez, abrir.
-- **En iPhone, la aplicación instalada no comparte datos con Safari.** Quien jugó en Safari y luego instala empieza de cero. La salida es exportar e importar el progreso con un código (K-02 de T-017, que quedó aplazada). Como mínimo, avisarlo en la ayuda de instalación.
+- **En iPhone, la aplicación instalada no comparte datos con Safari.** Quien jugó en Safari y luego instala empieza de cero. Se acepta mientras el juego esté en desarrollo (ADR-0014: sin exportación de datos). Conviene avisarlo en la ayuda de instalación.
 - El jugador desinstala la aplicación: el navegador puede tardar en volver a ofrecer la instalación.
 - "Borrar progreso" no debe tocar la caché de archivos, y actualizar la caché no debe tocar el progreso.
-- Si se cambia la forma de la partida guardada entre versiones, ya la cubre `SAVE_VERSION`; el progreso, sus migraciones (ADR-0014).
+- Si cambia la forma de la partida guardada o del progreso entre versiones, lo anterior se descarta (`SAVE_VERSION`, `PROGRESS_VERSION`; ADR-0014). Una actualización puede dejar al jugador a cero: es lo decidido durante el desarrollo.
 - El dominio tiene que servir por HTTPS (ya lo hace).
 
 ## Objetivo final con ejemplos

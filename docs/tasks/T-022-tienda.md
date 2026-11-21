@@ -13,7 +13,7 @@ Tras T-019 el Invernadero tiene un hueco de tienda con candado, tras T-020 el ju
 3. **Que lo comprado no se pierda.**
 
 ## Alcance
-**Incluye:** pantalla de tienda en el Invernadero, compra de poderes, selección de los que se llevan, precios en `balance.ts`, compras en el progreso permanente (con su migración), textos, tests.
+**Incluye:** pantalla de tienda en el Invernadero, compra de poderes, selección de los que se llevan, precios en `balance.ts`, compras en el progreso permanente (sin migración: ADR-0014), textos, tests.
 **No incluye:** nivel base de las plantas (T-023), plantas nuevas a la venta, pagos con dinero real, ofertas.
 
 ## Decisiones pendientes
@@ -51,7 +51,7 @@ Esta task no se puede ejecutar hasta cerrar O-01.
 - [ ] `npm test` y `npm run build` pasan.
 
 ## Casos límite y riesgos
-- Progreso de una versión anterior sin compras: se migra con la lista vacía.
+- Progreso de una versión anterior: se descarta (ADR-0014, sin migraciones durante el desarrollo).
 - Cambiar los poderes elegidos con una partida a medias: afecta a la siguiente partida, no a la que está guardada.
 - Bajar un precio después de que alguien compró: no se devuelve la diferencia.
 - Riesgo: una tienda con 3 artículos se vacía pronto. Es suficiente para probar si el bucle engancha; después llegan T-023 y más poderes.
