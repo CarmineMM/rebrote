@@ -4,6 +4,8 @@ import { hintDone, hintPending, hintShown, markTourDone, readTourProgress, write
 import { TOURS, cueOf, toursOfRound, type TourCue, type TourId } from './tours';
 
 interface UseToursOptions {
+  /** Jugador activo (T-034): cada uno tiene sus tours vistos. Solo cambia en la portada. */
+  player: string;
   onBoard: boolean;
   round: RoundInfo | null;
   /** Opcion "Ayuda" de los ajustes (T-013). Apagada, no sale ningun tour ni pista. */
@@ -22,10 +24,15 @@ const CHEER_MS = 900;
  * de lo que desbloquea; sale el primero que no se haya visto, si la ayuda esta encendida y no hay nada encima. Mientras
  * hay tour, la escena no descuenta la preparacion (`tourHold`). Un paso se completa al hacerlo de verdad (`playerAction`,
  * la ficha o el ataque) o con "Siguiente". El tour cuenta como visto al acabarlo, al saltarlo o si empieza el ataque.
- * Tambien lleva la pista de la moneda en el suelo, que sale en mitad del juego sin parar nada.
+ * Tambien lleva la pista de la moneda en el suelo, que sale en mitad del juego sin parar nada. Los tours vistos son del
+ * jugador activo: al cambiar de jugador se leen los suyos.
  */
-export function useTours({ onBoard, round, help, covered, over }: UseToursOptions) {
+export function useTours({ player, onBoard, round, help, covered, over }: UseToursOptions) {
   const [progress, setProgress] = useState(readTourProgress);
+  /** Jugador cuyos tours vistos estan en `progress`. */
+  const progressOf = useRef(player);
+  /** Lo que se leyo del jugador: no se vuelve a escribir (escribir cuenta como jugar, T-034). */
+  const loaded = useRef(progress);
   /** Tours de la ronda en curso, si se entro en ella por su preparacion. */
   const [queue, setQueue] = useState<TourId[]>([]);
   const [stepIndex, setStepIndex] = useState(0);
@@ -40,7 +47,18 @@ export function useTours({ onBoard, round, help, covered, over }: UseToursOption
   /** Tour que ya se llego a ver: si empieza el ataque a medias, cuenta como visto. */
   const shown = useRef<TourId | null>(null);
 
-  useEffect(() => writeTourProgress(progress), [progress]);
+  useEffect(() => {
+    if (progress !== loaded.current) writeTourProgress(progress);
+  }, [progress]);
+
+  // Otro jugador (solo desde la portada, sin tours en marcha): sus tours vistos.
+  useEffect(() => {
+    if (progressOf.current === player) return;
+    progressOf.current = player;
+    const next = readTourProgress();
+    loaded.current = next;
+    setProgress(next);
+  }, [player]);
 
   const roundNumber = round?.number ?? null;
   const outbreak = round?.outbreak ?? null;

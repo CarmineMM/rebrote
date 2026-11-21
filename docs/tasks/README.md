@@ -37,7 +37,7 @@ Una task por archivo. El tamaño es orientativo.
 | T-031 | [Historia] Viñetas, Boxer y Patty: el arranque de la historia | Pendiente | L | T-019 | Y-01 a Y-07 |
 | T-032 | [Historia] Boxer en los tours y Patty en lo nuevo | Pendiente | M | T-031 | VT-01 a VT-05 |
 | T-033 | [Historia] El jugador elige su nombre | Pendiente | S | T-031, T-034 | Ninguna (NJ-01 a NJ-06 cerradas) |
-| T-034 | [Guardado] Perfiles de jugador en el navegador | Pendiente | M | T-017, T-019 | PF-01 a PF-07 |
+| T-034 | [Guardado] Perfiles de jugador en el navegador | Completada (21 nov 2026, 0.2.0) | M | T-017, T-019 | Ninguna (PF-01 a PF-07 cerradas) |
 
 ## Estados
 

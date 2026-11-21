@@ -974,6 +974,95 @@ body {
   .title-panel { left: 16px; right: 16px; top: auto; bottom: max(16px, env(safe-area-inset-bottom)); translate: none; width: auto; max-height: 62%; }
 }
 
+/* ---------- Jugadores (T-034): quien juega arriba del menu, y la pantalla para elegir, crear y borrar ---------- */
+/* Avatar: un brote en un circulo del color del jugador; el 2 lleva un capullo y el 3 una tercera hoja. */
+.player-avatar { --avatar-light: #fff6c0; --avatar-dark: #e0a92a; flex: none; width: 34px; height: 34px; overflow: visible; filter: drop-shadow(0 2px 0 rgba(0, 0, 0, 0.28)); animation: medal-pop 0.45s cubic-bezier(0.2, 1.8, 0.4, 1) both; }
+.player-avatar.tone-2 { --avatar-light: #ffd9cf; --avatar-dark: #f07a5c; }
+.player-avatar.tone-3 { --avatar-light: #d6f3ff; --avatar-dark: #5bb4e6; }
+.player-avatar-disc { fill: var(--avatar-dark); stroke: #1d3a1f; stroke-width: 1.6; }
+.player-avatar-shine { fill: var(--avatar-light); opacity: 0.6; }
+.player-avatar-soil { fill: #7a4e2c; stroke: #3e2512; stroke-width: 1.2; stroke-linejoin: round; }
+.player-avatar-stem { fill: none; stroke: #2f8a28; stroke-width: 2.2; stroke-linecap: round; }
+.player-avatar-leaf { stroke: #1d4a17; stroke-width: 1.3; stroke-linejoin: round; }
+.player-avatar-leaf.is-left { fill: #9be564; }
+.player-avatar-leaf.is-right { fill: #74cc48; }
+.player-avatar-leaf.is-small { fill: #b6f07e; }
+.player-avatar-bud { fill: #ff8fb1; stroke: #8a2a4a; stroke-width: 1.2; }
+.player-avatar-sprout { transform-box: fill-box; transform-origin: 50% 100%; }
+.player-avatar.is-swaying .player-avatar-sprout { animation: sprout-sway 2.6s ease-in-out infinite; }
+
+/* En la portada: el avatar, "Juega" y el nombre, y la pastilla de cambiar. Toda la fila es el boton. */
+.player-chip {
+  display: flex; align-items: center; gap: 10px; width: 100%; margin: 0 0 12px; padding: 6px 8px 6px 6px;
+  border-radius: 14px; border: 1px solid rgba(255, 255, 255, 0.08); background: rgba(0, 0, 0, 0.22);
+  color: #f1f7ea; font: inherit; text-align: left; cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.12s ease;
+}
+.player-chip:hover { background: rgba(255, 255, 255, 0.06); border-color: rgba(159, 216, 138, 0.45); }
+.player-chip:hover .player-chip-change { filter: brightness(1.12); }
+.player-chip:active { transform: translateY(1px); }
+.player-chip:focus-visible { outline: 3px solid #ffe066; outline-offset: 2px; }
+.player-chip-text { flex: 1; min-width: 0; display: grid; line-height: 1.15; }
+.player-chip-text small { font-size: 0.62rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: #9fd88a; }
+.player-chip-text strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 1.02rem; font-weight: 900; color: #fff6c0; }
+.player-chip-change {
+  flex: none; display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 999px;
+  border: 1px solid #5fa54f; background: linear-gradient(180deg, #3f6f43, #2c5030); box-shadow: 0 2px 0 #142a17;
+  font-size: 0.76rem; font-weight: 800; white-space: nowrap; transition: filter 0.15s ease;
+}
+
+/* La lista: un boton por jugador (el activo, con borde dorado) y su papelera al lado. Entran uno tras otro. */
+.player-list { display: grid; gap: 8px; margin: 0 0 10px; padding: 0; list-style: none; }
+.player-row { display: flex; gap: 8px; animation: unlock-item-in 0.45s cubic-bezier(0.2, 1.4, 0.4, 1) both; }
+.btn.player-pick { flex: 1; min-width: 0; justify-content: flex-start; gap: 10px; padding: 7px 12px 7px 8px; text-align: left; }
+.btn.player-pick.is-current { border-color: #ffd23f; box-shadow: 0 4px 0 #142a17, 0 0 0 2px rgba(255, 210, 63, 0.28); }
+.player-info { flex: 1; min-width: 0; display: grid; gap: 1px; }
+.player-name-line { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.player-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 1rem; font-weight: 900; color: #fff6c0; }
+.player-name-line .btn-badge { flex: none; }
+.player-detail { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.player-detail.is-when { opacity: 0.65; }
+.btn.player-remove { flex: none; width: 44px; padding: 0; }
+.player-removed { margin: 0 0 10px; }
+.player-create .btn-line > span:first-child { font-size: 1.15em; line-height: 1; }
+
+@media (max-width: 860px), (max-height: 560px) {
+  .player-avatar { width: 28px; height: 28px; }
+  .player-chip { gap: 8px; margin-bottom: 8px; padding: 4px 6px 4px 4px; border-radius: 12px; }
+  .player-chip-text strong { font-size: 0.92rem; }
+  .player-chip-change { padding: 3px 8px; font-size: 0.7rem; }
+  .player-list { gap: 6px; margin-bottom: 8px; }
+  .player-row { gap: 6px; }
+  .title-panel .btn.player-pick { gap: 8px; padding: 5px 10px 5px 6px; }
+  .player-name { font-size: 0.92rem; }
+  .title-panel .btn.player-remove { width: 38px; padding: 0; }
+}
+@media (max-width: 860px) {
+  /* Estrecho: "Jugando" se queda en un punto dorado para que quepa el nombre (el lector de pantalla lo sigue leyendo). */
+  .player-name-line .btn-badge { width: 9px; height: 9px; padding: 0; border: 0; overflow: hidden; font-size: 0; background: #ffd23f; box-shadow: 0 0 0 2px rgba(255, 210, 63, 0.3); }
+}
+@media (max-height: 420px) {
+  /* Un movil pequeno en horizontal: el menu y los tres jugadores caben sin desplazarse. "Juega" sobra: el avatar lo dice. */
+  .player-chip { margin-bottom: 6px; padding: 2px 6px 2px 2px; }
+  .player-chip .player-avatar { width: 24px; height: 24px; }
+  .player-chip-text small { display: none; }
+  .title-panel.is-players { padding: 10px 12px; }
+  .title-panel.is-players .settings-header { margin-bottom: 8px; }
+  .title-panel.is-players .btn-ghost { width: 34px; height: 34px; }
+  .player-list { gap: 5px; margin-bottom: 6px; }
+  .player-row .player-avatar { width: 24px; height: 24px; }
+  .title-panel .btn.player-pick { padding-top: 2px; padding-bottom: 2px; }
+  .player-name { font-size: 0.86rem; }
+  .player-detail { font-size: 0.62rem; line-height: 1.2; }
+  /* El titulo ya dice si se puede crear o por que no: la linea de debajo sobra. */
+  .player-create .btn-detail { display: none; }
+  /* Borrar un jugador: menos aire y los dos botones en fila, para que "Si, borrar" se vea sin desplazarse. */
+  .title-confirm.is-player .title-confirm-text { margin-top: 6px; }
+  .title-confirm.is-player .title-confirm-list { margin-bottom: 6px; font-size: 0.86rem; }
+  .title-confirm.is-player .title-confirm-note { margin-bottom: 10px; font-size: 0.78rem; }
+  .title-confirm.is-player .pause-actions { grid-template-columns: 1fr 1fr; gap: 8px; }
+}
+
 /* ---------- Invernadero (T-019): el mismo panel de la derecha; el titulo grande dice "INVERNADERO" ---------- */
 .greenhouse-panel { animation-delay: 0.05s; }
 /* La casita de cristal, en el boton de la victoria que lleva al Invernadero. */

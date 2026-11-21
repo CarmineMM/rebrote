@@ -5,7 +5,7 @@
 ## Contexto
 El protagonista es el propio jugador: no tiene cara ni se le muestra. Carmine quiere que elija su nombre: Boxer se lo pregunta, el jugador lo escribe y la partida guardada se identifica con ese nombre.
 
-El nombre pertenece al perfil del jugador (T-034). El progreso permanente vive en `src/game/progress.ts` (`Progress`, `PROGRESS_VERSION`, `MIGRATIONS`; ADR-0014) y hoy solo guarda los brotes vencidos. Los textos admiten datos dentro de la frase (por ejemplo, `t.title.waiting` recibe el brote y la ronda). El juego se usa mucho en móvil en horizontal (ADR-0011), donde el teclado en pantalla tapa media pantalla o más.
+El nombre pertenece al perfil del jugador (T-034, ADR-0018): `Profile` (`src/game/profiles.ts`) ya tiene `name`, null mientras no lo elija (entonces se le llama "Jugador N", `playerName` en `src/ui/playerCards.ts`), y la lista de perfiles se guarda con su versión (`PROFILES_VERSION`). El progreso permanente vive en `src/game/progress.ts` (`Progress`, `PROGRESS_VERSION`; ADR-0014) y hoy solo guarda los brotes vencidos. Los textos admiten datos dentro de la frase (por ejemplo, `t.title.waiting` recibe el brote y la ronda). El juego se usa mucho en móvil en horizontal (ADR-0011), donde el teclado en pantalla tapa media pantalla o más.
 
 ## Objetivos
 1. **Que el jugador se ponga nombre** sin que sea un trámite.

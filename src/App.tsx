@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { CardId } from './game/core/match';
 import { FIRST_OUTBREAK, type OutbreakId } from './game/core/outbreaks';
 import { isGreenhouseOpen } from './game/core/route';
@@ -17,6 +17,7 @@ import {
   type RoundInfo,
   type UnlockInfo,
 } from './game/EventBus';
+import { profiles, type ProfileList } from './game/profiles';
 import { playerProgress, type Progress } from './game/progress';
 import { readSave, type SavedGame } from './game/save';
 import { SCENES } from './game/scenes/keys';
@@ -29,6 +30,7 @@ import { InfoPanel } from './ui/InfoPanel';
 import { LevelPanel } from './ui/LevelPanel';
 import { Lives } from './ui/Lives';
 import { PauseMenu } from './ui/PauseMenu';
+import { describePlayer } from './ui/playerCards';
 import { RotateNotice } from './ui/RotateNotice';
 import { RoundHud } from './ui/RoundHud';
 import { TitleMenu, TitleScreen } from './ui/TitleScreen';
@@ -60,6 +62,8 @@ const SCENE_OF: Record<GameScreen, string> = { title: SCENES.title, board: SCENE
  * pantalla (ADR-0011): el juego duerme y la partida queda en pausa para cuando se gire. Los tours de ayuda (T-013,
  * ADR-0012) ensenan lo nuevo de cada ronda encima del juego vivo, y esperan debajo de todo lo demas. Fuera de la partida
  * se esta en la portada o, si ya se vencio a Creeper, en el Invernadero (T-019, ADR-0016), al que lleva la victoria.
+ * Todo lo guardado (partida, progreso y tours vistos) es del jugador activo (T-034, ADR-0018), que solo se cambia en la
+ * portada.
  */
 export function App() {
   const t = useText();
@@ -67,10 +71,18 @@ export function App() {
   /** Escena que aviso de que esta lista; mientras no sea la de la pantalla, se ve la carga. */
   const [readyScene, setReadyScene] = useState<string | null>(null);
   const ready = readyScene === SCENE_OF[screen];
-  /** Partida guardada, para "Cargar partida" en el menu de inicio. */
+  /** Jugadores de este aparato y el activo (T-034). El primero se crea solo, sin ninguna pantalla. */
+  const [playerList, setPlayerList] = useState<ProfileList>(() => profiles.read());
+  /** Partida guardada del jugador activo, para "Continuar" en el menu de inicio. */
   const [saved, setSaved] = useState<SavedGame | null>(() => readSave());
-  /** Progreso permanente (T-017), para "Borrar progreso" en Opciones y para el Invernadero y su ruta (T-019). */
+  /** Progreso permanente del jugador activo (T-017), para el Invernadero y su ruta (T-019). */
   const [progress, setProgress] = useState<Progress>(() => playerProgress.read());
+  /** Lo que tiene cada jugador, para la pantalla de jugadores. El activo, al dia con su partida y su progreso. */
+  const players = useMemo(
+    () => playerList.profiles.map((profile) => describePlayer(profile, profiles.storeOf(profile.id))),
+    // Cuando cambian la partida o el progreso del activo, cambia lo que tiene: se vuelve a leer.
+    [playerList, saved, progress],
+  );
   /** Portada o Invernadero (T-019). El Invernadero solo se ve si esta abierto: sin progreso (o borrado), la portada. */
   const [place, setPlace] = useState<MenuPlace>('cover');
   const inGreenhouse = place === 'greenhouse' && isGreenhouseOpen(progress.defeated);
@@ -114,7 +126,7 @@ export function App() {
   const fullscreen = useFullscreen(settings.fullscreen, pause);
   const needsLandscape = useNeedsLandscape();
   // Tours de ayuda (T-013): esperan debajo de cualquier cosa que tape el juego.
-  const tours = useTours({ onBoard, round, help: settings.help, covered: halted || needsLandscape, over });
+  const tours = useTours({ player: playerList.active, onBoard, round, help: settings.help, covered: halted || needsLandscape, over });
 
   // Al ponerse en vertical, la partida se pausa: al girar de nuevo el jugador la encuentra en el menu de pausa.
   useEffect(() => {
@@ -177,20 +189,35 @@ export function App() {
   // Cambiar la calidad o el idioma recrea el juego: se vuelve a mostrar la carga hasta que este listo.
   useEffect(() => setReadyScene(null), [level, settings.language]);
 
-  // Al volver al menu (o al abrirlo), "Cargar partida" mira lo que hay guardado, y Opciones, el progreso (un jefe recien
-  // vencido ya esta apuntado).
-  useEffect(() => {
-    if (screen !== 'title') return;
-    setSaved(readSave());
-    setProgress(playerProgress.read());
-  }, [screen]);
-
-  /** "Borrar progreso" (T-017): se van el progreso y la partida guardada; los ajustes y los tours vistos se quedan. */
-  const eraseProgress = useCallback(() => {
-    playerProgress.erase();
+  /** Vuelve a leer lo del jugador activo: su partida, su progreso y la lista de jugadores (con su ultimo guardado). */
+  const refreshPlayer = useCallback(() => {
+    setPlayerList(profiles.read());
     setSaved(readSave());
     setProgress(playerProgress.read());
   }, []);
+
+  // Al volver al menu (o al abrirlo), "Continuar" mira lo que hay guardado, y el Invernadero, el progreso (un jefe recien
+  // vencido ya esta apuntado).
+  useEffect(() => {
+    if (screen === 'title') refreshPlayer();
+  }, [screen, refreshPlayer]);
+
+  /**
+   * Cambiar, crear o borrar un jugador (T-034): solo en la portada, nunca en mitad de una partida. Cambia la partida, el
+   * progreso, el Invernadero, la ruta y los tours vistos; los ajustes no. Se vuelve a la portada.
+   */
+  const changePlayer = useCallback(
+    (change: () => void) => {
+      if (screen !== 'title') return;
+      change();
+      setPlace('cover');
+      refreshPlayer();
+    },
+    [screen, refreshPlayer],
+  );
+  const selectPlayer = useCallback((id: string) => changePlayer(() => profiles.select(id)), [changePlayer]);
+  const createPlayer = useCallback(() => changePlayer(() => profiles.create()), [changePlayer]);
+  const removePlayer = useCallback((id: string) => changePlayer(() => profiles.remove(id)), [changePlayer]);
 
   /** Todo el HUD vuelve a estar como al empezar: nada de la partida anterior debe asomar en la siguiente. */
   const resetHud = useCallback(() => {
@@ -245,10 +272,9 @@ export function App() {
       resetHud();
       setScreen('title');
       setPlace(to);
-      setSaved(readSave());
-      setProgress(playerProgress.read());
+      refreshPlayer();
     },
-    [resetHud],
+    [resetHud, refreshPlayer],
   );
   const exitToCover = useCallback(() => exitToMenu('cover'), [exitToMenu]);
   const exitToGreenhouse = useCallback(() => exitToMenu('greenhouse'), [exitToMenu]);
@@ -350,13 +376,17 @@ export function App() {
             <TitleMenu
               saved={saved}
               progress={progress}
+              players={players}
+              player={playerList.active}
               settings={settings}
               autoLevel={autoLevel}
               fullscreenSupported={fullscreen.supported}
               onChange={update}
               onNewGame={newGame}
               onContinue={continueFromCover}
-              onEraseProgress={eraseProgress}
+              onSelectPlayer={selectPlayer}
+              onCreatePlayer={createPlayer}
+              onRemovePlayer={removePlayer}
             />
           )}
         </TitleScreen>

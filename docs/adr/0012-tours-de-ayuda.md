@@ -1,6 +1,6 @@
 # ADR-0012: Tours de ayuda hechos a mano, sobre el juego vivo
 
-- **Estado:** Aceptada
+- **Estado:** Aceptada. Modificada el 2026-11-21 por ADR-0018 (ver "Historial").
 - **Fecha:** 2026-11-20
 
 ## Contexto
@@ -31,10 +31,15 @@ Tours hechos a mano en React, encima del juego vivo.
 - **La escena dice qué señalar** (`tourBoard`): casillas y plantas que sirven para cada paso, ya en coordenadas de la página (círculos y el contorno de un carril). Las elige una función pura sobre el estado y las reglas de core (`src/game/view/tourSpots.ts`). También manda una vez los dibujos que van en los bocadillos (`tourArt`), compuestos con sus texturas como la foto de la ficha.
 - **La escena dice qué hizo el jugador** (`playerAction`: sembrar, infundir, seleccionar, subir de nivel, fusionar). El tour lo usa para dar el paso por hecho; la ficha (`entityInfo`) y el ataque (`roundChanged`) ya llegaban.
 - **React pinta** el velo con huecos (un SVG con máscara, que no recoge clics), los aros que laten, la mano (SVG hecha con código) que hace el gesto con CSS, y el bocadillo con su dibujo, una frase corta, los puntos de los pasos, "Siguiente" y "Saltar". Dónde va el bocadillo lo decide una función pura con test (`placeBubble`), como el panel de nivel.
-- **Los tours vistos** se guardan aparte de la partida (`rebrote.tours`): no se borran al perder ni con una partida nueva. La opción "Ayuda" va con los demás ajustes (`rebrote.ajustes`).
+- **Los tours vistos** se guardan aparte de la partida (`rebrote.tours`; desde T-034, uno por jugador, ADR-0018): no se borran al perder ni con una partida nueva. La opción "Ayuda" va con los demás ajustes (`rebrote.ajustes`).
 
 ## Consecuencias
 
 - Una mecánica nueva lleva su tour (regla de `CLAUDE.md`): pasos en `TOURS`, sus textos en `tour` de `src/i18n/`, lo que haya que señalar en `tourSpots.ts` y lo que cuente como hecho en `playerAction`. La guía de gráficos tiene la lista.
 - Lo que ilumina un tour no bloquea nada: el velo deja pasar los clics. Un tour nunca se atasca: si falta lo que señalar, sale solo el bocadillo.
 - Con la pausa, la ficha o el aviso encima, el tour espera debajo y sigue donde iba.
+
+## Historial
+
+- **2026-11-20, versión original (T-013).**
+- **2026-11-21, modificación (T-034, ADR-0018):** los tours vistos son de cada jugador (PF-02): un jugador nuevo en el mismo aparato ve la ayuda. Van en el hueco `tours` de su perfil (`rebrote.perfil.<id>.tours`); `useTours` lee los del jugador activo y los vuelve a leer al cambiar de jugador. Solo se escriben cuando cambian. La opción "Ayuda" sigue siendo del aparato (`rebrote.ajustes`). El hueco `rebrote.tours` se borra al arrancar, sin convertirlo.

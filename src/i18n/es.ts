@@ -65,17 +65,39 @@ export const es = {
     version: (version: string) => `Versión ${version}`,
   },
 
-  /** Progreso permanente (T-017): lo que no se pierde al acabar una partida. Se borra en Opciones. */
-  progress: {
-    section: 'Progreso',
-    erase: 'Borrar progreso',
+  /**
+   * Jugadores (T-034): varios perfiles en el mismo aparato, cada uno con su progreso, su partida y sus tours vistos. Se
+   * cambia, se crea y se borra desde la portada.
+   */
+  players: {
+    title: 'Jugadores',
+    /** Nombre de un jugador que aun no eligio el suyo (PF-05; el nombre llega en T-033). */
+    defaultName: (number: number) => `Jugador ${number}`,
+    /** Encima del nombre en la portada. */
+    playing: 'Juega',
+    change: 'Cambiar',
+    changeLabel: (name: string) => `Cambiar jugador. Ahora juega ${name}`,
+    /** En la fila del jugador activo de la lista. */
+    current: 'Jugando',
+    select: (name: string) => `Jugar como ${name}`,
+    defeated: (count: number) => (count === 0 ? 'Sin jefes vencidos' : count === 1 ? '1 jefe vencido' : `${count} jefes vencidos`),
+    lastPlayed: (when: string) => `Última vez: ${when}`,
+    notPlayed: 'Aún sin estrenar',
+    create: 'Nuevo jugador',
+    createDetail: 'Empieza desde cero',
+    full: 'Máximo de jugadores',
+    fullDetail: (max: number) => `Caben ${max}: borra uno para hacer sitio`,
+    remove: (name: string) => `Borrar a ${name}`,
+    nothingToRemove: 'No tiene nada guardado',
+    removed: (name: string) => `${name}: borrado.`,
+    confirmTitle: (name: string) => `¿Borrar a ${name}?`,
+    confirmLost: 'Se perderá para siempre:',
+    confirmNothing: 'No tiene nada guardado.',
     bosses: (names: string) => `Jefes vencidos: ${names}`,
     save: (round: number) => `Partida guardada en la ronda ${round}`,
-    nothing: 'No hay progreso guardado.',
-    erased: 'Progreso borrado.',
-    confirmTitle: '¿Borrar tu progreso?',
-    confirmLost: 'Se perderá para siempre:',
-    confirmKept: 'Se conservan los ajustes, el idioma y los tours de ayuda vistos.',
+    tours: 'Los tours de ayuda vistos',
+    confirmKept: 'Los demás jugadores y los ajustes no cambian.',
+    confirmLast: 'Quedará un jugador nuevo, sin nada guardado. Los ajustes no cambian.',
     confirmYes: 'Sí, borrar',
     confirmNo: 'Mejor no',
   },

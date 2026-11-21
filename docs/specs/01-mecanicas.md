@@ -195,15 +195,15 @@ Decisiones J-01 a J-05 cerradas el 20 nov 2026.
 
 ### Menú de inicio y partida guardada (T-011)
 Decisiones I-01 a I-12 cerradas el 20 nov 2026.
-- **Al abrir el juego sale el menú de inicio:** el título "Rebrote" con su lema arriba a la izquierda, debajo una portada en movimiento (Creeper, gusanos y plantas en plena batalla, sin desplazarse) y a la derecha el menú. Sin haber vencido a Creeper: nueva partida, continuar, opciones y créditos. Con Creeper vencido: continuar (lleva al Invernadero, T-019), opciones y créditos. "Jefes" ya no está: lo sustituye la ruta de brotes.
+- **Al abrir el juego sale el menú de inicio:** el título "Rebrote" con su lema arriba a la izquierda, debajo una portada en movimiento (Creeper, gusanos y plantas en plena batalla, sin desplazarse) y a la derecha el menú. Sin haber vencido a Creeper: nueva partida, continuar, opciones y créditos. Con Creeper vencido: continuar (lleva al Invernadero, T-019), opciones y créditos. "Jefes" ya no está: lo sustituye la ruta de brotes. Encima de todo, quién juega y el botón para cambiar de jugador (T-034).
 - **Portada:** la batalla responde al clic (la planta dispara, el gusano se queja, Creeper habla y la mina explota y vuelve a brotar). Es solo aspecto: no cuenta para nada.
 - **Nueva partida** empieza en la preparación de la ronda 1. Si hay una partida guardada, antes pide confirmar que se borrará, y dice que el progreso permanente se conserva (T-017).
-- **Partida guardada:** una sola, en este navegador. Se guarda sola, sin botón:
+- **Partida guardada:** una por jugador (T-034). Se guarda sola, sin botón:
   - al empezar la partida y al empezar cada ronda (con su aviso de lo desbloqueado, si aún no se aceptó);
   - en el momento exacto al salir al menú ("Salir al menú" en la pausa) y al ocultar o cerrar la pestaña.
 - **Continuar** (antes "Cargar partida"; desde T-019, "Reanudar" en el Invernadero) la sigue donde estaba: ronda y fase, saldo, vidas, plantas, minas, enemigos, balas y escupitajos, y el aviso sin aceptar. El botón dice la ronda, las vidas, las monedas y cuándo se guardó; sin partida guardada está desactivado. Las monedas soltadas en el suelo no se guardan.
 - **Al perder o al ganar la partida guardada se borra** (I-04): perder sigue obligando a empezar desde la ronda 1, también si se cierra la pestaña antes de perder (se guardó el momento exacto). La derrota ofrece "Jugar otra vez" y "Menú principal"; la victoria, "Al Invernadero" y "Jugar otra vez" (T-019).
-- **Opciones:** idioma, pantalla completa, calidad gráfica, tours de ayuda (T-013) y FPS, las mismas en el menú de inicio ("Opciones") y en la pausa ("Ajustes"). Las del menú de inicio llevan además "Borrar progreso" (T-017).
+- **Opciones:** idioma, pantalla completa, calidad gráfica, tours de ayuda (T-013) y FPS, las mismas en el menú de inicio ("Opciones") y en la pausa ("Ajustes"). Son del aparato, no del jugador (T-034, PF-03): cambiar de jugador no las toca. "Borrar progreso" (T-017) ya no está en Opciones: lo sustituye "Borrar jugador" (T-034).
 - **Idiomas:** español e inglés en todo el juego. Por defecto, el del navegador si es uno de los dos; si no, inglés. Cambiarlo recarga el escenario y la partida sigue. "Rebrote" no se traduce.
 - **Créditos:** autor (Carmine Maggio), desarrollo (Claude, con su logo), estética inspirada en Plants vs. Zombies, arte hecho con código, enemigos basados en virus reales y tecnología, con el aviso de marca de Plants vs. Zombies.
 - Una partida guardada con otra versión del juego, o en una ronda que ya no existe en su brote, no se carga (tampoco las de antes de los brotes, T-018).
@@ -220,13 +220,26 @@ Decisiones R-01 a R-04 cerradas el 21 nov 2026 con la recomendación. Cómo se h
 
 ### Progreso permanente (T-017)
 Decisiones K-01 y K-02 cerradas el 21 nov 2026 con la recomendación. Cómo se hace: ADR-0014.
-- **Qué es:** lo que el jugador no pierde al acabar una partida, en este navegador. Hoy, los jefes vencidos; después, las semillas (T-020), las compras (T-022) y las mejoras (T-023).
+- **Qué es:** lo que el jugador no pierde al acabar una partida. Es de cada jugador (T-034). Hoy, los jefes vencidos; después, las semillas (T-020), las compras (T-022) y las mejoras (T-023).
 - **Jefe vencido:** al vencer al jefe de un brote queda apuntado para siempre. Volver a vencerlo no cambia nada.
-- **No se pierde** al ganar, al perder ni al empezar una partida nueva, ni al cambiar de versión del juego: un progreso de una versión anterior se actualiza a la actual.
-- **Borrar progreso:** en Opciones del menú de inicio, con lo que hay guardado debajo ("Jefes vencidos: Creeper", "Partida guardada en la ronda 6"). Sin nada guardado, está desactivado. Pide confirmar y dice qué se pierde para siempre y qué se conserva. Borra el progreso y la partida guardada; se quedan los ajustes, el idioma y los tours vistos. No está en los ajustes de la pausa.
-- **Si algo falla:** un progreso que no se entiende cuenta como vacío, sin error, y no toca la partida guardada. En una ventana privada o con el almacenamiento lleno, el progreso dura lo que dure la sesión. Con dos pestañas abiertas gana la última que escribe.
+- **No se pierde** al ganar, al perder ni al empezar una partida nueva. Mientras el juego esté en desarrollo, un progreso guardado con otra versión de su forma se descarta, sin convertirlo (ADR-0014).
+- **Se borra con el jugador:** "Borrar jugador" en la pantalla de jugadores (T-034). Hasta T-034 era "Borrar progreso", en Opciones.
+- **Si algo falla:** un progreso que no se entiende cuenta como vacío, sin error, y no toca la partida guardada. En una ventana privada o con el almacenamiento lleno, el progreso dura lo que dure la sesión. Con dos pestañas abiertas, cada una escribe en su jugador.
 - **Antes de T-017 (K-01):** quien venció a Creeper antes no lo tiene vencido, porque no quedó constancia: tiene que vencerlo otra vez.
 - **Exportar e importar (K-02):** no por ahora; se apunta como mejora si el juego crece.
+
+### Jugadores (T-034)
+Decisiones PF-01 a PF-07 cerradas el 21 nov 2026 con la recomendación. Cómo se hace: ADR-0018.
+- **Varios jugadores en el mismo aparato**, como mucho 3 (PF-01). Cada uno tiene su progreso permanente, su partida a medias y sus tours vistos (PF-02). Los ajustes (calidad, volumen, idioma y ayuda) son del aparato y no cambian al cambiar de jugador (PF-03).
+- **Al abrir el juego** no sale ninguna pantalla nueva: con un solo jugador no molesta nunca (PF-04). Un navegador sin datos crea el primero solo. El jugador activo se recuerda al recargar.
+- **La portada dice quién juega**, arriba del menú, con su avatar (un brote en un círculo de su color) y el botón "Cambiar". Solo se cambia de jugador desde la portada, nunca en mitad de una partida.
+- **La pantalla de jugadores**, en el panel de la portada, lista a cada uno con su avatar, su nombre, sus jefes vencidos y la última vez que jugó ("Aún sin estrenar" si nunca guardó nada); el activo, con borde dorado y "Jugando". Elegir uno lo deja activo y vuelve al menú: cambian la partida, el progreso, el Invernadero, la ruta y los tours vistos.
+- **Nuevo jugador** empieza desde cero (sin progreso, sin partida y con los tours sin ver) y queda activo. Con 3 jugadores el botón se apaga y dice "Máximo de jugadores".
+- **Nombre (PF-05):** mientras no elija uno (T-033), "Jugador 1", "Jugador 2"... (el menor número libre), en el idioma del juego. Los nombres se pueden repetir (PF-07).
+- **Borrar jugador (PF-06):** la papelera de cada fila pide confirmar y dice qué se pierde para siempre (jefes vencidos, partida guardada y tours vistos) o que no tiene nada guardado; los demás jugadores y los ajustes no cambian. Si era el activo, pasa a serlo el que jugó por última vez; si era el último, queda uno nuevo y vacío. El único jugador, sin nada guardado, no se puede borrar: no cambiaría nada.
+- **Lo guardado antes de T-034** (progreso, partida a medias y tours vistos) se descarta y se borra del navegador, sin convertirlo: se empieza como "Jugador 1". Los ajustes se conservan.
+- **Para el futuro:** cada jugador tiene un identificador que no cambia aunque cambie su nombre y la fecha de su último guardado. No son cuentas: no se sincronizan ni se protegen.
+- **Teclado:** Tab recorre la lista, Enter elige y Esc vuelve (de la confirmación a la lista y de la lista al menú, con el foco en "Cambiar").
 
 ### Tours de ayuda (T-013)
 Decisiones G-01 a G-10 cerradas el 20 nov 2026. Cómo se hace: ADR-0012.
@@ -265,10 +278,12 @@ T-010: la fuerza de los enemigos está en `combat.ts` (`enemyTierBonus`, `enemyP
 
 T-011: la partida guardada (formato con versión, comprobación al cargar, guardar, leer y borrar) está en `src/game/save.ts`, con tests en `save.test.ts`; la escena guarda (`saveGame`) y borra al perder o ganar. Los textos de las reglas que se enseñan al jugador ya no están en `balance.ts`: el aviso de cada ronda está en `round.notices` y el grito de Creeper es una clave (`RoundGroup.shout`, `CreeperShout`) con su texto en `creeper.shouts`, en `src/i18n/` (ADR-0009).
 
-T-017: el progreso permanente (forma con versión, migraciones, comprobación al leer, jefe vencido y borrado) está en `src/game/progress.ts` (`recordDefeat`, `isOutbreakDefeated`, `hasProgress`, `MIGRATIONS`, `decodeProgress`, `ProgressKeeper`), con tests en `progress.test.ts`; el nombre del brote, en el `id` de cada brote de `OUTBREAKS` (desde T-018; antes, `OUTBREAK_ID` de `rounds.ts`). La escena lo apunta al ganar (`enterVictory`), antes de borrar la partida guardada.
+T-017: el progreso permanente (forma con versión, comprobación al leer y jefe vencido) está en `src/game/progress.ts` (`recordDefeat`, `isOutbreakDefeated`, `hasProgress`, `decodeProgress`, `ProgressKeeper`), con tests en `progress.test.ts` (desde T-034, sin migraciones y por jugador); el nombre del brote, en el `id` de cada brote de `OUTBREAKS` (desde T-018; antes, `OUTBREAK_ID` de `rounds.ts`). La escena lo apunta al ganar (`enterVictory`), antes de borrar la partida guardada.
 
 T-018: los brotes están en `src/game/core/outbreaks.ts` (`OutbreakId`, `OutbreakScript`, `FIRST_OUTBREAK`, `outbreakScript`, `outbreakNumber`, `roundCount`, `outbreaksBefore`, `outbreakOfBoss` e `isOutbreakOpen`, B-04), con tests en `outbreaks.test.ts` sobre dos brotes de prueba. La partida sabe su brote (`MatchState.outbreak`) y todas las reglas de `rounds.ts` lo reciben: lo desbloqueado y el tope de nivel suman los brotes anteriores (`unlockedAt`, `levelCapAt`; B-01) y lo nuevo de cada ronda es solo lo que no llegó ya desbloqueado (`newFeaturesAt`, que usan `roundUnlocks` y los tours). `createMatch` empieza con el saldo inicial del brote (B-02). La partida guardada va por la versión 2; las anteriores se ignoran. El nombre "Brote N: jefe" lo compone `src/ui/outbreakName.ts` con `outbreak.title` de `src/i18n/`; los avisos de ronda están por brote en `round.notices`.
 
 T-013: los tours de ayuda no son reglas. Qué señalar en el tablero lo elige `src/game/view/tourSpots.ts` (`tourCells`, con test) con las reglas de core; los tours, sus pasos y los vistos están en `src/ui/tour/` (`tours.ts`, `tourProgress.ts`, con test). La escena para la preparación con `tourHold` (en `advance`) y avisa de lo que hace el jugador con `playerAction`.
 
 T-009: el nivel de los enemigos está en `combat.ts` (`Enemy.level`, `enemyLevelFactor`, `enemyMaxHp`, `enemyDamage`, `rollEnemyLevel`) y las copias del Creeper, en `rollCopyKind`; `enemyKilled` lleva el tipo para pagar lo suyo (`ENEMIES[kind].reward`). En `rounds.ts`, el tope de nivel (`levelCapAt`, `levelCap`, `levelCapRaisedAfter`), lo nuevo de cada ronda para el aviso (`roundUnlocks`), los grupos con nivel y paso propios (`RoundGroup.level`, `haste`) y el grito (`shout`, evento `shout`). Infundir con una mina, en `match.ts` (`mineDragBlocker`, `mineInfusion`, `mineInfusionTargets`, `infuseWithMine`), y el tope en `levelUpOffer` (`cap`, `capRaisedAt`). Los valores están en `ENEMY_LEVELS`, `CREEPER`, `ENEMIES` y `OUTBREAKS` de `balance.ts`.
+
+T-034: los jugadores están en `src/game/profiles.ts` (reglas `addProfile`, `selectProfile`, `removeProfile`, `touchProfile`, `freeNumber` y `decodeProfiles`; `ProfileKeeper` y su instancia `profiles`, con el almacén de cada jugador en `store()` y `storeOf()`), con tests en `profiles.test.ts`; el almacén que nunca falla (`SessionStore`), en `src/game/storage.ts`. `save.ts`, `progress.ts` y `tourProgress.ts` escriben por defecto en el almacén del jugador activo. Lo que la pantalla de jugadores cuenta de cada uno (nombre, lo que se pierde al borrarlo) está en `src/ui/playerCards.ts`, con tests en `playerCards.test.ts`.

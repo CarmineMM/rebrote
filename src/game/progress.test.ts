@@ -3,7 +3,6 @@ import { OUTBREAKS } from './config/balance';
 import { createMatch } from './core/match';
 import type { OutbreakId } from './core/outbreaks';
 import {
-  MIGRATIONS,
   PROGRESS_KEY,
   PROGRESS_VERSION,
   ProgressKeeper,
@@ -11,13 +10,11 @@ import {
   emptyProgress,
   encodeProgress,
   hasProgress,
-  isNewerProgress,
   isOutbreakDefeated,
-  migrate,
   recordDefeat,
-  type Migration,
 } from './progress';
-import { SAVE_KEY, clearSave, readSave, writeSave, type SaveStore } from './save';
+import { clearSave, readSave, writeSave } from './save';
+import { SessionStore, type SaveStore } from './storage';
 
 /** El brote 1 (T-018). */
 const CREEPER: OutbreakId = 'creeper';
@@ -62,7 +59,9 @@ const blockedStore: SaveStore = {
   },
 };
 
-const keeperOn = (store: SaveStore | null) => new ProgressKeeper(() => store);
+const keeperOn = (store: SaveStore) => new ProgressKeeper(() => store);
+/** Como en el juego: el almacen del perfil, que nunca falla (`SessionStore`). */
+const sessionKeeperOn = (store: SaveStore | null) => keeperOn(new SessionStore(() => store));
 
 describe('progreso permanente: reglas (T-017)', () => {
   it('empieza sin nada vencido', () => {
@@ -75,7 +74,7 @@ describe('progreso permanente: reglas (T-017)', () => {
     expect(isOutbreakDefeated(once, 'creeper')).toBe(true);
     expect(hasProgress(once)).toBe(true);
     expect(recordDefeat(once, 'creeper')).toBe(once);
-    expect(recordDefeat(once, 'blaster').defeated).toEqual(['creeper', 'blaster']);
+    expect(recordDefeat(once, 'elk-cloner').defeated).toEqual(['creeper', 'elk-cloner']);
   });
 
   it('el progreso apunta cada brote por su nombre, el de su jefe (T-018)', () => {
@@ -87,7 +86,7 @@ describe('progreso permanente: guardar y recargar (T-017)', () => {
   it('vencer a un jefe queda escrito y sigue ahi al recargar la pagina', () => {
     const store = memoryStore();
     keeperOn(store).recordDefeat(CREEPER);
-    // Otra pagina: otro guardian con el mismo navegador.
+    // Otra pagina: otro guardian con el mismo almacen.
     expect(isOutbreakDefeated(keeperOn(store).read(), CREEPER)).toBe(true);
     expect(JSON.parse(store.data.get(PROGRESS_KEY) ?? '')).toEqual({ version: PROGRESS_VERSION, defeated: ['creeper'] });
   });
@@ -115,68 +114,27 @@ describe('progreso permanente: guardar y recargar (T-017)', () => {
     writeSave(createMatch(), null, store, 3);
     expect(isOutbreakDefeated(keeperOn(store).read(), CREEPER)).toBe(true);
   });
-});
-
-describe('progreso permanente: borrar (T-017)', () => {
-  it('borra el progreso y la partida guardada, y deja los ajustes y los tours vistos', () => {
-    const store = memoryStore({ 'rebrote.ajustes': '{"language":"en"}', 'rebrote.tours': '{"done":["basics"]}' });
-    const keeper = keeperOn(store);
-    keeper.recordDefeat(CREEPER);
-    writeSave(createMatch(), null, store, 1);
-    keeper.erase();
-    expect(store.data.has(PROGRESS_KEY)).toBe(false);
-    expect(store.data.has(SAVE_KEY)).toBe(false);
-    expect(keeper.read()).toEqual(emptyProgress());
-    expect(store.data.get('rebrote.ajustes')).toBe('{"language":"en"}');
-    expect(store.data.get('rebrote.tours')).toBe('{"done":["basics"]}');
-  });
-
-  it('tambien borra lo que solo estaba en memoria', () => {
-    const keeper = keeperOn(null);
-    keeper.recordDefeat(CREEPER);
-    keeper.erase();
-    expect(keeper.read()).toEqual(emptyProgress());
-  });
-});
-
-describe('progreso permanente: migraciones (T-017)', () => {
-  it('hay una migracion por cada version anterior a la actual', () => {
-    for (let version = 1; version < PROGRESS_VERSION; version++) expect(MIGRATIONS[version], `falta la migracion de la version ${version}`).toBeTypeOf('function');
-  });
-
-  it('un progreso de la version 1 se sigue leyendo en la actual, con todo lo que tenia', () => {
-    // Escrito a mano tal como lo guarda la version 1: este test no se cambia al subir la version.
-    const v1 = JSON.stringify({ version: 1, defeated: ['creeper'] });
-    const progress = decodeProgress(v1);
-    expect(progress).not.toBeNull();
-    expect(progress?.defeated).toEqual(['creeper']);
-  });
 
   it('lo que escribe esta version se lee igual', () => {
-    const progress = recordDefeat(recordDefeat(emptyProgress(), 'creeper'), 'blaster');
+    const progress = recordDefeat(recordDefeat(emptyProgress(), 'creeper'), 'elk-cloner');
     expect(decodeProgress(encodeProgress(progress))).toEqual(progress);
   });
+});
 
-  it('un progreso viejo pasa por todas las migraciones, en orden, sin perder datos', () => {
-    // Una historia de mentira: la 2 trae semillas y la 3 cambia la lista por un registro con la fecha.
-    const steps: Record<number, Migration> = {
-      1: (data) => ({ ...data, seeds: 0 }),
-      2: ({ defeated, ...rest }) => ({ ...rest, outbreaks: Object.fromEntries((defeated as string[]).map((id) => [id, { defeatedAt: null }])) }),
-    };
-    expect(migrate({ defeated: ['creeper'] }, 1, 3, steps)).toEqual({ seeds: 0, outbreaks: { creeper: { defeatedAt: null } } });
-    expect(migrate({ seeds: 40, defeated: [] }, 2, 3, steps)).toEqual({ seeds: 40, outbreaks: {} });
-    expect(migrate({ seeds: 40 }, 3, 3, steps)).toEqual({ seeds: 40 });
+describe('progreso permanente: sin migraciones mientras el juego esta en desarrollo (ADR-0014)', () => {
+  it.each([
+    ['una version anterior', PROGRESS_VERSION - 1],
+    ['una version mas nueva', PROGRESS_VERSION + 1],
+  ])('un progreso de %s se descarta: se empieza de cero', (_, version) => {
+    const raw = JSON.stringify({ version, defeated: ['creeper'] });
+    expect(decodeProgress(raw)).toBeNull();
+    expect(keeperOn(memoryStore({ [PROGRESS_KEY]: raw })).read()).toEqual(emptyProgress());
   });
 
-  it('si falta un paso o uno falla, no deja un progreso a medio migrar', () => {
-    expect(migrate({}, 1, 3, { 1: (data) => data })).toBeNull();
-    expect(
-      migrate({}, 1, 2, {
-        1: () => {
-          throw new Error('roto');
-        },
-      }),
-    ).toBeNull();
+  it('lo descartado se pisa con el progreso de esta version al vencer a un jefe', () => {
+    const store = memoryStore({ [PROGRESS_KEY]: JSON.stringify({ version: PROGRESS_VERSION + 1, defeated: ['creeper'], seeds: 300 }) });
+    keeperOn(store).recordDefeat(CREEPER);
+    expect(JSON.parse(store.data.get(PROGRESS_KEY) ?? '')).toEqual({ version: PROGRESS_VERSION, defeated: ['creeper'] });
   });
 });
 
@@ -199,7 +157,7 @@ describe('progreso permanente: datos rotos (T-017)', () => {
 
   it('de lo que se entiende a medias, se queda con lo que vale', () => {
     expect(decodeProgress('{"version":1,"defeated":"creeper"}')).toEqual(emptyProgress());
-    expect(decodeProgress('{"version":1,"defeated":["creeper", 7, "", null, "creeper", "blaster"]}')).toEqual({ defeated: ['creeper', 'blaster'] });
+    expect(decodeProgress('{"version":1,"defeated":["creeper", 7, "", null, "creeper", "elk-cloner"]}')).toEqual({ defeated: ['creeper', 'elk-cloner'] });
   });
 
   it('un progreso ilegible no toca la partida en curso, y al vencer otro jefe se escribe de nuevo', () => {
@@ -211,42 +169,29 @@ describe('progreso permanente: datos rotos (T-017)', () => {
     keeper.recordDefeat(CREEPER);
     expect(decodeProgress(store.data.get(PROGRESS_KEY) ?? null)?.defeated).toEqual(['creeper']);
   });
-
-  it('uno de una version mas nueva se ignora pero no se pisa: al volver a esa version sigue ahi', () => {
-    const newer = JSON.stringify({ version: PROGRESS_VERSION + 1, defeated: ['creeper', 'blaster'], seeds: 300 });
-    expect(isNewerProgress(newer)).toBe(true);
-    expect(decodeProgress(newer)).toBeNull();
-    const store = memoryStore({ [PROGRESS_KEY]: newer });
-    const keeper = keeperOn(store);
-    expect(keeper.read()).toEqual(emptyProgress());
-    keeper.recordDefeat(CREEPER);
-    expect(store.data.get(PROGRESS_KEY)).toBe(newer);
-    // En esta sesion, el jefe vencido se recuerda igual.
-    expect(isOutbreakDefeated(keeper.read(), CREEPER)).toBe(true);
-  });
 });
 
 describe('progreso permanente: sin almacenamiento (T-017)', () => {
   it('sin almacenamiento (ventana privada) el juego sigue y el progreso dura la sesion', () => {
-    const keeper = keeperOn(null);
+    const keeper = sessionKeeperOn(null);
     expect(keeper.read()).toEqual(emptyProgress());
     keeper.recordDefeat(CREEPER);
     expect(isOutbreakDefeated(keeper.read(), CREEPER)).toBe(true);
-    expect(keeper.write(keeper.read())).toBe(false);
   });
 
   it('con el almacenamiento bloqueado no falla nada', () => {
-    const keeper = keeperOn(blockedStore);
+    const keeper = sessionKeeperOn(blockedStore);
     expect(keeper.read()).toEqual(emptyProgress());
     expect(() => keeper.recordDefeat(CREEPER)).not.toThrow();
     expect(isOutbreakDefeated(keeper.read(), CREEPER)).toBe(true);
-    expect(() => keeper.erase()).not.toThrow();
-    expect(keeper.read()).toEqual(emptyProgress());
+    // Sobre un almacen que falla y no guarda en memoria, tampoco.
+    expect(() => keeperOn(blockedStore).recordDefeat(CREEPER)).not.toThrow();
+    expect(keeperOn(blockedStore).read()).toEqual(emptyProgress());
   });
 
   it('con el almacenamiento lleno, lo que no cupo manda sobre lo guardado mientras dure la sesion', () => {
     const store = fullStore({ [PROGRESS_KEY]: encodeProgress(emptyProgress()) });
-    const keeper = keeperOn(store);
+    const keeper = sessionKeeperOn(store);
     keeper.recordDefeat(CREEPER);
     expect(isOutbreakDefeated(keeper.read(), CREEPER)).toBe(true);
     expect(decodeProgress(store.data.get(PROGRESS_KEY) ?? null)).toEqual(emptyProgress());
@@ -262,11 +207,11 @@ describe('progreso permanente: sin almacenamiento (T-017)', () => {
         store.setItem(key, value);
       },
     };
-    const keeper = keeperOn(flaky);
+    const keeper = sessionKeeperOn(flaky);
     keeper.recordDefeat(CREEPER);
     expect(store.data.has(PROGRESS_KEY)).toBe(false);
     full = false;
-    keeper.recordDefeat('blaster');
-    expect(decodeProgress(store.data.get(PROGRESS_KEY) ?? null)?.defeated).toEqual(['creeper', 'blaster']);
+    keeper.recordDefeat('elk-cloner');
+    expect(decodeProgress(store.data.get(PROGRESS_KEY) ?? null)?.defeated).toEqual(['creeper', 'elk-cloner']);
   });
 });

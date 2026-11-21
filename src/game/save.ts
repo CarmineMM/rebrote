@@ -3,15 +3,19 @@ import type { Burn, Enemy, Jump, Slow } from './core/combat';
 import type { MatchState, Sown } from './core/match';
 import { isOutbreakId, roundCount, type OutbreakId } from './core/outbreaks';
 import type { UnlockInfo } from './EventBus';
+import { profiles } from './profiles';
+import type { SaveStore } from './storage';
 
 /**
- * Partida guardada (T-011, ADR-0010). Un solo hueco en `localStorage`: se guarda sola al empezar la partida y cada ronda,
- * y en el momento exacto al salir al menu o al ocultar o cerrar la pestana. Al perder o ganar se borra (I-04).
+ * Partida guardada (T-011, ADR-0010). Un solo hueco por jugador, `partida` en su perfil (T-034, ADR-0018): se guarda sola
+ * al empezar la partida y cada ronda, y en el momento exacto al salir al menu o al ocultar o cerrar la pestana. Al perder o
+ * ganar se borra (I-04).
  * Lo que se guarda es el estado entero de la partida (`MatchState`, ADR-0008), mas el aviso de desbloqueo que el
  * jugador aun no acepto. Una guardada que no se entiende, de otra version o con una ronda que ya no existe, se ignora.
  * Lo que no se pierde al acabar la partida (jefes vencidos) va aparte, en `progress.ts` (T-017, ADR-0014).
+ * Sin almacen, se usa el del jugador activo (`profiles.store()`).
  */
-export const SAVE_KEY = 'rebrote.partida';
+export const SAVE_KEY = 'partida';
 
 /** Sube cuando cambia la forma de `MatchState` o de la guardada: las de otra version se ignoran. La 2 (T-018) anade el brote. */
 export const SAVE_VERSION = 2;
@@ -37,17 +41,7 @@ export interface SaveSummary {
   readonly savedAt: number;
 }
 
-/** Lo que hace falta del almacenamiento del navegador; en los tests, uno de mentira. */
-export type SaveStore = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
-
-/** El `localStorage` del navegador, o null si no hay o no deja usarlo (ventana privada, permisos). */
-export function browserStore(): SaveStore | null {
-  try {
-    return globalThis.localStorage ?? null;
-  } catch {
-    return null;
-  }
-}
+export type { SaveStore };
 
 /** Una partida acabada (sin vidas o ganada) no se guarda: perder obliga a empezar desde la ronda 1. */
 export function isSavable(match: MatchState): boolean {
@@ -86,7 +80,7 @@ export function summarizeSave(save: SavedGame): SaveSummary {
   };
 }
 
-export function readSave(store: SaveStore | null = browserStore()): SavedGame | null {
+export function readSave(store: SaveStore | null = profiles.store()): SavedGame | null {
   if (!store) return null;
   try {
     return decodeSave(store.getItem(SAVE_KEY));
@@ -102,7 +96,7 @@ export function readSave(store: SaveStore | null = browserStore()): SavedGame | 
 export function writeSave(
   match: MatchState,
   pendingUnlock: UnlockInfo | null = null,
-  store: SaveStore | null = browserStore(),
+  store: SaveStore | null = profiles.store(),
   now: number = Date.now(),
 ): boolean {
   if (!store) return false;
@@ -118,7 +112,7 @@ export function writeSave(
   }
 }
 
-export function clearSave(store: SaveStore | null = browserStore()): void {
+export function clearSave(store: SaveStore | null = profiles.store()): void {
   try {
     store?.removeItem(SAVE_KEY);
   } catch {

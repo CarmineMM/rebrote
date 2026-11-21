@@ -1,9 +1,12 @@
 import type { OutbreakId } from '../../game/core/outbreaks';
+import { profiles } from '../../game/profiles';
+import type { SaveStore } from '../../game/storage';
 import { TOURS, toursOfRound, type HintId, type TourId } from './tours';
 
 /**
- * Que tours de ayuda ya vio el jugador en este navegador (T-013, G-05). Va aparte de la partida guardada: no se borra al
- * perder ni con una partida nueva, asi un tour visto no vuelve a salir.
+ * Que tours de ayuda ya vio el jugador (T-013, G-05). Es de cada jugador (T-034, PF-02): va en el hueco `tours` de su
+ * perfil, asi un jugador nuevo en el mismo aparato ve la ayuda. Va aparte de la partida guardada: no se borra al perder ni
+ * con una partida nueva, asi un tour visto no vuelve a salir.
  */
 export interface TourProgress {
   /** Tours vistos: acabados, saltados o cortados al empezar el ataque. */
@@ -12,7 +15,7 @@ export interface TourProgress {
   hints: Partial<Record<HintId, { shown: number; done: boolean }>>;
 }
 
-export const TOUR_STORAGE_KEY = 'rebrote.tours';
+export const TOUR_STORAGE_KEY = 'tours';
 /** Una pista que el jugador no sigue deja de salir tras estas veces (G-08). */
 export const HINT_MAX_SHOWS = 3;
 
@@ -43,17 +46,10 @@ export function parseTourProgress(raw: string | null): TourProgress {
   }
 }
 
-type Store = Pick<Storage, 'getItem' | 'setItem'>;
+type Store = Pick<SaveStore, 'getItem' | 'setItem'>;
 
-function defaultStore(): Store | null {
-  try {
-    return typeof localStorage === 'undefined' ? null : localStorage;
-  } catch {
-    return null;
-  }
-}
-
-export function readTourProgress(store: Store | null = defaultStore()): TourProgress {
+/** Los tours vistos del jugador; sin almacen, los del activo. */
+export function readTourProgress(store: Store | null = profiles.store()): TourProgress {
   try {
     return parseTourProgress(store?.getItem(TOUR_STORAGE_KEY) ?? null);
   } catch {
@@ -61,12 +57,17 @@ export function readTourProgress(store: Store | null = defaultStore()): TourProg
   }
 }
 
-export function writeTourProgress(progress: TourProgress, store: Store | null = defaultStore()): void {
+export function writeTourProgress(progress: TourProgress, store: Store | null = profiles.store()): void {
   try {
     store?.setItem(TOUR_STORAGE_KEY, JSON.stringify(progress));
   } catch {
-    // Sin almacenamiento (ventana privada, permisos): los tours vistos duran solo esta sesion.
+    // El almacen del perfil ya guarda en memoria lo que no cabe: los tours vistos duran al menos esta sesion.
   }
+}
+
+/** Vio algun tour o alguna pista: hay algo que perder al borrar el jugador. */
+export function hasSeenTours(progress: TourProgress): boolean {
+  return progress.done.length > 0 || Object.values(progress.hints).some((hint) => (hint?.shown ?? 0) > 0 || hint?.done === true);
 }
 
 export function markTourDone(progress: TourProgress, id: TourId): TourProgress {
