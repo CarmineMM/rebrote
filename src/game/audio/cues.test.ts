@@ -6,6 +6,7 @@ import { createMatch, createMine, createPlant, createWall, type MatchState, type
 import { createShooter, type ElementType, type MineElement } from '../core/plants';
 import { FIRST_OUTBREAK, roundCount } from '../core/outbreaks';
 import { KEY_EVERY, VOICE_EVERY, actionCue, combatCues, keystrokeCue, mineTicks, roundCues, shopCue, voiceCue } from './cues';
+import { panAt } from './voices';
 
 const ids = (cues: ReadonlyArray<{ id: string }>) => cues.map((cue) => cue.id);
 
@@ -376,5 +377,52 @@ describe('teclado de los tours', () => {
     expect(keystrokeCue('Arrastra una planta.', 0, 15)).toEqual({ id: 'keystroke', pan: 0 });
     expect(keystrokeCue('Hola', 4, 4)).toBeNull();
     expect(keystrokeCue('Hola', 4, 9)).toBeNull();
+  });
+});
+
+describe('tropas del brote 3 (T-038)', () => {
+  it('el Skipper suena al saltar, desde donde despega; caer no suena', () => {
+    const state = spawnEnemy(createMatch(), 'skipper', 2, 7);
+    const id = state.enemies[0].id;
+    const cues = combatCues(
+      [
+        { type: 'hopped', enemyId: id, from: 7, to: 5 },
+        { type: 'hopLanded', enemyId: id, x: 5 },
+      ],
+      state,
+    );
+    expect(cues).toEqual([{ id: 'hop', pan: panAt(7, BOARD.columns) }]);
+  });
+
+  it('un Lurker suena al descubrirse, donde esta; volver a ocultarse no suena', () => {
+    const state = spawnEnemy(createMatch(), 'lurker', 1, 6);
+    const id = state.enemies[0].id;
+    const cues = combatCues(
+      [
+        { type: 'revealed', enemyId: id },
+        { type: 'concealed', enemyId: id },
+      ],
+      state,
+    );
+    expect(cues).toEqual([{ id: 'reveal', pan: panAt(6, BOARD.columns) }]);
+  });
+
+  it('una semilla normal suena a metal en el Lurker acorazado, como en los otros acorazados', () => {
+    const state = spawnEnemy(createMatch(), 'lurkerArmored', 1, 5);
+    const hit: CombatEvent = { type: 'hit', bulletId: 7, enemyId: state.enemies[0].id, at: { x: 4.6, y: 1.5 } };
+    expect(ids(combatCues([hit], { ...state, bullets: [bullet(7, null)] }))).toEqual(['hitArmor']);
+  });
+
+  it('un Lurker que se acerca a lo sembrado se descubre y suena una vez, en el combate de verdad', () => {
+    let state = createMatch();
+    state = { ...state, plants: state.plants.map((lane, l) => lane.map((p, c) => (l === 1 && c === 1 ? createPlant() : p))) };
+    state = spawnEnemy(state, 'lurker', 1, 6);
+    const heard: string[] = [];
+    for (let t = 0; t < 4000; t += 50) {
+      const step = stepCombat(state, 50);
+      heard.push(...ids(combatCues(step.events, state)));
+      state = step.state;
+    }
+    expect(heard.filter((id) => id === 'reveal')).toHaveLength(1);
   });
 });

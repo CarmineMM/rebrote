@@ -6,6 +6,10 @@ import { entityDepth, perspective } from './layout';
 import { FEET_SIZE, FLAME_SIZE, FROST_SIZE, HAT_SIZE, RUFF_SIZE, TEX, WORM_SIZE, artInv, medalTexture } from './textures';
 import { WormAura, type AuraHost } from './wormAura';
 import { auraTier } from './wormAuraArt';
+import type { BugKind } from './bugView';
+
+/** Los enemigos que son gusanos (o van de pie como Elk Cloner): todos menos los bichos del brote 3 (T-038, `BugView`). */
+export type WormKind = Exclude<EnemyKind, BugKind>;
 
 /**
  * Aspecto del gusano. Las medidas locales son pixeles de diseno con 160 por casilla, como la disparadora.
@@ -214,7 +218,7 @@ const plain = { armor: null, pack: null, hat: null } as const;
  * (T-025) son las del brote 1 en otros colores con un disquete a la espalda (el acorazado, con armadura de disquete), y
  * el juglar, rojo y con gorro de pluma. La foto de la ficha (`portrait.ts`) pinta lo mismo.
  */
-export const KIND_LOOK: Record<EnemyKind, KindLook> = {
+export const KIND_LOOK: Record<WormKind, KindLook> = {
   worm: { head: WORM_HEAD, segment: TEX.wormSegment, size: 1, ...plain },
   armored: { head: WORM_HEAD, segment: TEX.wormSegment, size: 1.12, ...plain, armor: STEEL_ARMOR },
   spitter: {
@@ -268,7 +272,7 @@ export const KIND_LOOK: Record<EnemyKind, KindLook> = {
 export const CREEPER_SIZE = KIND_LOOK.creeper.size;
 
 /** Postura de un enemigo: la suya o la del gusano. */
-export function poseOf(kind: EnemyKind): WormPose {
+export function poseOf(kind: WormKind): WormPose {
   return KIND_LOOK[kind].pose ?? WORM_POSE;
 }
 
@@ -412,7 +416,7 @@ export class WormView implements EnemyView {
     /** Sale del suelo pasado este tiempo, sin verse antes (el Creeper aterriza desde donde se preparaba, T-008). */
     emergeDelayMs = 0,
     /** Otro aspecto que el de su tipo: la galeria de jefes (`/jefes.html`) pinta asi las propuestas. */
-    look: KindLook = KIND_LOOK[enemy.kind],
+    look: KindLook = KIND_LOOK[enemy.kind as WormKind],
   ) {
     this.look = look;
     this.pose = this.look.pose ?? WORM_POSE;

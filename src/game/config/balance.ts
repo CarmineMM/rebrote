@@ -168,6 +168,45 @@ const SPITTER = {
 } as const;
 
 /**
+ * Salto del Skipper (T-038; LK-05 a LK-07 cerradas por Carmine el 22 nov 2026 con la recomendacion). Avanza a saltos de
+ * `length` casillas por encima de plantas y minas, con `restMs` en tierra entre uno y otro; en el ultimo `crouchMs` del
+ * descanso se agacha: el aviso de que va a saltar. En el aire (`airMs`) no le dan las balas ni las minas. Un escudo en su
+ * camino lo para: cae delante y lo muerde (`hopLanding`, T-024); si el escudo cae, sigue saltando (LK-07). El hielo le
+ * alarga el descanso, no el vuelo. Con `restMs` y `airMs` va a unas 1,3 casillas por segundo de media. PROVISIONAL.
+ */
+export const HOP = {
+  /** Los que avanzan a saltos. */
+  kinds: ['skipper'],
+  /** Casillas por salto (LK-05). */
+  length: 2,
+  /** En tierra entre un salto y el siguiente (LK-05). Al salir del agujero tambien descansa esto. */
+  restMs: 1000,
+  /** Lo que dura cada salto en el aire. */
+  airMs: 500,
+  /** El final del descanso en que se agacha para saltar (dentro de `restMs`). */
+  crouchMs: 350,
+} as const;
+
+/** Vida de los Lurker respecto a su pareja del brote 1 (T-038, LK-09, ajustada con `npm run sim`). PROVISIONAL. */
+const LURKER_HP = 0.75;
+
+/**
+ * Sigilo de las tropas del brote 3 (T-038; LK-02 a LK-04 cerradas por Carmine el 22 nov 2026 con la recomendacion). Llegan
+ * ocultas: las disparadoras no les apuntan, pero una bala que ya va por el carril les da (LK-04) y las minas estallan igual.
+ * Se descubren a `revealRadius` casillas (de centro a centro) de lo primero sembrado que tienen delante en su carril y,
+ * ademas, al recibir dano o ir frenadas o quemadas (LK-03). Vuelven a ocultarse `holdMs` despues de lo ultimo que las
+ * descubrio, si siguen lejos. El jugador siempre las ve: oculto se pinta como una silueta que tiembla (LK-02). PROVISIONAL.
+ */
+export const STEALTH = {
+  /** Las que llegan ocultas. */
+  kinds: ['lurker', 'lurkerSpitter', 'lurkerArmored'],
+  /** Decidido el 22 nov 2026: a 4 casillas de lo primero sembrado en su carril. */
+  revealRadius: 4,
+  /** LK-03: "unos segundos". */
+  holdMs: 3000,
+} as const;
+
+/**
  * Enemigos. Posiciones y velocidades en casillas (ADR-0005): la logica no sabe de pixeles.
  * `attack` dice como ataca: `bite` muerde lo que toca; `spit` se para a distancia y escupe (T-007); `verse` se para a
  * distancia y suelta versos, ondas que cruzan el carril por encima de las plantas (T-025, el juglar).
@@ -262,6 +301,34 @@ export const ENEMIES = {
     firstVerseMs: 2500,
     /** Aviso de cada verso: se hincha tomando aire, como el Minstrel. PROVISIONAL. */
     warnMs: 1000,
+  },
+  /**
+   * Tropas del brote 3, el de Brain (T-038, LK-09): las del brote 1 con otro aspecto, pero llegan ocultas (`STEALTH`). Brain
+   * se escondia de quien lo buscaba. Con su vida, `npm run sim` no pasaba de la ronda 1 (el sigilo les quita a las plantas
+   * mas de la mitad del tiempo de disparo): llevan un 25 % menos, como permitia LK-09. Lo demas, igual. PROVISIONAL.
+   */
+  lurker: { ...WORM, hp: WORM.hp * LURKER_HP },
+  lurkerSpitter: { ...SPITTER, hp: SPITTER.hp * LURKER_HP },
+  lurkerArmored: { ...ARMORED, hp: ARMORED.hp * LURKER_HP },
+  /**
+   * Skipper (T-038, LK-05 a LK-08): avanza a saltos por encima de plantas y minas (`HOP`) y solo lo para un escudo, al que
+   * muerde. No muerde nada mas: va a la salida y cuesta una vida. Fragil: unos dos tercios de la vida del Lurker (LK-08).
+   * No llega oculto. `speed` es su media con salto y descanso, para la ficha y quien cuente lo que tarda en cruzar: no anda.
+   */
+  skipper: {
+    /** LK-08: lo de un escupidor. */
+    reward: 20,
+    /** LK-08: unos dos tercios de la del Lurker (100); 71,5 con la fuerza de todos. PROVISIONAL. */
+    hp: 65,
+    /** Casillas por segundo, de media: `HOP.length` cada `HOP.restMs` + `HOP.airMs`. */
+    speed: HOP.length / ((HOP.restMs + HOP.airMs) / 1000),
+    attack: 'bite',
+    /** Al escudo que lo para, como un gusano. PROVISIONAL. */
+    biteDamage: 50,
+    biteIntervalMs: 1000, // PROVISIONAL
+    firstBiteMs: 450,
+    reach: 0.6,
+    halfLength: 0.36,
   },
 } as const;
 
@@ -838,23 +905,25 @@ const ELK_CLONER_ROUNDS: readonly RoundScript[] = [
 
 /**
  * Brote 3, de Brain (T-037; diseno en docs/specs/06-brote-3-brain.md): EN PREPARACION. Guion provisional de 3 rondas para
- * estrenar infundir el escudo (`shieldInfuse`) en su ronda 2, que lo anuncia Patty (ES-01) y lo ensena Boxer. Sus tropas
- * (Lurker y Skipper) llegan con T-038, y su jefe y sus 8 rondas de verdad, con T-039: hasta entonces salen las del brote 2,
- * sin el Minstrel (que es solo del brote 2), en la misma banda de niveles (ninguna pasa del 9). PROVISIONAL.
+ * estrenar infundir el escudo (`shieldInfuse`) en su ronda 2, que lo anuncia Patty (ES-01) y lo ensena Boxer. Desde T-038
+ * salen sus tropas: los Lurker, ocultos, desde la ronda 1, y el Skipper de uno en uno en la 3, como dice el diseno. Su jefe y
+ * sus 8 rondas de verdad llegan con T-039. Misma banda de niveles que el brote 2 (ninguna pasa del 9). PROVISIONAL.
  */
 const BRAIN_ROUNDS: readonly RoundScript[] = [
   {
+    // Los Lurker, ocultos: las plantas tardan en verlos; las minas y el hielo los descubren. T-038: niveles `early`, como la
+    // ronda 1 del brote 2 (con `mid`, `npm run sim` no la pasaba).
     unlocks: [],
-    levels: ENEMY_LEVELS.tables.mid,
+    levels: ENEMY_LEVELS.tables.early,
     groups: [
-      { atMs: 3_000, kind: 'copycat', lanes: [2] },
-      { atMs: 10_000, kind: 'copycat', lanes: [1, 3] },
-      { atMs: 17_000, kind: 'copycatSpitter', lanes: [2] },
-      { atMs: 24_000, kind: 'copycat', lanes: [0, 4] },
-      { atMs: 31_000, kind: 'copycatArmored', lanes: [1, 3] },
-      { atMs: 38_000, kind: 'copycatSpitter', lanes: [0, 2, 4] },
-      { atMs: 46_000, kind: 'copycat', lanes: ALL },
-      { atMs: 54_000, kind: 'copycatArmored', lanes: [2] },
+      { atMs: 3_000, kind: 'lurker', lanes: [2] },
+      { atMs: 10_000, kind: 'lurker', lanes: [1, 3] },
+      { atMs: 17_000, kind: 'lurkerSpitter', lanes: [2] },
+      { atMs: 24_000, kind: 'lurker', lanes: [0, 4] },
+      { atMs: 31_000, kind: 'lurkerArmored', lanes: [1, 3] },
+      { atMs: 38_000, kind: 'lurkerSpitter', lanes: [0, 2, 4] },
+      { atMs: 46_000, kind: 'lurker', lanes: ALL },
+      { atMs: 54_000, kind: 'lurkerArmored', lanes: [2] },
     ],
   },
   {
@@ -862,28 +931,32 @@ const BRAIN_ROUNDS: readonly RoundScript[] = [
     unlocks: ['shieldInfuse'],
     levels: ENEMY_LEVELS.tables.mid,
     groups: [
-      { atMs: 3_000, kind: 'copycatSpitter', lanes: [2] },
-      { atMs: 9_000, kind: 'copycatSpitter', lanes: [1, 3] },
-      { atMs: 16_000, kind: 'copycat', lanes: [0, 2, 4] },
-      { atMs: 23_000, kind: 'copycatSpitter', lanes: [0, 4] },
-      { atMs: 30_000, kind: 'copycatArmored', lanes: [1, 3] },
-      { atMs: 37_000, kind: 'copycatSpitter', lanes: [0, 2, 4] },
-      { atMs: 45_000, kind: 'copycat', lanes: ALL },
-      { atMs: 53_000, kind: 'copycatSpitter', lanes: [1, 2, 3] },
-      { atMs: 61_000, kind: 'copycatArmored', lanes: [0, 4] },
+      { atMs: 3_000, kind: 'lurkerSpitter', lanes: [2] },
+      { atMs: 9_000, kind: 'lurkerSpitter', lanes: [1, 3] },
+      { atMs: 16_000, kind: 'lurker', lanes: [0, 2, 4] },
+      { atMs: 23_000, kind: 'lurkerSpitter', lanes: [0, 4] },
+      { atMs: 30_000, kind: 'lurkerArmored', lanes: [1, 3] },
+      { atMs: 37_000, kind: 'lurkerSpitter', lanes: [0, 2, 4] },
+      { atMs: 45_000, kind: 'lurker', lanes: ALL },
+      { atMs: 53_000, kind: 'lurkerSpitter', lanes: [1, 2, 3] },
+      { atMs: 61_000, kind: 'lurkerArmored', lanes: [0, 4] },
     ],
   },
   {
+    // T-038: llega el Skipper, de uno en uno: solo lo para un escudo.
     unlocks: [],
     levels: ENEMY_LEVELS.tables.late,
     groups: [
-      { atMs: 3_000, kind: 'copycatArmored', lanes: [0, 4] },
-      { atMs: 10_000, kind: 'copycatSpitter', lanes: [1, 2, 3] },
-      { atMs: 18_000, kind: 'copycat', lanes: ALL },
-      { atMs: 26_000, kind: 'copycatArmored', lanes: [1, 3] },
-      { atMs: 34_000, kind: 'copycatSpitter', lanes: ALL },
-      { atMs: 44_000, kind: 'copycat', lanes: ALL },
-      { atMs: 54_000, kind: 'copycatArmored', lanes: [0, 2, 4] },
+      { atMs: 3_000, kind: 'skipper', lanes: [2] },
+      { atMs: 9_000, kind: 'lurkerArmored', lanes: [0, 4] },
+      { atMs: 16_000, kind: 'lurkerSpitter', lanes: [1, 2, 3] },
+      { atMs: 22_000, kind: 'skipper', lanes: [0] },
+      { atMs: 28_000, kind: 'lurker', lanes: ALL },
+      { atMs: 36_000, kind: 'lurkerArmored', lanes: [1, 3] },
+      { atMs: 42_000, kind: 'skipper', lanes: [4] },
+      { atMs: 48_000, kind: 'lurkerSpitter', lanes: ALL },
+      { atMs: 56_000, kind: 'lurker', lanes: ALL },
+      { atMs: 62_000, kind: 'lurkerArmored', lanes: [0, 2, 4] },
     ],
   },
 ];

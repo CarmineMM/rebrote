@@ -265,9 +265,9 @@ export const en: Dictionary = {
         'Elk Cloner is here! Every few verses it recites the whole poem across all five lanes: put a shield in each one',
       ],
       brain: [
-        'What you learned stays with you: the wall is already in your tray',
+        "Watch out: Lurkers arrive hidden and your plants can't see them from afar. Mines and ice give them away",
         'Drop the shield on a shooter: it lasts twice as long and stops what heads for the ones behind',
-        'All at once: shields up front and mines for the armored ones',
+        'Here comes the Skipper! It hops over everything: only a shield stops it',
       ],
     },
   },
@@ -453,8 +453,8 @@ export const en: Dictionary = {
   defeat: {
     title: 'They got through!',
     bossTitle: { creeper: 'Creeper got away!', elkCloner: 'Elk Cloner crossed the garden!' },
-    text: (crossed, round, total) =>
-      `${crossed === 1 ? '1 worm' : `${crossed} worms`} crossed the garden${round === null ? '' : ` in round ${round} of ${total}`}.`,
+    text: (crossed, round, total, outbreak) =>
+      `${crossed === 1 ? `1 ${outbreak === 'brain' ? 'bug' : 'worm'}` : `${crossed} ${outbreak === 'brain' ? 'bugs' : 'worms'}`} crossed the garden${round === null ? '' : ` in round ${round} of ${total}`}.`,
     bossText: {
       creeper: 'It jumped lanes and crossed the garden in the final battle.',
       elkCloner: 'It recited to the very end and crossed the garden in the final battle.',
@@ -634,6 +634,12 @@ export const en: Dictionary = {
       poemIn: (verses) => (verses <= 1 ? 'After the next verse' : `In ${verses} verses`),
       poemNow: "It's reciting it now!",
       leavesClone: 'Leaves a copy',
+      hop: 'Hop',
+      hopValue: (cells) => `${cells} tiles`,
+      hopNote: (time) => `and ${time} on the ground`,
+      seen: 'Spotted',
+      seenValue: (cells) => `At ${cells} tiles`,
+      seenNote: 'from the first thing planted in its lane',
       bite: 'Bite',
       biteNote: (time) => `every ${time}`,
       slam: 'Landing slam',
@@ -673,6 +679,10 @@ export const en: Dictionary = {
       cracked: 'Cracked',
       crumbling: 'About to break!',
       melting: 'Melting!',
+      hidden: 'Hidden: plants can’t see it',
+      revealed: 'Spotted',
+      airborne: 'In the air: shots miss it',
+      crouching: 'About to hop!',
     },
     shooter: {
       title: { plain: 'Shooter', fire: 'Fire shooter', ice: 'Ice shooter', shield: 'Shield shooter' },
@@ -718,6 +728,10 @@ export const en: Dictionary = {
         copycatArmored: 'Armored Copycat',
         copycatSpitter: 'Spitter Copycat',
         minstrel: 'Minstrel',
+        lurker: 'Lurker',
+        lurkerSpitter: 'Spitter Lurker',
+        lurkerArmored: 'Armored Lurker',
+        skipper: 'Skipper',
       },
       cloneNames: { copycat: 'Copycat copy', copycatArmored: 'Armored copy', copycatSpitter: 'Spitter copy' },
       subtitle: {
@@ -728,6 +742,10 @@ export const en: Dictionary = {
         copycatArmored: 'With floppy disk plates',
         copycatSpitter: 'Spits and copies itself',
         minstrel: 'Recites verses',
+        lurker: 'Arrives hidden',
+        lurkerSpitter: 'Spits from the shadows',
+        lurkerArmored: 'With sector plates',
+        skipper: 'Hops over everything',
         clone: 'Small and weak',
         boss: (outbreak) => `Outbreak ${outbreak} boss`,
         bossEnraged: (outbreak) => `Outbreak ${outbreak} boss · phase 2`,
@@ -746,6 +764,14 @@ export const en: Dictionary = {
         minstrel: (cells) =>
           `Stops ${cells} tiles away from the first thing planted, puffs up and lets out a verse: a wave that crosses the lane and hurts everything it passes, mines too. Only a shield stops it.`,
         clone: (hp, damage) => `It came out of a copycat that fell. It attacks like it, with ${hp} of its health and ${damage} of its strength, and leaves no copy of its own.`,
+        lurker: (cells) =>
+          `Arrives hidden: plants don't aim at it until it is ${cells} tiles from the first thing planted in its lane. Taking damage, ice and fire give it away for a while. Bites like the worm.`,
+        lurkerSpitter: (cells, range) =>
+          `Arrives hidden like the Lurker, and plants spot it at ${cells} tiles. It stops ${range} tiles from the first thing planted and spits at it, so it is always spotted before it attacks.`,
+        lurkerArmored: (cells) =>
+          `Arrives hidden like the Lurker, and plants spot it at ${cells} tiles. It has four times its health and is slower. Its plates fall off as it loses health.`,
+        skipper: (cells) =>
+          `Hops ${cells} tiles at a time over plants and mines, and only a shield stops it, which it then bites. Shots miss it in the air: catch it on the ground.`,
       },
     },
   },

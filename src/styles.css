@@ -957,6 +957,11 @@ body {
 .info-card.tone-copycatSpitter { --tone: #ffd84a; --tone-light: #fff3c0; --tone-bg: #5a4510; --tone-bg-dark: #332606; --tone-glow: rgba(255, 216, 74, 0.32); }
 .info-card.tone-minstrel { --tone: #ff6b66; --tone-light: #ffd8d4; --tone-bg: #5c1c26; --tone-bg-dark: #350d14; --tone-glow: rgba(255, 107, 102, 0.32); }
 .info-card.tone-elkCloner { --tone: #ffd36a; --tone-light: #fff3c9; --tone-bg: #2a3478; --tone-bg-dark: #121845; --tone-glow: rgba(255, 211, 106, 0.32); }
+/* Tropas del brote 3 (T-038): el camaleon (el escupidor, con los colores al reves) y el saltamontes rosa (LK-01). */
+.info-card.tone-lurker { --tone: #ff9b4e; --tone-light: #ffe9d2; --tone-bg: #5c2a10; --tone-bg-dark: #331606; --tone-glow: rgba(255, 155, 78, 0.32); }
+.info-card.tone-lurkerSpitter { --tone: #3fd2c4; --tone-light: #dcfffa; --tone-bg: #10433f; --tone-bg-dark: #082624; --tone-glow: rgba(63, 210, 196, 0.32); }
+.info-card.tone-lurkerArmored { --tone: #9fb0c8; --tone-light: #e6edf6; --tone-bg: #2f3a4c; --tone-bg-dark: #171d28; --tone-glow: rgba(159, 176, 200, 0.3); }
+.info-card.tone-skipper { --tone: #ff8cc8; --tone-light: #ffe6f3; --tone-bg: #5c2244; --tone-bg-dark: #351126; --tone-glow: rgba(255, 140, 200, 0.32); }
 
 /* La foto: una polaroid algo torcida con un trozo de cinta, que cae en su sitio. */
 .info-photo {

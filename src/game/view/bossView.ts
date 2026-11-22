@@ -4,6 +4,7 @@ import type { BossKind, Enemy } from '../core/combat';
 import { CreeperOmen, CreeperView } from './creeperView';
 import type { Effects } from './effects';
 import { ElkClonerOmen, ElkClonerView } from './elkClonerView';
+import { BugView, isBugKind } from './bugView';
 import { WormView, type EnemyView } from './wormView';
 import { text } from '../../i18n';
 
@@ -29,10 +30,14 @@ export function createBossOmen(boss: BossKind, scene: Phaser.Scene, fx: Effects,
   return boss === 'elkCloner' ? new ElkClonerOmen(scene, fx, progress, appear) : new CreeperOmen(scene, fx, progress, appear);
 }
 
-/** La vista de un enemigo: la del jefe si lo es (Creeper o Elk Cloner, que envuelven un `WormView`) o la de un gusano. */
+/**
+ * La vista de un enemigo: la del jefe si lo es (Creeper o Elk Cloner, que envuelven un `WormView`), la de un bicho del brote
+ * 3 (T-038, `BugView`) o la de un gusano.
+ */
 export function createEnemyView(scene: Phaser.Scene, fx: Effects, enemy: Enemy, emerge: boolean, emergeDelayMs = 0): EnemyView {
   if (enemy.kind === 'creeper') return new CreeperView(scene, fx, enemy, emerge, emergeDelayMs);
   if (enemy.kind === 'elkCloner') return new ElkClonerView(scene, fx, enemy, emerge, emergeDelayMs);
+  if (isBugKind(enemy.kind)) return new BugView(scene, fx, enemy, emerge, emergeDelayMs);
   return new WormView(scene, fx, enemy, emerge, emergeDelayMs);
 }
 

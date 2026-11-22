@@ -68,7 +68,7 @@ export function combatCues(events: readonly CombatEvent[], before: MatchState): 
       case 'hit': {
         const element = bulletElement.get(event.bulletId) ?? null;
         const kind = enemies.get(event.enemyId)?.kind;
-        const armored = kind === 'armored' || kind === 'copycatArmored';
+        const armored = kind === 'armored' || kind === 'copycatArmored' || kind === 'lurkerArmored';
         cues.push(at(element === null && armored ? 'hitArmor' : HIT_OF[element ?? 'none'], event.at.x));
         break;
       }
@@ -132,6 +132,16 @@ export function combatCues(events: readonly CombatEvent[], before: MatchState): 
         break;
       case 'landed':
         cues.push(at('creeperLand', event.cell ? event.cell.col + 0.5 : (enemies.get(event.enemyId)?.x ?? BOARD.columns / 2)));
+        break;
+      // Tropas del brote 3 (T-038): el Skipper suena al saltar y un Lurker al descubrirse. Caer y volver a ocultarse, no.
+      case 'hopped':
+        cues.push(at('hop', event.from));
+        break;
+      case 'revealed':
+        cues.push(at('reveal', enemies.get(event.enemyId)?.x ?? BOARD.columns / 2));
+        break;
+      case 'hopLanded':
+      case 'concealed':
         break;
       // La mina armada suena con su cuenta atras (`mineTicks`); lo que se apaga o sale del tablero, no suena.
       case 'mineArmed':

@@ -14,6 +14,7 @@ import {
   ICE_BLOCK_SIZE,
   MINE_SIZE,
   SHOOTER_SIZE,
+  BUG_TEX,
   TEX,
   WALL_SIZE,
   WORM_SIZE,
@@ -28,7 +29,9 @@ import {
 import type { WallWear } from './wallArt';
 import { AURA_LOOK, auraTier, veilSize, veilStrength } from './wormAuraArt';
 import { isBoss } from '../core/combat';
-import { KIND_LOOK, WORM_LOOK, poseOf } from './wormView';
+import { KIND_LOOK, WORM_LOOK, poseOf, type WormKind } from './wormView';
+import { BUG_SIZE, LURKER_RIGS, SKIPPER_RIGS, hopLegAngles, type LegMount, type SkipperRig } from './bugArt';
+import { BUG_LOOK, GAME_BUGS, LURKER_VARIANT, isBugKind, type BugKind } from './bugView';
 
 /**
  * Foto de la ficha de informacion (T-010): la planta, la mina o el enemigo en reposo sobre un fondo de jardin, como
@@ -266,21 +269,12 @@ function piecesFor(subject: PortraitSubject): Piece[] {
     const { width, height, footX, footY } = GRENADE_SIZE;
     return [{ key: TEX.grenade.lit, x: 0, y: 0, scale: 1, ox: footX / width, oy: footY / height, width, height }];
   }
-  return wormPieces(subject);
+  return isBugKind(subject.enemy) ? bugPieces(subject, subject.enemy) : wormPieces(subject, subject.enemy);
 }
 
-/**
- * El gusano en reposo, con su postura (la de `WORM_LOOK` o, Elk Cloner, la suya de pie, T-026) y las texturas de su tipo
- * (`KIND_LOOK`, las del tablero): rayas de velocidad, anillos (y placas), adornos pegados a los anillos (la gorguera y los
- * pies de Elk Cloner), el disquete de la espalda de los copiones (T-025), cabeza (y casco, o el gorro del juglar o la
- * cornamenta) y medallita.
- */
-function wormPieces(subject: Extract<PortraitSubject, { kind: 'enemy' }>): Piece[] {
-  const art = KIND_LOOK[subject.enemy];
-  const pose = poseOf(subject.enemy);
-  const { head, segment } = WORM_SIZE;
+/** Aura de los tramos de nivel (T-030, Z-03) y rayas de velocidad: un velo quieto detras del cuerpo, como en el tablero. */
+function enemyBackdrop(subject: Extract<PortraitSubject, { kind: 'enemy' }>, streak: { x: number; y: number; scale: number }): Piece[] {
   const pieces: Piece[] = [];
-  // Aura de los tramos de nivel (T-030, Z-03): un velo quieto detras del cuerpo, como en el tablero en lo mas alto.
   const tier = auraTier(subject.enemy, subject.level);
   if (tier > 0) {
     const size = veilSize(tier);
@@ -299,10 +293,82 @@ function wormPieces(subject: Extract<PortraitSubject, { kind: 'enemy' }>): Piece
       alpha: veilStrength(tier) * 0.9,
     });
   }
-  if (subject.hasted) {
-    const { streak } = WORM_LOOK;
-    pieces.push({ key: TEX.hasteStreak, x: streak.x, y: streak.y, scale: streak.scale, ox: 0, oy: 0.5, ...HASTE_STREAK_SIZE, loose: true });
+  if (subject.hasted) pieces.push({ key: TEX.hasteStreak, x: streak.x, y: streak.y, scale: streak.scale, ox: 0, oy: 0.5, ...HASTE_STREAK_SIZE, loose: true });
+  return pieces;
+}
+
+/**
+ * Un bicho del brote 3 (T-038) en reposo, con su montaje (`LURKER_RIGS`, `SKIPPER_RIGS`) y las texturas de las propuestas del
+ * juego: las patas del otro lado (algo apagadas), la pata de saltar del Skipper, el cuerpo (y las placas del acorazado), las
+ * patas de este lado, la cabeza (y el casco) y la medallita. Se ve con sus colores, aunque este oculto: la ficha lo dice.
+ */
+function bugPieces(subject: Extract<PortraitSubject, { kind: 'enemy' }>, kind: BugKind): Piece[] {
+  const { body, head, leg, thigh, shin } = BUG_SIZE;
+  const skipper = kind === 'skipper';
+  const rig = skipper ? SKIPPER_RIGS[GAME_BUGS.skipper] : LURKER_RIGS[GAME_BUGS.lurker];
+  const variant = skipper ? 'base' : LURKER_VARIANT[kind];
+  const bodyKey = skipper ? BUG_TEX.skipperBody(GAME_BUGS.skipper) : BUG_TEX.lurkerBody(GAME_BUGS.lurker, variant);
+  const legKey = skipper ? BUG_TEX.skipperLeg(GAME_BUGS.skipper) : BUG_TEX.lurkerLeg(GAME_BUGS.lurker, variant);
+  const headKey = skipper ? BUG_TEX.skipperHead(GAME_BUGS.skipper, 'idle') : BUG_TEX.lurkerHead(GAME_BUGS.lurker, variant, 'idle');
+  const pieces = enemyBackdrop(subject, BUG_LOOK.streak);
+  const legPiece = (mount: LegMount): Piece => ({
+    key: legKey,
+    x: mount.x,
+    y: mount.y,
+    scale: 1,
+    ox: leg.hipX / leg.width,
+    oy: leg.hipY / leg.height,
+    width: leg.width,
+    height: leg.height,
+    alpha: mount.far ? 0.8 : 1,
+  });
+  const jumpLeg = (far: boolean): Piece[] => {
+    if (!skipper) return [];
+    const r = rig as SkipperRig;
+    const shift = far ? 8 : 0;
+    const hip = { x: r.hip.x + shift, y: r.hip.y - (far ? 5 : 0) };
+    const angles = hopLegAngles(hip, { x: r.foot.x + shift, y: r.foot.y });
+    const alpha = far ? 0.8 : 1;
+    const deg = (rad: number) => (rad * 180) / Math.PI;
+    return [
+      { key: BUG_TEX.skipperShin(GAME_BUGS.skipper), x: angles.knee.x, y: angles.knee.y, scale: 1, ox: shin.pivotX / shin.width, oy: shin.pivotY / shin.height, width: shin.width, height: shin.height, angle: deg(angles.shin), alpha },
+      { key: BUG_TEX.skipperThigh(GAME_BUGS.skipper), x: hip.x, y: hip.y, scale: 1, ox: thigh.pivotX / thigh.width, oy: thigh.pivotY / thigh.height, width: thigh.width, height: thigh.height, angle: deg(angles.thigh), alpha },
+    ];
+  };
+  pieces.push(...rig.legs.filter((m) => m.far).map(legPiece), ...jumpLeg(true));
+  const bodyPiece = { x: rig.body.x, y: rig.body.y, scale: 1, ox: body.cx / body.width, oy: body.cy / body.height, width: body.width, height: body.height };
+  pieces.push({ key: bodyKey, ...bodyPiece });
+  if (variant === 'armored') for (const part of [1, 0] as const) pieces.push({ key: BUG_TEX.lurkerPlate(GAME_BUGS.lurker, part), ...bodyPiece });
+  pieces.push(...rig.legs.filter((m) => !m.far).map(legPiece), ...jumpLeg(false));
+  const headPiece = { x: rig.head.x, y: rig.head.y, scale: 1, ox: head.cx / head.width, oy: head.cy / head.height, width: head.width, height: head.height };
+  pieces.push({ key: headKey, ...headPiece });
+  if (variant === 'armored') pieces.push({ key: BUG_TEX.lurkerHelmet(GAME_BUGS.lurker), ...headPiece });
+  if (subject.level > 1) {
+    pieces.push({
+      key: medalTexture(subject.level),
+      x: rig.head.x + rig.medal.x,
+      y: rig.head.y + rig.medal.y,
+      scale: BUG_LOOK.medalScale,
+      ox: 0.5,
+      oy: 0.5,
+      width: MEDAL.size,
+      height: MEDAL.size,
+    });
   }
+  return pieces;
+}
+
+/**
+ * El gusano en reposo, con su postura (la de `WORM_LOOK` o, Elk Cloner, la suya de pie, T-026) y las texturas de su tipo
+ * (`KIND_LOOK`, las del tablero): rayas de velocidad, anillos (y placas), adornos pegados a los anillos (la gorguera y los
+ * pies de Elk Cloner), el disquete de la espalda de los copiones (T-025), cabeza (y casco, o el gorro del juglar o la
+ * cornamenta) y medallita.
+ */
+function wormPieces(subject: Extract<PortraitSubject, { kind: 'enemy' }>, kind: WormKind): Piece[] {
+  const art = KIND_LOOK[kind];
+  const pose = poseOf(kind);
+  const { head, segment } = WORM_SIZE;
+  const pieces = enemyBackdrop(subject, WORM_LOOK.streak);
   const trim = (behind: boolean) =>
     (art.trims ?? [])
       .filter((t) => t.behind === behind)

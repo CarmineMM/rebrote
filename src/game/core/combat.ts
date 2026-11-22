@@ -1,4 +1,4 @@
-import { BOARD, CLONE, CREEPER, ELK_CLONER, ENEMIES, ENEMY_LEVELS, ENEMY_POWER, FIRE, ICE, MINE, SHIELD, SHOOTER, VERSE } from '../config/balance';
+import { BOARD, CLONE, CREEPER, ELK_CLONER, ENEMIES, ENEMY_LEVELS, ENEMY_POWER, FIRE, HOP, ICE, MINE, SHIELD, SHOOTER, STEALTH, VERSE } from '../config/balance';
 import type { BoardPoint, Cell } from './board';
 import type { MatchState, Mine, Sown } from './match';
 import { damageMultiplier, fireRateMultiplier, plantMaxHp, type MineElement, type Shooter } from './plants';
@@ -54,6 +54,22 @@ export interface Jump {
 }
 
 /**
+ * Salto del Skipper (T-038): en tierra descansa (`rest`) y luego vuela (`air`) de `from` hacia `to`, por encima de lo
+ * sembrado. `to` ya cuenta el escudo que lo para (`hopLanding`). En el aire no le dan las balas ni las minas.
+ */
+export interface Hop {
+  readonly stage: 'rest' | 'air';
+  /**
+   * En tierra, lo que le queda de descanso (`HOP.restMs`; corre mas despacio si va frenado, y no corre mientras muerde un
+   * escudo). En el aire no cuenta: avanza hasta `to`.
+   */
+  readonly ms: number;
+  /** Del salto en curso (o del ultimo, en tierra): de donde salio y donde cae, en casillas. */
+  readonly from: number;
+  readonly to: number;
+}
+
+/**
  * Recital de Elk Cloner (T-026): su reloj de versos, cuantos lleva desde el ultimo poema entero y, si esta anunciando el
  * poema entero (L-03), lo que le queda al aviso.
  */
@@ -101,6 +117,13 @@ export interface Enemy {
   readonly clone: boolean;
   /** Recital de Elk Cloner (T-026), o null en los demas. */
   readonly recital: Recital | null;
+  /** Salto del Skipper (T-038, `HOP`), o null en los que andan. */
+  readonly hop: Hop | null;
+  /**
+   * Sigilo de las tropas del brote 3 (T-038, `STEALTH`): lo que le queda descubierta. 0, oculta: las plantas no le apuntan
+   * (`isHidden`). Null en las que no se ocultan.
+   */
+  readonly revealMs: number | null;
 }
 
 /** Lo que deja una bala infundida al impactar, ademas de su dano: la de fuego quema y la de hielo frena. */
@@ -221,7 +244,15 @@ export type CombatEvent =
   /** La granada exploto. `enemyIds` son los alcanzados; los que mueren llevan su `enemyKilled`. Las plantas no reciben nada. */
   | { readonly type: 'grenadeExploded'; readonly grenadeId: number; readonly cell: Cell; readonly enemyIds: readonly number[] }
   /** Un bloque del muro de hielo (T-021) acabo su tiempo y se derritio: deja la casilla libre. */
-  | { readonly type: 'iceMelted'; readonly cell: Cell };
+  | { readonly type: 'iceMelted'; readonly cell: Cell }
+  /** El Skipper (T-038) despega de `from` y caera en `to` (ya en `Enemy.hop`). */
+  | { readonly type: 'hopped'; readonly enemyId: number; readonly from: number; readonly to: number }
+  /** El Skipper cae en `x`. Si cayo delante de un escudo, empieza a morderlo. */
+  | { readonly type: 'hopLanded'; readonly enemyId: number; readonly x: number }
+  /** Una tropa oculta (T-038) se descubre: desde ahora las plantas le apuntan. */
+  | { readonly type: 'revealed'; readonly enemyId: number }
+  /** Una tropa descubierta vuelve a ocultarse (LK-03): lejos de lo sembrado y sin dano, hielo ni fuego desde `STEALTH.holdMs`. */
+  | { readonly type: 'concealed'; readonly enemyId: number };
 
 export interface CombatStep {
   readonly state: MatchState;
@@ -427,10 +458,30 @@ export function rollEnemyLevel(table: Readonly<Record<number, number>> | undefin
   return entries[entries.length - 1][0];
 }
 
-/** Enemigo recien salido: avanza, sin efectos ni salto. Elk Cloner (T-026) trae su recital, con el primer verso por llegar. */
+/**
+ * Enemigo recien salido: avanza, sin efectos ni salto. Elk Cloner (T-026) trae su recital, con el primer verso por llegar;
+ * el Skipper (T-038), su descanso antes del primer salto; y las tropas del brote 3, su sigilo: salen ocultas.
+ */
 function newEnemy(id: number, kind: EnemyKind, lane: number, x: number, hp: number, haste: number, level: number, clone = false): Enemy {
   const recital = kind === 'elkCloner' ? { ms: ENEMIES.elkCloner.firstVerseMs, sung: 0, poemMs: null } : null;
-  return { id, kind, lane, x, hp, attackMs: null, burn: null, slow: null, haste, level, jump: null, jumpsUsed: 0, clone, recital };
+  const hop: Hop | null = hops(kind) ? { stage: 'rest', ms: HOP.restMs, from: x, to: x } : null;
+  const revealMs = sneaks(kind) ? 0 : null;
+  return { id, kind, lane, x, hp, attackMs: null, burn: null, slow: null, haste, level, jump: null, jumpsUsed: 0, clone, recital, hop, revealMs };
+}
+
+/** ¿Avanza a saltos (T-038, `HOP.kinds`)? El Skipper. */
+export function hops(kind: EnemyKind): boolean {
+  return (HOP.kinds as readonly EnemyKind[]).includes(kind);
+}
+
+/** ¿Llega oculto (T-038, `STEALTH.kinds`)? Las tropas del brote 3, menos el Skipper. */
+export function sneaks(kind: EnemyKind): boolean {
+  return (STEALTH.kinds as readonly EnemyKind[]).includes(kind);
+}
+
+/** ¿Esta oculto (T-038)? Las plantas no le apuntan, aunque una bala que ya va por el carril le da (LK-04). */
+export function isHidden(enemy: Pick<Enemy, 'revealMs'>): boolean {
+  return enemy.revealMs !== null && enemy.revealMs <= 0;
 }
 
 /**
@@ -467,9 +518,12 @@ export function spawnEnemy(
   return { ...state, enemies: [...state.enemies, enemy], nextId: state.nextId + 1 };
 }
 
-/** En el aire, a mitad de un salto (Creeper, T-008): no le dan las balas ni las minas, y las plantas no le apuntan. */
-export function isAirborne(enemy: Enemy): boolean {
-  return enemy.jump?.stage === 'air';
+/**
+ * En el aire, a mitad de un salto (Creeper, T-008, o el Skipper, T-038): no le dan las balas ni las minas, y las plantas no
+ * le apuntan.
+ */
+export function isAirborne(enemy: Pick<Enemy, 'jump' | 'hop'>): boolean {
+  return enemy.jump?.stage === 'air' || enemy.hop?.stage === 'air';
 }
 
 /**
@@ -498,11 +552,11 @@ export function jumpsCrossed(enemy: Enemy): number {
 
 /**
  * ¿Tiene la planta de la casilla a quien disparar? Un enemigo vivo de su carril, por delante de ella
- * y que ya pisa el tablero. A los que ya la pasaron no les dispara.
+ * y que ya pisa el tablero. A los que ya la pasaron no les dispara, ni a los que estan en el aire ni a los ocultos (T-038).
  */
 export function hasTarget(enemies: readonly Enemy[], cell: Cell): boolean {
   const plantX = cell.col + 0.5;
-  return enemies.some((e) => e.lane === cell.lane && e.hp > 0 && e.x > plantX && onLawn(e) && !isAirborne(e));
+  return enemies.some((e) => e.lane === cell.lane && e.hp > 0 && e.x > plantX && onLawn(e) && !isAirborne(e) && !isHidden(e));
 }
 
 /** Ya pisa el cesped: las plantas le pueden disparar (y el escupidor y el juglar pueden pararse a atacar). */
@@ -593,6 +647,17 @@ function substep(state: MatchState, dtMs: number, events: CombatEvent[], random:
       continue;
     }
     const lane = plants[e.lane];
+    // Skipper (T-038): salta por encima de lo sembrado y solo se para a morder un escudo. Si cruza el borde en el aire,
+    // resta una vida como cualquiera.
+    if (e.hop) {
+      if (!stepHop(e, lane, dtMs, walkMs, attackClockMs, plants, events) && e.x < 0) {
+        lives = isBoss(e.kind) ? 0 : Math.max(0, lives - 1);
+        events.push({ type: 'enemyEscaped', enemyId: e.id, lane: e.lane, kind: e.kind });
+        continue;
+      }
+      enemies.push(e);
+      continue;
+    }
     if (stats.attack === 'spit') {
       const col = rangedColumn(lane, e, stats.range);
       if (col !== null) {
@@ -765,6 +830,11 @@ function substep(state: MatchState, dtMs: number, events: CombatEvent[], random:
     flying = [];
   }
   const alive: Enemy[] = enemies.filter((e) => e.hp > 0);
+  // Sigilo (T-038): se descubren cerca de lo sembrado, al recibir dano o con hielo o fuego, y se vuelven a ocultar despues.
+  const hpBefore = new Map(state.enemies.map((e) => [e.id, e.hp]));
+  for (const e of alive as Array<Mutable<Enemy>>) {
+    if (e.revealMs !== null) stepStealth(e, plants[e.lane], dtMs, e.hp < (hpBefore.get(e.id) ?? e.hp), events);
+  }
   // Los copiones caidos dejan su copia donde estaban (T-025, F-01).
   if (!bossDown) {
     for (const parent of fallen) {
@@ -1021,6 +1091,110 @@ function rangedColumn(lane: ReadonlyArray<Sown | null>, enemy: Enemy, range: num
     return gap <= range ? col : null;
   }
   return null;
+}
+
+/**
+ * Un paso del Skipper (T-038). En el aire avanza hacia donde cae (`hop.to`, que se recalcula por si se sembro un escudo
+ * mientras volaba) y, al llegar, aterriza. En tierra, si tiene un escudo a su alcance lo muerde, y su descanso no corre:
+ * si el escudo cae, descansa antes de seguir saltando (LK-07). Si no, descansa (mas despacio si va frenado: el hielo le
+ * alarga la pausa) y despega hacia `HOP.length` casillas mas alla, o hasta delante del primer escudo (`hopLanding`).
+ * Devuelve si se queda donde esta este paso (mordiendo, descansando o despegando); si no, avanzo por el aire y puede
+ * haber cruzado el borde.
+ */
+function stepHop(
+  e: Mutable<Enemy>,
+  lane: ReadonlyArray<Sown | null>,
+  dtMs: number,
+  walkMs: number,
+  attackClockMs: number,
+  plants: Array<Array<Sown | null>>,
+  events: CombatEvent[],
+): boolean {
+  const hop = e.hop as Hop;
+  const reach = enemyReach(e);
+  if (hop.stage === 'air') {
+    const to = hopStop(lane, e.x, hop.to, reach);
+    const next = e.x - (HOP.length / HOP.airMs) * dtMs * e.haste;
+    if (next > to) {
+      e.x = next;
+      e.hop = to === hop.to ? hop : { ...hop, to };
+      return false;
+    }
+    e.x = to;
+    if (to < 0) return false;
+    e.hop = { stage: 'rest', ms: HOP.restMs, from: hop.from, to };
+    events.push({ type: 'hopLanded', enemyId: e.id, x: to });
+    return true;
+  }
+  const stats = ENEMIES[e.kind];
+  const col = stats.attack === 'bite' ? shieldColumn(lane, e.x, reach) : null;
+  if (col !== null && stats.attack === 'bite') {
+    e.attackMs = (e.attackMs ?? stats.firstBiteMs) - attackClockMs;
+    if (e.attackMs <= 0) {
+      e.attackMs += stats.biteIntervalMs;
+      const cell = { lane: e.lane, col };
+      events.push({ type: 'bite', enemyId: e.id, cell });
+      damageSown(plants, cell, enemyDamage(e), events);
+    }
+    return true;
+  }
+  e.attackMs = null;
+  const ms = hop.ms - walkMs * e.haste;
+  if (ms > 0) {
+    e.hop = { ...hop, ms };
+    return true;
+  }
+  const to = hopStop(lane, e.x, e.x - HOP.length, reach);
+  if (to >= e.x) {
+    e.hop = { ...hop, ms: 0 };
+    return true;
+  }
+  e.hop = { stage: 'air', ms: 0, from: e.x, to };
+  events.push({ type: 'hopped', enemyId: e.id, from: e.x, to });
+  return true;
+}
+
+/**
+ * Donde cae el Skipper (T-038) que salta de `from` hacia `to`: en `to` o, si hay un escudo entre medias o a menos de su
+ * alcance de donde caeria, delante de el, a `reach` de su centro, para morderlo (`hopLanding`). Asi nunca cae encima de un
+ * escudo ni detras.
+ */
+function hopStop(lane: ReadonlyArray<Sown | null>, from: number, to: number, reach: number): number {
+  const stop = hopLanding(lane, from, to - reach, reach);
+  return stop === to - reach ? to : Math.max(to, stop);
+}
+
+/** Holgura al comparar distancias que salen de sumas (caer a `reach` de un escudo y medir otra vez lo que hay). */
+const NEAR = 1e-6;
+
+/** Columna del escudo que el enemigo en `x` tiene justo delante, a su alcance para morderlo (T-038); null si no hay. */
+function shieldColumn(lane: ReadonlyArray<Sown | null>, x: number, reach: number): number | null {
+  for (let col = lane.length - 1; col >= 0; col--) {
+    const gap = x - (col + 0.5);
+    if (isShield(lane[col]) && gap >= -NEAR && gap <= reach + NEAR) return col;
+  }
+  return null;
+}
+
+/**
+ * ¿Tiene algo sembrado delante en su carril (centro a centro) a `STEALTH.revealRadius` casillas o menos? Entonces lo ven
+ * las plantas: una tropa oculta se descubre (T-038). Lo que ya dejo atras no cuenta.
+ */
+export function nearSown(lane: ReadonlyArray<Sown | null>, x: number): boolean {
+  return lane.some((sown, col) => sown !== null && x - (col + 0.5) >= 0 && x - (col + 0.5) <= STEALTH.revealRadius);
+}
+
+/**
+ * Sigilo de una tropa del brote 3 (T-038). Cerca de lo sembrado (`nearSown`), con dano este paso (`damaged`, LK-03),
+ * quemada o frenada, se descubre, y lo sigue `STEALTH.holdMs` despues de la ultima de esas cosas; luego vuelve a
+ * ocultarse. Cuenta los cambios con `revealed` y `concealed`.
+ */
+function stepStealth(e: Mutable<Enemy>, lane: ReadonlyArray<Sown | null>, dtMs: number, damaged: boolean, events: CombatEvent[]): void {
+  const before = e.revealMs as number;
+  const exposed = damaged || e.burn !== null || e.slow !== null || nearSown(lane, e.x);
+  e.revealMs = exposed ? STEALTH.holdMs : Math.max(0, before - dtMs);
+  if (before <= 0 && e.revealMs > 0) events.push({ type: 'revealed', enemyId: e.id });
+  else if (before > 0 && e.revealMs <= 0) events.push({ type: 'concealed', enemyId: e.id });
 }
 
 /**

@@ -1,5 +1,5 @@
 import { BOARD, ENEMIES, LIMITS, LIVES } from './config/balance';
-import type { Burn, Enemy, Jump, Recital, Slow } from './core/combat';
+import type { Burn, Enemy, Hop, Jump, Recital, Slow } from './core/combat';
 import type { MatchState, Sown } from './core/match';
 import { isOutbreakId, roundCount, type OutbreakId } from './core/outbreaks';
 import { isBaseLevel } from './core/baseLevel';
@@ -29,9 +29,10 @@ export const SAVE_KEY = 'partida';
  * del muro de hielo; la 8 (T-022), el nivel de cada poder (`PowerSlot.level`), el dano y el alcance de cada granada y la
  * vida entera de cada bloque de hielo (`IceBlock.maxHp`); la 9 (T-023), el nivel base de la partida (`MatchState.baseLevel`); la 10
  * (T-037), lo que la partida trae de brotes posteriores vencidos (`MatchState.carried`). Con ella se descartan tambien las
- * del brote 2 con una disparadora con escudo, que desde T-037 no se infunde ahi (sin migracion, ADR-0014).
+ * del brote 2 con una disparadora con escudo, que desde T-037 no se infunde ahi (sin migracion, ADR-0014). La 11 (T-038), el
+ * salto del Skipper (`Enemy.hop`) y el sigilo de los Lurker (`Enemy.revealMs`).
  */
-export const SAVE_VERSION = 10;
+export const SAVE_VERSION = 11;
 
 export interface SavedGame {
   readonly version: number;
@@ -159,6 +160,10 @@ const isJump = (value: unknown): value is Jump =>
   isNumber(value.ms) &&
   isNumber(value.stageMs);
 
+/** Salto del Skipper (T-038): en tierra o en el aire, lo que le queda de descanso y de donde a donde salta. */
+const isHop = (value: unknown): value is Hop =>
+  isRecord(value) && (value.stage === 'rest' || value.stage === 'air') && isNumber(value.ms) && isNumber(value.from) && isNumber(value.to);
+
 /** Recital de Elk Cloner (T-026): su reloj de versos, los que lleva y el aviso del poema entero, si lo anuncia. */
 const isRecital = (value: unknown): value is Recital =>
   isRecord(value) && isNumber(value.ms) && isInt(value.sung, 0) && isNullOr(value.poemMs, isNumber);
@@ -191,7 +196,9 @@ function isEnemy(value: unknown): value is Enemy {
     isNullOr(value.jump, isJump) &&
     isInt(value.jumpsUsed, 0) &&
     typeof value.clone === 'boolean' &&
-    isNullOr(value.recital, isRecital)
+    isNullOr(value.recital, isRecital) &&
+    isNullOr(value.hop, isHop) &&
+    isNullOr(value.revealMs, (ms) => isNumber(ms) && ms >= 0)
   );
 }
 

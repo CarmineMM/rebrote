@@ -16,7 +16,7 @@ Brain fue el primer virus para PC. Lo escribieron dos hermanos de Lahore, que de
 
 ## Lo que aporta al jugador
 
-- **Infundir el escudo (decidido).** En el brote 2 el escudo solo se siembra como muro. La disparadora con escudo llega en este brote, en la ronda 2. Patty no crea nada nuevo: avisa de que el escudo ya se puede infundir, y Boxer enseña a hacerlo. Es T-037. Hecho en T-037 (ES-01 a ES-04): Patty dice "He reforzado el escudo: ahora aguanta sobre una disparadora"; el saldo inicial es 300, como el brote 2; el brote está en preparación (`boss: null`, `?brote=3`) con un guion provisional de 3 rondas y las tropas del brote 2 sin el Minstrel, que T-038 y T-039 cambian por las suyas.
+- **Infundir el escudo (decidido).** En el brote 2 el escudo solo se siembra como muro. La disparadora con escudo llega en este brote, en la ronda 2. Patty no crea nada nuevo: avisa de que el escudo ya se puede infundir, y Boxer enseña a hacerlo. Es T-037. Hecho en T-037 (ES-01 a ES-04): Patty dice "He reforzado el escudo: ahora aguanta sobre una disparadora"; el saldo inicial es 300, como el brote 2; el brote está en preparación (`boss: null`, `?brote=3`) con un guion provisional de 3 rondas y las tropas del brote 2 sin el Minstrel, que T-038 ya cambió por las suyas (abajo) y T-039 cambiará por sus 8 rondas.
 - **Lo de este brote llega hacia atrás (norma ES-03):** quien vence a Brain puede infundir el escudo también al rejugar los brotes 1 y 2, desde su ronda 1. Las tropas y el jefe de este brote no cambian por eso, pero lo que traigan T-038 y T-039 (el Skipper que salta, el sigilo) tiene que funcionar también contra lo que el jugador ya lleva.
 - **Un segundo uso del escudo:** parar lo que salta.
 - **Un uso nuevo de las minas y del hielo:** descubren lo que está oculto.
@@ -51,6 +51,27 @@ Los nombres se quedan en inglés, como Copycat y Minstrel.
 - No llega oculto: saltando ya se le ve de sobra.
 
 Para que no se parezca a la unidad de otros juegos que salta una sola vez la primera planta, el Skipper salta siempre y por encima de todo lo que no sea escudo.
+
+### Hecho en T-038 (22 nov 2026)
+Las reglas, como arriba, con LK-02 a LK-09 (en `01-mecanicas.md`, "Tropas del brote 3"). Lo que cambió respecto a lo de arriba:
+- **Vida de los Lurker:** un 25 % menos que su pareja del brote 1 (75, 105 y 300 de base). Con la misma, el bot no pasaba de la ronda 1: con las disparadoras atrás, el sigilo les quita más de la mitad del tiempo de disparo y, sin bajas al principio, no hay monedas para construir. Así se confirmó el riesgo de "Las tropas ocultas valen, en la práctica, casi el doble de vida".
+- **Ronda 1 provisional:** niveles `early`, como la ronda 1 del brote 2.
+- **Skipper:** 65 de vida y 20 monedas; 2 casillas por salto, 1 s en tierra y 0,5 s en el aire (1,33 casillas/s de media).
+- **Aspecto (LK-01, Carmine, en la galería `/bichos.html`):** los Lurker son camaleones (el escupidor, con los colores al revés) y el Skipper, un saltamontes rosa.
+
+Simulación del guion provisional (`npm run sim`, 10 partidas por bot, con el azar fijo):
+
+| Variante | Bot | Ganadas | Dónde pierde |
+|---|---|---|---|
+| Vida del brote 1, ronda 1 `mid` | con escudos | 0 de 10 | Ronda 1 |
+| Vida −25 %, ronda 1 `mid` | con escudos | 0 de 10 | Ronda 1 |
+| Vida del brote 1, ronda 1 `early` | con escudos | 0 de 10 | Ronda 2 |
+| Vida −40 %, ronda 1 `mid` | con escudos | 0 de 10 | Ronda 3 |
+| **Vida −25 %, ronda 1 `early` (la elegida)** | con escudos | 4 de 10 | Ronda 3 (los Skipper cuestan vidas) |
+| | con escudos y 3 cañones | 2 de 10 | Ronda 3 |
+| | sin escudos | 4 de 10 | Ronda 3 |
+
+**Para T-039:** en este brote el bot con escudos juega igual que el que no los usa, porque gasta cada 100 monedas en disparadoras antes de juntar las 150 de un muro; tampoco usa minas ni hielo para descubrir. Hay que enseñarle a poner un muro (o una mina de hielo) delante de cada carril antes de ajustar el guion de verdad.
 
 ## Rondas
 

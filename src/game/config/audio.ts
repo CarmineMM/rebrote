@@ -50,6 +50,9 @@ export type SfxId =
   | 'verse'
   | 'verseHit'
   | 'clone'
+  // Tropas del brote 3 (T-038): el Skipper salta y un Lurker oculto se descubre
+  | 'hop'
+  | 'reveal'
   // Elk Cloner (T-026): su voz en el bocadillo, el aviso del poema entero, el poema y su derrota
   | 'elkClonerTalk'
   | 'poemWarn'
@@ -169,6 +172,9 @@ export const SFX: Readonly<Record<SfxId, SfxSpec>> = {
   verse: world(0.55, 2, 150, 1),
   verseHit: world(0.3, 3, 70, 1.5),
   clone: world(0.45, 2, 90, 1.2),
+  // El Skipper salta cada poco: bajo, con pocas voces y con variacion de tono para que no canse.
+  hop: world(0.3, 2, 110, 2),
+  reveal: world(0.5, 2, 140, 1),
   elkClonerTalk: world(0.45, 1, 300, 0.5, 1, 0),
   poemWarn: world(0.7, 1, 0, 0),
   poem: world(0.85, 1, 0, 0),

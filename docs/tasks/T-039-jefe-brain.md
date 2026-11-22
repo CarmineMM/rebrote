@@ -9,7 +9,7 @@ El diseño está en `docs/specs/06-brote-3-brain.md`. Carmine eligió la opción
 
 Los dos jefes anteriores sirven de modelo (verificado en `docs/specs/05-brote-2-elk-cloner.md`): barra de jefe, jefe que se prepara a la derecha en las rondas previas, escolta con grito, refuerzos mientras vive, derrota si cruza el jardín, frase de Boxer sobre el virus real, propuestas de aspecto en `/jefes.html`, medida de dificultad por ronda (`roundThreat`) y simulación con bots (`npm run sim`).
 
-Tras T-037 el brote 3 existe en preparación con un guion provisional, y tras T-038 están sus tropas.
+Tras T-037 el brote 3 existe en preparación con un guion provisional, y tras T-038 están sus tropas: los Lurker (ocultos, con un 25 % menos de vida que su pareja del brote 1, `LURKER_HP`) y el Skipper, con las reglas `STEALTH` y `HOP` y sus tests en `infiltration.test.ts`. Lo que T-038 dejó apuntado para la simulación (en `docs/specs/06-brote-3-brain.md`): en este brote el bot con escudos no llega a poner muros (gasta cada 100 monedas en disparadoras antes de juntar las 150 de un muro) y no usa minas ni hielo para descubrir; hay que enseñárselo antes de ajustar el guion.
 
 ## Objetivos
 1. **Guion de las 8 rondas,** con un concepto nuevo por ronda.

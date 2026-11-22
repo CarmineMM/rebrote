@@ -33,8 +33,12 @@ export interface BotStyle {
   readonly cannons: number;
 }
 
-/** Lo que ataca desde lejos, por encima o por delante de las plantas: lo que para un muro. */
-const RANGED = new Set<Enemy['kind']>(['spitter', 'copycatSpitter', 'minstrel', 'elkCloner']);
+/**
+ * Lo que pide un muro delante de las disparadoras: lo que ataca desde lejos, por encima o por delante de las plantas; lo que
+ * salta por encima (el Skipper, T-038); y lo que llega oculto (los Lurker, T-038), que se descubre a 4 casillas del muro y se
+ * para a morderlo, a tiro de todas.
+ */
+const RANGED = new Set<Enemy['kind']>(['spitter', 'copycatSpitter', 'minstrel', 'elkCloner', 'lurker', 'lurkerSpitter', 'lurkerArmored', 'skipper']);
 
 const cell = (lane: number, col: number): Cell => ({ lane, col });
 

@@ -26,6 +26,29 @@ import { WALL_SIZE, WALL_WEARS, paintWall, type WallWear } from './wallArt';
 import { ARIL_SIZE, GRENADE_SIZE, ICE_BLOCK_SIZE, ICE_WEARS, paintAril, paintGrenade, paintIceBlock, type IceWear } from './powerArt';
 import { FLOPPY_SIZE, HAT_SIZE, NOTE_SIZE, VERSE_SIZE, paintFloppy, paintMinstrelHat, paintNote, paintVerse } from './troopArt';
 import {
+  BUG_SIZE,
+  LURKER_DESIGN,
+  LURKER_MOODS,
+  SKIPPER_DESIGN,
+  SKIPPER_MOODS,
+  paintEyeGlow,
+  paintLurkerBody,
+  paintLurkerHead,
+  paintLurkerHelmet,
+  paintLurkerLeg,
+  paintLurkerPlate,
+  paintSkipperBody,
+  paintSkipperFrontLeg,
+  paintSkipperHead,
+  paintSkipperShin,
+  paintSkipperThigh,
+  type LurkerDesign,
+  type LurkerMood,
+  type LurkerVariant,
+  type SkipperDesign,
+  type SkipperMood,
+} from './bugArt';
+import {
   FEET_SIZE,
   POEM_INK,
   QUILL_SIZE,
@@ -213,6 +236,57 @@ export function registerElkHubTextures(scene: Phaser.Scene): void {
     for (const mood of ELK_MOODS) {
       paintTexture(scene, artScale, elkHeadTexture(mood, id), head.width, head.height, (ctx, _w, _h, scale) => paintElkHead(ctx, mood, scale, id));
     }
+  }
+}
+
+/**
+ * Texturas de las tropas del brote 3 (T-038, `bugArt.ts`) en la propuesta `design`. El acorazado lleva el cuerpo, la cabeza y
+ * las patas de la base, con su armadura encima.
+ */
+const paletteKey = (variant: LurkerVariant): string => (variant === 'spitter' ? 'spitter' : 'base');
+export const BUG_TEX = {
+  lurkerBody: (design: LurkerDesign, variant: LurkerVariant) => `lurker-${design}-${paletteKey(variant)}-body`,
+  lurkerHead: (design: LurkerDesign, variant: LurkerVariant, mood: LurkerMood) => `lurker-${design}-${paletteKey(variant)}-head-${mood}`,
+  lurkerLeg: (design: LurkerDesign, variant: LurkerVariant) => `lurker-${design}-${paletteKey(variant)}-leg`,
+  lurkerHelmet: (design: LurkerDesign) => `lurker-${design}-helmet`,
+  lurkerPlate: (design: LurkerDesign, part: 0 | 1) => `lurker-${design}-plate-${part}`,
+  skipperBody: (design: SkipperDesign) => `skipper-${design}-body`,
+  skipperHead: (design: SkipperDesign, mood: SkipperMood) => `skipper-${design}-head-${mood}`,
+  skipperThigh: (design: SkipperDesign) => `skipper-${design}-thigh`,
+  skipperShin: (design: SkipperDesign) => `skipper-${design}-shin`,
+  skipperLeg: (design: SkipperDesign) => `skipper-${design}-leg`,
+  eyeGlow: 'bug-eye-glow',
+} as const;
+
+/**
+ * Pinta las tropas del brote 3 (T-038) de las propuestas `lurkers` y `skippers`. `registerTextures` pinta las del juego
+ * (`LURKER_DESIGN`, `SKIPPER_DESIGN`); la galeria `/bichos.html`, todas. Llamar despues de `registerTextures`.
+ */
+export function registerBugTextures(
+  scene: Phaser.Scene,
+  lurkers: readonly LurkerDesign[] = [LURKER_DESIGN],
+  skippers: readonly SkipperDesign[] = [SKIPPER_DESIGN],
+): void {
+  const paint = (key: string, width: number, height: number, painter: Painter) => paintTexture(scene, artScale, key, width, height, painter);
+  const { body, head, leg, thigh, shin, glow } = BUG_SIZE;
+  paint(BUG_TEX.eyeGlow, glow.size, glow.size, paintEyeGlow);
+  for (const design of lurkers) {
+    for (const variant of ['base', 'spitter'] as const) {
+      paint(BUG_TEX.lurkerBody(design, variant), body.width, body.height, (ctx) => paintLurkerBody(ctx, design, variant));
+      paint(BUG_TEX.lurkerLeg(design, variant), leg.width, leg.height, (ctx) => paintLurkerLeg(ctx, design, variant));
+      for (const mood of LURKER_MOODS) {
+        paint(BUG_TEX.lurkerHead(design, variant, mood), head.width, head.height, (ctx) => paintLurkerHead(ctx, design, variant, mood));
+      }
+    }
+    paint(BUG_TEX.lurkerHelmet(design), head.width, head.height, (ctx) => paintLurkerHelmet(ctx, design));
+    for (const part of [0, 1] as const) paint(BUG_TEX.lurkerPlate(design, part), body.width, body.height, (ctx) => paintLurkerPlate(ctx, design, part));
+  }
+  for (const design of skippers) {
+    paint(BUG_TEX.skipperBody(design), body.width, body.height, (ctx) => paintSkipperBody(ctx, design));
+    paint(BUG_TEX.skipperThigh(design), thigh.width, thigh.height, (ctx) => paintSkipperThigh(ctx, design));
+    paint(BUG_TEX.skipperShin(design), shin.width, shin.height, (ctx) => paintSkipperShin(ctx, design));
+    paint(BUG_TEX.skipperLeg(design), leg.width, leg.height, (ctx) => paintSkipperFrontLeg(ctx, design));
+    for (const mood of SKIPPER_MOODS) paint(BUG_TEX.skipperHead(design, mood), head.width, head.height, (ctx) => paintSkipperHead(ctx, design, mood));
   }
 }
 
@@ -484,6 +558,8 @@ export function registerTextures(scene: Phaser.Scene, scale = 1): void {
   paint(TEX.elkScroll, SCROLL_SIZE.width, SCROLL_SIZE.height, paintElkScroll);
   paint(TEX.elkQuill, QUILL_SIZE.width, QUILL_SIZE.height, paintElkQuill);
   paint(TEX.hasteStreak, HASTE_STREAK_SIZE.width, HASTE_STREAK_SIZE.height, paintHasteStreak);
+  // Tropas del brote 3 (T-038), con las propuestas que usa el juego.
+  registerBugTextures(scene);
 }
 
 // ---------------------------------------------------------------------------
