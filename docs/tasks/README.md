@@ -49,29 +49,13 @@ Una task por archivo. El tamaño es orientativo.
 
 El estado se escribe en dos sitios: en esta tabla y en la cabecera de la task (`**Estado:**`). Al empezar o cerrar una task se cambian los dos en el mismo commit.
 
-## Orden recomendado
+## Orden en que se hicieron
 
-T-001, T-002, T-006, T-004, T-005, T-003, T-007, T-008, T-009, T-010, T-011, T-012, T-013.
+T-001, T-002, T-006, T-004, T-005, T-003, T-007, T-008, T-009, T-010, T-011, T-012, T-013. Después, T-014 a T-034; la última fue T-015 (música, 22 nov 2026).
 
-Después de T-013 se hicieron T-014 a T-034.
+No queda ninguna task pendiente (22 nov 2026). Lo siguiente según el plan son los brotes 3 y 4 (Brain y Morris), que cierran la defensa del refugio; sus ideas están en `../specs/03-ruta-de-brotes.md` y la historia en `../specs/04-historia.md`.
 
 Al cerrar una task se sube la versión del juego (ADR-0017). Mientras el juego esté en desarrollo, ninguna task migra datos guardados (ADR-0014).
-
-Orden sugerido para lo pendiente (revisado el 21 nov 2026):
-
-1. T-028: icono y favicon. Pequeña, no depende de nada y se nota en cada pestaña.
-2. T-034: perfiles. Va antes que todo lo que guarda datos permanentes (T-020, T-022, T-023, T-031, T-033) para que nazcan dentro del perfil.
-3. T-031: viñetas, Boxer y Patty. Empieza por la galería de propuestas, que necesita la decisión de Carmine: conviene lanzarla pronto.
-4. T-033 y T-032: el nombre del jugador y Boxer en los tours.
-5. T-020: semillas. Pequeña, y así el brote 2 ya da recompensa.
-6. T-024, T-025 y T-026: escudo, tropas y Elk Cloner. Es el contenido nuevo: va antes que la tienda porque una tienda sin segundo brote vende ayuda para lo que ya se venció.
-7. T-021, T-022 y T-023: poderes, tienda y nivel base.
-8. T-029: instalable. Después de T-028 y de T-034.
-9. T-015: música (hecha el 22 nov 2026; Carmine puede cambiar las pistas de oído en `/musica.html`).
-
-La lista de jefes está en `../specs/03-ruta-de-brotes.md` y la historia en `../specs/04-historia.md`.
-
-T-006 va antes que los elementos a propósito: fusionar es la mecánica que diferencia al juego. Si arrastrar una planta sobre otra no se siente bien, conviene saberlo cuanto antes.
 
 ## Punto de control
 
