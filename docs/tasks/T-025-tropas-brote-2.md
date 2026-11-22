@@ -25,7 +25,7 @@ Carmine quiere que cada brote siga el mismo guion de tropas (normal, que dispara
 | F-02 | ¿Cómo ataca la tropa nueva? | a) Suelta un verso: una onda que recorre el carril y daña un poco a todas las plantas que atraviesa. b) Dispara a una sola planta lejana | a: es el mismo ataque que el jefe, en pequeño, y no pisa al francotirador de Blaster | Carmine |
 | F-03 | ¿Cómo se llama? | Juglar, pregonero, trovador | Juglar | Carmine |
 | F-04 | ¿Avisa antes de atacar? | Sí o no | Sí: se hincha un momento antes de soltar el verso | Carmine |
-| F-05 | ¿La onda atraviesa una disparadora con escudo? | Depende de E-02 (T-024) | No, si E-02 es sí | Carmine |
+| F-05 | ¿La onda atraviesa una disparadora con escudo? | Depende de E-02 (T-024; cerrada el 21 nov 2026: sí, la disparadora con escudo también bloquea) | No: la regla ya está en `waveReach` (`combat.ts`) | Carmine |
 | F-06 | ¿La onda daña a las minas? | Sí o no | Sí, poco: como el escupidor, obliga a protegerlas | Carmine |
 
 ## Criterios de aceptación

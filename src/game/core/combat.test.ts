@@ -27,7 +27,7 @@ import {
   type Enemy,
 } from './combat';
 import { createMatch, createMine, createPlant, mineAt, type MatchState, type Mine } from './match';
-import { createShooter, damageMultiplier, plantMaxHp, type ElementType, type Shooter } from './plants';
+import { createShooter, damageMultiplier, plantMaxHp, type MineElement, type Shooter } from './plants';
 
 const worm = ENEMIES.worm;
 /** Vida y mordisco de un gusano de nivel 1, con la fuerza de T-010. */
@@ -45,7 +45,7 @@ function withPlant(state: MatchState, cell: Cell, plant: Shooter = createShooter
   return { ...state, plants };
 }
 
-function withMine(state: MatchState, cell: Cell, over: Partial<Mine> = {}, element: ElementType = 'fire'): MatchState {
+function withMine(state: MatchState, cell: Cell, over: Partial<Mine> = {}, element: MineElement = 'fire'): MatchState {
   const plants = state.plants.map((lane, l) => lane.map((p, c) => (l === cell.lane && c === cell.col ? { ...createMine(element), ...over } : p)));
   return { ...state, plants };
 }
@@ -596,7 +596,7 @@ describe('mina de hielo (T-005)', () => {
   const blastSlow = { amount: ICE.blastSlow, ms: ICE.blastSlowMs };
 
   it('sigue el mismo conteo de 2 s que la de fuego', () => {
-    const countdown = (element: ElementType) => {
+    const countdown = (element: MineElement) => {
       let state = withMine(createMatch(), cell, {}, element);
       state = spawnEnemy(state, 'worm', 2, center + 3, TOUGH);
       const armed = runUntil(state, 'mineArmed', 60_000, 50);

@@ -19,9 +19,9 @@ export const SAVE_KEY = 'partida';
 
 /**
  * Sube cuando cambia la forma de `MatchState` o de la guardada: las de otra version se ignoran. La 2 (T-018) anade el
- * brote; la 3 (T-020), las semillas de la partida.
+ * brote; la 3 (T-020), las semillas de la partida; la 4 (T-024), el muro y la disparadora con escudo.
  */
-export const SAVE_VERSION = 3;
+export const SAVE_VERSION = 4;
 
 export interface SavedGame {
   readonly version: number;
@@ -132,7 +132,10 @@ const isRecord = (value: unknown): value is Data => typeof value === 'object' &&
 const isNumber = (value: unknown): value is number => typeof value === 'number' && Number.isFinite(value);
 const isInt = (value: unknown, min = -Infinity, max = Infinity): value is number =>
   Number.isInteger(value) && (value as number) >= min && (value as number) <= max;
-const isElement = (value: unknown): boolean => value === 'fire' || value === 'ice';
+/** Elemento de una mina: fuego o hielo. */
+const isMineElement = (value: unknown): boolean => value === 'fire' || value === 'ice';
+/** Elemento infundido en una disparadora: los de mina o el escudo (T-024). */
+const isElement = (value: unknown): boolean => isMineElement(value) || value === 'shield';
 const isLane = (value: unknown): boolean => isInt(value, 0, BOARD.lanes - 1);
 const isNullOr = (value: unknown, check: (value: unknown) => boolean): boolean => value === null || check(value);
 
@@ -148,7 +151,8 @@ const isJump = (value: unknown): value is Jump =>
 
 function isSown(value: unknown): value is Sown {
   if (!isRecord(value) || !isNumber(value.hp) || value.hp <= 0) return false;
-  if (value.kind === 'mine') return isElement(value.element) && isNullOr(value.fuseMs, isNumber);
+  if (value.kind === 'mine') return isMineElement(value.element) && isNullOr(value.fuseMs, isNumber);
+  if (value.kind === 'wall') return true;
   if (value.kind !== 'shooter' || !isNumber(value.reloadMs) || !isRecord(value.shooter)) return false;
   const { shooter } = value;
   return isNullOr(shooter.element, isElement) && isInt(shooter.cannons, 1, LIMITS.maxCannons) && isInt(shooter.level, 1, LIMITS.maxLevel);

@@ -27,7 +27,7 @@ Una task por archivo. El tamaño es orientativo.
 | T-021 | [Poderes] Tres poderes en la partida y panel izquierdo | Pendiente | L | T-018 | O-01 a O-07 |
 | T-022 | [Tienda] Tienda de poderes | Pendiente | M | T-019, T-020, T-021 | O-01, T-01 a T-04 |
 | T-023 | [Progresión] Nivel base permanente de la disparadora | Pendiente | M | T-019, T-020, T-022 | N-02 a N-06 (N-01 cerrada) |
-| T-024 | [Plantas] Escudo: muro e infusión | Pendiente | L | T-016, T-018 | E-01 a E-06 |
+| T-024 | [Plantas] Escudo: muro e infusión | Completada (22 nov 2026, 0.6.0) | L | T-016, T-018 | Ninguna (E-01 a E-07 cerradas) |
 | T-025 | [Enemigos] Tropas del brote 2 y juglar | Pendiente | L | T-018, T-024 | F-01 a F-06 |
 | T-026 | [Jefe] Elk Cloner y rondas del brote 2 (antes Blaster, que pasó al brote 11) | Pendiente | L | T-024, T-025 | L-01, L-03 a L-09 (L-02 cerrada) |
 | T-027 | [Plantas] Premio en los niveles 5, 10, 15 y 20 y jardincito | Completada (21 nov 2026) | M | T-003 | Ninguna (Q-01 a Q-03 cerradas) |
@@ -53,7 +53,7 @@ El estado se escribe en dos sitios: en esta tabla y en la cabecera de la task (`
 
 T-001, T-002, T-006, T-004, T-005, T-003, T-007, T-008, T-009, T-010, T-011, T-012, T-013.
 
-Después de T-013 se hicieron T-014, T-016 a T-020, T-027, T-028 y T-030 a T-034.
+Después de T-013 se hicieron T-014, T-016 a T-020, T-024, T-027, T-028 y T-030 a T-034.
 
 Al cerrar una task se sube la versión del juego (ADR-0017). Mientras el juego esté en desarrollo, ninguna task migra datos guardados (ADR-0014).
 

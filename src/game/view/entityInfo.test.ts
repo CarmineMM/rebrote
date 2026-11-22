@@ -1,10 +1,10 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { CREEPER, ENEMIES, MINE } from '../config/balance';
+import { CREEPER, ENEMIES, MINE, SHIELD, SHOOTER } from '../config/balance';
 import { enemyMaxHp, spawnEnemy, type Enemy } from '../core/combat';
 import { createMatch, createMine, createPlant } from '../core/match';
 import { createShooter, type Shooter } from '../core/plants';
 import { setLanguage } from '../../i18n';
-import { enemyInfo, formatNumber, mineInfo, shooterInfo } from './entityInfo';
+import { enemyInfo, formatNumber, mineInfo, shooterInfo, wallInfo } from './entityInfo';
 
 const cell = { lane: 2, col: 3 };
 const shooter = (over: Partial<Shooter> = {}): Shooter => ({ ...createShooter(), ...over });
@@ -73,6 +73,25 @@ describe('ficha de una mina', () => {
     expect(info.tags).toEqual([{ text: '¡Explota en 1,24 s!', tone: 'alert' }]);
     expect(stat(info, 'Frena')).toMatchObject({ value: 'Un 70 %', note: 'durante 4 s' });
     expect(stat(info, 'Daño')).toBeUndefined();
+  });
+});
+
+describe('escudo (T-024)', () => {
+  it('la disparadora con escudo: su nombre, el doble de vida y que para lo de detras', () => {
+    const info = shooterInfo(createPlant(shooter({ element: 'shield' })), cell, 5);
+    expect(info).toMatchObject({ tone: 'shield', title: 'Disparadora con escudo', hp: { current: SHOOTER.hp * 2, max: SHOOTER.hp * 2 } });
+    expect(stat(info, 'Para')?.value).toBe('Lo que disparan a lo de detrás');
+    expect(stat(info, 'Daño')?.value).toBe('20 por disparo');
+  });
+
+  it('el muro: no ataca, para lo de detras, se arrastra a una disparadora y avisa de su desgaste', () => {
+    const full = wallInfo({ kind: 'wall', hp: SHIELD.wallHp }, cell);
+    expect(full).toMatchObject({ id: 'muro:2:3', tone: 'shield', title: 'Muro', level: null, hp: { current: SHIELD.wallHp, max: SHIELD.wallHp }, tags: [] });
+    expect(stat(full, 'Ataque')?.value).toBe('No ataca');
+    expect(stat(full, 'Para')).toBeDefined();
+    expect(stat(full, 'Arrastrarlo')).toBeDefined();
+    expect(wallInfo({ kind: 'wall', hp: SHIELD.wallHp * 0.5 }, cell).tags).toEqual([{ text: 'Agrietado', tone: 'calm' }]);
+    expect(wallInfo({ kind: 'wall', hp: SHIELD.wallHp * 0.2 }, cell).tags).toEqual([{ text: '¡A punto de romperse!', tone: 'alert' }]);
   });
 });
 

@@ -1,5 +1,5 @@
 import type { Cell } from '../core/board';
-import type { CannonCount, ElementType } from '../core/plants';
+import type { CannonCount, ElementType, MineElement } from '../core/plants';
 import type { Owned } from '../core/route';
 import type { Feature } from '../core/rounds';
 import type { CoverCast, Nudge, PlantSpot } from './titleCover';
@@ -33,7 +33,7 @@ interface ShooterExhibit extends Exhibit {
 
 interface MineExhibit extends Exhibit {
   readonly kind: 'mine';
-  readonly element: ElementType;
+  readonly element: MineElement;
 }
 
 /** Las piezas del jardin, en orden, cada una con lo que necesita y su casilla. */
@@ -44,6 +44,8 @@ const EXHIBITS: ReadonlyArray<ShooterExhibit | MineExhibit> = [
   { kind: 'shooter', needs: ['shooter', 'fuse'], cell: { lane: 3, col: 3 }, nudge: { x: -0.1, y: -0.15 }, cannons: 3, element: null },
   { kind: 'shooter', needs: ['shooter', 'fireInfuse'], cell: { lane: 3, col: 0 }, nudge: { x: 0.25, y: 0.18 }, cannons: 1, element: 'fire' },
   { kind: 'shooter', needs: ['shooter', 'iceInfuse'], cell: { lane: 1, col: 3 }, nudge: { x: 0.2, y: -0.05 }, cannons: 1, element: 'ice' },
+  // T-024: la de escudo, con lo del brote 2.
+  { kind: 'shooter', needs: ['shooter', 'shield'], cell: { lane: 4, col: 3 }, nudge: { x: -0.15, y: -0.1 }, cannons: 1, element: 'shield' },
   { kind: 'mine', needs: ['fireMine'], cell: { lane: 4, col: 1 }, nudge: { x: 0.35, y: -0.1 }, element: 'fire' },
   { kind: 'mine', needs: ['iceMine'], cell: { lane: 0, col: 4 }, nudge: { x: -0.2, y: 0.15 }, element: 'ice' },
 ];

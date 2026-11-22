@@ -49,7 +49,17 @@ Decisiones de diseño (B-01 a B-04, cerradas el 21 nov 2026 con la recomendació
 - **El orden de los brotes** es el de la lista de `docs/specs/03-ruta-de-brotes.md`: 25 jefes y el final. El brote 2 es Elk Cloner; Blaster es el 11.
 - **Datos guardados durante el desarrollo:** una guardada o un progreso de otra versión se descarta (ADR-0010 y ADR-0014, modificado el 21 nov 2026). Añadir o reordenar brotes no obliga a migrar nada.
 
+## Brotes en preparación (T-024)
+
+El escudo llega en la ronda 2 del brote 2 antes de que exista su jefe (Elk Cloner, T-026). Para que se pueda desbloquear y jugar sin enseñar un brote a medias:
+
+- **El jefe puede faltar:** `OutbreakScript.boss` es `EnemyKind | null`. Con `null` el brote está en preparación (`isOutbreakReady`): tiene su guion (el del brote 2, provisional, con tropas del brote 1), pero `isOutbreakOpen` nunca lo abre y `routeStops` lo trata como si aún no estuviera en el juego ("Próximamente"). Los brotes en preparación van al final de la lista (test).
+- **Su nombre:** como su jefe aún no es un enemigo, "Brote 2: Elk Cloner" sale de `outbreak.comingBoss` de `src/i18n/` (`bossName` en `src/ui/outbreakName.ts`). Cuando el jefe exista, sale de `info.enemy.names` como el de Creeper.
+- **En desarrollo** se juega con `?brote=2` en la dirección (`outbreakFromParam`): "Nueva partida" empieza ese brote. Ganarlo apunta el brote como vencido en el perfil de quien prueba, como cualquier otro.
+- Cuando T-026 traiga a Elk Cloner, basta con poner su `boss` y su guion de verdad: nada más cambia.
+
 ## Historial
 
 - **2026-11-21, versión original (T-018):** el contexto daba a Blaster como siguiente brote.
 - **2026-11-21, modificación:** Carmine decidió usar los 25 jefes en el orden de la lista. El brote 2 pasa a ser Elk Cloner y Blaster se va al puesto 11. La decisión técnica no cambia.
+- **2026-11-21, ampliación (T-024):** brotes en preparación, sin jefe todavía (sección "Brotes en preparación"). Carmine eligió que el brote 2 exista con un guion provisional, cerrado al jugador hasta T-026.

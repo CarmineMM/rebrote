@@ -217,6 +217,152 @@
       ]
     },
     {
+      "id": "sowWall",
+      "about": "Sembrar un muro (T-024): golpe gordo de madera y un poco de tierra",
+      "spec": {
+        "bus": "world",
+        "volume": 0.75,
+        "maxVoices": 2,
+        "minGapMs": 60,
+        "burst": 2,
+        "pitchJitter": 1,
+        "variants": 1
+      },
+      "pick": [
+        {
+          "url": "audio/sowWall",
+          "source": "Kenney RPG Audio: `doorClose_1.ogg`",
+          "seconds": 0.631
+        }
+      ],
+      "alternatives": [
+        {
+          "url": "audio-lab/candidatos/sowWall/1",
+          "source": "Kenney Impact Sounds: `impactPlank_medium_000.ogg` + Kenney Impact Sounds: `footstep_grass_000.ogg` (recortado 0-300 ms, -6 dB)",
+          "seconds": 0.43,
+          "recipes": []
+        },
+        {
+          "url": "audio-lab/candidatos/sowWall/2",
+          "source": "Kenney Impact Sounds: `impactWood_heavy_000.ogg` + Kenney Impact Sounds: `footstep_grass_001.ogg` (recortado 0-260 ms, -6 dB)",
+          "seconds": 0.31,
+          "recipes": []
+        }
+      ]
+    },
+    {
+      "id": "infuseShield",
+      "about": "Infundir escudo en una disparadora (T-024): golpe de madera y un brillo que sube",
+      "spec": {
+        "bus": "world",
+        "volume": 0.75,
+        "maxVoices": 2,
+        "minGapMs": 80,
+        "burst": 2,
+        "pitchJitter": 0.5,
+        "variants": 1
+      },
+      "pick": [
+        {
+          "url": "audio/infuseShield",
+          "source": "Kenney Impact Sounds: `impactWood_medium_001.ogg` (-3 dB) + Kenney Interface Sounds: `maximize_006.ogg` (-4 dB, +60 ms)",
+          "seconds": 0.427
+        }
+      ],
+      "alternatives": [
+        {
+          "url": "audio-lab/candidatos/infuseShield/1",
+          "source": "Kenney Impact Sounds: `impactPlank_medium_002.ogg` (-3 dB) + Kenney Interface Sounds: `confirmation_002.ogg` (-4 dB, +50 ms)",
+          "seconds": 0.572,
+          "recipes": []
+        },
+        {
+          "url": "audio-lab/candidatos/infuseShield/2",
+          "source": "Kenney Sci-Fi Sounds: `forceField_000.ogg` (recortado 0-500 ms, velocidad 0.8)",
+          "seconds": 0.612,
+          "recipes": []
+        }
+      ]
+    },
+    {
+      "id": "wallHit",
+      "about": "Un mordisco o un escupitajo da a un escudo (T-024): toc de madera (tres variantes)",
+      "spec": {
+        "bus": "world",
+        "volume": 0.4,
+        "maxVoices": 2,
+        "minGapMs": 120,
+        "burst": 2,
+        "pitchJitter": 1,
+        "variants": 3
+      },
+      "pick": [
+        {
+          "url": "audio/wallHit-1",
+          "source": "Kenney Impact Sounds: `impactWood_light_000.ogg`",
+          "seconds": 0.263
+        },
+        {
+          "url": "audio/wallHit-2",
+          "source": "Kenney Impact Sounds: `impactWood_light_001.ogg`",
+          "seconds": 0.263
+        },
+        {
+          "url": "audio/wallHit-3",
+          "source": "Kenney Impact Sounds: `impactWood_light_002.ogg`",
+          "seconds": 0.263
+        }
+      ],
+      "alternatives": [
+        {
+          "url": "audio-lab/candidatos/wallHit/1",
+          "source": "Kenney Impact Sounds: `impactPlank_medium_003.ogg`",
+          "seconds": 0.436,
+          "recipes": []
+        },
+        {
+          "url": "audio-lab/candidatos/wallHit/2",
+          "source": "Kenney Impact Sounds: `footstep_wood_000.ogg`",
+          "seconds": 0.252,
+          "recipes": []
+        }
+      ]
+    },
+    {
+      "id": "wallBreak",
+      "about": "Se rompe un muro (T-024): madera que se parte",
+      "spec": {
+        "bus": "world",
+        "volume": 0.7,
+        "maxVoices": 2,
+        "minGapMs": 120,
+        "burst": 2,
+        "pitchJitter": 0.8,
+        "variants": 1
+      },
+      "pick": [
+        {
+          "url": "audio/wallBreak",
+          "source": "Kenney Impact Sounds: `impactPlank_medium_004.ogg` + Kenney Impact Sounds: `impactPunch_medium_000.ogg` (-4 dB)",
+          "seconds": 0.428
+        }
+      ],
+      "alternatives": [
+        {
+          "url": "audio-lab/candidatos/wallBreak/1",
+          "source": "Kenney Impact Sounds: `impactMining_001.ogg`",
+          "seconds": 0.716,
+          "recipes": []
+        },
+        {
+          "url": "audio-lab/candidatos/wallBreak/2",
+          "source": "Kenney Impact Sounds: `impactWood_heavy_002.ogg` + Kenney RPG Audio: `creak1.ogg` (recortado 0-400 ms, -6 dB)",
+          "seconds": 0.393,
+          "recipes": []
+        }
+      ]
+    },
+    {
       "id": "fuse",
       "about": "Fusionar dos disparadoras: un golpe blando y unas notas que suben",
       "spec": {

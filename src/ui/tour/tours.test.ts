@@ -49,9 +49,18 @@ describe('tours de ayuda (T-013)', () => {
     expect(cueOf({ type: 'sow', card: 'shooter' })).toBe('sowShooter');
     expect(cueOf({ type: 'sow', card: 'fire' })).toBe('sowFire');
     expect(cueOf({ type: 'sow', card: 'ice' })).toBe('sowIce');
-    expect(cueOf({ type: 'infuse', element: 'ice', withMine: false })).toBe('infuseCard');
-    expect(cueOf({ type: 'infuse', element: 'fire', withMine: true })).toBe('infuseMine');
+    expect(cueOf({ type: 'infuse', element: 'ice', dragged: false })).toBe('infuseCard');
+    expect(cueOf({ type: 'infuse', element: 'fire', dragged: true })).toBe('infuseMine');
     expect(cueOf({ type: 'fuse' })).toBe('fuse');
+    // T-024: el muro, y el escudo infundido con la carta o arrastrando el muro.
+    expect(cueOf({ type: 'sow', card: 'shield' })).toBe('sowWall');
+    expect(cueOf({ type: 'infuse', element: 'shield', dragged: false })).toBe('infuseShield');
+    expect(cueOf({ type: 'infuse', element: 'shield', dragged: true })).toBe('infuseShield');
+  });
+
+  it('la ronda 2 del brote 2 trae el tour del escudo (T-024), y la 1 ninguno', () => {
+    expect(toursOfRound('elkCloner', 0)).toEqual([]);
+    expect(toursOfRound('elkCloner', 1)).toEqual(['shield']);
   });
 
   it('un paso sin su objetivo en el tablero sale sin iluminarlo ni gesto (no se atasca)', () => {
@@ -167,6 +176,8 @@ const LENGTH_BEFORE_T032: Record<Language, Record<TourId, Record<string, number>
     iceMine: { sow: 29, freeze: 43 },
     infuse: { card: 42, mine: 39 },
     fuse: { drag: 41 },
+    // T-024: pasos nuevos, con lo que miden.
+    shield: { wall: 33, block: 33, infuse: 38 },
   },
   en: {
     basics: { sow: 30, lane: 45, coins: 47, lives: 46, info: 38, go: 21 },
@@ -175,6 +186,7 @@ const LENGTH_BEFORE_T032: Record<Language, Record<TourId, Record<string, number>
     iceMine: { sow: 25, freeze: 50 },
     infuse: { card: 31, mine: 30 },
     fuse: { drag: 34 },
+    shield: { wall: 31, block: 22, infuse: 32 },
   },
 };
 

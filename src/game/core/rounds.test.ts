@@ -59,9 +59,17 @@ describe('brotes (datos, T-018)', () => {
     for (const outbreak of OUTBREAKS) {
       expect(outbreak.rounds.length, outbreak.id).toBeGreaterThan(0);
       expect(Number.isInteger(outbreak.startingBalance) && outbreak.startingBalance > 0, outbreak.id).toBe(true);
-      expect(bossRoundIndex(outbreak.id), outbreak.id).toBe(outbreak.rounds.length - 1);
-      expect(outbreak.rounds.filter((_, i) => isBossRound(outbreak.id, i)), outbreak.id).toHaveLength(1);
+      // T-024: un brote en preparacion (sin jefe aun) no saca jefe en ninguna ronda.
+      const bossRounds = outbreak.boss === null ? 0 : 1;
+      expect(bossRoundIndex(outbreak.id), outbreak.id).toBe(outbreak.boss === null ? null : outbreak.rounds.length - 1);
+      expect(outbreak.rounds.filter((_, i) => isBossRound(outbreak.id, i)), outbreak.id).toHaveLength(bossRounds);
     }
+  });
+
+  it('los brotes en preparacion (T-024) van despues de todos los terminados', () => {
+    const firstDraft = OUTBREAKS.findIndex((outbreak) => outbreak.boss === null);
+    if (firstDraft < 0) return;
+    expect(OUTBREAKS.slice(firstDraft).every((outbreak) => outbreak.boss === null)).toBe(true);
   });
 
   it('el primero es el de Creeper, con el saldo inicial de siempre (250)', () => {

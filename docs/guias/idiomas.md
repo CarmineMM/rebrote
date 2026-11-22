@@ -46,6 +46,7 @@ Cómo se escriben los textos de Rebrote para que salgan en español y en inglés
   | Fusionar | Fuse |
   | Nivel | Level |
   | Mina | Mine |
+  | Escudo, muro (T-024) | Shield, wall |
   | Gusano, acorazado, escupidor | Worm, armored worm, spitter worm |
   | Moneda | Coin |
   | Semillas (T-020) | Seeds |
@@ -76,7 +77,7 @@ Cómo se escriben los textos de Rebrote para que salgan en español y en inglés
 ### Brote nuevo (T-018)
 - [ ] Sus avisos de ronda están en `round.notices.<brote>`, uno por ronda, en los dos idiomas.
 - [ ] Lo que cuenta Boxer de su jefe (T-032) está en `story.lore.<brote>` en los dos idiomas: `line`, una línea que avisa de que llega y dice qué fue el virus de verdad; `card`, lo completo para su ficha (el test comprueba que cada brote los tiene).
-- [ ] Su jefe tiene nombre en `info.enemy.names`: de ahí sale "Brote N: jefe" (`outbreak.title`, compuesto en `src/ui/outbreakName.ts`). No se escribe a mano.
+- [ ] Su jefe tiene nombre en `info.enemy.names`: de ahí sale "Brote N: jefe" (`outbreak.title`, compuesto en `src/ui/outbreakName.ts` con `bossName`). No se escribe a mano. Si el brote está en preparación y su jefe aún no es un enemigo del juego (T-024), el nombre va en `outbreak.comingBoss.<brote>` hasta que lo sea.
 - [ ] Ningún texto dice "mundo": esa palabra queda para el futuro (el test lo comprueba).
 
 ### Paso de un tour de ayuda (T-013)

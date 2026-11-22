@@ -1,4 +1,5 @@
 import { type Ctx, circle, ellipse, leafShape, smallFlower } from '../canvasKit';
+import type { BarkScaleColors } from '../wallArt';
 import type { Ellipse, Point, ShooterCannons, ShooterVariant } from './design';
 
 /**
@@ -31,7 +32,20 @@ export interface ShooterColors {
   /** Pinchos (cactus) y lo claro de dentro (vaina). */
   spine: string;
   inner: readonly [string, string];
+  /** Escamas de corteza sobre el cuerpo (escudo, T-024; de momento solo las pinta Brote). */
+  bark?: BarkScaleColors;
 }
+
+/**
+ * Escamas de corteza del escudo (T-024): las mismas en el muro (`wallArt.ts`) y en la disparadora infundida. Labio claro
+ * donde da la luz, borde y sombra sobre la escama de debajo, y la corteza lisa y clara donde va la cara.
+ */
+export const BARK_SCALES: BarkScaleColors = {
+  rim: 'rgba(255, 233, 190, 0.85)',
+  edge: 'rgba(74, 44, 18, 0.8)',
+  shade: 'rgba(74, 44, 18, 0.3)',
+  face: ['rgba(250, 234, 200, 0.97)', 'rgba(240, 214, 168, 0.9)', 'rgba(232, 200, 150, 0)'],
+};
 
 export const SHOOTER_COLORS: Record<ShooterVariant, ShooterColors> = {
   normal: {
@@ -78,6 +92,23 @@ export const SHOOTER_COLORS: Record<ShooterVariant, ShooterColors> = {
     cheek: 'rgba(255, 110, 160, 0.5)',
     spine: '#ffffff',
     inner: ['#ffffff', '#d2efff'],
+  },
+  // Escudo (T-024): corteza con escamas, como el muro (`wallArt.ts`), y musgo en el brote y en la boca.
+  shield: {
+    outline: '#4a2c12',
+    body: ['#f6e3bc', '#c9945a', '#8a5a2e'],
+    tube: ['#e8cfa0', '#9a6a3a'],
+    mouth: '#b9e27a',
+    bore: '#2a1a0c',
+    boreGlow: '#a8e070',
+    rib: 'rgba(74, 44, 18, 0.38)',
+    sprout: '#8fcf5a',
+    sproutOutline: '#3f6a1e',
+    flower: ['#fff1c8', '#e0a040'],
+    cheek: 'rgba(255, 120, 100, 0.4)',
+    spine: '#fff1d0',
+    inner: ['#fff6e0', '#e8cfa0'],
+    bark: BARK_SCALES,
   },
 };
 

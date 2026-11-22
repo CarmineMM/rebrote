@@ -106,6 +106,28 @@ export const MANIFEST: Readonly<Record<SfxId, SoundEntry>> = {
     pick: [impact('impactGlass_light_001', { gainDb: -4 }), ui('glass_004', { delayMs: 40 })],
     alternatives: [ui('glass_004'), scifi('forceField_000', { lengthMs: 500, fadeOutMs: 250 })],
   },
+  sowWall: {
+    about: 'Sembrar un muro (T-024): golpe gordo de madera y un poco de tierra',
+    // Elegido de oido por Carmine (22 nov 2026).
+    pick: rpg('doorClose_1'),
+    alternatives: [[impact('impactPlank_medium_000'), impact('footstep_grass_000', { lengthMs: 300, fadeOutMs: 180, gainDb: -6 })], [impact('impactWood_heavy_000'), impact('footstep_grass_001', { lengthMs: 260, fadeOutMs: 160, gainDb: -6 })]],
+  },
+  infuseShield: {
+    about: 'Infundir escudo en una disparadora (T-024): golpe de madera y un brillo que sube',
+    pick: [impact('impactWood_medium_001', { gainDb: -3 }), ui('maximize_006', { delayMs: 60, gainDb: -4 })],
+    alternatives: [[impact('impactPlank_medium_002', { gainDb: -3 }), ui('confirmation_002', { delayMs: 50, gainDb: -4 })], scifi('forceField_000', { rate: 0.8, lengthMs: 500, fadeOutMs: 250 })],
+  },
+  wallHit: {
+    about: 'Un mordisco o un escupitajo da a un escudo (T-024): toc de madera (tres variantes)',
+    pick: variants(impact, 'impactWood_light', 3),
+    alternatives: [impact('impactPlank_medium_003'), impact('footstep_wood_000')],
+  },
+  wallBreak: {
+    about: 'Se rompe un muro (T-024): madera que se parte',
+    // Elegido de oido por Carmine (22 nov 2026).
+    pick: [impact('impactPlank_medium_004'), impact('impactPunch_medium_000', { gainDb: -4 })],
+    alternatives: [impact('impactMining_001'), [impact('impactWood_heavy_002'), rpg('creak1', { lengthMs: 400, fadeOutMs: 250, gainDb: -6 })]],
+  },
   fuse: {
     about: 'Fusionar dos disparadoras: un golpe blando y unas notas que suben',
     pick: [ui('confirmation_004'), impact('impactSoft_medium_000', { gainDb: -6 })],

@@ -14,8 +14,11 @@ import type { Presenter, RoundScript } from './rounds';
  * - Para entrar en un brote hay que haber vencido al jefe del anterior (B-04).
  */
 
-/** Nombre de cada brote: el de su jefe. Al anadir un brote, su nombre va aqui. */
-export type OutbreakId = 'creeper';
+/**
+ * Nombre de cada brote: el de su jefe. Al anadir un brote, su nombre va aqui. El brote 2, de Elk Cloner, existe desde
+ * T-024 con un guion provisional y sin jefe (`boss: null`) hasta T-026.
+ */
+export type OutbreakId = 'creeper' | 'elkCloner';
 
 export interface OutbreakScript {
   /**
@@ -23,8 +26,11 @@ export interface OutbreakScript {
    * permanente (ADR-0014), asi que no cambia aunque cambie el orden de la lista.
    */
   readonly id: OutbreakId;
-  /** Jefe del brote: sale en su ultima ronda y al vencerlo se gana la partida. */
-  readonly boss: EnemyKind;
+  /**
+   * Jefe del brote: sale en su ultima ronda y al vencerlo se gana la partida. Null mientras no esta en el juego (T-024: el
+   * brote 2 trae el escudo antes que a Elk Cloner, T-026): el brote esta en preparacion (`isOutbreakReady`).
+   */
+  readonly boss: EnemyKind | null;
   /** Saldo con el que empieza la partida (B-02: no se trae nada del brote anterior). */
   readonly startingBalance: number;
   /** Guion de rondas, en orden: cuantas hay, que desbloquea cada una y que enemigos saca. */
@@ -67,6 +73,17 @@ export function isOutbreakId(value: unknown): value is OutbreakId {
   return OUTBREAKS.some((outbreak) => outbreak.id === value);
 }
 
+/**
+ * Brote que pide un parametro de la direccion (`?brote=2` o `?brote=elkCloner`), o null si no es ninguno. Solo para
+ * desarrollo (T-024): asi se juega un brote en preparacion, que la ruta aun no deja elegir.
+ */
+export function outbreakFromParam(value: string | null): OutbreakId | null {
+  if (value === null || value === '') return null;
+  if (isOutbreakId(value)) return value;
+  const number = Number(value);
+  return Number.isInteger(number) && number >= 1 && number <= OUTBREAKS.length ? OUTBREAKS[number - 1].id : null;
+}
+
 /** Brotes que van antes que `id`, en orden (B-01: lo que desbloquearon llega ya desbloqueado). */
 export function outbreaksBefore(id: OutbreakId): readonly OutbreakScript[] {
   return OUTBREAKS.slice(0, outbreakIndex(id));
@@ -78,10 +95,19 @@ export function outbreakOfBoss(kind: EnemyKind): OutbreakId | null {
 }
 
 /**
- * Se puede jugar el brote `id` (B-04): el primero siempre; los demas, si ya se vencio al jefe del anterior. `defeated`
- * son los brotes vencidos del progreso permanente (`Progress.defeated`).
+ * ¿Esta el brote terminado? Uno sin jefe aun (T-024) esta en preparacion: sus rondas existen para probar lo nuevo, pero el
+ * jugador no lo puede jugar y la ruta lo da por "Proximamente" (`routeStops`). Solo se juega en desarrollo.
+ */
+export function isOutbreakReady(id: OutbreakId): boolean {
+  return outbreakScript(id).boss !== null;
+}
+
+/**
+ * Se puede jugar el brote `id` (B-04): el primero siempre; los demas, si ya se vencio al jefe del anterior. Uno en
+ * preparacion (`isOutbreakReady`), nunca. `defeated` son los brotes vencidos del progreso permanente (`Progress.defeated`).
  */
 export function isOutbreakOpen(id: OutbreakId, defeated: readonly string[]): boolean {
+  if (!isOutbreakReady(id)) return false;
   const index = outbreakIndex(id);
   return index === 0 || defeated.includes(OUTBREAKS[index - 1].id);
 }

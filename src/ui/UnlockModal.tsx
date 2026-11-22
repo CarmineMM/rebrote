@@ -97,6 +97,9 @@ function describe(t: Dictionary['unlock'], items: readonly UnlockItem[]): Shown[
           text: t.fuse.text,
         });
         break;
+      case 'shield':
+        shown.push({ key: item.id, icon: <CardIcon card="shield" />, title: t.shield.title, text: t.shield.text });
+        break;
     }
   }
   return shown;

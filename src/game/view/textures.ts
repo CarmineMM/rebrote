@@ -1,7 +1,7 @@
 import * as Phaser from 'phaser';
 import { BOARD, LIMITS } from '../config/balance';
 import type { BoardPoint } from '../core/board';
-import type { ElementType } from '../core/plants';
+import type { ElementType, MineElement } from '../core/plants';
 import type { ScreenPoint } from './perspective';
 import { SCENERY, VIEW, WORLD, perspective } from './layout';
 import { GARDEN, GARDEN_PARTS, GARDEN_TIERS, paintGardenPiece, type GardenPart } from './gardenArt';
@@ -11,6 +11,7 @@ import { text } from '../../i18n';
 import { type Ctx, circle, ellipse, leafShape, smallFlower } from './canvasKit';
 import { SHOOTER, type ShooterCannons, type ShooterDesign, type ShooterVariant } from './shooterShape';
 import { SHOOTER_CANNONS, SHOOTER_VARIANTS } from './shooters/design';
+import { WALL_SIZE, WALL_WEARS, paintWall, type WallWear } from './wallArt';
 
 /**
  * Arte hecho por codigo (ADR-0004): todo se pinta con Canvas 2D una sola vez al arrancar
@@ -51,6 +52,10 @@ export const TEX = {
   frost: 'fx-frost',
   /** Disparadora con 1, 2 y 3 canones, normal, de fuego y de hielo, de cada forma (usar `shooterTexture`). */
   shooter: 'unit-shooter',
+  /** Muro (T-024): el escudo sembrado solo, entero, mordido y casi roto (usar `wallTexture`, `wallArt.ts`). */
+  wall: 'unit-wall',
+  /** Astilla de corteza: salta del muro al morderlo, al perder placas y al romperse (T-024). */
+  barkChip: 'fx-bark-chip',
   /** Mina de cada elemento, dormida y en cuenta atras (usar `mineTexture`). */
   mine: {
     fire: { idle: 'unit-mine-fire', armed: 'unit-mine-fire-armed' },
@@ -108,9 +113,14 @@ export function shooterVariant(element: ElementType | null): ShooterVariant {
 export const shooterTexture = (cannons: ShooterCannons, element: ElementType | null = null, design: ShooterDesign = SHOOTER): string =>
   `${TEX.shooter}-${design.id}-${shooterVariant(element)}-${cannons}`;
 
-/** Textura de la semilla que dispara una planta con `element`. */
+/** Textura de la semilla que dispara una planta con `element`. La de escudo dispara como una normal (T-024). */
 export const seedTexture = (element: ElementType | null): string =>
   element === 'fire' ? TEX.fireSeed : element === 'ice' ? TEX.iceSeed : TEX.seed;
+
+/** Textura del muro (T-024) con el desgaste `wear` (`wallWear` de su vida). */
+export const wallTexture = (wear: WallWear): string => `${TEX.wall}-${wear}`;
+
+export { WALL_SIZE, type WallWear } from './wallArt';
 
 /**
  * Mina (T-004), en pixeles de su textura (diseno, 160 px por casilla): pies, centro del bulbo y punta de la mecha,
@@ -119,7 +129,7 @@ export const seedTexture = (element: ElementType | null): string =>
 export const MINE_SIZE = { width: 112, height: 124, footX: 56, footY: 112, bulbY: 78, tipX: 72, tipY: 16 } as const;
 
 /** Textura de la mina de `element`: dormida o en cuenta atras. */
-export const mineTexture = (element: ElementType, armed: boolean): string => TEX.mine[element][armed ? 'armed' : 'idle'];
+export const mineTexture = (element: MineElement, armed: boolean): string => TEX.mine[element][armed ? 'armed' : 'idle'];
 
 /** Trozo `part` del jardincito del tramo `tier` (1 a 4) de los niveles con premio (`gardenArt.ts`). */
 export const levelGardenTexture = (tier: number, part: GardenPart): string => `${TEX.levelGarden}-${tier}-${part}`;
@@ -270,7 +280,9 @@ export function registerTextures(scene: Phaser.Scene, scale = 1): void {
   paint(TEX.snowflake, 24, 24, paintSnowflake);
   paint(TEX.frost, FROST_SIZE.width, FROST_SIZE.height, paintFrost);
   registerShooterTextures(scene, SHOOTER);
-  for (const element of Object.keys(TEX.mine) as ElementType[]) {
+  for (const wear of WALL_WEARS) paint(wallTexture(wear), WALL_SIZE.width, WALL_SIZE.height, (ctx) => paintWall(ctx, wear));
+  paint(TEX.barkChip, 20, 16, paintBarkChip);
+  for (const element of Object.keys(TEX.mine) as MineElement[]) {
     paint(TEX.mine[element].idle, MINE_SIZE.width, MINE_SIZE.height, (ctx) => paintMine(ctx, false, MINE_PALETTES[element]));
     paint(TEX.mine[element].armed, MINE_SIZE.width, MINE_SIZE.height, (ctx) => paintMine(ctx, true, MINE_PALETTES[element]));
   }
@@ -1491,7 +1503,7 @@ interface MinePalette {
   snowCap: boolean;
 }
 
-const MINE_PALETTES: Record<ElementType, MinePalette> = {
+const MINE_PALETTES: Record<MineElement, MinePalette> = {
   // Fuego (T-004): guindilla con una mecha que chisporrotea.
   fire: {
     outline: '#8a2410',
@@ -1562,6 +1574,31 @@ function paintFlakeTip(ctx: Ctx, tipX: number, tipY: number, armed: boolean): vo
  * Cada elemento pone sus colores y su punta (`MINE_PALETTES`): guindilla con chispa (fuego) o bulbo escarchado
  * con gorro de nieve y un copo (hielo, T-005).
  */
+/** Astilla de corteza (T-024): un trozo de placa con su borde claro, para las particulas del muro. */
+function paintBarkChip(ctx: Ctx, w: number, h: number): void {
+  ctx.beginPath();
+  ctx.moveTo(w * 0.1, h * 0.55);
+  ctx.quadraticCurveTo(w * 0.35, h * 0.05, w * 0.85, h * 0.2);
+  ctx.lineTo(w * 0.92, h * 0.72);
+  ctx.quadraticCurveTo(w * 0.5, h * 0.98, w * 0.1, h * 0.55);
+  ctx.closePath();
+  const g = ctx.createLinearGradient(0, 0, 0, h);
+  g.addColorStop(0, '#e6c08a');
+  g.addColorStop(1, '#8a5a2e');
+  ctx.fillStyle = g;
+  ctx.fill();
+  ctx.strokeStyle = '#4a2c12';
+  ctx.lineWidth = 1.6;
+  ctx.lineJoin = 'round';
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(w * 0.22, h * 0.48);
+  ctx.quadraticCurveTo(w * 0.4, h * 0.2, w * 0.78, h * 0.28);
+  ctx.strokeStyle = 'rgba(255, 233, 190, 0.8)';
+  ctx.lineWidth = 1.4;
+  ctx.stroke();
+}
+
 function paintMine(ctx: Ctx, armed: boolean, palette: MinePalette): void {
   const cx = MINE_SIZE.footX;
   const cy = MINE_SIZE.bulbY;

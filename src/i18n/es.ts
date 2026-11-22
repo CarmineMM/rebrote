@@ -37,6 +37,11 @@ export const es = {
     title: (number: number, boss: string) => `Brote ${number}: ${boss}`,
     /** El brote sin su jefe, para uno que aun no esta en el juego (la ruta, T-019). */
     number: (number: number) => `Brote ${number}`,
+    /**
+     * Jefe de un brote en preparacion (T-024): el brote ya tiene rondas, pero su jefe aun no es un enemigo del juego (no
+     * esta en `info.enemy.names`). Cuando lo sea, sale de alli y se quita de aqui.
+     */
+    comingBoss: { elkCloner: 'Elk Cloner' },
   },
 
   /** Menu de inicio (T-011). */
@@ -226,13 +231,14 @@ export const es = {
 
   hud: {
     cards: 'Cartas',
-    cardNames: { shooter: 'Disparadora', fire: 'Fuego', ice: 'Hielo' },
+    cardNames: { shooter: 'Disparadora', fire: 'Fuego', ice: 'Hielo', shield: 'Escudo' },
     cardHelp: {
       shooter: 'Sembrar disparadora',
       fire: 'Fuego: en una casilla vacía, mina que explota',
       fireInfuse: 'Fuego: en una casilla vacía, mina; sobre una disparadora, la infunde (un fuego por cañón)',
       ice: 'Hielo: en una casilla vacía, mina que frena',
       iceInfuse: 'Hielo: en una casilla vacía, mina que frena; sobre una disparadora, la infunde (un hielo por cañón)',
+      shield: 'Escudo: en una casilla vacía, muro que aguanta y para los disparos; sobre una disparadora, la infunde (un escudo por cañón)',
     },
     noFunds: 'Saldo insuficiente',
     coins: 'Monedas',
@@ -265,6 +271,12 @@ export const es = {
         '¡Creeper se prepara! Sus tropas llegan más rápido y en mayor número',
         'Creeper casi está listo: aún más tropas y más rápidas',
         '¡Llega Creeper con su escolta! Salta de carril: reparte tus defensas',
+      ],
+      // T-024: guion provisional del brote 2 hasta que T-026 traiga el suyo.
+      elkCloner: [
+        'Lo aprendido sigue contigo: disparadoras, minas, infundir y fusionar',
+        'Siembra el escudo solo y para los disparos, o suéltalo sobre una disparadora',
+        'Escupidores en todos los carriles: ¡pon muros delante!',
       ],
     },
   },
@@ -321,6 +333,10 @@ export const es = {
       text: 'Suelta fuego o hielo sobre una disparadora, o arrastra hasta ella una mina sembrada: sus semillas queman o frenan.',
     },
     fuse: { title: 'Fusionar', text: 'Arrastra una disparadora sobre otra igual: suman cañones y pegan más fuerte.' },
+    shield: {
+      title: 'Escudo',
+      text: 'Siémbralo solo y es un muro que aguanta y para los disparos. Sobre una disparadora, le dobla la vida.',
+    },
   },
 
   /**
@@ -336,6 +352,7 @@ export const es = {
       iceMine: 'Mina de hielo',
       infuse: 'Infundir',
       fuse: 'Fusionar',
+      shield: 'Escudo',
     },
     next: 'Siguiente',
     done: '¡Entendido!',
@@ -374,6 +391,11 @@ export const es = {
       fuse: {
         drag: 'Arrastra una sobre otra igual: ¡fusión!',
       },
+      shield: {
+        wall: '¡Siembra el escudo solo: un muro!',
+        block: 'Los disparos se quedan en el muro',
+        infuse: 'Sobre una disparadora: ¡doble de vida!',
+      },
     },
     /** Pista de la moneda en el suelo (G-08). */
     coin: '¡Tócala! Vale más',
@@ -411,6 +433,11 @@ export const es = {
       creeper: {
         line: '¡Ojo, que viene Creeper, el primer gusano informático! Al de verdad lo paró Reaper, el primer antivirus. ¡Hoy el Reaper eres tú!',
         card: 'Creeper (1971) fue el primer gusano informático: un experimento que saltaba de un ordenador a otro por ARPANET, la red de la que nació internet. No rompía nada: solo escribía «I’M THE CREEPER: CATCH ME IF YOU CAN!». Para atraparlo se programó Reaper, el primer antivirus.',
+      },
+      // T-024: el brote 2 ya existe (provisional); su viñeta sale cuando T-026 traiga a Elk Cloner.
+      elkCloner: {
+        line: '¡Que viene Elk Cloner! En 1982 saltaba de disquete en disquete por los Apple II. ¡Y recitaba poemas!',
+        card: 'Elk Cloner (1982) fue uno de los primeros virus que salió de un laboratorio. Viajaba en los disquetes de los Apple II: se copiaba en cada disquete que pasaba por un equipo infectado y, cada 50 arranques, enseñaba un poema en la pantalla. No rompía nada: lo escribió un estudiante de 15 años, como una broma.',
       },
     },
     lines: {
@@ -490,10 +517,10 @@ export const es = {
     bossEscaped: '¡Se escapó!',
     lifeLost: '−1 ♥',
     fused: '¡Fusión!',
-    infused: { fire: '¡Fuego!', ice: '¡Hielo!' },
+    infused: { fire: '¡Fuego!', ice: '¡Hielo!', shield: '¡Escudo!' },
     cannotInfuse: 'No se puede infundir',
     infuseFrom: (round: number) => `Infundir: desde la ronda ${round}`,
-    hasElement: { fire: 'Ya tiene fuego', ice: 'Ya tiene hielo' },
+    hasElement: { fire: 'Ya tiene fuego', ice: 'Ya tiene hielo', shield: 'Ya tiene escudo' },
     infuse: (price: string) => `Infundir: ${price}`,
     noFunds: 'No alcanza la moneda',
     fuse: (cannons: number) => `Fusionar: ${cannons} cañones`,
@@ -502,6 +529,9 @@ export const es = {
     maxCannons: (cannons: number) => `Máximo ${cannons} cañones`,
     infuseWithMine: 'Infundir con la mina',
     infuseMinePlus: (extra: string) => `Infundir: mina + ${extra}`,
+    /** Con un muro en la mano (T-024). */
+    infuseWithWall: 'Infundir con el muro',
+    infuseWallPlus: (extra: string) => `Infundir: muro + ${extra}`,
   },
 
   /** Lo que dice Creeper en su bocadillo de terminal. El original de 1971 escribia "I'M THE CREEPER : CATCH ME IF YOU CAN". */
@@ -561,6 +591,13 @@ export const es = {
       youWin: '¡Ganas la partida!',
       reward: 'Recompensa',
       rewardValue: (coins: number) => `${coins} monedas`,
+      /** Escudo (T-024): lo que para el muro o la disparadora con escudo. */
+      blocks: 'Para',
+      blocksValue: 'Lo que disparan a lo de detrás',
+      attack: 'Ataque',
+      noAttack: 'No ataca',
+      drag: 'Arrastrarlo',
+      dragValue: 'Infunde escudo en una disparadora',
     },
     tags: {
       waiting: 'Esperando a un enemigo',
@@ -572,9 +609,12 @@ export const es = {
       burning: (amount: string) => `Quemado: −${amount} por segundo`,
       slowed: (percent: string) => `Frenado un ${percent}`,
       hasted: (percent: string) => `Acelerado +${percent}`,
+      /** Desgaste del muro (T-024). */
+      cracked: 'Agrietado',
+      crumbling: '¡A punto de romperse!',
     },
     shooter: {
-      title: { plain: 'Disparadora', fire: 'Disparadora de fuego', ice: 'Disparadora de hielo' },
+      title: { plain: 'Disparadora', fire: 'Disparadora de fuego', ice: 'Disparadora de hielo', shield: 'Disparadora con escudo' },
       oneCannon: 'Un cañón',
       fused: (cannons: number) => `${cannons} cañones fusionados`,
       cap: (cap: number) => `Tope ${cap}`,
@@ -582,7 +622,14 @@ export const es = {
         plain: 'Dispara semillas a los enemigos de su carril que tiene delante.',
         fire: 'Sus semillas queman: el enemigo sigue perdiendo vida un rato después del impacto.',
         ice: 'Sus semillas frenan: el enemigo avanza y muerde más despacio.',
+        shield: 'Dispara como una normal y aguanta el doble. Los disparos enemigos se quedan en ella: no llegan a las de detrás.',
       },
+    },
+    /** Muro (T-024): el escudo sembrado solo. */
+    wall: {
+      title: 'Muro',
+      subtitle: 'Escudo sembrado solo',
+      about: 'No dispara ni explota: aguanta los mordiscos y los disparos que iban a lo de detrás. Arrástralo sobre una disparadora para infundirle escudo.',
     },
     mine: {
       title: { fire: 'Mina de fuego', ice: 'Mina de hielo' },

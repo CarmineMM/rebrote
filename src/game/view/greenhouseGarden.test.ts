@@ -30,6 +30,17 @@ describe('jardin del Invernadero (T-019)', () => {
     expect(greenhouseCast(owned(['shooter', 'fireMine'])).plants.some((p) => p.element === 'fire')).toBe(false);
   });
 
+  it('con el escudo (T-024) sale tambien la disparadora con escudo, sin pisar a las demas', () => {
+    const all: Feature[] = ['shooter', 'levelUp', 'fuse', 'fireInfuse', 'iceInfuse', 'fireMine', 'iceMine', 'shield'];
+    const cast = greenhouseCast(owned(all, 5));
+    expect(cast.plants.some((p) => p.element === 'shield')).toBe(true);
+    const at = [...cast.plants, ...cast.mines].map(({ cell, nudge }) => ({ x: cell.col + 0.5 + (nudge?.x ?? 0), y: cell.lane + 0.5 + (nudge?.y ?? 0) }));
+    for (let i = 0; i < at.length; i++) {
+      for (let j = i + 1; j < at.length; j++) expect(Math.hypot(at[i].x - at[j].x, at[i].y - at[j].y)).toBeGreaterThan(0.9);
+    }
+    expect(greenhouseCast(ownedSoFar([FIRST_OUTBREAK])).plants.some((p) => p.element === 'shield')).toBe(false);
+  });
+
   it('la de nivel llega al tope que ya se alcanza, con su medallita y su jardincito', () => {
     const leveled = (cap: number) => greenhouseCast(owned(['shooter', 'levelUp'], cap)).plants.find((p) => p.level > 1)?.level;
     expect(leveled(5)).toBe(5);

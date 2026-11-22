@@ -1,6 +1,5 @@
 import * as Phaser from 'phaser';
 import type { Bullet } from '../core/combat';
-import type { ElementType } from '../core/plants';
 import type { Effects } from './effects';
 import { entityDepth, perspective } from './layout';
 import { PLANT_LOOK, barrelMuzzle, type Muzzle } from './plantView';
@@ -15,6 +14,9 @@ const BULLET_LOOK = {
 
 /** Color del anillo del impacto segun la semilla. */
 const IMPACT_RING = { normal: 0xb9ec5c, fire: 0xffa04d, ice: 0x8fd8ff } as const;
+
+/** Lo que deja la semilla al impactar: el elemento de su efecto (la de escudo no lleva, dispara como una normal, T-024). */
+type SeedElement = 'fire' | 'ice' | null;
 
 /**
  * Semilla en vuelo. Vuela a la altura del canon del que salio por su carril y lleva una sombrita en el suelo.
@@ -31,7 +33,7 @@ export class BulletView {
   /** Altura de vuelo sobre el suelo, en anchos de casilla: la de la boca del canon. */
   private readonly up: number;
   /** Elemento de la semilla: la de fuego (T-004) revienta en brasas y la de hielo (T-005), en copos. */
-  private readonly element: ElementType | null;
+  private readonly element: SeedElement;
 
   constructor(
     private readonly scene: Phaser.Scene,

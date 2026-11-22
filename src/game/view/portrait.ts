@@ -2,11 +2,12 @@ import type * as Phaser from 'phaser';
 import { OUTBREAKS } from '../config/balance';
 import type { EnemyKind } from '../core/combat';
 import type { OutbreakId } from '../core/outbreaks';
-import type { CannonCount, ElementType } from '../core/plants';
+import type { CannonCount, ElementType, MineElement } from '../core/plants';
 import { GARDEN, gardenSpots, gardenTier } from './gardenArt';
 import { MEDAL, showsMedal } from './levelMedal';
 import { SHOOTER } from './shooterShape';
-import { HASTE_STREAK_SIZE, MINE_SIZE, SHOOTER_SIZE, TEX, WORM_SIZE, levelGardenTexture, medalTexture, mineTexture, shooterTexture } from './textures';
+import { HASTE_STREAK_SIZE, MINE_SIZE, SHOOTER_SIZE, TEX, WALL_SIZE, WORM_SIZE, levelGardenTexture, medalTexture, mineTexture, shooterTexture, wallTexture } from './textures';
+import type { WallWear } from './wallArt';
 import { AURA_LOOK, auraTier, veilSize, veilStrength } from './wormAuraArt';
 import { WORM_LOOK } from './wormView';
 
@@ -17,7 +18,9 @@ import { WORM_LOOK } from './wormView';
  */
 export type PortraitSubject =
   | { readonly kind: 'shooter'; readonly cannons: CannonCount; readonly element: ElementType | null; readonly level: number }
-  | { readonly kind: 'mine'; readonly element: ElementType; readonly armed: boolean }
+  | { readonly kind: 'mine'; readonly element: MineElement; readonly armed: boolean }
+  /** Muro (T-024), con su desgaste. */
+  | { readonly kind: 'wall'; readonly wear: WallWear }
   | {
       readonly kind: 'enemy';
       readonly enemy: EnemyKind;
@@ -42,7 +45,7 @@ const BACKDROP = {
   lawnDark: '#5aa642',
   corruptLight: '#6b4f8f',
   corruptDark: '#2b2034',
-  halo: { plant: '#fff3b0', fire: '#ffc48a', ice: '#c9ecff', enemy: '#c7ffd9' },
+  halo: { plant: '#fff3b0', fire: '#ffc48a', ice: '#c9ecff', shield: '#f6dcae', enemy: '#c7ffd9' },
 } as const;
 
 /** Una pieza a pintar: textura, centro (o punto de origen) en unidades de la foto, escala y origen relativo. */
@@ -101,10 +104,11 @@ export function portraitUrl(scene: Phaser.Scene, subject: PortraitSubject, { bac
  * El jefe de cada brote recortado, en reposo y sin enfadar, para los lugares de la ruta de brotes (T-019). La ruta lo
  * ensena en color si se puede jugar y en silueta si el brote esta cerrado.
  */
-export function bossCutouts(scene: Phaser.Scene): Record<OutbreakId, string> {
-  const art = {} as Record<OutbreakId, string>;
+export function bossCutouts(scene: Phaser.Scene): Partial<Record<OutbreakId, string>> {
+  const art: Partial<Record<OutbreakId, string>> = {};
   for (const { id, boss } of OUTBREAKS) {
-    art[id] = portraitUrl(scene, { kind: 'enemy', enemy: boss, level: 1, enraged: false, hasted: false }, { backdrop: false });
+    // Un brote en preparacion (T-024) aun no tiene jefe que recortar: la ruta lo da por "Proximamente".
+    if (boss) art[id] = portraitUrl(scene, { kind: 'enemy', enemy: boss, level: 1, enraged: false, hasted: false }, { backdrop: false });
   }
   return art;
 }
@@ -118,8 +122,7 @@ function paintBackdrop(ctx: CanvasRenderingContext2D, subject: PortraitSubject):
   ctx.fillRect(0, 0, size, size);
 
   // Halo detras de lo fotografiado, del color de su tono.
-  const tone =
-    subject.kind === 'enemy' ? BACKDROP.halo.enemy : subject.element === 'fire' ? BACKDROP.halo.fire : subject.element === 'ice' ? BACKDROP.halo.ice : BACKDROP.halo.plant;
+  const tone = haloOf(subject);
   const halo = ctx.createRadialGradient(size / 2, size * 0.5, 4, size / 2, size * 0.5, size * 0.55);
   halo.addColorStop(0, tone);
   halo.addColorStop(1, 'rgba(255, 255, 255, 0)');
@@ -154,6 +157,14 @@ function paintBackdrop(ctx: CanvasRenderingContext2D, subject: PortraitSubject):
       ctx.fill();
     }
   }
+}
+
+/** Halo detras de lo fotografiado: el de su elemento, el de la planta o el de los enemigos. El muro, el del escudo. */
+function haloOf(subject: PortraitSubject): string {
+  if (subject.kind === 'enemy') return BACKDROP.halo.enemy;
+  if (subject.kind === 'wall') return BACKDROP.halo.shield;
+  const element: ElementType | null = subject.element;
+  return element ? BACKDROP.halo[element] : BACKDROP.halo.plant;
 }
 
 /** Piezas de lo fotografiado, en unidades de su textura con los pies en (0, 0). Luego se escalan y centran. */
@@ -191,6 +202,10 @@ function piecesFor(subject: PortraitSubject): Piece[] {
   if (subject.kind === 'mine') {
     const { width, height, footX, footY } = MINE_SIZE;
     return [{ key: mineTexture(subject.element, subject.armed), x: 0, y: 0, scale: 1, ox: footX / width, oy: footY / height, width, height }];
+  }
+  if (subject.kind === 'wall') {
+    const { width, height, footX, footY } = WALL_SIZE;
+    return [{ key: wallTexture(subject.wear), x: 0, y: 0, scale: 1, ox: footX / width, oy: footY / height, width, height }];
   }
   return wormPieces(subject);
 }

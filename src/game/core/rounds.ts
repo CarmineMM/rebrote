@@ -15,10 +15,10 @@ import { creditRound } from './seeds';
 
 /**
  * Lo que una ronda desbloquea (un concepto nuevo por ronda): sembrar disparadoras, subir de nivel, sembrar o
- * infundir cada elemento, y fusionar. Lo desbloqueado sigue desbloqueado en las rondas siguientes y en los brotes
- * siguientes (T-018, B-01).
+ * infundir cada elemento, fusionar, y el escudo (T-024: el muro y la infusion llegan juntos). Lo desbloqueado sigue
+ * desbloqueado en las rondas siguientes y en los brotes siguientes (T-018, B-01).
  */
-export type Feature = 'shooter' | 'levelUp' | 'fireMine' | 'fireInfuse' | 'iceMine' | 'iceInfuse' | 'fuse';
+export type Feature = 'shooter' | 'levelUp' | 'fireMine' | 'fireInfuse' | 'iceMine' | 'iceInfuse' | 'fuse' | 'shield';
 
 /** Gritos de Creeper (T-009). El texto de cada uno, en cada idioma, esta en `creeper.shouts` de `src/i18n/` (T-011). */
 export type CreeperShout = 'escort';
@@ -230,17 +230,20 @@ export function unlockRound(outbreak: OutbreakId, feature: Feature): number | nu
   return index < 0 ? null : index;
 }
 
-/** Lo que hay que tener desbloqueado para sembrar la carta en una casilla vacia. */
+/** Lo que hay que tener desbloqueado para sembrar la carta en una casilla vacia. El escudo, para el muro (T-024). */
 export function sowFeature(card: CardId): Feature {
-  return card === 'shooter' ? 'shooter' : card === 'fire' ? 'fireMine' : 'iceMine';
+  if (card === 'shooter' || card === 'shield') return card;
+  return card === 'fire' ? 'fireMine' : 'iceMine';
 }
 
-/** Lo que hay que tener desbloqueado para infundir el elemento en una disparadora. */
+/** Lo que hay que tener desbloqueado para infundir el elemento en una disparadora. El escudo llega entero (T-024). */
 export function infuseFeature(element: ElementType): Feature {
+  if (element === 'shield') return 'shield';
   return element === 'fire' ? 'fireInfuse' : 'iceInfuse';
 }
 
-const CARDS: readonly CardId[] = ['shooter', 'fire', 'ice'];
+/** Cartas de la bandeja, en orden. La del escudo (T-024) va la ultima: llega en el brote 2. */
+const CARDS: readonly CardId[] = ['shooter', 'fire', 'ice', 'shield'];
 
 /** Cartas de la bandeja: las que ya se pueden jugar de alguna forma (sembrar o infundir). Las bloqueadas no se ven. */
 export function availableCards(state: MatchState): CardId[] {
@@ -251,7 +254,7 @@ export function availableCards(state: MatchState): CardId[] {
 /** Elementos que ya se pueden infundir. */
 export function infusableElements(state: MatchState): ElementType[] {
   const unlocked = unlockedAt(state.outbreak, state.round.index);
-  return (['fire', 'ice'] as const).filter((element) => unlocked.has(infuseFeature(element)));
+  return (['fire', 'ice', 'shield'] as const).filter((element) => unlocked.has(infuseFeature(element)));
 }
 
 export function isWon(state: MatchState): boolean {

@@ -7,6 +7,8 @@ Sustituye a la task del jefe Blaster, que pasó al brote 11 (21 nov 2026). Carmi
 
 **El original (1982).** Elk Cloner fue uno de los primeros virus que se extendió fuera de un laboratorio. Viajaba en disquetes de Apple II: se copiaba a cada disquete que pasaba por un equipo infectado y, cada 50 arranques, mostraba un poema en pantalla. No destruía nada; era una broma.
 
+**Desde T-024** el brote 2 ya existe en `OUTBREAKS` con un guion provisional de 3 rondas (tropas del brote 1 y el escudo en la ronda 2) y sin jefe (`boss: null`): está en preparación, cerrado al jugador, y en desarrollo se juega con `?brote=2` (ADR-0015, "Brotes en preparación"). Esta task sustituye ese guion por el de verdad, pone a Elk Cloner como `boss` (y quita su nombre de `outbreak.comingBoss`) y lo abre. Lo que cuenta Boxer de él ya está en `story.lore.elkCloner`; repasarlo si hace falta. Los ataques que cruzan el carril tienen su regla de bloqueo en `waveReach` (`combat.ts`).
+
 En el juego es **Elk Cloner, el Poeta**. El combate de Creeper sirve de modelo: barra de jefe (`BossBar`), jefe esperando a la derecha (`bossPreparing`), tests propios (`creeper.test.ts`) y vista propia (`creeperView.ts`). El brote 2 no cambia de escenario.
 
 ## Objetivos

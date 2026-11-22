@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BOARD, CREEPER, ENEMIES, ENEMY_POWER, FIRE, ICE, SHOOTER } from '../config/balance';
+import { BOARD, CREEPER, ENEMIES, ENEMY_POWER, FIRE, ICE, SHIELD, SHOOTER } from '../config/balance';
 import type { Cell } from './board';
 import {
   enemyDamage,
@@ -16,7 +16,7 @@ import {
   type CombatEvent,
   type Enemy,
 } from './combat';
-import { createMatch, createMine, createPlant, sownAt, type MatchState } from './match';
+import { createMatch, createMine, createPlant, createWall, sownAt, type MatchState } from './match';
 import { createShooter, type Shooter } from './plants';
 
 /** Reglas del Creeper (T-008): salto de carril, copias, golpe al aterrizar, fases, derrota y victoria. */
@@ -319,6 +319,16 @@ describe('aterrizaje (J-05)', () => {
     expect(ofType(under.events, 'landed')[0].cell).toEqual({ lane: 0, col: 6 });
     const behind = jumpTo0(withPlant(withCreeper(2, 6, 0.79), { lane: 0, col: 7 }));
     expect(ofType(behind.events, 'landed')[0].cell).toBeNull();
+  });
+
+  it('golpea un muro (T-024, E-06) como a cualquier planta: le quita lo mismo y no le salta por encima', () => {
+    let state = withCreeper(2, 6, 0.79);
+    state = { ...state, plants: state.plants.map((lane, l) => lane.map((p, c) => (l === 0 && c === 4 ? createWall() : p))) };
+    state = withPlant(state, { lane: 0, col: 1 });
+    const { state: after, events } = jumpTo0(state);
+    expect(ofType(events, 'landed')).toEqual([{ type: 'landed', enemyId: 1, lane: 0, cell: { lane: 0, col: 4 } }]);
+    expect(sownAt(after, { lane: 0, col: 4 })?.hp).toBe(SHIELD.wallHp - slamDamage());
+    expect(sownAt(after, { lane: 0, col: 1 })?.hp).toBe(createPlant().hp);
   });
 
   it('puede romper una mina, que asi no explota', () => {

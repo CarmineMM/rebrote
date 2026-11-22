@@ -9,10 +9,11 @@ import type { Ctx } from '../canvasKit';
  */
 
 export type ShooterCannons = 1 | 2 | 3;
-export type ShooterVariant = 'normal' | 'fire' | 'ice';
+/** Normal o infundida: de fuego, de hielo o de escudo (T-024). */
+export type ShooterVariant = 'normal' | 'fire' | 'ice' | 'shield';
 
 export const SHOOTER_CANNONS: readonly ShooterCannons[] = [1, 2, 3];
-export const SHOOTER_VARIANTS: readonly ShooterVariant[] = ['normal', 'fire', 'ice'];
+export const SHOOTER_VARIANTS: readonly ShooterVariant[] = ['normal', 'fire', 'ice', 'shield'];
 
 export interface ShooterSize {
   width: number;

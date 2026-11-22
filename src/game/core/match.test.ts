@@ -11,13 +11,13 @@ import {
   fusedPlant,
   fusionBlocker,
   fusionTargets,
-  infuseWithMine,
+  infuseWithElement,
   levelUpOffer,
   levelUpPlant,
   mineAt,
-  mineDragBlocker,
-  mineInfusion,
-  mineInfusionTargets,
+  elementDragBlocker,
+  elementInfusion,
+  elementInfusionTargets,
   plantAt,
   playCard,
   cardPlay,
@@ -488,8 +488,8 @@ describe('infundir con una mina sembrada (T-009)', () => {
 
   it('la mina infunde a una disparadora de un canon gratis y deja su casilla', () => {
     const before = board(0, 'ice');
-    expect(mineInfusion(before, mineCell, plantCell)).toEqual({ cost: 0, multiplier: 0, blocker: null });
-    const after = infuseWithMine(before, mineCell, plantCell);
+    expect(elementInfusion(before, mineCell, plantCell)).toEqual({ cost: 0, multiplier: 0, blocker: null });
+    const after = infuseWithElement(before, mineCell, plantCell);
     expect(mineAt(after, mineCell)).toBeNull();
     expect(sownAt(after, mineCell)).toBeNull();
     expect(plantAt(after, plantCell)?.shooter.element).toBe('ice');
@@ -498,21 +498,21 @@ describe('infundir con una mina sembrada (T-009)', () => {
 
   it('en una de N canones la mina cuenta como un elemento y se pagan los demas', () => {
     const before = board(1000, 'fire', { shooter: shooter({ cannons: 3 }), hp: 500, reloadMs: 120 });
-    expect(mineInfusion(before, mineCell, plantCell)).toEqual({ cost: 2 * COSTS.fire, multiplier: 2, blocker: null });
-    const after = infuseWithMine(before, mineCell, plantCell);
+    expect(elementInfusion(before, mineCell, plantCell)).toEqual({ cost: 2 * COSTS.fire, multiplier: 2, blocker: null });
+    const after = infuseWithElement(before, mineCell, plantCell);
     expect(after.balance).toBe(1000 - 2 * COSTS.fire);
     expect(plantAt(after, plantCell)).toMatchObject({ shooter: { element: 'fire', cannons: 3, level: 1 }, hp: 500, reloadMs: 120 });
     const poor = board(2 * COSTS.fire - 1, 'fire', { shooter: shooter({ cannons: 3 }) });
-    expect(mineInfusion(poor, mineCell, plantCell).blocker).toBe('insufficient-funds');
-    expect(() => infuseWithMine(poor, mineCell, plantCell)).toThrow();
+    expect(elementInfusion(poor, mineCell, plantCell).blocker).toBe('insufficient-funds');
+    expect(() => infuseWithElement(poor, mineCell, plantCell)).toThrow();
   });
 
   it('no sirve sobre una disparadora con elemento, ni sobre una casilla sin disparadora', () => {
-    expect(mineInfusion(board(0, 'fire', { shooter: shooter({ element: 'ice' }) }), mineCell, plantCell).blocker).toBe('has-element');
-    expect(mineInfusion(board(), mineCell, { lane: 0, col: 0 }).blocker).toBe('no-plant');
-    expect(mineInfusion(board(), mineCell, mineCell).blocker).toBe('no-plant');
-    expect(mineInfusion(board(), plantCell, plantCell).blocker).toBe('no-mine');
-    expect(mineInfusion(board(), mineCell, { lane: 9, col: 0 }).blocker).toBe('off-board');
+    expect(elementInfusion(board(0, 'fire', { shooter: shooter({ element: 'ice' }) }), mineCell, plantCell).blocker).toBe('has-element');
+    expect(elementInfusion(board(), mineCell, { lane: 0, col: 0 }).blocker).toBe('no-plant');
+    expect(elementInfusion(board(), mineCell, mineCell).blocker).toBe('no-plant');
+    expect(elementInfusion(board(), plantCell, plantCell).blocker).toBe('no-element');
+    expect(elementInfusion(board(), mineCell, { lane: 9, col: 0 }).blocker).toBe('off-board');
   });
 
   it('una mina que ya cuenta no se arrastra', () => {
@@ -520,21 +520,21 @@ describe('infundir con una mina sembrada (T-009)', () => {
     const plants = armed.plants.map((lane) => [...lane]);
     plants[mineCell.lane][mineCell.col] = { ...createMine('fire'), fuseMs: 900 };
     const state = { ...armed, plants };
-    expect(mineDragBlocker(state, mineCell)).toBe('armed');
-    expect(mineInfusion(state, mineCell, plantCell).blocker).toBe('armed');
-    expect(mineDragBlocker(board(), mineCell)).toBeNull();
-    expect(mineDragBlocker(board(), plantCell)).toBe('no-mine');
+    expect(elementDragBlocker(state, mineCell)).toBe('armed');
+    expect(elementInfusion(state, mineCell, plantCell).blocker).toBe('armed');
+    expect(elementDragBlocker(board(), mineCell)).toBeNull();
+    expect(elementDragBlocker(board(), plantCell)).toBe('no-element');
   });
 
   it('solo desde la ronda que desbloquea infundir (la 5)', () => {
-    expect(mineDragBlocker(board(0, 'fire', {}, 3), mineCell)).toBe('locked');
-    expect(mineInfusion(board(0, 'fire', {}, 3), mineCell, plantCell).blocker).toBe('locked');
-    expect(mineDragBlocker(board(0, 'ice', {}, 4), mineCell)).toBeNull();
+    expect(elementDragBlocker(board(0, 'fire', {}, 3), mineCell)).toBe('locked');
+    expect(elementInfusion(board(0, 'fire', {}, 3), mineCell, plantCell).blocker).toBe('locked');
+    expect(elementDragBlocker(board(0, 'ice', {}, 4), mineCell)).toBeNull();
   });
 
   it('marca como destinos las disparadoras que se pueden infundir', () => {
     const other = { lane: 0, col: 2 };
     const state = withPlants(board(), [other, { shooter: shooter({ element: 'fire' }) }]);
-    expect(mineInfusionTargets(state, mineCell)).toEqual([plantCell]);
+    expect(elementInfusionTargets(state, mineCell)).toEqual([plantCell]);
   });
 });

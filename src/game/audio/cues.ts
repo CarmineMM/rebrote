@@ -1,6 +1,6 @@
 import type { SfxId } from '../config/audio';
 import { BOARD } from '../config/balance';
-import type { CombatEvent } from '../core/combat';
+import { isShield, type BulletEffect, type CombatEvent } from '../core/combat';
 import type { MatchState } from '../core/match';
 import { isMilestoneLevel, type ElementType } from '../core/plants';
 import type { RoundEvent } from '../core/rounds';
@@ -22,9 +22,11 @@ export interface SfxCue {
 const at = (id: SfxId, x: number): SfxCue => ({ id, pan: panAt(x, BOARD.columns) });
 const centered = (id: SfxId): SfxCue => ({ id, pan: 0 });
 
-const SHOT_OF: Record<'none' | ElementType, SfxId> = { none: 'shot', fire: 'shotFire', ice: 'shotIce' };
-const HIT_OF: Record<'none' | ElementType, SfxId> = { none: 'hit', fire: 'hitFire', ice: 'hitIce' };
-const INFUSE_OF: Record<ElementType, SfxId> = { fire: 'infuseFire', ice: 'infuseIce' };
+/** El disparo y el impacto suenan segun lo que deja la semilla: la de escudo (T-024) dispara como una normal. */
+type SeedSound = 'none' | BulletEffect['element'];
+const SHOT_OF: Record<SeedSound, SfxId> = { none: 'shot', fire: 'shotFire', ice: 'shotIce' };
+const HIT_OF: Record<SeedSound, SfxId> = { none: 'hit', fire: 'hitFire', ice: 'hitIce' };
+const INFUSE_OF: Record<ElementType, SfxId> = { fire: 'infuseFire', ice: 'infuseIce', shield: 'infuseShield' };
 
 /**
  * Lo que suena con los eventos de un paso del combate. `before` es el estado de antes del paso: ahi siguen las balas que
@@ -33,10 +35,13 @@ const INFUSE_OF: Record<ElementType, SfxId> = { fire: 'infuseFire', ice: 'infuse
  * - Fuego y hielo suenan distinto al disparar y al impactar; la semilla que da a un acorazado suena a metal.
  * - Los enemigos que caen en una explosion de mina no suenan aparte: suena la explosion.
  * - Si cae el Creeper, suena su derrota y no la de sus copias, que caen con el.
+ * - Un mordisco o un escupitajo que da a un escudo (muro o disparadora con escudo, T-024) suena a madera, y el muro que se
+ *   rompe, a madera que se parte.
  */
 export function combatCues(events: readonly CombatEvent[], before: MatchState): SfxCue[] {
   const cues: SfxCue[] = [];
-  const bulletElement = new Map<number, ElementType | null>();
+  const shieldAt = (cell: { lane: number; col: number }) => isShield(before.plants[cell.lane]?.[cell.col]);
+  const bulletElement = new Map<number, BulletEffect['element'] | null>();
   for (const bullet of before.bullets) bulletElement.set(bullet.id, bullet.effect?.element ?? null);
   for (const event of events) if (event.type === 'shot') bulletElement.set(event.bullet.id, event.bullet.effect?.element ?? null);
   const enemies = new Map(before.enemies.map((enemy) => [enemy.id, enemy]));
@@ -55,17 +60,19 @@ export function combatCues(events: readonly CombatEvent[], before: MatchState): 
         break;
       }
       case 'bite':
-        cues.push(at('bite', event.cell.col + 0.5));
+        cues.push(at(shieldAt(event.cell) ? 'wallHit' : 'bite', event.cell.col + 0.5));
         break;
       case 'spat':
         cues.push(at('spit', event.spit.x));
         break;
       case 'spitHit':
-        cues.push(at('spitHit', event.cell.col + 0.5));
+        cues.push(at(shieldAt(event.cell) ? 'wallHit' : 'spitHit', event.cell.col + 0.5));
         break;
-      case 'plantDestroyed':
-        cues.push(at('plantDestroyed', event.cell.col + 0.5));
+      case 'plantDestroyed': {
+        const wall = before.plants[event.cell.lane]?.[event.cell.col]?.kind === 'wall';
+        cues.push(at(wall ? 'wallBreak' : 'plantDestroyed', event.cell.col + 0.5));
         break;
+      }
       case 'enemyKilled':
         if (event.kind === 'creeper') cues.push(at('creeperDefeated', event.at.x));
         else if (!bossDown && !blasted.has(event.enemyId)) cues.push(at('enemyKilled', event.at.x));
@@ -131,7 +138,7 @@ export function mineTicks(before: MatchState, after: MatchState): SfxCue[] {
 export function actionCue(action: PlayerAction, x: number): SfxCue | null {
   switch (action.type) {
     case 'sow':
-      return at('sow', x);
+      return at(action.card === 'shield' ? 'sowWall' : 'sow', x);
     case 'infuse':
       return at(INFUSE_OF[action.element], x);
     case 'fuse':

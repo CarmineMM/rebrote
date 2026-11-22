@@ -108,6 +108,19 @@ const PALETTES: Record<ShooterVariant, LegacyPalette> = {
     flower: ['#ffffff', '#7fd0ff'],
     cheek: 'rgba(255, 110, 160, 0.5)',
   },
+  // Escudo (T-024): la misma corteza con musgo que las demas formas (`SHOOTER_COLORS.shield` en kit.ts), copiada aqui.
+  shield: {
+    outline: '#4a2c12',
+    head: ['#f6e3bc', '#c9945a', '#8a5a2e'],
+    tube: ['#e8cfa0', '#9a6a3a'],
+    mouth: '#b9e27a',
+    bore: '#2a1a0c',
+    boreGlow: '#a8e070',
+    sprout: '#8fcf5a',
+    sproutOutline: '#3f6a1e',
+    flower: ['#fff1c8', '#e0a040'],
+    cheek: 'rgba(255, 120, 100, 0.4)',
+  },
 };
 
 /** Contorno de lo verde de la planta (hojas de la base y puntos del tallo). */

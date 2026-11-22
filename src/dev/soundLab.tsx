@@ -37,6 +37,7 @@ const GROUPS: Array<{ title: string; ids: SfxId[] }> = [
   { title: 'Plantas y jugador', ids: ['sow', 'shot', 'shotFire', 'shotIce', 'infuseFire', 'infuseIce', 'fuse', 'levelUp', 'plantDestroyed', 'coin'] },
   { title: 'Combate', ids: ['hit', 'hitFire', 'hitIce', 'hitArmor', 'bite', 'spit', 'spitHit', 'enemyKilled', 'enemyEscaped'] },
   { title: 'Minas', ids: ['mineTick', 'fireExplosion', 'iceExplosion'] },
+  { title: 'Escudo (T-024)', ids: ['sowWall', 'infuseShield', 'wallHit', 'wallBreak'] },
   { title: 'Creeper', ids: ['creeperWarn', 'creeperTakeoff', 'creeperLand', 'creeperTalk', 'creeperRage', 'creeperDefeated'] },
   { title: 'Rondas, partida y menus', ids: ['attackStarted', 'roundCleared', 'unlock', 'defeat', 'victory', 'button'] },
 ];

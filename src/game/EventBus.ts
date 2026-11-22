@@ -228,7 +228,7 @@ export interface RoundInfo {
  * `levelCap` es el tope de nivel nuevo de las disparadoras.
  */
 export type UnlockItem =
-  | { id: 'shooter' | 'levelUp' | 'fireMine' | 'iceMine' | 'infuse' | 'fuse' }
+  | { id: 'shooter' | 'levelUp' | 'fireMine' | 'iceMine' | 'infuse' | 'fuse' | 'shield' }
   | { id: 'levelCap'; level: number };
 
 /** Aviso de lo desbloqueado al empezar una ronda (T-009). Sale de `roundUnlocks` en core. */
@@ -239,7 +239,7 @@ export interface UnlockInfo {
 }
 
 /** Color de la ficha de informacion (T-010): el de la planta, su elemento o el enemigo. */
-export type InfoTone = 'plant' | 'fire' | 'ice' | 'worm' | 'armored' | 'spitter' | 'creeper';
+export type InfoTone = 'plant' | 'fire' | 'ice' | 'shield' | 'worm' | 'armored' | 'spitter' | 'creeper';
 
 /** Una fila de datos de la ficha: "Mordisco 57,5 (cada 1 s)". */
 export interface InfoStat {
@@ -299,7 +299,11 @@ export type TourSpotId =
   | 'fireMine'
   | 'fireBlast'
   | 'iceMine'
-  | 'iceBlast';
+  | 'iceBlast'
+  // Escudo (T-024): donde sembrar el muro, el muro sembrado y la disparadora que se puede infundir con escudo
+  | 'wallCell'
+  | 'wall'
+  | 'shieldInfusable';
 
 /** Zonas del tablero que un tour ilumina con su contorno (T-013): el carril de una disparadora y el borde por donde se cuelan. */
 export type TourAreaId = 'shooterLane' | 'exit';
@@ -323,16 +327,29 @@ export interface TourBoard {
 }
 
 /** Dibujos de los bocadillos del tour (T-013): plantas, minas y el gusano, recortados (data URL de una imagen PNG). */
-export type TourArtKey = 'shooter' | 'shooter2' | 'shooterFire' | 'shooterIce' | 'fireMine' | 'fireMineArmed' | 'iceMine' | 'iceMineArmed' | 'worm';
+export type TourArtKey =
+  | 'shooter'
+  | 'shooter2'
+  | 'shooterFire'
+  | 'shooterIce'
+  | 'shooterShield'
+  | 'fireMine'
+  | 'fireMineArmed'
+  | 'iceMine'
+  | 'iceMineArmed'
+  | 'wall'
+  | 'spitter'
+  | 'worm';
 export type TourArt = Record<TourArtKey, string>;
 
-/** Jefe de cada brote recortado (data URL), por el nombre del brote (ver `routeArt`). */
-export type RouteArt = Readonly<Record<OutbreakId, string>>;
+/** Jefe de cada brote recortado (data URL), por el nombre del brote (ver `routeArt`). Uno sin jefe aun (T-024) no viene. */
+export type RouteArt = Readonly<Partial<Record<OutbreakId, string>>>;
 
 /** Algo que acaba de hacer el jugador y que un tour puede estar ensenando (T-013). */
 export type PlayerAction =
   | { type: 'sow'; card: CardId }
-  | { type: 'infuse'; element: ElementType; withMine: boolean }
+  /** `dragged`: infundio arrastrando una mina o un muro (T-024) sembrados, no con la carta. */
+  | { type: 'infuse'; element: ElementType; dragged: boolean }
   | { type: 'pick' }
   /** `level`: el nivel al que llega (en los que dan premio suena distinto). */
   | { type: 'levelUp'; level: number }

@@ -21,6 +21,8 @@ export const COSTS = {
   shooter: 100, // PROVISIONAL
   fire: 75, // PROVISIONAL
   ice: 75, // PROVISIONAL
+  /** Escudo (T-024, E-05): sembrar un muro o infundir una disparadora de un canon. PROVISIONAL. */
+  shield: 150,
 } as const;
 
 /**
@@ -85,6 +87,19 @@ export const SHOOTER = {
   fireIntervalMs: 1400, // PROVISIONAL
   /** Velocidad de la bala, en casillas por segundo. PROVISIONAL. */
   bulletSpeed: 6,
+} as const;
+
+/**
+ * Escudo (T-024; E-01 a E-06 decididas el 21 nov 2026). Sembrado solo es un muro: no dispara ni explota, aguanta mucho y
+ * los enemigos lo muerden hasta romperlo. Infundido, la disparadora dispara igual que una normal y tiene `hpMultiplier`
+ * veces su vida (E-05). Los dos paran lo que va por su carril hacia lo de detras (E-02): ningun disparo enemigo ni salto
+ * pasa por encima, y el disparo que paran les quita vida (E-01). El precio, en `COSTS.shield`. PROVISIONAL.
+ */
+export const SHIELD = {
+  /** Vida del muro: cuatro veces la de una disparadora (E-05). PROVISIONAL. */
+  wallHp: 1200,
+  /** La disparadora con escudo tiene el doble de su vida normal, con sus canones (E-05). PROVISIONAL. */
+  hpMultiplier: 2,
 } as const;
 
 /**
@@ -489,6 +504,63 @@ const CREEPER_ROUNDS: readonly RoundScript[] = [
 ];
 
 /**
+ * Las rondas del brote 2, el de Elk Cloner, PROVISIONALES (T-024): sirven para jugar el escudo mientras no exista su guion
+ * de verdad, que trae T-026 con su jefe y sus tropas (T-025). Sacan las tropas del brote 1. Como todo brote, empiezan con
+ * lo aprendido en el anterior (B-01) y el escudo llega en la ronda 2 (decidido por Carmine). Mientras su jefe no este en
+ * el juego (`boss: null`), el brote no se puede jugar fuera del modo desarrollo: la ruta lo da por "Proximamente".
+ */
+const ELK_CLONER_ROUNDS: readonly RoundScript[] = [
+  {
+    unlocks: [],
+    levels: ENEMY_LEVELS.tables.mid,
+    groups: [
+      { atMs: 3_000, kind: 'worm', lanes: [1, 3] },
+      { atMs: 10_000, kind: 'armored', lanes: [2] },
+      { atMs: 16_000, kind: 'spitter', lanes: [0] },
+      { atMs: 22_000, kind: 'worm', lanes: [0, 2, 4] },
+      { atMs: 32_000, kind: 'armored', lanes: [1, 3] },
+      { atMs: 40_000, kind: 'spitter', lanes: [4] },
+      { atMs: 48_000, kind: 'worm', lanes: [0, 1, 2, 3, 4] },
+      { atMs: 60_000, kind: 'armored', lanes: [0, 4] },
+    ],
+  },
+  {
+    unlocks: ['shield'],
+    levels: ENEMY_LEVELS.tables.mid,
+    // Muchos escupidores: el muro les para los escupitajos antes de que lleguen a las disparadoras.
+    groups: [
+      { atMs: 3_000, kind: 'spitter', lanes: [2] },
+      { atMs: 9_000, kind: 'worm', lanes: [1, 3] },
+      { atMs: 16_000, kind: 'spitter', lanes: [0, 4] },
+      { atMs: 24_000, kind: 'armored', lanes: [2] },
+      { atMs: 30_000, kind: 'spitter', lanes: [1, 3] },
+      { atMs: 38_000, kind: 'worm', lanes: [0, 2, 4] },
+      { atMs: 46_000, kind: 'spitter', lanes: [0, 2, 4] },
+      { atMs: 56_000, kind: 'armored', lanes: [1, 3] },
+      { atMs: 64_000, kind: 'spitter', lanes: [1, 2, 3] },
+      { atMs: 72_000, kind: 'worm', lanes: [0, 1, 2, 3, 4] },
+    ],
+  },
+  {
+    unlocks: [],
+    levels: ENEMY_LEVELS.tables.late,
+    groups: [
+      { atMs: 3_000, kind: 'armored', lanes: [0, 4] },
+      { atMs: 8_000, kind: 'spitter', lanes: [1, 3] },
+      { atMs: 14_000, kind: 'worm', lanes: [0, 1, 2, 3, 4] },
+      { atMs: 22_000, kind: 'spitter', lanes: [2] },
+      { atMs: 26_000, kind: 'armored', lanes: [1, 2, 3] },
+      { atMs: 34_000, kind: 'spitter', lanes: [0, 4] },
+      { atMs: 40_000, kind: 'worm', lanes: [0, 1, 2, 3, 4] },
+      { atMs: 48_000, kind: 'spitter', lanes: [1, 2, 3] },
+      { atMs: 56_000, kind: 'armored', lanes: [0, 2, 4] },
+      { atMs: 64_000, kind: 'worm', lanes: [0, 1, 2, 3, 4] },
+      { atMs: 70_000, kind: 'spitter', lanes: [0, 1, 3, 4] },
+    ],
+  },
+];
+
+/**
  * Brotes (T-018, ADR-0015), en orden: cada uno es una campana que acaba en su jefe ("Brote 1: Creeper"), con su guion de
  * rondas (`rounds`, como el de arriba) y el saldo con el que se empieza (`startingBalance`). Lo que desbloquearon los
  * brotes anteriores llega desbloqueado desde la ronda 1 (B-01), asi que las rondas de un brote nuevo solo desbloquean lo
@@ -505,6 +577,15 @@ export const OUTBREAKS: readonly OutbreakScript[] = [
     rounds: CREEPER_ROUNDS,
     // Lo del brote 1 lo da Boxer (T-032, VT-02).
     presenter: 'boxer',
+  },
+  {
+    id: 'elkCloner',
+    // T-024: su jefe aun no esta en el juego (llega con T-026). Hasta entonces, el brote solo se juega en desarrollo.
+    boss: null,
+    startingBalance: 300, // PROVISIONAL
+    rounds: ELK_CLONER_ROUNDS,
+    // Lo nuevo desde el brote 2 lo crea Patty (T-032, VT-03).
+    presenter: 'patty',
   },
 ];
 

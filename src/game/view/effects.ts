@@ -49,6 +49,7 @@ export class Effects {
   private readonly flakeDrift: Phaser.GameObjects.Particles.ParticleEmitter;
   private readonly gooBurst: Phaser.GameObjects.Particles.ParticleEmitter;
   private readonly scrapBurst: Phaser.GameObjects.Particles.ParticleEmitter;
+  private readonly barkBurst: Phaser.GameObjects.Particles.ParticleEmitter;
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -248,6 +249,22 @@ export class Effects {
       },
       DEPTH.foreground - 1,
     );
+    // Escudo (T-024): astillas de corteza que saltan del muro mordido, de la placa que pierde y del muro que se parte.
+    // Mezcla normal: son de madera, no brillan.
+    this.barkBurst = burst(
+      TEX.barkChip,
+      {
+        speed: { min: 60, max: 200 },
+        angle: { min: -165, max: -15 },
+        gravityY: 600,
+        rotate: { min: -180, max: 180 },
+        lifespan: { min: 380, max: 700 },
+        scale: { start: 0.9 * artInv(), end: 0.45 * artInv() },
+        alpha: { start: 1, end: 0, ease: 'Quad.In' },
+        tint: [0xffffff, 0xf0dcc0, 0xd8b890],
+      },
+      DEPTH.foreground - 1,
+    );
   }
 
   /** Particulas de respuesta a una accion: menos en Bajo, pero nunca ninguna (son parte del gesto). */
@@ -326,6 +343,11 @@ export class Effects {
   /** Esquirlas de acero: una semilla rebota en la armadura del acorazado o se le cae una placa (T-007). */
   scrap(x: number, y: number, base: number): void {
     this.scrapBurst.explode(this.count(base), x, y);
+  }
+
+  /** Astillas de corteza: un mordisco o un escupitajo que da a un escudo, o el muro que pierde placas o se rompe (T-024). */
+  bark(x: number, y: number, base: number): void {
+    this.barkBurst.explode(this.count(base), x, y);
   }
 
   /** Espera entre particulas ambientales: `base` en Alto, mas larga en Bajo (ADR-0006). */

@@ -38,12 +38,15 @@ const VARIANT_FX: Record<ShooterVariant, { muzzle: number; muzzleGlow: number; b
   normal: { muzzle: 0xd6ff96, muzzleGlow: 0xc8ff8a, burst: 0xc8ff8a, burstGlow: 0xd6ff96 },
   fire: { muzzle: 0xffc46b, muzzleGlow: 0xff9a3d, burst: 0xffa04d, burstGlow: 0xffd27a },
   ice: { muzzle: 0xc8f0ff, muzzleGlow: 0x8fd8ff, burst: 0x8fd8ff, burstGlow: 0xd8f6ff },
+  // Escudo (T-024): dispara como una normal (fogonazo lima) y destella en ambar de corteza al fusionarse o infundirse.
+  shield: { muzzle: 0xd6ff96, muzzleGlow: 0xc8ff8a, burst: 0xf0c27a, burstGlow: 0xffe3b0 },
 };
 
 /** Colores del texto que salta al infundir cada elemento. El texto ("¡Fuego!"), en `board.infused` de `src/i18n/`. */
 const INFUSED_TEXT: Record<ElementType, { color: string; stroke: string }> = {
   fire: { color: '#ffe3a0', stroke: '#8a2410' },
   ice: { color: '#e6f7ff', stroke: '#1f5a8a' },
+  shield: { color: '#ffeccb', stroke: '#4a2c12' },
 };
 
 /** Boca de un canon respecto a los pies, en anchos de casilla: hacia delante (`x`) y hacia arriba (`up`). */
@@ -224,6 +227,8 @@ export class PlantView {
     this.scene.tweens.add({ targets: this.holder, angle: 0, scaleX: 1, scaleY: 1, duration: 420, ease: 'Elastic.Out', easeParams: [1, 0.45] });
     this.flash();
     this.fx.leaves(this.base.x + this.cellWidth * 0.25, this.base.y - this.cellWidth * 0.35, 5);
+    // La de escudo (T-024) es de corteza: suelta astillas.
+    if (this.element === 'shield') this.fx.bark(this.base.x + this.cellWidth * 0.28, this.base.y - this.cellWidth * 0.45, 4);
   }
 
   /** Mientras se arrastra otra planta: se oscurece si no puede fusionarse con ella. */
@@ -291,8 +296,9 @@ export class PlantView {
   }
 
   /**
-   * Infundida con un elemento (T-004): las llamas (fuego) o la escarcha (hielo) suben por la planta, que se aplasta,
-   * destella, cambia a la textura de su variante y rebota. Como al fusionarse, va sobre la figura.
+   * Infundida con un elemento (T-004): las llamas (fuego), la escarcha (hielo) o las astillas de corteza y unas hojas
+   * (escudo, T-024) suben por la planta, que se aplasta, destella, cambia a la textura de su variante y rebota. Como al
+   * fusionarse, va sobre la figura.
    */
   infuse(element: ElementType): void {
     this.element = element;
@@ -305,11 +311,16 @@ export class PlantView {
       this.fx.fire(this.base.x, this.base.y - w * 0.1, 14);
       this.fx.fire(middle.x, middle.y, 8);
       this.fx.embers(middle.x, middle.y, 12);
-    } else {
+    } else if (element === 'ice') {
       this.fx.frost(this.base.x, this.base.y - w * 0.1, 12);
       this.fx.frost(middle.x, middle.y, 8);
       this.fx.mist(this.base.x, this.base.y - w * 0.2, 6);
       this.fx.sparkles(middle.x, middle.y, 8);
+    } else {
+      this.fx.bark(this.base.x, this.base.y - w * 0.1, 10);
+      this.fx.bark(middle.x, middle.y, 6);
+      this.fx.leaves(middle.x, middle.y, 6);
+      this.fx.groundRing(this.base.x, this.base.y, w * 1.05, w * 0.34, colors.burst, this.holder.depth - 0.4, 480, 0.9);
     }
     this.fx.ring(middle.x, middle.y, w * 1.3, colors.burst, depth, 460, 0.9);
     this.fx.glow(middle.x, middle.y, w * 1.5, colors.burstGlow, depth, 460);
@@ -432,10 +443,10 @@ export class PlantView {
 
   /**
    * La de fuego suelta brasas de la cabeza de vez en cuando y la de hielo, copos que caen: asi se ve su elemento
-   * aunque no dispare.
+   * aunque no dispare. La de escudo (T-024) no suelta nada: su corteza ya se lee quieta.
    */
   private startAura(): void {
-    if (!this.element || this.aura) return;
+    if (!this.element || this.element === 'shield' || this.aura) return;
     const fire = this.element === 'fire';
     const delay = this.fx.ambientDelay(fire ? PLANT_LOOK.emberEveryMs : PLANT_LOOK.flakeEveryMs);
     this.aura = this.scene.time.addEvent({

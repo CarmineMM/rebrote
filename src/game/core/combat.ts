@@ -1,7 +1,7 @@
 import { BOARD, CREEPER, ENEMIES, ENEMY_LEVELS, ENEMY_POWER, FIRE, ICE, MINE, SHOOTER } from '../config/balance';
 import type { BoardPoint, Cell } from './board';
 import type { MatchState, Mine, Sown } from './match';
-import { damageMultiplier, fireRateMultiplier, type ElementType, type Shooter } from './plants';
+import { damageMultiplier, fireRateMultiplier, type MineElement, type Shooter } from './plants';
 
 /**
  * Combate como simulacion pura por pasos (ADR-0008). `stepCombat` avanza la partida un trozo de tiempo
@@ -126,7 +126,7 @@ export type CombatEvent =
   /** Un enemigo entro en el radio de la mina: empieza su conteo. */
   | { readonly type: 'mineArmed'; readonly cell: Cell }
   /** La mina exploto y dejo su casilla. `enemyIds` son los enemigos alcanzados; los que mueren llevan su `enemyKilled`. */
-  | { readonly type: 'mineExploded'; readonly cell: Cell; readonly element: ElementType; readonly enemyIds: readonly number[] };
+  | { readonly type: 'mineExploded'; readonly cell: Cell; readonly element: MineElement; readonly enemyIds: readonly number[] };
 
 export interface CombatStep {
   readonly state: MatchState;
@@ -163,7 +163,7 @@ export function bulletEffect(shooter: Shooter): BulletEffect | null {
 }
 
 /** Lo que hace la explosion de la mina de cada elemento a cada enemigo alcanzado: la de fuego dana y la de hielo frena. */
-export function mineBlast(element: ElementType): { readonly damage: number; readonly slow: Slow | null } {
+export function mineBlast(element: MineElement): { readonly damage: number; readonly slow: Slow | null } {
   return element === 'fire'
     ? { damage: FIRE.blastDamage, slow: null }
     : { damage: ICE.blastDamage, slow: { amount: ICE.blastSlow, ms: ICE.blastSlowMs } };
@@ -658,7 +658,7 @@ function slamColumn(lane: ReadonlyArray<Sown | null>, x: number, behind: number)
   return null;
 }
 
-/** Quita vida a lo sembrado en `cell` (planta o mina). Si se queda sin vida, deja la casilla libre. */
+/** Quita vida a lo sembrado en `cell` (planta, mina o muro). Si se queda sin vida, deja la casilla libre. */
 function damageSown(plants: Array<Array<Sown | null>>, cell: Cell, damage: number, events: CombatEvent[]): void {
   const sown = plants[cell.lane][cell.col] as Sown;
   const hp = sown.hp - damage;
@@ -682,6 +682,50 @@ function spitColumn(lane: ReadonlyArray<Sown | null>, enemy: Enemy, range: numbe
     return gap <= range ? col : null;
   }
   return null;
+}
+
+/**
+ * ¿Para lo sembrado lo que va por su carril hacia lo de detras (T-024)? El muro y la disparadora con escudo (E-02): ningun
+ * disparo enemigo ni salto pasa por encima de ellos, y lo que paran les quita vida (E-01). Las demas plantas y las minas,
+ * no: hoy no importa, porque el escupitajo da a lo primero que encuentra, pero los ataques que cruzan el carril por encima
+ * de las plantas (los versos de Elk Cloner y sus juglares, T-025 y T-026) atraviesan todo lo que no es escudo.
+ */
+export function isShield(sown: Sown | null | undefined): boolean {
+  if (!sown) return false;
+  return sown.kind === 'wall' || (sown.kind === 'shooter' && sown.shooter.element === 'shield');
+}
+
+/**
+ * Lo que alcanza un ataque que cruza el carril por encima de las plantas al ir de `from` a `to` (hacia la izquierda), como
+ * una onda (T-024; la usaran los versos de T-025 y T-026): las columnas de todo lo sembrado cuyo centro cruza, de derecha a
+ * izquierda, hasta el primer escudo, que lo recibe y lo para. Lo que hay detras de un escudo no recibe nada. `blockedAt`
+ * es la columna del escudo que lo paro, o null si sigue.
+ */
+export function waveReach(lane: ReadonlyArray<Sown | null>, from: number, to: number): { readonly cols: number[]; readonly blockedAt: number | null } {
+  const cols: number[] = [];
+  for (let col = lane.length - 1; col >= 0; col--) {
+    const center = col + 0.5;
+    if (!lane[col] || center > from || center < to) continue;
+    cols.push(col);
+    if (isShield(lane[col])) return { cols, blockedAt: col };
+  }
+  return { cols, blockedAt: null };
+}
+
+/**
+ * Donde cae una unidad que salta por su carril por encima de lo sembrado, de `from` hacia `to` (hacia la izquierda; T-024,
+ * para las que salten en el futuro): no puede pasar por encima de un escudo. Si hay uno entre medias (o justo donde iba a
+ * caer), se queda delante de el, a `reach` de su centro, para morderlo; si ya estaba ahi, no se mueve. Las demas plantas
+ * y las minas no la paran.
+ */
+export function hopLanding(lane: ReadonlyArray<Sown | null>, from: number, to: number, reach: number): number {
+  for (let col = lane.length - 1; col >= 0; col--) {
+    const center = col + 0.5;
+    if (center >= from) continue;
+    if (center < to) break;
+    if (isShield(lane[col])) return Math.min(from, center + reach);
+  }
+  return to;
 }
 
 /** Columna de lo primero sembrado cuyo centro alcanza un escupitajo al ir de `from` a `to` (hacia la izquierda). */

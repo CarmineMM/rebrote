@@ -2,14 +2,14 @@ import { describe, expect, it } from 'vitest';
 import { BOARD, MINE } from '../config/balance';
 import type { Cell } from '../core/board';
 import { spawnEnemy, stepCombat, type Bullet, type CombatEvent } from '../core/combat';
-import { createMatch, createMine, createPlant, type MatchState, type Mine } from '../core/match';
-import { createShooter, type ElementType } from '../core/plants';
+import { createMatch, createMine, createPlant, createWall, type MatchState, type Mine } from '../core/match';
+import { createShooter, type ElementType, type MineElement } from '../core/plants';
 import { FIRST_OUTBREAK, roundCount } from '../core/outbreaks';
 import { VOICE_EVERY, actionCue, combatCues, mineTicks, roundCues, voiceCue } from './cues';
 
 const ids = (cues: ReadonlyArray<{ id: string }>) => cues.map((cue) => cue.id);
 
-function withMine(state: MatchState, cell: Cell, over: Partial<Mine> = {}, element: ElementType = 'fire'): MatchState {
+function withMine(state: MatchState, cell: Cell, over: Partial<Mine> = {}, element: MineElement = 'fire'): MatchState {
   const plants = state.plants.map((lane, l) => lane.map((p, c) => (l === cell.lane && c === cell.col ? { ...createMine(element), ...over } : p)));
   return { ...state, plants };
 }
@@ -160,12 +160,48 @@ describe('mineTicks', () => {
   });
 });
 
+describe('escudo (T-024)', () => {
+  const at = { lane: 1, col: 2 };
+  const put = (state: MatchState, sown: MatchState['plants'][number][number]): MatchState => ({
+    ...state,
+    plants: state.plants.map((lane, l) => lane.map((p, c) => (l === at.lane && c === at.col ? sown : p))),
+  });
+
+  it('un mordisco o un escupitajo que da a un escudo suena a madera', () => {
+    const bite: CombatEvent = { type: 'bite', enemyId: 1, cell: at };
+    const spitHit: CombatEvent = { type: 'spitHit', spitId: 9, cell: at };
+    for (const shield of [createWall(), createPlant(createShooter())]) {
+      const state = put(createMatch(), shield);
+      const wood = shield.kind === 'wall';
+      expect(ids(combatCues([bite, spitHit], state)), shield.kind).toEqual(wood ? ['wallHit', 'wallHit'] : ['bite', 'spitHit']);
+    }
+    const shielded = put(createMatch(), createPlant({ ...createShooter(), element: 'shield' }));
+    expect(ids(combatCues([bite], shielded))).toEqual(['wallHit']);
+  });
+
+  it('el muro que se rompe suena a madera que se parte; una planta, como siempre', () => {
+    const destroyed: CombatEvent = { type: 'plantDestroyed', cell: at };
+    expect(ids(combatCues([destroyed], put(createMatch(), createWall())))).toEqual(['wallBreak']);
+    expect(ids(combatCues([destroyed], put(createMatch(), createPlant({ ...createShooter(), element: 'shield' }))))).toEqual(['plantDestroyed']);
+  });
+
+  it('la de escudo dispara y da como una normal', () => {
+    expect(ids(combatCues([shot(0, null)], createMatch()))).toEqual(['shot']);
+  });
+
+  it('sembrar el muro e infundir escudo suenan distinto de los demas', () => {
+    expect(actionCue({ type: 'sow', card: 'shield' }, 2)?.id).toBe('sowWall');
+    expect(actionCue({ type: 'infuse', element: 'shield', dragged: false }, 2)?.id).toBe('infuseShield');
+    expect(actionCue({ type: 'infuse', element: 'shield', dragged: true }, 2)?.id).toBe('infuseShield');
+  });
+});
+
 describe('actionCue', () => {
   it('sembrar, infundir con cada elemento, fusionar y subir de nivel suenan; seleccionar no', () => {
     expect(actionCue({ type: 'sow', card: 'shooter' }, 2)?.id).toBe('sow');
     expect(actionCue({ type: 'sow', card: 'fire' }, 2)?.id).toBe('sow');
-    expect(actionCue({ type: 'infuse', element: 'fire', withMine: false }, 2)?.id).toBe('infuseFire');
-    expect(actionCue({ type: 'infuse', element: 'ice', withMine: true }, 2)?.id).toBe('infuseIce');
+    expect(actionCue({ type: 'infuse', element: 'fire', dragged: false }, 2)?.id).toBe('infuseFire');
+    expect(actionCue({ type: 'infuse', element: 'ice', dragged: true }, 2)?.id).toBe('infuseIce');
     expect(actionCue({ type: 'fuse' }, 2)?.id).toBe('fuse');
     expect(actionCue({ type: 'levelUp', level: 3 }, 2)?.id).toBe('levelUp');
     expect(actionCue({ type: 'pick' }, 2)).toBeNull();

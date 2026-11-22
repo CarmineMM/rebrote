@@ -1,16 +1,17 @@
 import * as Phaser from 'phaser';
 import { BOARD } from '../config/balance';
 import type { BoardPoint, Cell } from '../core/board';
-import type { ElementType, Shooter } from '../core/plants';
+import type { MineElement, Shooter } from '../core/plants';
 import { BoardLabel, drawCell, type LabelLine } from './boardMarks';
 import type { Effects } from './effects';
 import { DEPTH, perspective } from './layout';
 import type { ScreenPoint } from './perspective';
 import { mineScale } from './mineView';
-import { MINE_SIZE, SHOOTER_SIZE, TEX, artInv, mineTexture, shooterTexture } from './textures';
+import { MINE_SIZE, SHOOTER_SIZE, TEX, WALL_SIZE, artInv, mineTexture, shooterTexture, wallTexture, type WallWear } from './textures';
+import { wallScale } from './wallView';
 
 /**
- * Aspecto del arrastre para fusionar (T-006) o para infundir con una mina sembrada (T-009). Medidas en anchos de
+ * Aspecto del arrastre para fusionar (T-006) o para infundir con una mina (T-009) o un muro (T-024) sembrados. Medidas en anchos de
  * casilla salvo que se diga otra cosa. Las reglas (que se puede soltar sobre que) las decide core; aqui solo se pinta.
  */
 export const DRAG_LOOK = {
@@ -71,8 +72,13 @@ export function carriedShooter(shooter: Shooter): CarriedLook {
 }
 
 /** Una mina sembrada en la mano, camino de infundir una disparadora (T-009). */
-export function carriedMine(element: ElementType): CarriedLook {
+export function carriedMine(element: MineElement): CarriedLook {
   return { texture: mineTexture(element, false), footY: MINE_SIZE.footY / MINE_SIZE.height, scaleFor: mineScale };
+}
+
+/** Un muro en la mano, camino de infundir una disparadora con escudo (T-024). Con su desgaste: se lleva como esta. */
+export function carriedWall(wear: WallWear): CarriedLook {
+  return { texture: wallTexture(wear), footY: WALL_SIZE.footY / WALL_SIZE.height, scaleFor: wallScale };
 }
 
 /** ¿Cae el punto en el cesped o justo al lado? Fuera de ahi (cielo, seto) la sombra no se pinta. */

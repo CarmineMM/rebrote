@@ -1,10 +1,11 @@
 import { OUTBREAKS } from '../../game/config/balance';
-import { FIRST_OUTBREAK, isOutbreakId, outbreakScript, type OutbreakId } from '../../game/core/outbreaks';
+import { FIRST_OUTBREAK, isOutbreakId, type OutbreakId } from '../../game/core/outbreaks';
 import { isGreenhouseOpen } from '../../game/core/route';
 import { bossFirstSeenRound, bossRoundIndex, type RoundPhase } from '../../game/core/rounds';
 import { NICKNAME } from '../../game/playerName';
 import type { CharacterId, Expression } from '../../game/view/characters/design';
 import type { Dictionary } from '../../i18n';
+import { bossName } from '../outbreakName';
 
 /**
  * Las viñetas de la historia (T-031, ADR-0019): que secuencias hay, quien dice cada viñeta y con que cara, y cuando sale
@@ -169,5 +170,5 @@ export function stepText(t: Dictionary, story: StoryId, step: StoryStep, name: s
 export function storyTitle(t: Dictionary, id: StoryId): string {
   const outbreak = loreOutbreak(id);
   if (!outbreak) return t.story.titles[id as ScriptedStoryId];
-  return t.story.loreTitle(t.info.enemy.names[outbreakScript(outbreak).boss]);
+  return t.story.loreTitle(bossName(t, outbreak));
 }

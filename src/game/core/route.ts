@@ -1,5 +1,5 @@
 import { OUTBREAKS } from '../config/balance';
-import { FIRST_OUTBREAK, isOutbreakOpen, roundCount, type OutbreakId } from './outbreaks';
+import { FIRST_OUTBREAK, isOutbreakOpen, isOutbreakReady, roundCount, type OutbreakId } from './outbreaks';
 import { levelCapAt, unlockedAt, type Feature } from './rounds';
 
 /**
@@ -74,13 +74,18 @@ export function currentOutbreak(defeated: readonly string[]): OutbreakId | null 
 /**
  * Lugares de la ruta, en orden (R-03): los brotes vencidos y los abiertos; despues, el primero cerrado en sombra (los
  * siguientes no se ensenan) o, si ya no queda ninguno en el juego, uno por llegar ("Proximamente"); y al final, el
- * destino final. Nunca esta vacia: el primer brote siempre esta abierto o vencido.
+ * destino final. Un brote en preparacion (T-024, sin jefe aun) cuenta como uno que aun no esta en el juego. Nunca esta
+ * vacia: el primer brote siempre esta abierto o vencido.
  */
 export function routeStops(defeated: readonly string[]): RouteStop[] {
   const current = currentOutbreak(defeated);
   const stops: RouteStop[] = [];
   let shadowed = false;
+  let number = 1;
   for (const { id } of OUTBREAKS) {
+    // Un brote en preparacion corta la ruta: es el que viene, aunque ya tenga rondas (y aunque se venciera en desarrollo).
+    if (!isOutbreakReady(id)) break;
+    number++;
     const standing = outbreakStanding(id, defeated);
     stops.push({ kind: 'outbreak', id, standing, current: id === current });
     if (standing === 'locked') {
@@ -88,7 +93,7 @@ export function routeStops(defeated: readonly string[]): RouteStop[] {
       break;
     }
   }
-  if (!shadowed) stops.push({ kind: 'soon', number: OUTBREAKS.length + 1 });
+  if (!shadowed) stops.push({ kind: 'soon', number });
   stops.push({ kind: 'final' });
   return stops;
 }

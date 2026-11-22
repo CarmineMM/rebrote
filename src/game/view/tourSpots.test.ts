@@ -1,12 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { BOARD } from '../config/balance';
 import type { Cell } from '../core/board';
-import { createMatch, earn, playCard, type MatchState } from '../core/match';
+import { createMatch, earn, playCard, type CardId, type MatchState } from '../core/match';
 import { lanesFromCenter, tourCells } from './tourSpots';
 
 /** Ronda (desde 0) con saldo de sobra para sembrar lo que haga falta. */
 const matchAt = (round: number) => earn(createMatch(undefined, round), 10_000);
-const sow = (state: MatchState, card: 'shooter' | 'fire' | 'ice', ...cells: Cell[]) => cells.reduce((s, cell) => playCard(s, card, cell), state);
+const sow = (state: MatchState, card: CardId, ...cells: Cell[]) => cells.reduce((s, cell) => playCard(s, card, cell), state);
+/** Ronda del escudo (T-024): la 2 del brote 2, con saldo de sobra. */
+const shieldRound = () => earn(createMatch(undefined, 1, 'elkCloner'), 10_000);
 
 describe('lo que senala un tour de ayuda (T-013)', () => {
   it('los carriles van del centro hacia fuera', () => {
@@ -70,5 +72,35 @@ describe('lo que senala un tour de ayuda (T-013)', () => {
   it('no propone fusionar variantes distintas', () => {
     const state = playCard(sow(matchAt(5), 'shooter', { lane: 2, col: 0 }, { lane: 2, col: 1 }), 'fire', { lane: 2, col: 0 });
     expect(tourCells(state).fusion).toBeNull();
+  });
+
+  describe('escudo (T-024)', () => {
+    it('el muro, delante de una disparadora y en su carril', () => {
+      const state = sow(shieldRound(), 'shooter', { lane: 2, col: 1 });
+      expect(tourCells(state).wallCell).toEqual({ lane: 2, col: 2 });
+    });
+
+    it('sin disparadoras, el muro va donde iria una mina', () => {
+      expect(tourCells(shieldRound()).wallCell).toEqual({ lane: 2, col: 5 });
+    });
+
+    it('senala el muro sembrado y la disparadora que se puede infundir con escudo', () => {
+      let state = sow(shieldRound(), 'shooter', { lane: 2, col: 0 }, { lane: 2, col: 1 });
+      state = sow(state, 'shield', { lane: 2, col: 3 });
+      expect(tourCells(state).wall).toEqual({ lane: 2, col: 3 });
+      expect(tourCells(state).shieldInfusable).toEqual({ lane: 2, col: 0 });
+      state = playCard(state, 'shield', { lane: 2, col: 0 });
+      expect(tourCells(state).shieldInfusable).toEqual({ lane: 2, col: 1 });
+    });
+
+    it('antes de su ronda no hay a quien infundir con escudo', () => {
+      const state = sow(matchAt(5), 'shooter', { lane: 2, col: 0 });
+      expect(tourCells(state).shieldInfusable).toBeNull();
+    });
+
+    it('un muro no cuenta como mina para infundir arrastrandola', () => {
+      const state = sow(sow(shieldRound(), 'shooter', { lane: 2, col: 0 }), 'shield', { lane: 2, col: 3 });
+      expect(tourCells(state).mineInfusion).toBeNull();
+    });
   });
 });

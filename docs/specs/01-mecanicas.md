@@ -8,7 +8,8 @@
 | Infundir | Soltar un elemento sobre una disparadora ya sembrada |
 | Fusionar | Arrastrar una disparadora sobre otra de la misma variante para sumar cañones |
 | Nivel | Mejora individual de una disparadora (daño y cadencia) |
-| Variante | Normal, de fuego o de hielo |
+| Variante | Normal, de fuego, de hielo o con escudo (T-024) |
+| Muro | El escudo sembrado solo (T-024) |
 
 No se usa la palabra "combinar": se confundía con fusionar.
 
@@ -21,6 +22,14 @@ No se usa la palabra "combinar": se confundía con fusionar.
 | Hielo | Igual que la mina de fuego, pero ralentiza en área con efecto fuerte, y desaparece | Las balas ralentizan |
 
 El elemento solo siempre tiene un efecto mayor que su versión infundida, a cambio de gastarse.
+
+## Pieza del brote 2 (T-024)
+
+| Pieza | Sembrada sola | Infundida en una disparadora |
+|---|---|---|
+| Escudo | Muro: aguanta mucho, no dispara ni explota y para lo que va hacia lo de detrás | Disparadora con escudo: dispara igual que una normal, con el doble de vida, y también para lo que va hacia las de detrás |
+
+El escudo no se gasta al sembrarlo solo: es la defensa pura. Ver "Escudo (T-024)".
 
 ## Reglas confirmadas
 
@@ -44,7 +53,8 @@ Decisiones B-01 a B-04 cerradas el 21 nov 2026 con la recomendación. Cómo se h
 - **Qué es un brote:** una campaña que termina en un jefe. Se llama por su número y su jefe: "Brote 1: Creeper" ("Outbreak 1: Creeper" en inglés). La palabra "mundo" no sale en el juego: queda reservada para el futuro (familias de virus, `00-vision.md`).
 - Cada brote tiene su guion de rondas, sus tropas, su jefe y su saldo inicial. El brote 1 es el de Creeper (`02-brote-1-creeper.md`); los jefes candidatos para los siguientes están en `03-ruta-de-brotes.md`.
 - **Una partida es de un brote** y lo conserva al guardarse y cargarse. El indicador de ronda ("Ronda 3 de 10") y el resumen de la partida guardada ("Continuar" y "Reanudar", T-019) cuentan las rondas de su brote. Al vencer a su jefe, el brote queda vencido en el progreso permanente (T-017).
-- **Lo aprendido se queda (B-01):** al empezar un brote, todo lo que desbloquearon los anteriores llega desbloqueado desde la ronda 1, con el último tope de nivel que pusieron. Sus rondas solo desbloquean lo nuevo: lo ya sabido no saca "¡YA LO TIENES!" ni su tour.
+- **Lo aprendido se queda (B-01):** al empezar un brote, todo lo que desbloquearon los anteriores llega desbloqueado desde la ronda 1, con el último tope de nivel que pusieron. Sus rondas solo desbloquean lo nuevo: lo ya sabido no saca "¡YA LO TIENES!" ni su tour. Al revés no: rejugar un brote no trae lo de los siguientes (el escudo no existe en el brote 1).
+- **Brote en preparación (T-024):** un brote cuyo jefe aún no está en el juego tiene sus rondas, pero no se puede jugar: la ruta lo da por "Próximamente" y el Invernadero no lo ofrece. Es el brote 2 hasta T-026, con un guion provisional de 3 rondas con tropas del brote 1 que trae el escudo en la ronda 2. En desarrollo se juega con `?brote=2` en la dirección.
 - **Cada brote empieza de cero (B-02):** tablero vacío, todas las vidas y el saldo inicial del brote. No pasan plantas ni monedas de un brote a otro.
 - **El jefe se nombra siempre (B-03):** "Brote 2: Elk Cloner" desde el principio, también antes de llegar a él.
 - **En orden (B-04):** para entrar en un brote hay que haber vencido al jefe del anterior; el primero siempre se puede jugar. Hasta la ruta de brotes (T-019), "Nueva partida" empieza el brote 1 y "Jugar otra vez" repite el mismo brote desde su ronda 1.
@@ -120,13 +130,28 @@ Decisiones J-01 a J-05 cerradas el 20 nov 2026.
 - Los valores están como PROVISIONAL en `ENEMIES.creeper` y `CREEPER` de `balance.ts`.
 
 ### Infundir
-- Desde la ronda 5 (T-009).
+- Desde la ronda 5 (T-009). El escudo, desde la ronda 2 del brote 2 (T-024).
 - Solo sobre una disparadora ya sembrada y sin elemento.
-- Una planta tiene como máximo un elemento. No hay fuego y hielo a la vez.
+- Una planta tiene como máximo un elemento. No hay fuego y hielo a la vez, ni mezclas con el escudo (T-024).
 - Infundir una planta de N cañones cuesta N elementos.
 - **Interfaz (D-04, cerrada el 19 nov 2026 con la recomendación):** un solo arrastre. Al pasar la carta de elemento sobre una disparadora, su precio cambia a "×3 = 225". Si no alcanza la moneda, se pone en rojo y no deja soltar. Vale igual con clic en la carta y clic en la planta.
-- Infundir no cambia la vida, el nivel ni la recarga de la planta.
+- Infundir no cambia el nivel ni la recarga de la planta. El fuego y el hielo tampoco cambian la vida; el escudo la dobla y conserva la proporción que tenía: una a media vida queda a media vida (T-024).
 - **Con una mina sembrada (T-009, P-12):** una mina que aún espera (no cuenta) se puede arrastrar sobre una disparadora sin elemento para infundirla con su elemento. La mina deja su casilla y cuenta como un elemento: en una de N cañones se pagan los N − 1 que faltan ("Infundir: mina + ×2 = 150"); en una de un cañón es gratis. Si la mina se arma mientras se arrastra, vuelve a su casilla.
+- **Con un muro (T-024):** igual que con una mina: el muro deja su casilla y cuenta como un escudo ("Infundir: muro + ×2 = 300"). Se puede arrastrar aunque esté mordido; la vida que le faltaba no pasa a la planta, que se infunde como con la carta.
+
+### Escudo (T-024)
+Decisiones E-01 a E-06 cerradas el 21 nov 2026 (E-01 a E-04 y E-06 con la recomendación; E-05, con los valores de Carmine). Los valores están como PROVISIONAL en `SHIELD` y `COSTS.shield` de `balance.ts`.
+- **Cuándo:** se gana en la ronda 2 del brote 2 (el de Elk Cloner). El muro y la infusión llegan juntos, con un solo aviso y un tour. Lo presenta Patty ("¡He creado algo nuevo!") y lo enseña Boxer. En el brote 1 la carta no existe.
+- **Precio:** 150 por escudo, al sembrar el muro o por cada cañón al infundir (E-04, como fuego y hielo).
+- **Muro (escudo sembrado solo):** 1200 de vida, cuatro veces la de una disparadora (E-05). No dispara ni explota; los enemigos lo muerden hasta romperlo. Se ve su desgaste: pierde placas de corteza con dos tercios de su vida y con un tercio, y tira a gastado.
+- **Disparadora con escudo (infundida):** dispara igual que una normal (mismo daño, cadencia y semilla) y tiene el doble de su vida normal, con sus cañones: 600, 1200 o 1800 (E-05). Dos con escudo se fusionan como cualquier variante igual y suman su vida (E-03).
+- **Bloqueo:** el muro y la disparadora con escudo (E-02) paran lo que va por su carril hacia lo de detrás: ningún disparo enemigo ni salto pasa por encima. El disparo que paran les quita vida (E-01).
+  - Hoy el escupitajo ya da a lo primero que encuentra: con el escudo no cambia, solo tarda más en romperlo.
+  - Los ataques que cruzan el carril por encima de las plantas (los versos de Elk Cloner y del juglar, T-025 y T-026) alcanzan todo lo que no es escudo, de delante atrás, hasta el primer escudo, que lo recibe; lo de detrás no recibe nada (`waveReach`).
+  - Una unidad que salta por su carril (ninguna todavía) cae delante del primer escudo que encuentre, a su alcance para morderlo (`hopLanding`).
+  - **Creeper al rejugar el brote 1 (E-06, a):** si cayera sobre un escudo, lo golpearía como a cualquier planta. Hoy no puede pasar: el escudo no existe en el brote 1.
+- **No hay mezclas:** una disparadora con fuego o hielo no admite escudo, y una con escudo no admite fuego ni hielo ("Ya tiene escudo").
+- **Ficha:** la del muro dice que no ataca, que para lo de detrás, que se puede llevar a una disparadora y si está agrietado o a punto de romperse; la de la disparadora con escudo, que para lo de detrás.
 
 ### Fuego (T-004)
 - **Mina (fuego sembrado solo):** ocupa su casilla y tiene vida propia; los gusanos se paran a morderla como a una planta.
@@ -154,7 +179,7 @@ Decisiones J-01 a J-05 cerradas el 20 nov 2026.
 
 ### Fusionar
 - Se hace arrastrando una disparadora sobre otra. La arrastrada deja su casilla y la de destino se queda con el resultado. No cuesta moneda.
-- Solo entre la misma variante: normal con normal, fuego con fuego, hielo con hielo.
+- Solo entre la misma variante: normal con normal, fuego con fuego, hielo con hielo, escudo con escudo (T-024, E-03).
 - Máximo 3 cañones. Combinaciones válidas: 1+1 y 2+1.
 - La planta resultante queda con el nivel más bajo de las dos. Si los niveles son distintos, se avisa antes de soltar ("Quedará en nivel 7").
 - Qué gana el jugador: ahorra casillas y obtiene más ataque que la suma de las partes.
@@ -270,7 +295,7 @@ Decisiones PF-01 a PF-07 cerradas el 21 nov 2026 con la recomendación. Cómo se
 
 ### Tours de ayuda (T-013)
 Decisiones G-01 a G-10 cerradas el 20 nov 2026. Cómo se hace: ADR-0012.
-- **Cada cosa nueva se enseña la primera vez:** al empezar la preparación de la ronda que la desbloquea, tras aceptar "¡YA LO TIENES!", sale su tour. En la ronda 1, lo básico: sembrar, el carril, monedas, vidas, la ficha y "¡Que vengan!". En la 2, subir de nivel; en la 3 y la 4, las minas; en la 5, infundir (con la carta o con una mina); en la 6, fusionar.
+- **Cada cosa nueva se enseña la primera vez:** al empezar la preparación de la ronda que la desbloquea, tras aceptar "¡YA LO TIENES!", sale su tour. En la ronda 1, lo básico: sembrar, el carril, monedas, vidas, la ficha y "¡Que vengan!". En la 2, subir de nivel; en la 3 y la 4, las minas; en la 5, infundir (con la carta o con una mina); en la 6, fusionar. En la ronda 2 del brote 2, el escudo: sembrar el muro, lo que para y la infusión (T-024).
 - **Mira y prueba:** se oscurece todo menos lo importante y una mano hace el gesto sobre el tablero de verdad. Si el jugador lo hace, el paso se celebra ("¡Bien!") y pasa al siguiente; si no, "Siguiente". "Saltar" cierra el tour. Si no hay lo que señalar (sin planta, sin dos iguales para fusionar...), el paso sale solo con su dibujo.
 - **La cuenta atrás de la preparación no corre mientras dura el tour.** "¡Que vengan!" sigue funcionando y lo cierra.
 - **Un tour visto no vuelve a salir** en este navegador, tampoco en una partida nueva. Cuenta como visto al acabarlo, al saltarlo o si empieza el ataque a medias.
@@ -338,6 +363,8 @@ T-018: los brotes están en `src/game/core/outbreaks.ts` (`OutbreakId`, `Outbrea
 T-013: los tours de ayuda no son reglas. Qué señalar en el tablero lo elige `src/game/view/tourSpots.ts` (`tourCells`, con test) con las reglas de core; los tours, sus pasos y los vistos están en `src/ui/tour/` (`tours.ts`, `tourProgress.ts`, con test). La escena para la preparación con `tourHold` (en `advance`) y avisa de lo que hace el jugador con `playerAction`.
 
 T-009: el nivel de los enemigos está en `combat.ts` (`Enemy.level`, `enemyLevelFactor`, `enemyMaxHp`, `enemyDamage`, `rollEnemyLevel`) y las copias del Creeper, en `rollCopyKind`; `enemyKilled` lleva el tipo para pagar lo suyo (`ENEMIES[kind].reward`). En `rounds.ts`, el tope de nivel (`levelCapAt`, `levelCap`, `levelCapRaisedAfter`), lo nuevo de cada ronda para el aviso (`roundUnlocks`), los grupos con nivel y paso propios (`RoundGroup.level`, `haste`) y el grito (`shout`, evento `shout`). Infundir con una mina, en `match.ts` (`mineDragBlocker`, `mineInfusion`, `mineInfusionTargets`, `infuseWithMine`), y el tope en `levelUpOffer` (`cap`, `capRaisedAt`). Los valores están en `ENEMY_LEVELS`, `CREEPER`, `ENEMIES` y `OUTBREAKS` de `balance.ts`.
+
+T-024: el escudo es un elemento más (`ElementType` en `plants.ts`, con `MineElement` para los de mina) y el muro, lo sembrado de `kind: 'wall'` (`Wall`, `createWall`, `wallAt` en `match.ts`); la vida de la variante, en `plantMaxHp`, y la infusión que conserva la proporción, en `infusedPlant`. Arrastrar una mina o un muro para infundir es `elementDragBlocker`, `elementInfusion`, `elementInfusionTargets` e `infuseWithElement` (antes, solo minas). El bloqueo está en `combat.ts` (`isShield`, `waveReach`, `hopLanding`), con tests en `shield.test.ts` (y el golpe de Creeper sobre un muro, E-06, en `creeper.test.ts`). La `Feature` es `shield`. Un brote en preparación tiene `boss: null` (`isOutbreakReady` en `outbreaks.ts`; `isOutbreakOpen` y `routeStops` lo dejan fuera) y el nombre de su jefe en `outbreak.comingBoss` de `src/i18n/` (`bossName` en `src/ui/outbreakName.ts`). La partida guardada va por la versión 4. Los valores, en `SHIELD` y `COSTS.shield` de `balance.ts`.
 
 T-034: los jugadores están en `src/game/profiles.ts` (reglas `addProfile`, `selectProfile`, `removeProfile`, `touchProfile`, `freeNumber` y `decodeProfiles`; `ProfileKeeper` y su instancia `profiles`, con el almacén de cada jugador en `store()` y `storeOf()`), con tests en `profiles.test.ts`; el almacén que nunca falla (`SessionStore`), en `src/game/storage.ts`. `save.ts`, `progress.ts` y `tourProgress.ts` escriben por defecto en el almacén del jugador activo. Lo que la pantalla de jugadores cuenta de cada uno (nombre, lo que se pierde al borrarlo) está en `src/ui/playerCards.ts`, con tests en `playerCards.test.ts`.
 

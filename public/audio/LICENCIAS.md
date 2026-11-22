@@ -14,6 +14,12 @@ Cada efecto va en OGG Vorbis y en MP3, en mono, con el volumen igualado y sin si
 | `shotIce` | Kenney Interface Sounds: `glass_006.ogg` | CC0 1.0 (Kenney, www.kenney.nl) |
 | `infuseFire` | jsfxr: receta `firePower` | propio, generado con jsfxr (dominio público) |
 | `infuseIce` | Kenney Impact Sounds: `impactGlass_light_001.ogg` (-4 dB) + Kenney Interface Sounds: `glass_004.ogg` (+40 ms) | CC0 1.0 (Kenney, www.kenney.nl) |
+| `sowWall` | Kenney RPG Audio: `doorClose_1.ogg` | CC0 1.0 (Kenney, www.kenney.nl) |
+| `infuseShield` | Kenney Impact Sounds: `impactWood_medium_001.ogg` (-3 dB) + Kenney Interface Sounds: `maximize_006.ogg` (-4 dB, +60 ms) | CC0 1.0 (Kenney, www.kenney.nl) |
+| `wallHit-1` | Kenney Impact Sounds: `impactWood_light_000.ogg` | CC0 1.0 (Kenney, www.kenney.nl) |
+| `wallHit-2` | Kenney Impact Sounds: `impactWood_light_001.ogg` | CC0 1.0 (Kenney, www.kenney.nl) |
+| `wallHit-3` | Kenney Impact Sounds: `impactWood_light_002.ogg` | CC0 1.0 (Kenney, www.kenney.nl) |
+| `wallBreak` | Kenney Impact Sounds: `impactPlank_medium_004.ogg` + Kenney Impact Sounds: `impactPunch_medium_000.ogg` (-4 dB) | CC0 1.0 (Kenney, www.kenney.nl) |
 | `fuse` | Kenney Interface Sounds: `confirmation_004.ogg` + Kenney Impact Sounds: `impactSoft_medium_000.ogg` (-6 dB) | CC0 1.0 (Kenney, www.kenney.nl) |
 | `levelUp` | Kenney Interface Sounds: `maximize_005.ogg` | CC0 1.0 (Kenney, www.kenney.nl) |
 | `plantDestroyed` | Kenney Impact Sounds: `impactPunch_medium_000.ogg` | CC0 1.0 (Kenney, www.kenney.nl) |

@@ -79,19 +79,29 @@ export function Card({ card, label, balance, selected, preview = null, canInfuse
   );
 }
 
-/** Lo que hace la carta. Antes de poder infundir (T-007), el elemento solo se siembra como mina. */
+/** Lo que hace la carta. Antes de poder infundir (T-007), el elemento solo se siembra como mina. El escudo llega entero (T-024). */
 function cardTitle(t: Dictionary, card: CardId, canInfuse: boolean): string {
   const help = t.hud.cardHelp;
   if (card === 'shooter') return help.shooter;
+  if (card === 'shield') return help.shield;
   if (card === 'fire') return canInfuse ? help.fireInfuse : help.fire;
   return canInfuse ? help.iceInfuse : help.ice;
 }
 
 /**
- * Dibujo de la carta: la disparadora (un "Brote" en miniatura, en SVG, T-016), o una llama o un copo sobre un
- * montoncito de tierra (en CSS). Tambien en el aviso de desbloqueo (T-009) y en los dibujos de los tours (T-013).
+ * Dibujo de la carta: la disparadora (un "Brote" en miniatura, en SVG, T-016), una llama o un copo sobre un montoncito
+ * de tierra (en CSS), o un escudo de corteza con musgo (SVG, T-024). Tambien en el aviso de desbloqueo (T-009) y en los
+ * dibujos de los tours (T-013).
  */
 export function CardIcon({ card }: { card: CardId }) {
+  if (card === 'shield') {
+    return (
+      <span className="card-icon" aria-hidden="true">
+        <span className="card-icon-mound" />
+        <ShieldIcon />
+      </span>
+    );
+  }
   if (card === 'fire') {
     return (
       <span className="card-icon" aria-hidden="true">
@@ -114,6 +124,33 @@ export function CardIcon({ card }: { card: CardId }) {
     <span className="card-icon" aria-hidden="true">
       <ShooterIcon />
     </span>
+  );
+}
+
+/**
+ * Escudo en miniatura (T-024): una placa de corteza con dos filas de escamas, un gorro de musgo y una hojita, con los
+ * colores del muro (`wallArt.ts`).
+ */
+function ShieldIcon() {
+  const fill = `${useId()}-bark`;
+  const outline = '#4a2c12';
+  return (
+    <svg className="card-icon-shield" viewBox="0 0 40 36" width="40" height="36">
+      <defs>
+        <radialGradient id={fill} cx="0.35" cy="0.3" r="0.8">
+          <stop offset="0" stopColor="#f6e3bc" />
+          <stop offset="0.5" stopColor="#c9945a" />
+          <stop offset="1" stopColor="#8a5a2e" />
+        </radialGradient>
+      </defs>
+      <path d="M20 5 Q28.5 6.5 31.5 9.5 Q31.5 22.5 20 31.5 Q8.5 22.5 8.5 9.5 Q11.5 6.5 20 5 Z" fill={`url(#${fill})`} stroke={outline} strokeWidth="1.8" strokeLinejoin="round" />
+      <path d="M10.5 14.5 Q15 17.5 20 14.5 Q25 17.5 29.5 14.5 M12.5 21 Q16.2 24 20 21 Q23.8 24 27.5 21" fill="none" stroke="rgba(255, 233, 190, 0.85)" strokeWidth="1.2" />
+      <path d="M10.5 15.4 Q15 18.4 20 15.4 Q25 18.4 29.5 15.4 M12.5 21.9 Q16.2 24.9 20 21.9 Q23.8 24.9 27.5 21.9" fill="none" stroke="rgba(74, 44, 18, 0.55)" strokeWidth="1.2" />
+      <path d="M9.5 9.6 Q14 5.2 20 5.4 Q26 5.2 30.5 9.6 Q25.5 11.6 20 10.6 Q14.5 11.6 9.5 9.6 Z" fill="#8fcf5a" stroke="#3f6a1e" strokeWidth="1.3" strokeLinejoin="round" />
+      <path d="M20 5.6 Q17 2.2 13.6 1.6 Q15.6 5 20 5.6 Z" fill="#62c046" stroke="#3f6a1e" strokeWidth="1" strokeLinejoin="round" />
+      <path d="M20 5.6 Q23.4 2 26.8 2 Q24.4 5.4 20 5.6 Z" fill="#62c046" stroke="#3f6a1e" strokeWidth="1" strokeLinejoin="round" />
+      <ellipse cx="14.5" cy="13" rx="2.6" ry="1.5" fill="rgba(255, 255, 255, 0.45)" transform="rotate(-30 14.5 13)" />
+    </svg>
   );
 }
 

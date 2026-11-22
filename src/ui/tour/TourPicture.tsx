@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { ENEMIES } from '../../game/config/balance';
+import type { CardId } from '../../game/core/match';
 import type { TourArt, TourArtKey } from '../../game/EventBus';
 import { CardIcon } from '../Card';
 import { HEART_PATH } from '../Lives';
@@ -21,7 +22,7 @@ export function TourPicture({ id, art }: TourPictureProps) {
     art ? <img className={`pic-art ${className}`} src={art[key]} alt="" draggable={false} /> : <span className={`pic-art ${className}`}>{fallback}</span>;
   const plant = (className: string, key: TourArtKey = 'shooter') => pic(key, className, <CardIcon card="shooter" />);
   const worm = (className: string) => pic('worm', className, <span className="pic-worm-fallback" />);
-  const card = (kind: 'shooter' | 'fire' | 'ice', className: string) => (
+  const card = (kind: CardId, className: string) => (
     <span className={`pic-card is-${kind} ${className}`}>
       <CardIcon card={kind} />
     </span>
@@ -161,6 +162,38 @@ export function TourPicture({ id, art }: TourPictureProps) {
           {plant('pic-merge-to')}
           {plant('pic-merged', 'shooter2')}
           <span className="pic-ring" />
+        </>
+      );
+      break;
+    // Escudo (T-024): el muro brota de la tierra, para los escupitajos que iban a la planta de detras, y la carta sobre
+    // una disparadora la vuelve de corteza.
+    case 'wallSow':
+      scene = (
+        <>
+          {card('shield', 'pic-fly')}
+          <span className="pic-mound" />
+          {pic('wall', 'pic-at-mound pic-pop is-wall', <CardIcon card="shield" />)}
+        </>
+      );
+      break;
+    case 'wallBlock':
+      scene = (
+        <>
+          {plant('pic-behind is-small')}
+          {pic('wall', 'pic-wall-mid pic-brace is-wall', <CardIcon card="shield" />)}
+          {pic('spitter', 'pic-spitter pic-spitting is-small', <span className="pic-worm-fallback" />)}
+          <span className="pic-spit" />
+          <span className="pic-splat" />
+        </>
+      );
+      break;
+    case 'shieldInfuse':
+      scene = (
+        <>
+          {card('shield', 'pic-drop')}
+          {plant('pic-center pic-swap-a')}
+          {plant('pic-center pic-swap-b', 'shooterShield')}
+          <span className="pic-glow is-shield" />
         </>
       );
       break;

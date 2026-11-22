@@ -11,7 +11,7 @@ import type { CharacterId } from '../../game/view/characters/design';
  * Regla del proyecto: una mecanica nueva llega con su tour. Cada `Feature` de `rounds.ts` tiene el suyo en
  * `TOUR_OF_FEATURE` (si se anade una sin tour, no compila).
  */
-export type TourId = 'basics' | 'levelUp' | 'fireMine' | 'iceMine' | 'infuse' | 'fuse';
+export type TourId = 'basics' | 'levelUp' | 'fireMine' | 'iceMine' | 'infuse' | 'fuse' | 'shield';
 
 /**
  * Quien da los tours (T-032): Boxer, en todos. Lo nuevo de los brotes siguientes lo presenta Patty en el aviso (VT-03),
@@ -31,10 +31,12 @@ export const TOUR_OF_FEATURE: Record<Feature, TourId> = {
   fireInfuse: 'infuse',
   iceInfuse: 'infuse',
   fuse: 'fuse',
+  // T-024: el muro y la infusion llegan juntos y van en un tour.
+  shield: 'shield',
 };
 
 /** Piezas del HUD que un tour puede senalar: llevan `data-tour` con este nombre. */
-export type HudTarget = 'card-shooter' | 'card-fire' | 'card-ice' | 'balance' | 'lives' | 'round-go' | 'level-up';
+export type HudTarget = 'card-shooter' | 'card-fire' | 'card-ice' | 'card-shield' | 'balance' | 'lives' | 'round-go' | 'level-up';
 
 /** Algo que senalar: una pieza del HUD, una elipse del tablero o un contorno del tablero. */
 export type Target = { hud: HudTarget } | { spot: TourSpotId } | { area: TourAreaId };
@@ -46,7 +48,19 @@ export type Gesture =
   | { kind: 'drag'; from: Target; to: Target; carry?: CardId };
 
 /** Lo que tiene que hacer el jugador para dar el paso por hecho. */
-export type TourCue = 'sowShooter' | 'sowFire' | 'sowIce' | 'pick' | 'levelUp' | 'infuseCard' | 'infuseMine' | 'fuse' | 'info' | 'attack';
+export type TourCue =
+  | 'sowShooter'
+  | 'sowFire'
+  | 'sowIce'
+  | 'sowWall'
+  | 'pick'
+  | 'levelUp'
+  | 'infuseCard'
+  | 'infuseMine'
+  | 'infuseShield'
+  | 'fuse'
+  | 'info'
+  | 'attack';
 
 /** Dibujo animado del bocadillo (`TourPicture`). */
 export type PictureId =
@@ -64,7 +78,10 @@ export type PictureId =
   | 'iceFreeze'
   | 'infuseCard'
   | 'infuseMine'
-  | 'fuse';
+  | 'fuse'
+  | 'wallSow'
+  | 'wallBlock'
+  | 'shieldInfuse';
 
 export interface TourStep {
   /** Clave de su frase en `tour.steps.<tour>` de `src/i18n/`. */
@@ -145,6 +162,24 @@ export const TOURS: Record<TourId, readonly TourStep[]> = {
       picture: 'fuse',
     },
   ],
+  // T-024: el muro, lo que para y la infusion (con la carta; arrastrar el muro tambien cuenta).
+  shield: [
+    {
+      id: 'wall',
+      spots: [hud('card-shield'), spot('wallCell')],
+      gesture: { kind: 'drag', from: hud('card-shield'), to: spot('wallCell'), carry: 'shield' },
+      doneWhen: 'sowWall',
+      picture: 'wallSow',
+    },
+    { id: 'block', spots: [spot('wall')], gesture: null, doneWhen: null, picture: 'wallBlock' },
+    {
+      id: 'infuse',
+      spots: [hud('card-shield'), spot('shieldInfusable')],
+      gesture: { kind: 'drag', from: hud('card-shield'), to: spot('shieldInfusable'), carry: 'shield' },
+      doneWhen: 'infuseShield',
+      picture: 'shieldInfuse',
+    },
+  ],
 };
 
 /**
@@ -164,9 +199,12 @@ export function toursOfRound(outbreak: OutbreakId, index: number): TourId[] {
 export function cueOf(action: PlayerAction): TourCue {
   switch (action.type) {
     case 'sow':
+      if (action.card === 'shield') return 'sowWall';
       return action.card === 'shooter' ? 'sowShooter' : action.card === 'fire' ? 'sowFire' : 'sowIce';
     case 'infuse':
-      return action.withMine ? 'infuseMine' : 'infuseCard';
+      // El escudo se da por infundido igual con la carta que arrastrando el muro (T-024).
+      if (action.element === 'shield') return 'infuseShield';
+      return action.dragged ? 'infuseMine' : 'infuseCard';
     case 'pick':
       return 'pick';
     case 'levelUp':

@@ -15,6 +15,11 @@ export type SfxId =
   | 'shotIce'
   | 'infuseFire'
   | 'infuseIce'
+  // Escudo (T-024): sembrar el muro, infundirlo, lo que le da y el muro que se rompe
+  | 'sowWall'
+  | 'infuseShield'
+  | 'wallHit'
+  | 'wallBreak'
   | 'fuse'
   | 'levelUp'
   | 'plantDestroyed'
@@ -102,6 +107,10 @@ export const SFX: Readonly<Record<SfxId, SfxSpec>> = {
   shotIce: world(0.32, 4, 45, 1.2),
   infuseFire: world(0.75, 2, 80, 0.5),
   infuseIce: world(0.7, 2, 80, 0.5),
+  sowWall: world(0.75, 2, 60, 1),
+  infuseShield: world(0.75, 2, 80, 0.5),
+  wallHit: world(0.4, 2, 120, 1, 3),
+  wallBreak: world(0.7, 2, 120, 0.8),
   fuse: world(0.8, 2, 0, 0),
   levelUp: world(0.7, 2, 0, 0),
   plantDestroyed: world(0.6, 2, 120, 1),

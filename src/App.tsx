@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import type { CardId } from './game/core/match';
-import { FIRST_OUTBREAK, type OutbreakId } from './game/core/outbreaks';
+import { FIRST_OUTBREAK, outbreakFromParam, type OutbreakId } from './game/core/outbreaks';
 import { isGreenhouseOpen } from './game/core/route';
 import type { GameScreen } from './game/createGame';
 import {
@@ -52,7 +52,13 @@ import { StoryOverlay } from './ui/story/StoryOverlay';
 import { useStory } from './ui/story/useStory';
 
 /** Cartas de la bandeja, en orden. Solo se ven las que la ronda ya desbloqueo (T-007). */
-const CARDS: readonly CardId[] = ['shooter', 'fire', 'ice'];
+const CARDS: readonly CardId[] = ['shooter', 'fire', 'ice', 'shield'];
+
+/**
+ * Solo en desarrollo (T-024): con `?brote=2` en la direccion, "Nueva partida" empieza ese brote, tambien uno en
+ * preparacion que la ruta aun no deja elegir (el brote 2 hasta T-026). Con la tecla N se salta a la ronda siguiente.
+ */
+const DEV_OUTBREAK = import.meta.env.DEV ? outbreakFromParam(new URLSearchParams(window.location.search).get('brote')) : null;
 
 /** Escena que tiene que estar lista para cada pantalla. */
 const SCENE_OF: Record<GameScreen, string> = { title: SCENES.title, board: SCENES.board };
@@ -296,7 +302,7 @@ export function App() {
     [resetHud, settings.fullscreen, fullscreen],
   );
 
-  const newGame = useCallback(() => startMatch({}), [startMatch]);
+  const newGame = useCallback(() => startMatch(DEV_OUTBREAK ? { outbreak: DEV_OUTBREAK } : {}), [startMatch]);
 
   /** Desde el Invernadero o su ruta (T-019): un brote desde la ronda 1. Si habia partida a medias, ya se confirmo pisarla. */
   const playOutbreak = useCallback((outbreak: OutbreakId) => startMatch({ outbreak }), [startMatch]);

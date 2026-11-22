@@ -2,7 +2,7 @@ import * as Phaser from 'phaser';
 import { BOARD, MINE } from '../config/balance';
 import type { Cell } from '../core/board';
 import type { Mine } from '../core/match';
-import type { ElementType } from '../core/plants';
+import type { MineElement } from '../core/plants';
 import { areaSize, drawArea } from './boardMarks';
 import { mixColor, type Effects } from './effects';
 import { DEPTH, entityDepth, perspective } from './layout';
@@ -28,7 +28,7 @@ const MINE_LOOK = {
  * punta de la mecha en Alto y colores de la cuenta atras.
  */
 const ELEMENT_LOOK: Record<
-  ElementType,
+  MineElement,
   { areaColor: number; blinkWarm: number; blinkHot: number; tipEveryMs: number; countdownText: { color: string; stroke: string } }
 > = {
   // Fuego (T-004): se pone al rojo y la mecha echa chispas.
@@ -38,7 +38,7 @@ const ELEMENT_LOOK: Record<
 };
 
 /** Color del alcance de la mina de `element` pintado en el suelo (tambien al ir a sembrarla). */
-export function mineAreaColor(element: ElementType): number {
+export function mineAreaColor(element: MineElement): number {
   return ELEMENT_LOOK[element].areaColor;
 }
 

@@ -6,7 +6,7 @@ import { BOARD, ENEMIES, MINE } from '../config/balance';
 import type { Cell } from '../core/board';
 import { enemyMaxHp, spawnEnemy, stepCombat, type CombatEvent, type Enemy, type EnemyKind } from '../core/combat';
 import { createMatch, createMine, createPlant, sownAt, sownMaxHp, type MatchState, type Sown } from '../core/match';
-import type { CannonCount, ElementType } from '../core/plants';
+import type { CannonCount, ElementType, MineElement } from '../core/plants';
 import { text } from '../../i18n';
 import { BulletView } from './bulletView';
 import { CreeperView } from './creeperView';
@@ -78,7 +78,7 @@ export function engagedX(kind: EnemyKind, col: number): number {
 /** Reparto de una batalla de portada: plantas, minas y enemigos, cada uno en su sitio. */
 export interface CoverCast {
   plants: PlantSpot[];
-  mines: Array<{ cell: Cell; element: ElementType; nudge?: Nudge }>;
+  mines: Array<{ cell: Cell; element: MineElement; nudge?: Nudge }>;
   enemies: EnemySpot[];
 }
 
@@ -311,9 +311,10 @@ export class TitleCover {
     if (sown.kind === 'shooter') {
       const design = this.designs.get(cellKey(cell)) ?? SHOOTER;
       this.plantViews.set(cellKey(cell), new PlantView(this.scene, this.fx, at, sown.shooter, 1, sprout, design));
-    } else {
+    } else if (sown.kind === 'mine') {
       this.mineViews.set(cellKey(cell), new MineView(this.scene, this.fx, sown.element, at, sown, sprout));
     }
+    // La portada y el Invernadero no llevan muros (T-024): su reparto no los pide.
   }
 
   /** Donde se pinta lo sembrado en `cell`: su casilla, corrida si el reparto lo pide. */
@@ -405,7 +406,7 @@ export class TitleCover {
   }
 
   /** La mina que exploto vuelve a brotar en su casilla al cabo de un rato. */
-  private regrow(cell: Cell, element: ElementType): void {
+  private regrow(cell: Cell, element: MineElement): void {
     this.scene.time.delayedCall(COVER_LOOK.mineRegrowMs, () => {
       if (sownAt(this.state, cell)) return;
       const mine = createMine(element);

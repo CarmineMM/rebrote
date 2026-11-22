@@ -48,7 +48,7 @@ De menos a más daño, mezclando dos cosas: lo que le hizo a los equipos y lo qu
 | Brote | Jefe | Estado | Qué aporta |
 |---|---|---|---|
 | 1 | Creeper, el Escurridizo | Hecho | Disparadora, fuego, hielo, infundir, fusionar y subir de nivel |
-| 2 | Elk Cloner, el Poeta | Planificado (T-024 a T-026), aprobado por Carmine | Escudo. Sus versos son ondas que cruzan el carril y solo un escudo las para |
+| 2 | Elk Cloner, el Poeta | En preparación: el escudo ya está (T-024) con un guion provisional, cerrado al jugador; faltan sus tropas (T-025) y su jefe (T-026) | Escudo. Sus versos son ondas que cruzan el carril y solo un escudo las para |
 | 3 | Brain, el Cerebro | Sin diseñar | Idea suelta: el Brain real se escondía de quien lo buscaba. Enemigos que no se ven hasta que están cerca |
 | 4 | Morris, el Imparable | Sin diseñar | Idea suelta: el Morris real se copiaba tantas veces que tumbaba las máquinas. Enemigos en masa |
 

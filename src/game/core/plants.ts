@@ -1,6 +1,18 @@
-import { COSTS, FUSION, LEVELING, LIMITS, SHOOTER } from '../config/balance';
+import { COSTS, FUSION, LEVELING, LIMITS, SHIELD, SHOOTER } from '../config/balance';
 
-export type ElementType = 'fire' | 'ice';
+/** Elementos que, sembrados solos, son una mina (T-004, T-005). */
+export type MineElement = 'fire' | 'ice';
+
+/**
+ * Lo que se suelta sobre una disparadora para infundirla: fuego, hielo o escudo (T-024). Una planta tiene como mucho uno
+ * (no hay mezclas). Sembrado solo, el fuego y el hielo son una mina, y el escudo, un muro.
+ */
+export type ElementType = MineElement | 'shield';
+
+/** ¿Es un elemento de mina (fuego o hielo)? El escudo, sembrado solo, es un muro. */
+export function isMineElement(element: ElementType): element is MineElement {
+  return element !== 'shield';
+}
 export type CannonCount = 1 | 2 | 3;
 
 export interface Shooter {
@@ -23,7 +35,7 @@ export function fuseBlocker(a: Shooter, b: Shooter): FuseBlocker | null {
   return null;
 }
 
-/** Fusionar: misma variante (normal, fuego o hielo) y sin pasar del maximo de canones. */
+/** Fusionar: misma variante (normal, fuego, hielo o escudo, T-024 E-03) y sin pasar del maximo de canones. */
 export function canFuse(a: Shooter, b: Shooter): boolean {
   return fuseBlocker(a, b) === null;
 }
@@ -40,12 +52,12 @@ export function fuse(a: Shooter, b: Shooter): Shooter {
   };
 }
 
-/** Infundir: solo sobre una disparadora que todavia no tiene elemento. */
+/** Infundir: solo sobre una disparadora que todavia no tiene elemento (no hay mezclas: tampoco de escudo, T-024). */
 export function canInfuse(plant: Shooter): boolean {
   return plant.element === null;
 }
 
-/** Infundir una planta de N canones cuesta N elementos. */
+/** Infundir una planta de N canones cuesta N elementos (tambien el escudo, T-024 E-04). */
 export function infusionCost(plant: Shooter, element: ElementType): number {
   return COSTS[element] * plant.cannons;
 }
@@ -121,7 +133,11 @@ export function fireRateMultiplier(plant: Shooter): number {
   return 1 + levelBonus(plant.level).fireRate;
 }
 
-/** Vida maxima de la planta: la de la disparadora por cada canon (D-02: la suma de las partes). */
+/**
+ * Vida maxima de la planta: la de la disparadora por cada canon (D-02: la suma de las partes). La de escudo, por
+ * `SHIELD.hpMultiplier` (T-024, E-05).
+ */
 export function plantMaxHp(plant: Shooter): number {
-  return SHOOTER.hp * FUSION.hpByCannons[plant.cannons];
+  const shield = plant.element === 'shield' ? SHIELD.hpMultiplier : 1;
+  return SHOOTER.hp * FUSION.hpByCannons[plant.cannons] * shield;
 }

@@ -1,4 +1,4 @@
-import { BOARD, COSTS, LIVES, MINE } from '../config/balance';
+import { BOARD, COSTS, LIVES, MINE, SHIELD } from '../config/balance';
 import { isOnBoard, type Cell } from './board';
 import type { Bullet, Enemy, Spit } from './combat';
 import {
@@ -10,16 +10,18 @@ import {
   infusionCost,
   levelUp,
   levelUpCost,
+  isMineElement,
   plantMaxHp,
   type ElementType,
   type FuseBlocker,
+  type MineElement,
   type Shooter,
 } from './plants';
 import { FIRST_OUTBREAK, outbreakScript, type OutbreakId } from './outbreaks';
 import { createRound, infuseFeature, isUnlocked, levelCap, levelCapRaisedAfter, sowFeature, type RoundState } from './rounds';
 import { newMatchSeeds, type MatchSeeds } from './seeds';
 
-/** Cartas que se pueden jugar desde el HUD: la disparadora y los elementos. */
+/** Cartas que se pueden jugar desde el HUD: la disparadora y los elementos (fuego, hielo y, desde T-024, escudo). */
 export type CardId = 'shooter' | ElementType;
 
 /** Disparadora sembrada: lo que es (`shooter`) y como esta en el combate. */
@@ -37,14 +39,23 @@ export interface Plant {
  */
 export interface Mine {
   readonly kind: 'mine';
-  readonly element: ElementType;
+  readonly element: MineElement;
   readonly hp: number;
   /** Milisegundos que le quedan al conteo; null mientras espera a un enemigo. */
   readonly fuseMs: number | null;
 }
 
-/** Lo que ocupa una casilla: una disparadora o una mina. Los enemigos muerden las dos. */
-export type Sown = Plant | Mine;
+/**
+ * Escudo sembrado solo (T-024): un muro. No dispara ni explota: aguanta `SHIELD.wallHp` y los enemigos lo muerden hasta
+ * romperlo. Para lo que va por su carril hacia lo de detras (`isShield` en combat.ts).
+ */
+export interface Wall {
+  readonly kind: 'wall';
+  readonly hp: number;
+}
+
+/** Lo que ocupa una casilla: una disparadora, una mina o un muro (T-024). Los enemigos muerden todo. */
+export type Sown = Plant | Mine | Wall;
 
 /**
  * Todo lo que forma una partida, incluido el combate. Al cambiar el nivel grafico el juego se recrea
@@ -133,9 +144,25 @@ export function mineAt(state: MatchState, cell: Cell): Mine | null {
   return sown?.kind === 'mine' ? sown : null;
 }
 
-/** Vida maxima de lo sembrado: la de la disparadora segun sus canones, o la de la mina. */
+/** Muro de la casilla (T-024), o null si no hay. */
+export function wallAt(state: MatchState, cell: Cell): Wall | null {
+  const sown = sownAt(state, cell);
+  return sown?.kind === 'wall' ? sown : null;
+}
+
+/** Vida maxima de lo sembrado: la de la disparadora segun sus canones y su elemento, la de la mina o la del muro. */
 export function sownMaxHp(sown: Sown): number {
-  return sown.kind === 'shooter' ? plantMaxHp(sown.shooter) : MINE.hp;
+  if (sown.kind === 'shooter') return plantMaxHp(sown.shooter);
+  return sown.kind === 'mine' ? MINE.hp : SHIELD.wallHp;
+}
+
+/**
+ * Elemento sembrado solo en la casilla: el de la mina, o el escudo del muro (T-024). Null si es una disparadora. Es lo que
+ * vale al arrastrarlo sobre una disparadora para infundirla (`elementInfusion`).
+ */
+export function sownElement(sown: Sown): ElementType | null {
+  if (sown.kind === 'mine') return sown.element;
+  return sown.kind === 'wall' ? 'shield' : null;
 }
 
 /** Planta recien sembrada: vida llena y lista para disparar en cuanto tenga a quien. */
@@ -144,8 +171,29 @@ export function createPlant(shooter: Shooter = createShooter()): Plant {
 }
 
 /** Mina recien sembrada: vida llena y esperando a un enemigo. */
-export function createMine(element: ElementType): Mine {
+export function createMine(element: MineElement): Mine {
   return { kind: 'mine', element, hp: MINE.hp, fuseMs: null };
+}
+
+/** Muro recien sembrado (T-024): vida llena. */
+export function createWall(): Wall {
+  return { kind: 'wall', hp: SHIELD.wallHp };
+}
+
+/** Lo que brota al sembrar el elemento solo en una casilla vacia: una mina (fuego o hielo) o un muro (escudo). */
+export function createSownElement(element: ElementType): Mine | Wall {
+  return isMineElement(element) ? createMine(element) : createWall();
+}
+
+/**
+ * La disparadora infundida con `element`. Conserva su nivel y su recarga. Si su vida maxima cambia (el escudo la dobla,
+ * T-024), conserva la proporcion de vida que tenia: una a media vida queda a media vida. El fuego y el hielo no cambian
+ * la vida.
+ */
+export function infusedPlant(plant: Plant, element: ElementType): Plant {
+  const shooter = infuse(plant.shooter, element);
+  const hp = (plant.hp * plantMaxHp(shooter)) / plantMaxHp(plant.shooter);
+  return { ...plant, shooter, hp };
 }
 
 /**
@@ -169,7 +217,7 @@ export interface CardPlay {
 
 /**
  * Que pasa al soltar `card` en `cell`. La disparadora se siembra en una casilla vacia. Un elemento se siembra
- * en una casilla vacia (mina) o se infunde en una disparadora sin elemento, y cuesta un elemento por canon.
+ * en una casilla vacia (mina, o muro el escudo) o se infunde en una disparadora sin elemento, y cuesta un elemento por canon.
  * Sembrar e infundir cada elemento se desbloquean por separado (T-007: el fuego solo llega antes que infundirlo).
  */
 export function cardPlay(state: MatchState, card: CardId, cell: Cell): CardPlay {
@@ -202,10 +250,9 @@ export function playCard(state: MatchState, card: CardId, cell: Cell): MatchStat
   const element = cardElement(card);
   let placed: Sown;
   if (play.action === 'infuse' && element) {
-    const plant = plantAt(state, cell) as Plant;
-    placed = { ...plant, shooter: infuse(plant.shooter, element) };
+    placed = infusedPlant(plantAt(state, cell) as Plant, element);
   } else {
-    placed = element ? createMine(element) : createPlant();
+    placed = element ? createSownElement(element) : createPlant();
   }
   const plants = state.plants.map((lane, laneIndex) =>
     laneIndex === cell.lane ? lane.map((sown, col) => (col === cell.col ? placed : sown)) : lane,
@@ -214,72 +261,88 @@ export function playCard(state: MatchState, card: CardId, cell: Cell): MatchStat
 }
 
 /**
- * Por que no se puede arrastrar una mina sembrada sobre una disparadora para infundirla (T-009, P-12): infundir su
- * elemento aun no esta desbloqueado, fuera del tablero, en el origen no hay mina, la mina ya cuenta para explotar, en
- * el destino no hay disparadora, la disparadora ya tiene elemento, o no alcanza para los canones que faltan.
+ * Por que no se puede arrastrar un elemento sembrado (una mina, o un muro desde T-024) sobre una disparadora para
+ * infundirla (T-009, P-12): infundir su elemento aun no esta desbloqueado, fuera del tablero, en el origen no hay mina ni
+ * muro, la mina ya cuenta para explotar, en el destino no hay disparadora, la disparadora ya tiene elemento, o no alcanza
+ * para los canones que faltan.
  */
-export type MineInfusionBlocker = 'locked' | 'off-board' | 'no-mine' | 'armed' | 'no-plant' | 'has-element' | 'insufficient-funds';
+export type ElementInfusionBlocker = 'locked' | 'off-board' | 'no-element' | 'armed' | 'no-plant' | 'has-element' | 'insufficient-funds';
 
-/** Lo que pasaria al soltar la mina de una casilla sobre la disparadora de otra. */
-export interface MineInfusion {
-  /** Lo que se cobra: la mina cuenta como un elemento y se pagan los que faltan, uno por canon mas alla del primero. */
+/** Lo que pasaria al soltar la mina o el muro de una casilla sobre la disparadora de otra. */
+export interface ElementInfusion {
+  /** Lo que se cobra: lo arrastrado cuenta como un elemento y se pagan los que faltan, uno por canon mas alla del primero. */
   readonly cost: number;
-  /** Elementos que se pagan aparte de la mina: los canones menos uno. */
+  /** Elementos que se pagan aparte de lo arrastrado: los canones menos uno. */
   readonly multiplier: number;
-  readonly blocker: MineInfusionBlocker | null;
+  readonly blocker: ElementInfusionBlocker | null;
+}
+
+/** Mina o muro de la casilla, con su elemento, o null si no hay ninguno. */
+function elementAt(state: MatchState, cell: Cell): { readonly sown: Mine | Wall; readonly element: ElementType } | null {
+  const sown = sownAt(state, cell);
+  if (!sown || sown.kind === 'shooter') return null;
+  return { sown, element: sownElement(sown) as ElementType };
+}
+
+/** La mina que ya cuenta para explotar no se puede arrastrar; el muro (T-024), siempre, aunque este mordido. */
+function isArmed(sown: Mine | Wall): boolean {
+  return sown.kind === 'mine' && sown.fuseMs !== null;
 }
 
 /**
- * Por que no se puede empezar a arrastrar la mina de `cell` (o null si se puede): solo una mina que aun espera, y
- * desde la ronda que desbloquea infundir su elemento.
+ * Por que no se puede empezar a arrastrar la mina o el muro de `cell` (o null si se puede): una mina que aun espera, o un
+ * muro, desde la ronda que desbloquea infundir su elemento.
  */
-export function mineDragBlocker(state: MatchState, cell: Cell): 'locked' | 'no-mine' | 'armed' | null {
-  const mine = mineAt(state, cell);
-  if (!mine) return 'no-mine';
-  if (!isUnlocked(state, infuseFeature(mine.element))) return 'locked';
-  return mine.fuseMs === null ? null : 'armed';
+export function elementDragBlocker(state: MatchState, cell: Cell): 'locked' | 'no-element' | 'armed' | null {
+  const found = elementAt(state, cell);
+  if (!found) return 'no-element';
+  if (!isUnlocked(state, infuseFeature(found.element))) return 'locked';
+  return isArmed(found.sown) ? 'armed' : null;
 }
 
 /**
- * Que pasa al soltar la mina de `from` sobre lo sembrado en `to` (T-009, P-12): infunde la disparadora con el elemento
- * de la mina, que deja su casilla. La mina vale un elemento; en una de N canones se pagan los N - 1 que faltan.
+ * Que pasa al soltar la mina o el muro de `from` sobre lo sembrado en `to` (T-009, P-12; el muro desde T-024): infunde la
+ * disparadora con su elemento, y lo arrastrado deja su casilla. Vale un elemento; en una de N canones se pagan los N - 1
+ * que faltan.
  */
-export function mineInfusion(state: MatchState, from: Cell, to: Cell): MineInfusion {
-  const result = (blocker: MineInfusionBlocker | null, cost = 0, multiplier = 0): MineInfusion => ({ cost, multiplier, blocker });
+export function elementInfusion(state: MatchState, from: Cell, to: Cell): ElementInfusion {
+  const result = (blocker: ElementInfusionBlocker | null, cost = 0, multiplier = 0): ElementInfusion => ({ cost, multiplier, blocker });
   if (!isOnBoard(from) || !isOnBoard(to)) return result('off-board');
-  const mine = mineAt(state, from);
-  if (!mine) return result('no-mine');
+  const found = elementAt(state, from);
+  if (!found) return result('no-element');
   const plant = plantAt(state, to);
   if (!plant) return result('no-plant');
   const multiplier = plant.shooter.cannons - 1;
-  const cost = COSTS[mine.element] * multiplier;
-  if (!isUnlocked(state, infuseFeature(mine.element))) return result('locked', cost, multiplier);
-  if (mine.fuseMs !== null) return result('armed', cost, multiplier);
+  const cost = COSTS[found.element] * multiplier;
+  if (!isUnlocked(state, infuseFeature(found.element))) return result('locked', cost, multiplier);
+  if (isArmed(found.sown)) return result('armed', cost, multiplier);
   if (!canInfuse(plant.shooter)) return result('has-element', cost, multiplier);
   return result(canAfford(state.balance, cost) ? null : 'insufficient-funds', cost, multiplier);
 }
 
-/** Casillas de las disparadoras sobre las que se puede soltar la mina de `from` para infundirlas. */
-export function mineInfusionTargets(state: MatchState, from: Cell): Cell[] {
+/** Casillas de las disparadoras sobre las que se puede soltar la mina o el muro de `from` para infundirlas. */
+export function elementInfusionTargets(state: MatchState, from: Cell): Cell[] {
   const targets: Cell[] = [];
   state.plants.forEach((lane, laneIndex) =>
     lane.forEach((_sown, col) => {
       const to = { lane: laneIndex, col };
-      if (mineInfusion(state, from, to).blocker === null) targets.push(to);
+      if (elementInfusion(state, from, to).blocker === null) targets.push(to);
     }),
   );
   return targets;
 }
 
-/** Infunde la disparadora de `to` con la mina de `from`, que deja su casilla, y cobra los canones que faltan. */
-export function infuseWithMine(state: MatchState, from: Cell, to: Cell): MatchState {
-  const play = mineInfusion(state, from, to);
+/**
+ * Infunde la disparadora de `to` con la mina o el muro de `from`, que deja su casilla, y cobra los canones que faltan. La
+ * vida de la planta se conserva en proporcion (`infusedPlant`); la que le faltaba al muro no pasa a la planta.
+ */
+export function infuseWithElement(state: MatchState, from: Cell, to: Cell): MatchState {
+  const play = elementInfusion(state, from, to);
   if (play.blocker) {
-    throw new Error(`No se puede infundir con la mina: ${play.blocker}`);
+    throw new Error(`No se puede infundir con lo arrastrado: ${play.blocker}`);
   }
-  const mine = mineAt(state, from) as Mine;
-  const plant = plantAt(state, to) as Plant;
-  const infused: Plant = { ...plant, shooter: infuse(plant.shooter, mine.element) };
+  const { element } = elementAt(state, from) as { element: ElementType };
+  const infused = infusedPlant(plantAt(state, to) as Plant, element);
   const plants = state.plants.map((lane, laneIndex) =>
     lane.map((sown, col) => {
       if (laneIndex === from.lane && col === from.col) return null;
@@ -292,7 +355,7 @@ export function infuseWithMine(state: MatchState, from: Cell, to: Cell): MatchSt
 
 /**
  * Por que no se puede fusionar la planta de una casilla sobre la de otra: fusionar aun no esta desbloqueado (T-007),
- * fuera del tablero, la misma casilla, alguna de las dos sin disparadora (vacia o con una mina), o las reglas de
+ * fuera del tablero, la misma casilla, alguna de las dos sin disparadora (vacia, o con una mina o un muro), o las reglas de
  * `fuseBlocker` (otra variante, mas de 3 canones).
  */
 export type FusionBlocker = 'locked' | 'off-board' | 'same-cell' | 'no-plant' | FuseBlocker;

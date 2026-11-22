@@ -1,4 +1,5 @@
 import { type Ctx, ellipse, leafShape } from '../canvasKit';
+import { type BarkScaleColors, barkScaleRows, paintBarkScale, scalesInside } from '../wallArt';
 import type { Barrel, ShooterCannons, ShooterDesign, ShooterVariant } from './design';
 import { LEAF, SHOOTER_COLORS, type ShooterColors, bodyFill, curveTube, fillStroke, paintEye, paintMouth, paintSprout, shine } from './kit';
 
@@ -153,6 +154,21 @@ function paintRoots(ctx: Ctx, x: number, bottom: number, rw: number): void {
   }
 }
 
+/**
+ * Coraza de corteza del escudo (T-024): filas de escamas solapadas sobre el bulbo, como las del muro, con la luz del
+ * cuerpo (`fill`) para que siga de una escama a otra. Va recortada al bulbo.
+ */
+function paintBark(ctx: Ctx, cannons: ShooterCannons, fill: CanvasGradient, colors: BarkScaleColors): void {
+  const b = bulb(cannons);
+  // Filas de abajo arriba hasta el hombro; el cuello se queda liso, que en pequeno las escamas finas solo ensucian.
+  const rows: number[] = [];
+  for (let y = b.bottom + 2; y > b.cy - b.rh * 0.72; y -= 15) rows.push(y);
+  // Medio ancho del bulbo a cada altura, algo de mas: lo que sobra lo recorta el bulbo.
+  const halfWidth = (y: number) => b.rw * Math.max(0, 1 - ((y - 4 - b.cy) / (b.rh + 8)) ** 2) ** 0.4 + 3;
+  const scales = scalesInside(barkScaleRows(b.x, rows, halfWidth, 4, 11, 6), SIZE.width, SIZE.height, 5);
+  for (const scale of scales) paintBarkScale(ctx, scale, fill, colors, 0.8);
+}
+
 function paint(ctx: Ctx, cannons: ShooterCannons, variant: ShooterVariant): void {
   const colors = SHOOTER_COLORS[variant];
   const b = bulb(cannons);
@@ -181,24 +197,38 @@ function paint(ctx: Ctx, cannons: ShooterCannons, variant: ShooterVariant): void
     .forEach((barrel, i) => paintShoot(ctx, barrel, colors, i === cannons - 1));
 
   // Bulbo con la luz arriba a la izquierda.
+  const body = bodyFill(ctx, b.x, b.cy - 6, b.rw * 1.05, colors);
   bulbPath(ctx, cannons);
-  fillStroke(ctx, bodyFill(ctx, b.x, b.cy - 6, b.rw * 1.05, colors), colors.outline, 3.5);
+  fillStroke(ctx, body, colors.outline, 3.5);
 
-  // Vetas de bulbo, de la base a la punta.
   ctx.save();
   bulbPath(ctx, cannons);
   ctx.clip();
-  ctx.strokeStyle = colors.rib;
-  ctx.lineWidth = 2.2;
-  for (const side of [-1, 1]) {
-    for (const k of [0.42, 0.78]) {
-      ctx.beginPath();
-      ctx.moveTo(b.x + side * b.rw * k * 0.5, b.bottom - 2);
-      ctx.bezierCurveTo(b.x + side * b.rw * (k + 0.12), b.cy + b.rh * 0.3, b.x + side * b.rw * k, b.cy - b.rh * 0.7, b.x + 1, b.tipY + 8);
-      ctx.stroke();
+  if (colors.bark) {
+    // El escudo lleva una coraza de escamas de corteza en vez de las vetas.
+    paintBark(ctx, cannons, body, colors.bark);
+  } else {
+    // Vetas de bulbo, de la base a la punta.
+    ctx.strokeStyle = colors.rib;
+    ctx.lineWidth = 2.2;
+    for (const side of [-1, 1]) {
+      for (const k of [0.42, 0.78]) {
+        ctx.beginPath();
+        ctx.moveTo(b.x + side * b.rw * k * 0.5, b.bottom - 2);
+        ctx.bezierCurveTo(b.x + side * b.rw * (k + 0.12), b.cy + b.rh * 0.3, b.x + side * b.rw * k, b.cy - b.rh * 0.7, b.x + 1, b.tipY + 8);
+        ctx.stroke();
+      }
     }
   }
   ctx.restore();
+  if (colors.bark) {
+    // Las escamas tapan la mitad de dentro del contorno: se vuelve a perfilar.
+    bulbPath(ctx, cannons);
+    ctx.strokeStyle = colors.outline;
+    ctx.lineWidth = 3.5;
+    ctx.lineJoin = 'round';
+    ctx.stroke();
+  }
 
   // Brote en la punta: dos hojas, tres al fusionar, y la de 3 canones con una flor.
   const sprout = cannons >= 2 ? [-2.25, -1.7, -1.15] : [-2.1, -1.25];
@@ -210,9 +240,15 @@ function paint(ctx: Ctx, cannons: ShooterCannons, variant: ShooterVariant): void
   ctx.beginPath();
   ctx.moveTo(e.x - 1, e.y + e.ry + 9);
   ctx.quadraticCurveTo(e.x + 7, e.y + e.ry + 15, e.x + 15, e.y + e.ry + 8);
+  ctx.lineCap = 'round';
+  if (colors.bark) {
+    // Entre escamas, la sonrisa lleva un filo claro para que se lea.
+    ctx.strokeStyle = colors.bark.face[0];
+    ctx.lineWidth = 6.5;
+    ctx.stroke();
+  }
   ctx.strokeStyle = colors.outline;
   ctx.lineWidth = 2.6;
-  ctx.lineCap = 'round';
   ctx.stroke();
   ellipse(ctx, e.x - 17, e.y + e.ry + 8, 8, 4.5, colors.cheek);
   shine(ctx, b.x - b.rw * 0.5, b.cy - b.rh * 0.55, 12, 7);

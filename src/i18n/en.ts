@@ -30,6 +30,7 @@ export const en: Dictionary = {
   outbreak: {
     title: (number, boss) => `Outbreak ${number}: ${boss}`,
     number: (number) => `Outbreak ${number}`,
+    comingBoss: { elkCloner: 'Elk Cloner' },
   },
 
   title: {
@@ -188,13 +189,14 @@ export const en: Dictionary = {
 
   hud: {
     cards: 'Cards',
-    cardNames: { shooter: 'Shooter', fire: 'Fire', ice: 'Ice' },
+    cardNames: { shooter: 'Shooter', fire: 'Fire', ice: 'Ice', shield: 'Shield' },
     cardHelp: {
       shooter: 'Plant a shooter',
       fire: 'Fire: on an empty tile, a mine that explodes',
       fireInfuse: 'Fire: on an empty tile, a mine; on a shooter, it infuses it (one fire per barrel)',
       ice: 'Ice: on an empty tile, a mine that slows',
       iceInfuse: 'Ice: on an empty tile, a mine that slows; on a shooter, it infuses it (one ice per barrel)',
+      shield: 'Shield: on an empty tile, a sturdy wall that blocks shots; on a shooter, it infuses it (one shield per barrel)',
     },
     noFunds: 'Not enough coins',
     coins: 'Coins',
@@ -225,6 +227,11 @@ export const en: Dictionary = {
         'Creeper is getting ready! Its troops come faster and in greater numbers',
         'Creeper is almost ready: even more troops, and even faster',
         'Creeper arrives with its escort! It jumps lanes: spread out your defenses',
+      ],
+      elkCloner: [
+        'What you learned stays with you: shooters, mines, infusing and fusing',
+        'Plant the shield alone to block shots, or drop it on a shooter',
+        'Spitters in every lane: put walls in front!',
       ],
     },
   },
@@ -276,6 +283,7 @@ export const en: Dictionary = {
       text: 'Drop fire or ice on a shooter, or drag a planted mine onto it: its seeds burn or slow.',
     },
     fuse: { title: 'Fuse', text: 'Drag a shooter onto a matching one: their barrels add up and they hit harder.' },
+    shield: { title: 'Shield', text: 'Plant it alone and it is a wall that holds and blocks shots. On a shooter, it doubles its health.' },
   },
 
   tour: {
@@ -287,6 +295,7 @@ export const en: Dictionary = {
       iceMine: 'Ice mine',
       infuse: 'Infuse',
       fuse: 'Fuse',
+      shield: 'Shield',
     },
     next: 'Next',
     done: 'Got it!',
@@ -321,6 +330,11 @@ export const en: Dictionary = {
       fuse: {
         drag: 'Drag one onto its twin to fuse!',
       },
+      shield: {
+        wall: 'Plant the shield alone: a wall!',
+        block: 'Shots stop at the wall',
+        infuse: 'On a shooter: double the health!',
+      },
     },
     coin: 'Tap it! It is worth more',
   },
@@ -345,6 +359,10 @@ export const en: Dictionary = {
       creeper: {
         line: "Heads up, Creeper's coming: the very first computer worm! The real one was stopped by Reaper, the first antivirus. Today, you're the Reaper!",
         card: 'Creeper (1971) was the first computer worm: an experiment that hopped from computer to computer across ARPANET, the network the internet grew out of. It broke nothing; it just printed “I’M THE CREEPER: CATCH ME IF YOU CAN!” To catch it, someone wrote Reaper, the first antivirus.',
+      },
+      elkCloner: {
+        line: "Elk Cloner's coming! In 1982 it hopped from floppy to floppy on Apple IIs. And it recited poems!",
+        card: 'Elk Cloner (1982) was one of the first viruses to spread outside a lab. It traveled on Apple II floppy disks, copying itself onto every disk that went through an infected computer, and every 50th boot it showed a poem on screen. It broke nothing: a 15-year-old student wrote it as a prank.',
       },
     },
     lines: {
@@ -411,10 +429,10 @@ export const en: Dictionary = {
     bossEscaped: 'It got away!',
     lifeLost: '−1 ♥',
     fused: 'Fused!',
-    infused: { fire: 'Fire!', ice: 'Ice!' },
+    infused: { fire: 'Fire!', ice: 'Ice!', shield: 'Shield!' },
     cannotInfuse: "Can't infuse",
     infuseFrom: (round) => `Infuse: from round ${round}`,
-    hasElement: { fire: 'Already has fire', ice: 'Already has ice' },
+    hasElement: { fire: 'Already has fire', ice: 'Already has ice', shield: 'Already has a shield' },
     infuse: (price) => `Infuse: ${price}`,
     noFunds: 'Not enough coins',
     fuse: (cannons) => `Fuse: ${cannons} barrels`,
@@ -423,6 +441,8 @@ export const en: Dictionary = {
     maxCannons: (cannons) => `Max ${cannons} barrels`,
     infuseWithMine: 'Infuse with the mine',
     infuseMinePlus: (extra) => `Infuse: mine + ${extra}`,
+    infuseWithWall: 'Infuse with the wall',
+    infuseWallPlus: (extra) => `Infuse: wall + ${extra}`,
   },
 
   creeper: {
@@ -479,6 +499,12 @@ export const en: Dictionary = {
       youWin: 'You win the game!',
       reward: 'Reward',
       rewardValue: (coins) => `${coins} coins`,
+      blocks: 'Blocks',
+      blocksValue: 'Shots aimed at what is behind',
+      attack: 'Attack',
+      noAttack: 'Does not attack',
+      drag: 'Drag it',
+      dragValue: 'Infuses a shooter with a shield',
     },
     tags: {
       waiting: 'Waiting for an enemy',
@@ -490,9 +516,11 @@ export const en: Dictionary = {
       burning: (amount) => `Burning: −${amount} per second`,
       slowed: (percent) => `Slowed by ${percent}`,
       hasted: (percent) => `Sped up +${percent}`,
+      cracked: 'Cracked',
+      crumbling: 'About to break!',
     },
     shooter: {
-      title: { plain: 'Shooter', fire: 'Fire shooter', ice: 'Ice shooter' },
+      title: { plain: 'Shooter', fire: 'Fire shooter', ice: 'Ice shooter', shield: 'Shield shooter' },
       oneCannon: 'Single barrel',
       fused: (cannons) => `${cannons} fused barrels`,
       cap: (cap) => `Cap ${cap}`,
@@ -500,7 +528,13 @@ export const en: Dictionary = {
         plain: 'Shoots seeds at the enemies ahead of it in its lane.',
         fire: 'Its seeds burn: the enemy keeps losing health for a while after the hit.',
         ice: 'Its seeds slow: the enemy moves and bites more slowly.',
+        shield: 'Shoots like a normal one and lasts twice as long. Enemy shots stop at it: they never reach the ones behind.',
       },
+    },
+    wall: {
+      title: 'Wall',
+      subtitle: 'Shield planted on its own',
+      about: 'It neither shoots nor explodes: it takes the bites and the shots aimed at what is behind it. Drag it onto a shooter to infuse it with a shield.',
     },
     mine: {
       title: { fire: 'Fire mine', ice: 'Ice mine' },

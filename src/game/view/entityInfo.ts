@@ -1,4 +1,4 @@
-import { BOARD, CREEPER, ENEMIES, MINE } from '../config/balance';
+import { BOARD, CREEPER, ENEMIES, MINE, SHIELD } from '../config/balance';
 import type { Cell } from '../core/board';
 import {
   bulletDamage,
@@ -12,12 +12,13 @@ import {
   slamDamage,
   type Enemy,
 } from '../core/combat';
-import type { Mine, Plant } from '../core/match';
+import type { Mine, Plant, Wall } from '../core/match';
 import { FIRST_OUTBREAK, outbreakNumber, outbreakOfBoss } from '../core/outbreaks';
 import { plantMaxHp } from '../core/plants';
 import type { EntityInfo, InfoStat, InfoTag } from '../EventBus';
 import { formatNumber, formatPercent, formatSeconds, text } from '../../i18n';
 import { medalTier, showsMedal } from './levelMedal';
+import { wallWear } from './wallArt';
 
 /**
  * Ficha de informacion (T-010): nombre, nivel, vida, datos y como funciona una disparadora, una mina o un enemigo, con
@@ -61,6 +62,8 @@ export function shooterInfo(plant: Plant, cell: Cell, levelCap: number | null): 
     stats.push({ label: t.stats.slows, value: t.stats.slowBy(formatPercent(effect.slow.amount)), note: t.stats.during(formatSeconds(effect.slow.ms)) });
   }
   stats.push({ label: t.stats.range, value: t.stats.rangeValue });
+  // La de escudo (T-024, E-02) para lo que va hacia las de detras.
+  if (element === 'shield') stats.push({ label: t.stats.blocks, value: t.stats.blocksValue });
   return {
     id: `planta:${cell.lane}:${cell.col}`,
     tone: element ?? 'plant',
@@ -100,6 +103,30 @@ export function mineInfo(mine: Mine, cell: Cell): EntityInfoData {
     stats,
     tags,
     about: t.mine.about[mine.element](formatSeconds(MINE.countdownMs)),
+    lore: null,
+  };
+}
+
+/** Ficha del muro (T-024): el escudo sembrado solo. No ataca; para lo de detras y se puede llevar a una disparadora. */
+export function wallInfo(wall: Wall, cell: Cell): EntityInfoData {
+  const t = text().info;
+  const stats: InfoStat[] = [
+    { label: t.stats.attack, value: t.stats.noAttack },
+    { label: t.stats.blocks, value: t.stats.blocksValue },
+    { label: t.stats.drag, value: t.stats.dragValue },
+  ];
+  const wear = wallWear(wall.hp / SHIELD.wallHp);
+  const tags: InfoTag[] = wear === 2 ? [{ text: t.tags.crumbling, tone: 'alert' }] : wear === 1 ? [{ text: t.tags.cracked, tone: 'calm' }] : [];
+  return {
+    id: `muro:${cell.lane}:${cell.col}`,
+    tone: 'shield',
+    title: t.wall.title,
+    subtitle: t.wall.subtitle,
+    level: null,
+    hp: hpOf(wall.hp, SHIELD.wallHp),
+    stats,
+    tags,
+    about: t.wall.about,
     lore: null,
   };
 }

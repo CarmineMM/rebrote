@@ -1,7 +1,7 @@
 import { BOARD } from '../config/balance';
 import type { Cell } from '../core/board';
-import { cardPlay, fusionTargets, mineAt, mineDragBlocker, mineInfusionTargets, plantAt, sownAt, type MatchState } from '../core/match';
-import type { ElementType } from '../core/plants';
+import { cardPlay, elementDragBlocker, elementInfusionTargets, fusionTargets, mineAt, plantAt, sownAt, wallAt, type MatchState } from '../core/match';
+import type { ElementType, MineElement } from '../core/plants';
 
 /**
  * Que se senala en el tablero en cada paso de un tour de ayuda (T-013, ADR-0012). Solo elige casillas con el estado y
@@ -21,7 +21,16 @@ export interface TourCells {
   /** Dos disparadoras que se pueden fusionar: la que se arrastra y la de destino. */
   fusion: { from: Cell; to: Cell } | null;
   /** Una mina de cada elemento (la recien sembrada, para contar como explota). */
-  mines: Record<ElementType, Cell | null>;
+  mines: Record<MineElement, Cell | null>;
+  /**
+   * Casilla libre para un muro (T-024): justo delante de una disparadora, en su carril, para que la proteja; sin
+   * disparadoras, una algo adelantada como la de la mina.
+   */
+  wallCell: Cell | null;
+  /** Un muro sembrado (T-024). */
+  wall: Cell | null;
+  /** Disparadora que se puede infundir con la carta de escudo (T-024). */
+  shieldInfusable: Cell | null;
 }
 
 /** Carriles del centro hacia fuera (2, 1, 3, 0, 4): lo senalado queda en mitad del cesped. */
@@ -55,8 +64,8 @@ export function tourCells(state: MatchState): TourCells {
 
   let mineInfusion: TourCells['mineInfusion'] = null;
   for (const mine of cellsInOrder(LEFT_TO_RIGHT)) {
-    if (mineDragBlocker(state, mine) !== null) continue;
-    const target = nearest(mine, mineInfusionTargets(state, mine));
+    if (!mineAt(state, mine) || elementDragBlocker(state, mine) !== null) continue;
+    const target = nearest(mine, elementInfusionTargets(state, mine));
     if (target) {
       mineInfusion = { mine, target };
       break;
@@ -73,16 +82,31 @@ export function tourCells(state: MatchState): TourCells {
     }
   }
 
-  const mineOf = (element: ElementType) => firstCell(LEFT_TO_RIGHT, (cell) => mineAt(state, cell)?.element === element);
+  const mineOf = (element: MineElement) => firstCell(LEFT_TO_RIGHT, (cell) => mineAt(state, cell)?.element === element);
+  const mineCell = firstCell(MINE_COLUMNS, free);
+
+  // Delante de una disparadora: la primera casilla libre a su derecha, en su carril, antes de que haya otra cosa sembrada.
+  let wallCell: Cell | null = null;
+  for (const at of cellsInOrder(LEFT_TO_RIGHT)) {
+    if (!shooter(at)) continue;
+    const ahead = { lane: at.lane, col: at.col + 1 };
+    if (ahead.col < BOARD.columns && free(ahead)) {
+      wallCell = ahead;
+      break;
+    }
+  }
 
   return {
     sowCell: firstCell(LEFT_TO_RIGHT, free),
-    mineCell: firstCell(MINE_COLUMNS, free),
+    mineCell,
     shooter: firstCell(LEFT_TO_RIGHT, shooter),
     infusable: firstCell(LEFT_TO_RIGHT, infusableWith('fire')) ?? firstCell(LEFT_TO_RIGHT, infusableWith('ice')),
     mineInfusion,
     fusion,
     mines: { fire: mineOf('fire'), ice: mineOf('ice') },
+    wallCell: wallCell ?? mineCell,
+    wall: firstCell(LEFT_TO_RIGHT, (cell) => wallAt(state, cell) !== null),
+    shieldInfusable: firstCell(LEFT_TO_RIGHT, infusableWith('shield')),
   };
 }
 

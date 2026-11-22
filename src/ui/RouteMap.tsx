@@ -1,11 +1,10 @@
 import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type RefObject } from 'react';
 import type { RouteArt } from '../game/EventBus';
-import { outbreakNumber, outbreakScript, outbreaksBefore, roundCount, type OutbreakId } from '../game/core/outbreaks';
+import { outbreakNumber, outbreaksBefore, roundCount, type OutbreakId } from '../game/core/outbreaks';
 import { isPlayable, routeStops, type RouteStop } from '../game/core/route';
 import type { Progress } from '../game/progress';
 import type { SaveSummary } from '../game/save';
-import type { Dictionary } from '../i18n';
-import { outbreakTitle } from './outbreakName';
+import { bossName, outbreakTitle } from './outbreakName';
 import { layoutRoute, routeSegment, type RouteBox, type RoutePoint } from './routeLayout';
 import { NO_AUTO_FULLSCREEN } from './useFullscreen';
 import { useText } from './useText';
@@ -44,7 +43,6 @@ function useBoxSize(ref: RefObject<HTMLElement | null>): RouteBox {
   return box;
 }
 
-const bossName = (t: Dictionary, id: OutbreakId) => t.info.enemy.names[outbreakScript(id).boss];
 
 /**
  * Ruta de brotes (T-019): un camino de izquierda a derecha con un lugar por brote (R-03): los vencidos, superados, con
@@ -321,7 +319,7 @@ function StopView({ stop, point, art, selected, saved, buttons, onChoose }: Stop
 
   if (!isPlayable(standing)) {
     const before = outbreaksBefore(id).at(-1);
-    const why = before ? t.route.locked(t.info.enemy.names[before.boss]) : t.common.soon;
+    const why = before ? t.route.locked(bossName(t, before.id)) : t.common.soon;
     return (
       <li className={classes} style={style}>
         <div className="route-stop-body" role="img" aria-label={`${name} · ${why}`} title={why}>
