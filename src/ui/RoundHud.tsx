@@ -12,7 +12,8 @@ interface RoundHudProps {
 
 /**
  * Ronda en curso (T-007): "Ronda N de 10" con una semillita por ronda (las superadas, verdes; la actual late; la del
- * jefe, una pantallita). En la ronda del jefe (T-008) dice "Combate final" y, cuando sale, muestra su barra de vida.
+ * jefe, una pantallita). En la ronda del jefe (T-008) dice su numero como las demas, sin aviso aparte, y, cuando sale el
+ * jefe, muestra su barra de vida.
  * En la preparacion, la cuenta atras y el boton para adelantar el ataque. Al empezar cada ronda sale debajo su aviso de
  * una linea, que se va solo. React solo pinta y avisa a Phaser por EventBus: la ronda vive en core.
  */
@@ -28,21 +29,13 @@ export function RoundHud({ round, boss }: RoundHudProps) {
   return (
     <section className={`round-info is-boss-${outbreakBoss(round.outbreak)}`} aria-label={t.round.label}>
       <div className="round-badge">
-        {isBoss ? (
-          <span className="round-title is-boss">
-            <strong key={number} className="round-number">
-              {t.round.finalBattle}
-            </strong>
-          </span>
-        ) : (
-          <span className="round-title">
-            {t.round.word}{' '}
-            <strong key={number} className="round-number">
-              {number}
-            </strong>{' '}
-            {t.round.of} {total}
-          </span>
-        )}
+        <span className="round-title">
+          {t.round.word}{' '}
+          <strong key={number} className="round-number">
+            {number}
+          </strong>{' '}
+          {t.round.of} {total}
+        </span>
         <span className="round-progress" aria-hidden="true">
           {Array.from({ length: total }, (_, i) => (
             <span key={i} className={`round-seed ${seedState(i)}`} />

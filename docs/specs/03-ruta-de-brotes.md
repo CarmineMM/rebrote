@@ -56,6 +56,8 @@ Después de estos cuatro brotes, la historia pasa de la defensa al ataque y camb
 
 Los cuatro comparten la música de ronda y la del jefe (T-015, `MUSIC_STAGES`). El tramo del ataque traerá la suya.
 
+**Nivel de las plantas (T-035, decidido por Carmine el 22 nov 2026).** Durante los cuatro brotes de la defensa el tope de nivel de las disparadoras se queda en 5. En el brote 5, el primero del ataque, Patty le cuenta al jugador que sus plantas ya pueden llegar al nivel 10: su ronda 1 pone `levelCap: 10` y el aviso de desbloqueo lo presenta ella (`presenter: 'patty'`). El nivel de los enemigos de los brotes 3 en adelante se pregunta a Carmine antes de escribir sus tablas (en los brotes 1 y 2, como mucho el 9, y el 10 solo los aliados de los jefes).
+
 Las ideas de los brotes 3 y 4 no están decididas: son un punto de partida para cuando les toque.
 
 ## Lo que se guarda para Blaster (brote 11)

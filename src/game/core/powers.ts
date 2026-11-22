@@ -1,4 +1,5 @@
 import { BOARD, GRENADE, ICE_WALL, POWER_LEVELS, POWERS, RELOCATE } from '../config/balance';
+import { isMilestone, milestonesReached } from './levels';
 import { isOnBoard, type Cell } from './board';
 import { enemyHalfLength, isAirborne, type Enemy, type Grenade } from './combat';
 import type { IceBlock, MatchState, Plant, Sown } from './match';
@@ -45,14 +46,14 @@ export function isPowerLevel(value: unknown): value is number {
 // ---------------------------------------------------------------------------
 // Niveles (T-022, T-01)
 
-/** El nivel `level` da premio (el 5 y el 10). */
+/** El nivel `level` da premio: cada 5 niveles (`LEVEL_MILESTONES`, T-035), el 5 y el 10. */
 export function isPowerMilestone(level: number): boolean {
-  return (POWER_LEVELS.milestones as readonly number[]).includes(level);
+  return isMilestone(level) && level <= POWER_LEVELS.max;
 }
 
 /** Cuantos niveles con premio alcanzo un poder de nivel `level`: 0 antes del 5, 1 del 5 al 9 y 2 en el 10. */
 export function powerMilestones(level: number): number {
-  return POWER_LEVELS.milestones.filter((milestone) => level >= milestone).length;
+  return milestonesReached(Math.min(level, POWER_LEVELS.max));
 }
 
 /**

@@ -333,13 +333,13 @@ describe('partida guardada (T-026)', () => {
 });
 
 describe('guion del brote 2 (L-01, L-07 y L-08)', () => {
-  it('8 rondas, con el escudo en la 2 y el Minstrel en la 3, y tope de nivel 10 desde la 1', () => {
+  it('8 rondas, con el escudo en la 2 y el Minstrel en la 3, y el tope de nivel en el 5 del brote 1 (T-035)', () => {
     expect(roundCount(BROTE2)).toBe(8);
     expect(roundScript(BROTE2, 1).unlocks).toEqual(['shield']);
     const first = (kind: Enemy['kind']) => outbreakScript(BROTE2).rounds.findIndex((round) => round.groups.some((group) => group.kind === kind));
     expect(first('minstrel')).toBe(2);
     expect(first('copycat')).toBe(0);
-    for (let i = 0; i < roundCount(BROTE2); i++) expect(levelCapAt(BROTE2, i)).toBe(10);
+    for (let i = 0; i < roundCount(BROTE2); i++) expect(levelCapAt(BROTE2, i)).toBe(5);
   });
 
   it('la dificultad sube de ronda en ronda hasta el combate final', () => {

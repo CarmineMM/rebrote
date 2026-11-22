@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ENEMY_POWER } from '../config/balance';
+import { LEVEL_MILESTONES } from '../config/balance';
 import { AURA_TIERS, auraTier, veilPhase, veilSize, veilStrength } from './wormAuraArt';
 
 describe('aura de los gusanos (T-030)', () => {
@@ -15,10 +15,10 @@ describe('aura de los gusanos (T-030)', () => {
     expect(auraTier('worm', 20)).toBe(AURA_TIERS);
   });
 
-  it('empieza donde empieza el salto de fuerza de los enemigos', () => {
-    expect(auraTier('worm', ENEMY_POWER.levelTiers[0].from)).toBe(1);
-    expect(auraTier('worm', ENEMY_POWER.levelTiers[0].from - 1)).toBe(0);
-    expect(auraTier('worm', ENEMY_POWER.levelTiers[1].from)).toBe(2);
+  it('empieza en el primer nivel con premio de los enemigos (T-035) y cambia en cada uno', () => {
+    expect(auraTier('worm', LEVEL_MILESTONES.every)).toBe(1);
+    expect(auraTier('worm', LEVEL_MILESTONES.every - 1)).toBe(0);
+    expect(auraTier('worm', 2 * LEVEL_MILESTONES.every)).toBe(2);
   });
 
   it('la llevan las tres tropas, tambien las copias de Creeper (nivel 10, Z-02), pero no Creeper', () => {

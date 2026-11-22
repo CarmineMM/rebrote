@@ -7,7 +7,7 @@ import { MEDAL_TIERS, medalTier } from './levelMedal';
  * del gusano en velos que se elevan y se apagan un poco por encima de su cabeza, con un halo tenue a los pies, alguna
  * mota que sube y un velo casi invisible por delante. La eligio Carmine en la galeria `/gusanos.html` (21 nov 2026).
  *
- * Decidido (Z-01 a Z-04): sale desde el nivel 5, donde empieza el salto de fuerza de `ENEMY_POWER.levelTiers`; la
+ * Decidido (Z-01 a Z-04): sale desde el nivel 5, el primero con premio (`LEVEL_MILESTONES`, T-035); la
  * llevan todas las tropas con nivel (tambien las copias de Creeper), pero no Creeper; sale en el tablero, la portada y
  * la foto de la ficha; en Bajo no se ve y en Medio va sin motas ni velo delantero (`QualityProfile.auras`).
  *

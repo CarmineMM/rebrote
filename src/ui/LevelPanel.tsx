@@ -1,7 +1,7 @@
 import { useLayoutEffect, useRef, useState, type CSSProperties, type RefObject } from 'react';
 import { isMilestoneLevel, levelBonus, levelStepBonus } from '../game/core/plants';
 import { EventBus, GameEvents, type PlantPanel } from '../game/EventBus';
-import { formatPercent } from '../i18n';
+import { formatHpBonus, formatPercent } from '../i18n';
 import { placeLevelPanel, type PanelPlace } from './levelPanelPlace';
 import { useText } from './useText';
 
@@ -78,12 +78,12 @@ export function LevelPanel({ panel, avoid }: LevelPanelProps) {
         </span>
       </div>
       <p className="level-panel-stats">
-        {level > 1 ? t.level.bonus(formatPercent(now.damage), formatPercent(now.fireRate)) : t.level.base}
+        {level > 1 ? t.level.bonus(formatPercent(now.damage), formatPercent(now.fireRate), formatHpBonus(now.hp)) : t.level.base}
       </p>
       {milestoneNext && (
         <p className="level-panel-milestone">
           <span className="level-panel-milestone-title">{t.level.milestone(level + 1)}</span>
-          <span>{t.level.bonus(formatPercent(step.damage), formatPercent(step.fireRate))}</span>
+          <span>{t.level.bonus(formatPercent(step.damage), formatPercent(step.fireRate), formatHpBonus(step.hp))}</span>
         </p>
       )}
       {/* En el tope de la ronda (T-009): hasta cuando. */}
@@ -101,7 +101,7 @@ export function LevelPanel({ panel, avoid }: LevelPanelProps) {
               ? t.level.atMax(cap)
               : t.level.capTitle(cap, capRaisedAt)
             : affordable
-              ? t.level.nextLevel(formatPercent(step.damage), formatPercent(step.fireRate))
+              ? t.level.nextLevel(formatPercent(step.damage), formatPercent(step.fireRate), formatHpBonus(step.hp))
               : t.level.noFunds
         }
         onClick={onLevelUp}

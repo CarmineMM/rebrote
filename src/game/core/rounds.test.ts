@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BOARD, COSTS, ENEMIES, ENEMY_LEVELS, LIMITS, LIVES, OUTBREAKS, ROUND_PREP, SEEDS } from '../config/balance';
+import { BOARD, COSTS, CREEPER, ENEMIES, ENEMY_LEVELS, LIMITS, LIVES, OUTBREAKS, ROUND_PREP, SEEDS } from '../config/balance';
 import type { Cell } from './board';
 import { enemyMaxHp, spawnEnemy, stepCombat } from './combat';
 import { cardPlay, createMatch, createPlant, fusionBlocker, fusionTargets, levelUpOffer, playCard, type MatchState } from './match';
@@ -154,10 +154,24 @@ describe('guion de las rondas (datos)', () => {
     expect(levels(mid)).toEqual([1, 2, 3, 4, 5, 6, 7]);
     expect(Math.max(...Object.values(mid))).toBe(weight(mid, 4));
     expect(weight(mid, 7)).toBeLessThan(weight(mid, 1));
-    // 8-10: del 3 al 10, el 7 lo que mas; menos el 3, y aun menos el 10.
-    expect(levels(late)).toEqual([3, 4, 5, 6, 7, 8, 9, 10]);
+    // 8-10: del 3 al 9 (T-035), el 7 lo que mas; menos el 3.
+    expect(levels(late)).toEqual([3, 4, 5, 6, 7, 8, 9]);
     expect(Math.max(...Object.values(late))).toBe(weight(late, 7));
-    expect(weight(late, 10)).toBeLessThan(weight(late, 3));
+    expect(weight(late, 3)).toBeLessThan(weight(late, 9));
+  });
+
+  it('T-035: en los brotes 1 y 2 ninguna tropa al azar pasa del nivel 9; el 10 solo lo llevan los aliados de los jefes', () => {
+    for (const outbreak of OUTBREAKS) {
+      outbreak.rounds.forEach((round, index) => {
+        if (round.levels) expect(Math.max(...Object.keys(round.levels).map(Number))).toBeLessThanOrEqual(9);
+        for (const group of round.groups) {
+          if (group.level === undefined || group.level <= 9) continue;
+          expect(group.level).toBe(10);
+          expect(index).toBe(outbreak.rounds.length - 1);
+        }
+      });
+    }
+    expect(CREEPER.copyLevel).toBe(10);
   });
 
   it('cada grupo saca enemigos validos por carriles del tablero, sin repetir carril, y los grupos van en orden', () => {

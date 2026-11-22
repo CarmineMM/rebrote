@@ -6,13 +6,16 @@ import { simulate, type BotStyle, type SimResult } from './bot';
  * Simulacion de los brotes con bots (T-026): no va con `npm test`, sino con `npm run sim`, porque tarda. Juega cada brote
  * varias veces con cada bot (con azar fijo, asi que repetirla da lo mismo) y saca una tabla. Lo que dio esta en
  * `docs/specs/05-brote-2-elk-cloner.md`. Lo que comprueba es lo que pide la task: sin escudos se pierde el brote 2 casi
- * siempre; usandolos bien, se gana la mayoria.
+ * siempre; usandolos bien, se gana la mayoria. Desde T-035 (curva compuesta y tope 5), usarlos bien es con disparadoras de
+ * 3 canones, o con 2 y algo de nivel base comprado.
  */
 
 const RUNS = 10;
 
 const SHIELDLESS: BotStyle = { name: 'sin escudos', shields: 'never', columns: 3, cannons: 2 };
 const SHIELDED: BotStyle = { name: 'con escudos', shields: 'always', columns: 3, cannons: 2 };
+/** Con escudos y disparadoras de 3 canones: lo que pide el brote 2 sin mejoras compradas (T-035). */
+const SHIELDED_STRONG: BotStyle = { name: 'con escudos y 3 canones', shields: 'always', columns: 3, cannons: 3 };
 /** Sin escudos, pero con disparadoras de 3 canones: mas fuego en el carril del jefe para tumbarlo antes. */
 const SHIELDLESS_STRONG: BotStyle = { name: 'sin escudos y con 3 canones', shields: 'never', columns: 3, cannons: 3 };
 /** Llega al jefe sin escudos y solo siembra muros cuando anuncia el poema entero (caso limite de la task). */
@@ -51,16 +54,26 @@ describe('brote 2: Elk Cloner (T-026)', () => {
     expect(results.filter((r) => r.outcome === 'won').length).toBeLessThanOrEqual(RUNS * 0.2);
   });
 
-  it('con escudos bien puestos se gana la mayoria', () => {
-    const results = play('elkCloner', SHIELDED);
-    report('elkCloner', SHIELDED, results);
+  it('con escudos bien puestos y disparadoras de 3 canones se gana la mayoria', () => {
+    const results = play('elkCloner', SHIELDED_STRONG);
+    report('elkCloner', SHIELDED_STRONG, results);
     expect(results.filter((r) => r.outcome === 'won').length).toBeGreaterThan(RUNS / 2);
+  });
+
+  it('con escudos y 2 canones hace falta nivel base (T-035): sin el se pierde, con el 3 se gana la mayoria', () => {
+    const bare = play('elkCloner', SHIELDED);
+    report('elkCloner', SHIELDED, bare);
+    expect(bare.filter((r) => r.outcome === 'won').length).toBeLessThanOrEqual(RUNS * 0.2);
+    const bought = play('elkCloner', SHIELDED, 3);
+    report('elkCloner', SHIELDED, bought, 3);
+    expect(bought.filter((r) => r.outcome === 'won').length).toBeGreaterThan(RUNS / 2);
   });
 
   it('llegando sin escudos, el aviso del poema da tiempo a reaccionar (se anota, no se exige)', () => {
     const results = play('elkCloner', LATE);
     report('elkCloner', LATE, results);
-    expect(results.every((r) => r.round === 8)).toBe(true);
+    // T-035: con 2 canones y sin mejoras, a veces ni llega al jefe (cae en la ronda 7).
+    expect(results.every((r) => r.round >= 7)).toBe(true);
   });
 });
 

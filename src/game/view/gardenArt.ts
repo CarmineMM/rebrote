@@ -1,5 +1,5 @@
-import { LEVELING } from '../config/balance';
-import { milestonesReached } from '../core/plants';
+import { LIMITS } from '../config/balance';
+import { isMilestoneLevel, milestonesReached } from '../core/plants';
 import { type Ctx, circle, ellipse, leafShape, smallFlower } from './canvasKit';
 import { MEDAL_TIERS } from './levelMedal';
 
@@ -55,9 +55,7 @@ export function gardenSpots(tier: number): GardenSpot[] {
 }
 
 /** Los niveles con premio, de menor a mayor (para la guia y los tests). */
-export const GARDEN_LEVELS: readonly number[] = Object.keys(LEVELING.milestones)
-  .map(Number)
-  .sort((a, b) => a - b);
+export const GARDEN_LEVELS: readonly number[] = Array.from({ length: LIMITS.maxLevel }, (_, i) => i + 1).filter(isMilestoneLevel);
 
 const hex = (color: string): number => Number.parseInt(color.slice(1), 16);
 

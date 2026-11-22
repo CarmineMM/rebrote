@@ -292,7 +292,6 @@ export const es = {
     /** "Ronda 3 de 10": la palabra y el "de", porque el numero va resaltado. */
     word: 'Ronda',
     of: 'de',
-    finalBattle: 'Combate final',
     startsIn: 'Empieza en',
     /** En la preparacion del combate final: "Creeper llega en 12 s". */
     bossIn: (boss: string) => `${boss} llega en`,
@@ -315,7 +314,7 @@ export const es = {
       ],
       // T-026: el guion del brote 2, con las tropas de T-025.
       elkCloner: [
-        'Lo aprendido sigue contigo, y ya subes hasta el nivel 10. Ojo: los Copycat dejan una copia al caer',
+        'Lo aprendido sigue contigo. Ojo: los Copycat dejan una copia al caer',
         'Siembra el escudo solo y para los disparos, o suéltalo sobre una disparadora',
         '¡Llegan los Minstrel! Sus versos cruzan el carril: solo los para un escudo',
         'Acorazados, Minstrel y escupidores juntos: minas para unos, escudos para otros',
@@ -343,11 +342,13 @@ export const es = {
     level: (level: number) => `Nivel ${level}`,
     max: '(máximo)',
     base: 'Daño y cadencia de base',
-    bonus: (damage: string, rate: string) => `Daño +${damage} · Cadencia +${rate}`,
+    /** Lo que da el nivel; la vida (T-035), solo si crece: en los niveles con premio. */
+    bonus: (damage: string, rate: string, hp?: string) => `Daño +${damage} · Cadencia +${rate}${hp ? ` · Vida +${hp}` : ''}`,
     capUntil: (cap: number, round: number) => `Tope ${cap}: sube en la ronda ${round}`,
     atMax: (cap: number) => `Ya está en el nivel máximo (${cap})`,
     capTitle: (cap: number, round: number) => `Tope de nivel ${cap} hasta la ronda ${round}`,
-    nextLevel: (damage: string, rate: string) => `Siguiente nivel: +${damage} de daño y +${rate} de cadencia`,
+    nextLevel: (damage: string, rate: string, hp?: string) =>
+      `Siguiente nivel: +${damage} de daño${hp ? `, +${hp} de vida` : ''} y +${rate} de cadencia`,
     /** El siguiente nivel da premio (5, 10, 15 y 20): debajo va lo que suma, con `bonus`. */
     milestone: (level: number) => `¡Premio en el nivel ${level}!`,
     noFunds: 'Saldo insuficiente',
@@ -868,7 +869,6 @@ export const es = {
         /** Elk Cloner, el Poeta (T-026). */
         poet: (outbreak: number) => `El Poeta · jefe del brote ${outbreak}`,
       },
-      tier: (percent: string) => `+${percent} de fuerza por su tramo`,
       about: {
         worm: 'Avanza por su carril y muerde lo primero que encuentra hasta destruirlo.',
         armored: 'Como el gusano, con cuatro veces su vida y más lento. Se le caen las placas al perder vida.',
@@ -898,8 +898,6 @@ export const es = {
     aestheticNote: 'de PopCap Games',
     art: 'Arte y animación',
     artValue: 'Pintados con código, sin imágenes',
-    enemies: 'Enemigos',
-    enemiesValue: 'Virus informáticos de verdad: Creeper (1971) fue el primer gusano',
     /** Musica de fondo (T-015): el titulo y la licencia de cada pista van tal cual; esto es lo que los rodea. */
     music: 'Música',
     musicTitle: (title: string) => `«${title}»`,

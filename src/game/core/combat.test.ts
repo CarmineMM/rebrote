@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BOARD, ENEMIES, ENEMY_LEVELS, ENEMY_POWER, FIRE, ICE, LEVELING, LIVES, MINE, SHOOTER } from '../config/balance';
+import { BOARD, ENEMIES, ENEMY_LEVELS, ENEMY_POWER, FIRE, ICE, LIVES, MINE, SHOOTER } from '../config/balance';
 import type { Cell } from './board';
 import {
   MAX_STEP_MS,
@@ -11,7 +11,6 @@ import {
   enemyLevelFactor,
   enemyMaxHp,
   enemyPower,
-  enemyTierBonus,
   fireIntervalMs,
   hasTarget,
   hpFraction,
@@ -97,31 +96,30 @@ describe('gusano', () => {
     expect(() => spawnEnemy(createMatch(), 'worm', BOARD.lanes, HOLE_X)).toThrow();
   });
 
-  it('con nivel (T-009): +15 % de vida y de dano por nivel sobre el de nivel 1, misma velocidad', () => {
+  it('con nivel (T-035): vida y dano crecen en compuesto, un 18,5 % por nivel y un 27 % en los de premio; misma velocidad', () => {
     expect(enemyLevelFactor(1)).toBe(1);
-    expect(enemyLevelFactor(10)).toBeCloseTo(1 + 9 * ENEMY_LEVELS.perLevel, 9);
-    expect(ENEMY_LEVELS.perLevel).toBeCloseTo(LEVELING.damagePerLevel + 0.05, 9);
+    expect(enemyLevelFactor(4)).toBeCloseTo((1 + ENEMY_LEVELS.perLevel) ** 3, 9);
+    expect(enemyLevelFactor(10)).toBeCloseTo((1 + ENEMY_LEVELS.perLevel) ** 7 * (1 + ENEMY_LEVELS.perMilestone) ** 2, 9);
     const strong = spawnEnemy(createMatch(), 'armored', 2, HOLE_X, undefined, 1, 4).enemies[0];
     expect(strong.level).toBe(4);
-    expect(strong.hp).toBeCloseTo(ENEMIES.armored.hp * 1.45 * ENEMY_POWER.base, 9);
+    expect(strong.hp).toBeCloseTo(ENEMIES.armored.hp * 1.185 ** 3 * ENEMY_POWER.base, 9);
     expect(hpFraction(strong)).toBe(1);
-    expect(enemyDamage(strong)).toBeCloseTo(ENEMIES.armored.biteDamage * 1.45 * ENEMY_POWER.base, 9);
-    expect(enemyDamage({ kind: 'spitter', level: 3 })).toBeCloseTo(ENEMIES.spitter.spitDamage * 1.3 * ENEMY_POWER.base, 9);
+    expect(enemyDamage(strong)).toBeCloseTo(ENEMIES.armored.biteDamage * 1.185 ** 3 * ENEMY_POWER.base, 9);
+    expect(enemyDamage({ kind: 'spitter', level: 3 })).toBeCloseTo(ENEMIES.spitter.spitDamage * 1.185 ** 2 * ENEMY_POWER.base, 9);
     const walked = (level: number) => HOLE_X - stepCombat(spawnEnemy(createMatch(), 'worm', 2, HOLE_X, undefined, 1, level), 1000).state.enemies[0].x;
     expect(walked(7)).toBeCloseTo(walked(1), 9);
     expect(() => spawnEnemy(createMatch(), 'worm', 2, HOLE_X, undefined, 1, 0)).toThrow();
   });
 
-  it('fuerza (T-010): todos +10 %; del nivel 5 al 9, +20 % mas, y desde el 10, +40 % (en vez del 20)', () => {
+  it('fuerza (T-010): todos +10 %, encima de su nivel; sin extra por tramo desde T-035', () => {
     expect(ENEMY_POWER.base).toBe(1.1);
-    expect([1, 4, 5, 9, 10, 14, 20].map(enemyTierBonus)).toEqual([0, 0, 0.2, 0.2, 0.4, 0.4, 0.4]);
-    // Lo que multiplica la base de su tipo: nivel x tramo x fuerza.
+    // Lo que multiplica la base de su tipo: nivel x fuerza.
     expect(enemyPower(1)).toBeCloseTo(1.1, 9);
-    expect(enemyPower(4)).toBeCloseTo(1.45 * 1.1, 9);
-    expect(enemyPower(5)).toBeCloseTo(1.6 * 1.2 * 1.1, 9);
-    expect(enemyPower(10)).toBeCloseTo(2.35 * 1.4 * 1.1, 9);
+    expect(enemyPower(4)).toBeCloseTo(1.185 ** 3 * 1.1, 9);
+    expect(enemyPower(5)).toBeCloseTo(1.185 ** 3 * 1.27 * 1.1, 9);
+    expect(enemyPower(10)).toBeCloseTo(1.185 ** 7 * 1.27 ** 2 * 1.1, 9);
     // Vida de un gusano por nivel, como en la spec.
-    expect([1, 4, 5, 7, 9, 10].map((level) => Math.round(enemyMaxHp('worm', level)))).toEqual([110, 160, 211, 251, 290, 362]);
+    expect([1, 4, 5, 7, 9, 10].map((level) => Math.round(enemyMaxHp('worm', level)))).toEqual([110, 183, 232, 326, 458, 582]);
     // Un nivel 5 nunca es mas debil que un nivel 4, ni un 10 que un 9.
     for (let level = 2; level <= 20; level++) expect(enemyPower(level)).toBeGreaterThan(enemyPower(level - 1));
     // Vale igual para el dano y para cualquier tipo.
@@ -142,7 +140,7 @@ describe('gusano', () => {
     let state = spawnEnemy(createMatch(), 'worm', 2, 3.5 + worm.reach - 0.01, undefined, 1, 3);
     state = { ...state, plants: state.plants.map((lane, l) => lane.map((p, c) => (l === 2 && c === 3 ? createPlant() : p))) };
     const after = stepCombat(state, worm.firstBiteMs + 10).state;
-    expect(after.plants[2][3]?.hp).toBeCloseTo(SHOOTER.hp - worm.biteDamage * 1.3 * ENEMY_POWER.base, 9);
+    expect(after.plants[2][3]?.hp).toBeCloseTo(SHOOTER.hp - worm.biteDamage * 1.185 ** 2 * ENEMY_POWER.base, 9);
   });
 
   it('avanza a velocidad constante por su carril', () => {

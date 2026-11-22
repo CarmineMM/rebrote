@@ -48,10 +48,10 @@ describe('ficha de una disparadora', () => {
     const plant = { ...createPlant(shooter({ element: 'fire', cannons: 3, level: 5 })), hp: 412.4 };
     const info = shooterInfo(plant, cell, 5);
     expect(info).toMatchObject({ tone: 'fire', title: 'Disparadora de fuego', subtitle: '3 cañones fusionados', level: { value: 5, medalTier: 1 } });
-    // 20 x 3,5 (tres canones) x 1,45 (nivel 5, con su premio) = 101,5, en tres semillas.
-    expect(stat(info, 'Daño')).toMatchObject({ value: '101,5 por disparo', note: '3 semillas de 33,8' });
-    expect(stat(info, 'Quemadura')).toMatchObject({ value: '40,6 por segundo', note: 'durante 3 s' });
-    expect(info.hp).toEqual({ current: 413, max: 900 });
+    // 20 x 3,5 (tres canones) x 1,71 (nivel 5, con su premio: 1,125^3 x 1,2, T-035) = 119,6, en tres semillas.
+    expect(stat(info, 'Daño')).toMatchObject({ value: '119,6 por disparo', note: '3 semillas de 39,9' });
+    expect(stat(info, 'Quemadura')).toMatchObject({ value: '47,8 por segundo', note: 'durante 3 s' });
+    expect(info.hp).toEqual({ current: 413, max: 1125 });
   });
 
   it('la de hielo dice cuanto frena', () => {
@@ -104,14 +104,13 @@ describe('ficha de un enemigo', () => {
     expect(stat(info, 'Recompensa')?.value).toBe(`${ENEMIES.worm.reward} monedas`);
   });
 
-  it('su tramo de nivel y lo que le pasa ahora: quemado, frenado y acelerado', () => {
+  it('su nivel (sin nota de tramo desde T-035) y lo que le pasa ahora: quemado, frenado y acelerado', () => {
     const armored = { ...enemy('armored', 10, 1.25), burn: { dps: 8, ms: 1000 }, slow: { amount: 0.3, ms: 500 }, attackMs: 200 };
     const info = enemyInfo(armored);
-    expect(info.level).toEqual({ value: 10, medalTier: 2, note: '+40 % de fuerza por su tramo' });
+    expect(info.level).toEqual({ value: 10, medalTier: 2, note: null });
     expect(info.hp.max).toBe(Math.round(enemyMaxHp('armored', 10)));
     expect(info.tags.map((t) => t.tone)).toEqual(['alert', 'fire', 'ice', 'haste']);
     expect(info.tags.map((t) => t.text)).toEqual(['Mordiendo', 'Quemado: −8 por segundo', 'Frenado un 30 %', 'Acelerado +25 %']);
-    expect(enemyInfo(enemy('spitter', 7)).level?.note).toBe('+20 % de fuerza por su tramo');
   });
 
   it('el escupidor dice su alcance', () => {
@@ -170,7 +169,7 @@ describe('ficha de las tropas del brote 2 (T-025)', () => {
     const Minstrel = enemy('minstrel');
     const info = enemyInfo(Minstrel);
     expect(info).toMatchObject({ tone: 'minstrel', title: 'Minstrel', subtitle: 'Recita versos', tags: [] });
-    expect(stat(info, 'Verso')).toEqual({ label: 'Verso', value: '16,5', note: 'a cada cosa, cada 3,6 s, desde 3,5 casillas' });
+    expect(stat(info, 'Verso')).toEqual({ label: 'Verso', value: '23,1', note: 'a cada cosa, cada 3,6 s, desde 3,5 casillas' });
     expect(info.about).toMatch(/^Se para a 3,5 casillas/);
     expect(info.about).toMatch(/Solo la para un escudo/);
     expect(enemyInfo({ ...Minstrel, attackMs: ENEMIES.minstrel.warnMs + 500 }).tags).toEqual([{ text: 'Recitando', tone: 'alert' }]);
@@ -210,14 +209,14 @@ describe('ficha en ingles (T-011)', () => {
     setLanguage('en');
     const fire = shooterInfo(createPlant(shooter({ element: 'fire', cannons: 3, level: 5 })), cell, 5);
     expect(fire).toMatchObject({ title: 'Fire shooter', subtitle: '3 fused barrels', level: { note: 'Cap 5' } });
-    expect(stat(fire, 'Damage')).toMatchObject({ value: '101.5 per shot', note: '3 seeds of 33.8' });
-    expect(stat(fire, 'Burn')).toMatchObject({ value: '40.6 per second', note: 'for 3 s' });
+    expect(stat(fire, 'Damage')).toMatchObject({ value: '119.6 per shot', note: '3 seeds of 39.9' });
+    expect(stat(fire, 'Burn')).toMatchObject({ value: '47.8 per second', note: 'for 3 s' });
     const ice = shooterInfo(createPlant(shooter({ element: 'ice', cannons: 2 })), cell, 5);
     expect(stat(ice, 'Slows')).toMatchObject({ value: 'By 40%', note: 'for 2.5 s' });
     const mine = mineInfo({ ...createMine('fire'), fuseMs: 1240 }, cell);
     expect(mine.tags).toEqual([{ text: 'Explodes in 1.24 s!', tone: 'alert' }]);
     const armored = enemyInfo(enemy('armored', 10));
-    expect(armored).toMatchObject({ title: 'Armored worm', level: { note: '+40% strength from its tier' } });
+    expect(armored).toMatchObject({ title: 'Armored worm', level: { value: 10, note: null } });
     expect(enemyInfo(enemy('minstrel'))).toMatchObject({ title: 'Minstrel', subtitle: 'Recites verses' });
     expect(stat(enemyInfo(enemy('minstrel')), 'Verse')?.note).toBe('to each thing, every 3.6 s, from 3.5 tiles');
     expect(enemyInfo({ ...enemy('copycat'), clone: true })).toMatchObject({ title: 'Copycat copy', subtitle: 'Small and weak' });

@@ -11,6 +11,15 @@ export const BOARD = {
   columns: 9,
 } as const;
 
+/**
+ * Regla de los niveles (T-035, Carmine, 22 nov 2026): todo lo que tiene nivel (disparadoras, enemigos, poderes y el nivel
+ * base) da premio cada `every` niveles: el 5, el 10, el 15, el 20 y los que vengan si el tope sube. Lo que da cada premio es
+ * de cada cosa (`LEVELING`, `ENEMY_LEVELS`, `GRENADE`...). Nunca se escribe la lista de niveles con premio a mano.
+ */
+export const LEVEL_MILESTONES = {
+  every: 5,
+} as const;
+
 export const LIMITS = {
   maxCannons: 3,
   /** Tope absoluto de nivel de una disparadora. Cada ronda de un brote puede poner el suyo (`levelCap` en `OUTBREAKS`, T-009). */
@@ -204,14 +213,18 @@ export const ENEMIES = {
    */
   minstrel: {
     reward: 25,
-    hp: 150, // PROVISIONAL
+    /** T-035: un 40 % mas que en T-025 (150). PROVISIONAL. */
+    hp: 210,
     /** Casillas por segundo. PROVISIONAL. */
     speed: 0.25,
     attack: 'verse',
     /** Distancia de centro a centro a la que se para: mas lejos que el escupidor, porque su verso cruza el carril. PROVISIONAL. */
     range: 3.5,
-    /** Lo que quita el verso a cada cosa que cruza: poco, porque da a todas (F-06: las minas aguantan varios). PROVISIONAL. */
-    verseDamage: 15,
+    /**
+     * Lo que quita el verso a cada cosa que cruza: poco, porque da a todas (F-06: las minas aguantan varios). T-035: un 40 %
+     * mas que en T-025 (15). PROVISIONAL.
+     */
+    verseDamage: 21,
     verseIntervalMs: 3600, // PROVISIONAL
     /** Lo que tarda el primer verso desde que se para. Mas que `warnMs`: siempre avisa. PROVISIONAL. */
     firstVerseMs: 1800,
@@ -228,18 +241,22 @@ export const ENEMIES = {
    */
   elkCloner: {
     reward: 0,
-    hp: 9000, // PROVISIONAL: ajustado con la simulacion (docs/specs/05-brote-2-elk-cloner.md)
-    /** Casillas por segundo: la mitad que Creeper. Va despacio, pero no se para (L-05). PROVISIONAL. */
-    speed: 0.1,
+    /** T-035: un 10 % mas que en T-026 (9000); 10 890 con la fuerza de todos. PROVISIONAL (docs/specs/05-brote-2-elk-cloner.md). */
+    hp: 9900,
+    /** Casillas por segundo: T-035, un 50 % mas que en T-026 (0,1), y algo menos que Creeper. No se para (L-05). PROVISIONAL. */
+    speed: 0.15,
     attack: 'recite',
-    /** Muerde lo que toca, como Creeper. PROVISIONAL. */
-    biteDamage: 100,
+    /** Muerde lo que toca, como Creeper. T-035: un 30 % mas que en T-026 (100); 143 con la fuerza de todos. PROVISIONAL. */
+    biteDamage: 130,
     biteIntervalMs: 1200, // PROVISIONAL
     firstBiteMs: 600,
     reach: 0.8,
     halfLength: 0.55,
-    /** Lo que quita cada verso de su carril: mas que el del Minstrel, porque es el suyo en grande. PROVISIONAL. */
-    verseDamage: 50,
+    /**
+     * Lo que quita cada verso de su carril: mas que el del Minstrel, porque es el suyo en grande. T-035: 75 en la partida, ya
+     * con la fuerza de todos (`ENEMY_POWER.base`, x1,1), que aqui no se puede leer porque va despues. PROVISIONAL.
+     */
+    verseDamage: 750 / 11,
     verseIntervalMs: 3500, // PROVISIONAL
     /** Lo que tarda el primer verso desde que pisa el cesped. Mas que `warnMs`: siempre avisa. PROVISIONAL. */
     firstVerseMs: 2500,
@@ -260,8 +277,11 @@ export const ELK_CLONER = {
   poemEvery: 2,
   /** Aviso del poema entero: largo, para que de tiempo a sembrar o infundir un escudo. No va mas lento aunque este frenado. PROVISIONAL. */
   poemWarnMs: 5000,
-  /** Lo que quita el poema a cada cosa que cruza, sin la fuerza de todos (T-010). Alto (L-04). PROVISIONAL. */
-  poemDamage: 350,
+  /**
+   * Lo que quita el poema a cada cosa que cruza, sin la fuerza de todos (T-010). Alto (L-04). T-035: un 45 % mas que en
+   * T-026 (350); 558,25 con la fuerza. PROVISIONAL.
+   */
+  poemDamage: 507.5,
   /** L-04: a lo que tenia la vida entera, el poema lo deja como poco con esta parte de su vida: nunca lo mata. */
   spareFraction: 0.25,
 } as const;
@@ -296,48 +316,46 @@ export const CLONE = {
 } as const;
 
 /**
- * Niveles de los enemigos (T-009, P-04 y P-05, decididos el 20 nov 2026). Cada nivel suma `perLevel` a la vida y al dano
- * (mordisco o escupitajo) de nivel 1; la velocidad no cambia. Encima va la fuerza de `ENEMY_POWER` (T-010). Cada ronda
- * dice con que pesos sale cada nivel (`levels` en las rondas de `OUTBREAKS`); sin tabla, todos de nivel 1. Las copias del Creeper y su
- * escolta tienen nivel fijo. PROVISIONAL.
+ * Niveles de los enemigos (T-009; curva de T-035, Carmine, 22 nov 2026). Crecimiento compuesto: cada nivel multiplica la
+ * vida y el dano (mordisco, escupitajo o verso) del nivel anterior por 1 + `perLevel`, y cada nivel con premio
+ * (`LEVEL_MILESTONES`) por 1 + `perMilestone`; la velocidad y la cadencia no cambian. Encima va la fuerza de todos
+ * (`ENEMY_POWER`). Nivel 5, x2,11 sobre la base del tipo (con la fuerza, x2,33); nivel 9, x4,17 (x4,58); nivel 10, x5,29
+ * (x5,82). Cada ronda dice con que pesos sale cada nivel (`levels` en las rondas de `OUTBREAKS`); sin tabla, todos de
+ * nivel 1. Las copias del Creeper y las escoltas de los jefes tienen nivel fijo.
+ * T-035: en los brotes 1 y 2 ninguna tropa al azar pasa del nivel 9; solo los aliados de los jefes llevan el 10. Para
+ * los brotes siguientes, el nivel de los enemigos se pregunta a Carmine. PROVISIONAL.
  */
 export const ENEMY_LEVELS = {
-  /** Un 5 % mas que lo que suma al dano cada nivel de una disparadora (`LEVELING.damagePerLevel`). */
-  perLevel: 0.15,
+  /** Lo que crece la vida y el dano en cada nivel, sobre los del anterior (compuesto). */
+  perLevel: 0.185,
+  /** Lo mismo en cada nivel con premio (`LEVEL_MILESTONES`: 5, 10, 15...), en vez de `perLevel`. */
+  perMilestone: 0.27,
   /** Pesos de cada nivel (no hace falta que sumen 100). */
   tables: {
-    /** Rondas 3 y 4: del 1 al 4, mas probable cuanto mas bajo. */
+    /** Del 1 al 4, mas probable cuanto mas bajo. */
     early: { 1: 40, 2: 30, 3: 20, 4: 10 },
-    /** Rondas 5 a 7: del 1 al 7, con el pico en el 4; menos el 1 y aun menos el 7. */
+    /** Del 1 al 7, con el pico en el 4; menos el 1 y aun menos el 7. */
     mid: { 1: 8, 2: 14, 3: 20, 4: 24, 5: 16, 6: 12, 7: 6 },
-    /** Rondas 8 a 10: del 3 al 10, con el pico en el 7; menos el 3 y aun menos el 10. */
-    late: { 3: 6, 4: 10, 5: 15, 6: 20, 7: 22, 8: 14, 9: 9, 10: 4 },
+    /** Del 3 al 9, con el pico en el 7 (T-035: sin el 10, que era el 4 %; su parte, al 8 y al 9). */
+    late: { 3: 6, 4: 10, 5: 15, 6: 20, 7: 22, 8: 15, 9: 12 },
     /**
-     * Brote 2 desde la ronda 5 (T-026): del 5 al 12, con el pico en el 8; el jugador ya puede subir sus disparadoras hasta
-     * el 10 (L-08). Es lo que hace que el final del brote 2 sea mas duro que el del brote 1.
+     * Brote 2 desde la ronda 6 (T-026): del 5 al 9, con el pico en el 7 y el 8 (T-035: antes llegaba al 12). Es lo que
+     * hace que el final del brote 2 sea mas duro que el del brote 1.
      */
-    high: { 5: 8, 6: 13, 7: 18, 8: 20, 9: 16, 10: 13, 11: 8, 12: 4 },
+    high: { 5: 12, 6: 18, 7: 25, 8: 25, 9: 20 },
   },
 } as const;
 
 /**
- * Fuerza de los enemigos (T-010, A-07, decidida el 20 nov 2026). Multiplica su vida y su dano (mordisco, escupitajo y el
- * golpe del Creeper al aterrizar), encima de lo que suma su nivel (`ENEMY_LEVELS.perLevel`). Vale para todos los
- * enemigos, tambien Creeper (que no tiene nivel: solo `base`) y los que vengan. La velocidad no cambia. PROVISIONAL.
- * Un gusano de nivel 10 tiene 2,35 (nivel) x 1,40 (tramo) x 1,10 (fuerza) = 3,62 veces la vida y el dano de su base.
- * Ajustada a la baja el mismo dia (de 15, 25 y 40 % a 10, 20 y 40 %).
+ * Fuerza de los enemigos (T-010, A-07, decidida el 20 nov 2026). Multiplica su vida y su dano (mordisco, escupitajo, verso,
+ * el golpe del Creeper al aterrizar y el poema de Elk Cloner), encima de lo que da su nivel (`ENEMY_LEVELS`). Vale para
+ * todos los enemigos, tambien los jefes (que no tienen nivel: solo `base`) y los que vengan. La velocidad no cambia.
+ * El extra por tramo de nivel de T-010 (+20 % desde el 5 y +40 % desde el 10) lo sustituye desde T-035 el premio de cada
+ * 5 niveles (`ENEMY_LEVELS.perMilestone`). PROVISIONAL.
  */
 export const ENEMY_POWER = {
   /** Todos los enemigos: un 10 % mas. */
   base: 1.1,
-  /**
-   * Extra por tramo de nivel, encima de lo que ya da el nivel: del 5 al 9, +20 %; desde el 10, +40 % (en vez del 20:
-   * solo cuenta el tramo mas alto alcanzado). Son los niveles en los que la medallita cambia de color (plata y oro).
-   */
-  levelTiers: [
-    { from: 5, bonus: 0.2 },
-    { from: 10, bonus: 0.4 },
-  ],
 } as const;
 
 /**
@@ -627,7 +645,7 @@ const ALL = [0, 1, 2, 3, 4] as const;
 /**
  * Las rondas del brote 2, el de Elk Cloner (T-026; L-01, L-07 y L-08 cerradas el 22 nov 2026 con la recomendacion): 8
  * rondas, porque el jugador ya sabe jugar y solo hay dos cosas nuevas. Empiezan con lo aprendido en el brote 1 (B-01) y
- * con el tope de nivel a 10 desde la ronda 1 (L-08). Un concepto por ronda (L-07): en la 1, los Copycat y el tope 10; en
+ * con el tope de nivel en 5, como el brote 1 (T-035; hasta entonces subia a 10, L-08). Un concepto por ronda (L-07): en la 1, los Copycat; en
  * la 2, el escudo; en la 3, el Minstrel; de la 4 a la 7, mezcla y mas dificultad (los niveles suben de `mid` a `high`), y
  * en la 6 y la 7 Elk Cloner se prepara a la derecha y acelera a sus tropas, como Creeper. La 8 es el combate: primero su
  * escolta de acorazados de nivel 10 por los cinco carriles y dos Minstrel (L-06, para que las minas sigan sirviendo), y
@@ -638,8 +656,7 @@ const ALL = [0, 1, 2, 3, 4] as const;
 const ELK_CLONER_ROUNDS: readonly RoundScript[] = [
   {
     unlocks: [],
-    // L-08: el tope sube a 10 desde la primera ronda: el aviso lo cuenta Boxer.
-    levelCap: 10,
+    // T-035: el tope de nivel sigue en el 5 del brote 1 (antes subia a 10 aqui, L-08). Sube a 10 en el brote 5, con Patty.
     // El tablero empieza vacio (B-02): de uno en uno al principio, como en el brote 1, pero ya con nivel y con copias.
     levels: ENEMY_LEVELS.tables.early,
     groups: [
@@ -862,22 +879,29 @@ export const FUSION = {
 
 /**
  * Subir de nivel una disparadora (T-003). Los niveles duran la partida (D-03, cerrada el 19 nov 2026).
- * Cada nivel suma sobre los valores de nivel 1: el dano del disparo entero (tambien la quemadura) y la cadencia.
- * Lo que frena una de hielo no cambia con el nivel (depende de sus canones, ver `ICE`).
+ * Dano (tambien la quemadura) y vida crecen en compuesto (T-035, Carmine, 22 nov 2026): cada nivel multiplica el dano del
+ * anterior por 1 + `damagePerLevel`, y cada nivel con premio (`LEVEL_MILESTONES`: 5, 10, 15...) por 1 + `damagePerMilestone`
+ * y la vida por 1 + `hpPerMilestone`. Nivel 5: x1,71 de dano y 375 de vida; nivel 10: x3,28 y 469. La cadencia suma sobre la
+ * de nivel 1, como antes. Lo que frena una de hielo no cambia con el nivel (depende de sus canones, ver `ICE`).
  * Costo (D-05, cerrada el 19 nov 2026): creciente. De nivel 1 a 2 cuesta `baseCost` y cada nivel siguiente
  * `costStep` mas (75, 100, 125...), por canon, como infundir: una de 3 canones paga el triple.
  */
 export const LEVELING = {
-  /** Dano que suma cada nivel sobre el de nivel 1. PROVISIONAL. */
-  damagePerLevel: 0.1,
+  /** Lo que crece el dano en cada nivel, sobre el del anterior (compuesto). PROVISIONAL. */
+  damagePerLevel: 0.125,
+  /** Lo mismo en cada nivel con premio, en vez de `damagePerLevel`. PROVISIONAL. */
+  damagePerMilestone: 0.2,
+  /** Lo que crece la vida en cada nivel con premio, sobre la que tenia (compuesto); en los demas no cambia. PROVISIONAL. */
+  hpPerMilestone: 0.25,
   /** Cadencia que suma cada nivel sobre la de nivel 1. PROVISIONAL. */
   fireRatePerLevel: 0.03,
   /**
-   * Premio de algunos niveles (21 nov 2026): llegar a ellos suma mas dano y cadencia que un nivel normal, y lo ganado
-   * se queda. En el 5 y el 15, un 50 % mas que un nivel normal (x1,5); en el 10 y el 20, el doble (x2). Son los niveles
-   * en los que la medallita cambia de color. PROVISIONAL.
+   * Premio de cadencia (21 nov 2026): un nivel con premio suma `fireRateMilestone` veces lo de un nivel normal, y uno que
+   * es dos premios a la vez (el 10, el 20...: multiplo de dos veces `LEVEL_MILESTONES.every`), `fireRateDoubleMilestone`
+   * veces. Lo ganado se queda. Son los niveles en los que la medallita cambia de color. PROVISIONAL.
    */
-  milestones: { 5: 1.5, 10: 2, 15: 1.5, 20: 2 } as Readonly<Record<number, number>>,
+  fireRateMilestone: 1.5,
+  fireRateDoubleMilestone: 2,
   /** Subir de nivel 1 a 2 una disparadora de un canon. PROVISIONAL. */
   baseCost: 75,
   /** Cuanto mas cuesta cada nivel que el anterior, por canon. PROVISIONAL. */
@@ -955,13 +979,12 @@ export const POWERS = {
 
 /**
  * Niveles de los poderes (T-022, T-01 decidida por Carmine el 22 nov 2026): cada poder comprado empieza en el nivel 1 y
- * se mejora en la tienda hasta `max`. Cada nivel suma lo suyo (`RELOCATE`, `GRENADE`, `ICE_WALL`) y los `milestones`
- * suman mas y dan un salto: una carga mas de recolocar, mas alcance de la granada y una casilla mas de muro.
+ * se mejora en la tienda hasta `max`. Cada nivel suma lo suyo (`RELOCATE`, `GRENADE`, `ICE_WALL`) y los niveles con premio
+ * (`LEVEL_MILESTONES`, como los de las plantas: el 5 y el 10) suman mas y dan un salto: una carga mas de recolocar, mas
+ * alcance de la granada y una casilla mas de muro.
  */
 export const POWER_LEVELS = {
   max: 10,
-  /** Niveles con premio, como los de las plantas (T-027). */
-  milestones: [5, 10],
 } as const;
 
 /**

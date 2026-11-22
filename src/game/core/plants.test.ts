@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { COSTS, ENEMIES, LEVELING, LIMITS, SHOOTER } from '../config/balance';
+import { COSTS, ENEMIES, LEVELING, LIMITS, SHIELD, SHOOTER } from '../config/balance';
 import {
   canFuse,
   canInfuse,
@@ -137,53 +137,51 @@ describe('subir de nivel', () => {
     }
   });
 
-  it('cada nivel suma dano y cadencia sobre el nivel 1', () => {
-    expect(levelBonus(1)).toEqual({ damage: 0, fireRate: 0 });
-    expect(levelBonus(3).damage).toBeCloseTo(2 * LEVELING.damagePerLevel);
+  it('cada nivel multiplica el dano del anterior (T-035, compuesto) y suma cadencia sobre el nivel 1', () => {
+    expect(levelBonus(1)).toEqual({ damage: 0, fireRate: 0, hp: 0 });
+    expect(levelBonus(3).damage).toBeCloseTo((1 + LEVELING.damagePerLevel) ** 2 - 1);
     expect(levelBonus(3).fireRate).toBeCloseTo(2 * LEVELING.fireRatePerLevel);
     expect(damageMultiplier(shooter({ level: 2 }))).toBeCloseTo(1 + LEVELING.damagePerLevel);
     expect(fireRateMultiplier(shooter({ level: 2 }))).toBeCloseTo(1 + LEVELING.fireRatePerLevel);
   });
 
   it('en una fusionada el nivel multiplica el disparo entero', () => {
-    expect(damageMultiplier(shooter({ cannons: 3, level: 4 }))).toBeCloseTo(damageMultiplier(shooter({ cannons: 3 })) * (1 + 3 * LEVELING.damagePerLevel));
+    expect(damageMultiplier(shooter({ cannons: 3, level: 4 }))).toBeCloseTo(damageMultiplier(shooter({ cannons: 3 })) * (1 + LEVELING.damagePerLevel) ** 3);
     expect(damageMultiplier(shooter({ cannons: 3, level: 5 }))).toBeCloseTo(damageMultiplier(shooter({ cannons: 3 })) * (1 + levelBonus(5).damage));
   });
 
-  describe('premio en los niveles 5, 10, 15 y 20', () => {
-    it('son los niveles con premio', () => {
-      expect([5, 10, 15, 20].every(isMilestoneLevel)).toBe(true);
-      expect([1, 2, 4, 6, 9, 11, 14, 16, 19].some(isMilestoneLevel)).toBe(false);
+  describe('premio cada 5 niveles (T-035): el 5, el 10, el 15 y el 20', () => {
+    it('son los niveles con premio, sin lista escrita a mano', () => {
+      expect([5, 10, 15, 20, 25].every(isMilestoneLevel)).toBe(true);
+      expect([0, 1, 2, 4, 6, 9, 11, 14, 16, 19].some(isMilestoneLevel)).toBe(false);
     });
 
-    it('llegar al 5 y al 15 suma un 50 % mas que un nivel normal, y al 10 y al 20 el doble', () => {
+    it('en un nivel con premio el dano crece un 20 % y la vida un 25 %; la cadencia, x1,5 (x2 en el 10 y el 20)', () => {
       const normal = levelStepBonus(4);
-      expect(normal.damage).toBeCloseTo(LEVELING.damagePerLevel);
-      expect(normal.fireRate).toBeCloseTo(LEVELING.fireRatePerLevel);
-      for (const level of [5, 15]) {
-        expect(levelStepBonus(level).damage).toBeCloseTo(1.5 * normal.damage);
-        expect(levelStepBonus(level).fireRate).toBeCloseTo(1.5 * normal.fireRate);
+      expect(normal).toEqual({ damage: LEVELING.damagePerLevel, fireRate: LEVELING.fireRatePerLevel, hp: 0 });
+      for (const level of [5, 10, 15, 20]) {
+        expect(levelStepBonus(level).damage).toBeCloseTo(LEVELING.damagePerMilestone);
+        expect(levelStepBonus(level).hp).toBeCloseTo(LEVELING.hpPerMilestone);
       }
-      for (const level of [10, 20]) {
-        expect(levelStepBonus(level).damage).toBeCloseTo(2 * normal.damage);
-        expect(levelStepBonus(level).fireRate).toBeCloseTo(2 * normal.fireRate);
-      }
-      expect(levelStepBonus(1)).toEqual({ damage: 0, fireRate: 0 });
+      for (const level of [5, 15]) expect(levelStepBonus(level).fireRate).toBeCloseTo(1.5 * normal.fireRate);
+      for (const level of [10, 20]) expect(levelStepBonus(level).fireRate).toBeCloseTo(2 * normal.fireRate);
+      expect(levelStepBonus(1)).toEqual({ damage: 0, fireRate: 0, hp: 0 });
     });
 
-    it('el premio se queda: el bonus de un nivel es la suma de lo que dio cada subida', () => {
-      // 10 % por nivel normal: nivel 5 = 3 normales + 1,5 = +45 %; nivel 10 = 7 normales + 1,5 + 2 = +105 %;
-      // nivel 20 = 15 normales + 1,5 + 2 + 1,5 + 2 = +220 %.
-      expect(levelBonus(4).damage).toBeCloseTo(0.3);
-      expect(levelBonus(5).damage).toBeCloseTo(0.45);
-      expect(levelBonus(6).damage).toBeCloseTo(0.55);
-      expect(levelBonus(10).damage).toBeCloseTo(1.05);
-      expect(levelBonus(15).damage).toBeCloseTo(1.6);
-      expect(levelBonus(20).damage).toBeCloseTo(2.2);
+    it('el premio se queda: cada nivel parte de lo que dio el anterior', () => {
+      // 12,5 % por nivel normal y 20 % en los de premio, compuesto: nivel 5 = 1,125^3 x 1,2 = x1,71; nivel 10 = x3,28.
+      expect(levelBonus(4).damage).toBeCloseTo(1.125 ** 3 - 1);
+      expect(levelBonus(5).damage).toBeCloseTo(1.125 ** 3 * 1.2 - 1);
+      expect(levelBonus(10).damage).toBeCloseTo(1.125 ** 7 * 1.2 ** 2 - 1);
+      expect(levelBonus(20).damage).toBeCloseTo(1.125 ** 15 * 1.2 ** 4 - 1);
       expect(levelBonus(5).fireRate).toBeCloseTo(0.135);
       expect(levelBonus(20).fireRate).toBeCloseTo(0.66);
+      expect([1, 4, 5, 9, 10, 15, 20].map((level) => levelBonus(level).hp)).toEqual([0, 0, 0.25, 0.25, 0.5625, 1.25 ** 3 - 1, 1.25 ** 4 - 1]);
       for (let level = 2; level <= LIMITS.maxLevel; level++) {
-        expect(levelBonus(level).damage - levelBonus(level - 1).damage).toBeCloseTo(levelStepBonus(level).damage);
+        const step = levelStepBonus(level);
+        expect(1 + levelBonus(level).damage).toBeCloseTo((1 + levelBonus(level - 1).damage) * (1 + step.damage));
+        expect(1 + levelBonus(level).hp).toBeCloseTo((1 + levelBonus(level - 1).hp) * (1 + step.hp));
+        expect(levelBonus(level).fireRate - levelBonus(level - 1).fireRate).toBeCloseTo(step.fireRate);
       }
     });
 
@@ -199,7 +197,11 @@ describe('subir de nivel', () => {
     expect(fireRateMultiplier(shooter({ level: 3 }))).toBeGreaterThan(1.05);
   });
 
-  it('subir de nivel no cambia la vida maxima', () => {
-    expect(plantMaxHp(shooter({ level: 12 }))).toBe(plantMaxHp(shooter()));
+  it('la vida maxima solo crece en los niveles con premio: un 25 % cada vez (T-035)', () => {
+    expect(plantMaxHp(shooter({ level: 4 }))).toBe(plantMaxHp(shooter()));
+    expect(plantMaxHp(shooter({ level: 5 }))).toBeCloseTo(SHOOTER.hp * 1.25);
+    expect(plantMaxHp(shooter({ level: 9 }))).toBeCloseTo(SHOOTER.hp * 1.25);
+    expect(plantMaxHp(shooter({ level: 10 }))).toBeCloseTo(SHOOTER.hp * 1.25 ** 2);
+    expect(plantMaxHp(shooter({ cannons: 2, element: 'shield', level: 5 }))).toBeCloseTo(SHOOTER.hp * 2 * SHIELD.hpMultiplier * 1.25);
   });
 });
