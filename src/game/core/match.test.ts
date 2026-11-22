@@ -419,6 +419,15 @@ describe('subir de nivel', () => {
     });
   });
 
+  it('al llegar a un nivel con premio crece su vida maxima y conserva la proporcion de vida (T-035)', () => {
+    const before = withPlants(unlocked(5000), [at, { shooter: shooter({ cannons: 2, level: 4 }), hp: 300, reloadMs: 0 }]);
+    const after = plantAt(levelUpPlant(before, at), at);
+    expect(after?.shooter.level).toBe(5);
+    // A media vida (300 de 600) sigue a media vida de la nueva (750).
+    expect(plantMaxHp(after!.shooter)).toBeCloseTo(2 * SHOOTER.hp * (1 + LEVELING.hpPerMilestone));
+    expect(after?.hp).toBeCloseTo(375);
+  });
+
   it('no modifica el estado anterior', () => {
     const before = withPlants(unlocked(500), [at, {}]);
     levelUpPlant(before, at);

@@ -518,8 +518,9 @@ export function levelUpOffer(state: MatchState, cell: Cell): LevelUpOffer | null
 }
 
 /**
- * Sube un nivel la disparadora de la casilla y cobra su costo. Conserva su vida y su recarga: el nivel nuevo
- * cuenta desde el siguiente disparo. No modifica el estado recibido.
+ * Sube un nivel la disparadora de la casilla y cobra su costo. Conserva su recarga: el nivel nuevo cuenta desde el
+ * siguiente disparo. Si su vida maxima crece (un nivel con premio, T-035), conserva la proporcion de vida que tenia,
+ * como al infundir. No modifica el estado recibido.
  */
 export function levelUpPlant(state: MatchState, cell: Cell): MatchState {
   const offer = levelUpOffer(state, cell);
@@ -527,7 +528,8 @@ export function levelUpPlant(state: MatchState, cell: Cell): MatchState {
     throw new Error(`No se puede subir de nivel: ${offer ? offer.blocker : 'no-plant'}`);
   }
   const plant = plantAt(state, cell) as Plant;
-  const leveled: Plant = { ...plant, shooter: levelUp(plant.shooter) };
+  const shooter = levelUp(plant.shooter);
+  const leveled: Plant = { ...plant, shooter, hp: (plant.hp * plantMaxHp(shooter)) / plantMaxHp(plant.shooter) };
   const plants = state.plants.map((lane, laneIndex) =>
     laneIndex === cell.lane ? lane.map((sown, col) => (col === cell.col ? leveled : sown)) : lane,
   );

@@ -60,10 +60,6 @@ export function Credits({ titleId, firstButton, onBack }: CreditsProps) {
           <dd>{c.artValue}</dd>
         </div>
         <div className="credits-row" style={{ animationDelay: '0.33s' }}>
-          <dt>{c.enemies}</dt>
-          <dd>{c.enemiesValue}</dd>
-        </div>
-        <div className="credits-row" style={{ animationDelay: '0.4s' }}>
           <dt>{c.music}</dt>
           <dd>
             <ul className="credits-music">
@@ -87,7 +83,7 @@ export function Credits({ titleId, firstButton, onBack }: CreditsProps) {
             </ul>
           </dd>
         </div>
-        <div className="credits-row" style={{ animationDelay: '0.47s' }}>
+        <div className="credits-row" style={{ animationDelay: '0.4s' }}>
           <dt>{c.tech}</dt>
           <dd>{TECH}</dd>
         </div>

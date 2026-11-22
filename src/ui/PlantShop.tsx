@@ -6,7 +6,7 @@ import { baseLevelBlocker, nextBaseStep } from '../game/core/baseLevel';
 import { isMilestoneLevel, levelBonus, levelStepBonus } from '../game/core/plants';
 import type { NurseryArt } from '../game/EventBus';
 import type { Progress } from '../game/progress';
-import { formatAmount, formatPercent } from '../i18n';
+import { formatAmount, formatHpBonus, formatPercent } from '../i18n';
 import { SeedIcon } from './SeedIcon';
 import { SeedBalance } from './SeedsEarned';
 import { LevelLeaves } from './Shop';
@@ -93,11 +93,11 @@ export function PlantShop({ progress, art, onBuy, onClose }: PlantShopProps) {
             <p className="shop-about">{t.plantShop.about}</p>
             <p className="shop-stats">
               {t.plantShop.now(level)}
-              {level > 1 && <span className="plant-shop-bonus"> · {t.level.bonus(formatPercent(now.damage), formatPercent(now.fireRate))}</span>}
+              {level > 1 && <span className="plant-shop-bonus"> · {t.level.bonus(formatPercent(now.damage), formatPercent(now.fireRate), formatHpBonus(now.hp))}</span>}
             </p>
             {next && step && (
               <p className="shop-next">
-                <strong>{t.shop.next(next.level)}</strong> {t.level.bonus(formatPercent(step.damage), formatPercent(step.fireRate))}
+                <strong>{t.shop.next(next.level)}</strong> {t.level.bonus(formatPercent(step.damage), formatPercent(step.fireRate), formatHpBonus(step.hp))}
                 {isMilestoneLevel(next.level) && <span className="shop-bonus"> {t.plantShop.milestone}</span>}
               </p>
             )}

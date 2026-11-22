@@ -68,8 +68,10 @@ describe('comprar el nivel base', () => {
   });
 
   it('cada paso da lo mismo que un nivel de partida, con el premio del 5 (N-02, N-05)', () => {
-    expect(levelBonus(3).damage).toBeCloseTo(2 * LEVELING.damagePerLevel);
-    expect(levelBonus(5).damage).toBeCloseTo(0.45);
+    // T-035: compuesto, un 12,5 % por nivel y un 20 % (y un 25 % de vida) en el 5.
+    expect(levelBonus(3).damage).toBeCloseTo((1 + LEVELING.damagePerLevel) ** 2 - 1);
+    expect(levelBonus(5).damage).toBeCloseTo(1.125 ** 3 * 1.2 - 1);
+    expect(levelBonus(5).hp).toBeCloseTo(0.25);
   });
 
   it('lo guardado que no es un nivel base cuenta como el 1', () => {
@@ -120,11 +122,12 @@ describe('el nivel base en la partida', () => {
   });
 
   it('con un tope mayor sube con normalidad desde su nivel, y cuesta lo de su nivel (N-06 a)', () => {
-    const sown = playCard(lastRound('elkCloner', 5), 'shooter', at);
+    // T-035: el tope sigue en 5 en el brote 2; un nivel base 3 sube con normalidad hasta el.
+    const sown = playCard(lastRound('elkCloner', 3), 'shooter', at);
     const offer = levelUpOffer(sown, at);
-    expect(offer).toMatchObject({ level: 5, cap: 10, blocker: null, cost: LEVELING.baseCost + 4 * LEVELING.costStep });
+    expect(offer).toMatchObject({ level: 3, cap: 5, blocker: null, cost: LEVELING.baseCost + 2 * LEVELING.costStep });
     expect(offer?.cost).toBe(levelUpCost(plantAt(sown, at)!.shooter));
-    expect(plantAt(levelUpPlant(sown, at), at)?.shooter.level).toBe(6);
+    expect(plantAt(levelUpPlant(sown, at), at)?.shooter.level).toBe(4);
   });
 
   it('fusionar no pierde ni duplica la mejora: queda el nivel mas bajo, que nunca baja del base', () => {

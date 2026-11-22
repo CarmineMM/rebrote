@@ -85,6 +85,11 @@ export function formatPercent(fraction: number, language: Language = current): s
   return text(language).decimalComma ? `${value} %` : `${value}%`;
 }
 
+/** Lo que da de vida un nivel (T-035) como porcentaje, o nada si no da: la vida solo crece en los niveles con premio. */
+export function formatHpBonus(fraction: number, language: Language = current): string | undefined {
+  return fraction > 1e-9 ? formatPercent(fraction, language) : undefined;
+}
+
 /** Milisegundos como segundos con hasta dos decimales: "1,24 s" o "1.24 s". */
 export function formatSeconds(ms: number, language: Language = current): string {
   return `${formatNumber(ms / 1000, 2, language)} s`;

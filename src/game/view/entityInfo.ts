@@ -6,7 +6,6 @@ import {
   enemyDamage,
   enemyMaxHp,
   enemyReward,
-  enemyTierBonus,
   fireIntervalMs,
   isBoss,
   isEnraged,
@@ -244,7 +243,6 @@ export function enemyInfo(enemy: Enemy): EntityInfoData {
   if (enemy.slow) tags.push({ text: t.tags.slowed(formatPercent(enemy.slow.amount)), tone: 'ice' });
   if (enemy.haste > 1) tags.push({ text: t.tags.hasted(formatPercent(enemy.haste - 1)), tone: 'haste' });
 
-  const tier = enemyTierBonus(enemy.level);
   const subtitle = t.enemy.subtitle;
   return {
     id: `enemigo:${enemy.id}`,
@@ -256,7 +254,7 @@ export function enemyInfo(enemy: Enemy): EntityInfoData {
       : {
           value: enemy.level,
           medalTier: showsMedal(enemy.level) ? medalTier(enemy.level) : null,
-          note: tier > 0 ? t.enemy.tier(formatPercent(tier)) : null,
+          note: null,
         },
     hp: hpOf(enemy.hp, enemyMaxHp(enemy.kind, enemy.level, enemy.clone)),
     stats: rows,

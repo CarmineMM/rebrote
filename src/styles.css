@@ -333,8 +333,7 @@ body {
 }
 @keyframes spark-spin { to { transform: rotate(360deg); } }
 
-/* ---------- Jefe (T-008): "Combate final", semillita del jefe y barra de vida de Creeper ---------- */
-.round-title.is-boss .round-number { font-size: 1.15rem; color: #ffd6df; letter-spacing: 0.02em; }
+/* ---------- Jefe (T-008): semillita del jefe y barra de vida de Creeper ---------- */
 /* La ronda del jefe: una pantallita de monitor en vez de semilla. */
 .round-seed.is-boss { width: 13px; border-radius: 3px; background: linear-gradient(180deg, #1c3a28, #071a10); border-color: #8a7550; box-shadow: inset 0 0 0 1.5px #efe0bc; }
 .round-seed.is-boss.is-current { background: radial-gradient(circle at 50% 45%, #b8ffd4, #39ff88 45%, #0b4a26); border-color: #5a4528; }

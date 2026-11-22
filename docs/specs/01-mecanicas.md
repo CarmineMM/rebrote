@@ -37,6 +37,10 @@ El escudo no se gasta al sembrarlo solo: es la defensa pura. Ver "Escudo (T-024)
 
 ## Reglas confirmadas
 
+### Regla de los niveles: premio cada 5 (T-035)
+Decidida por Carmine el 22 nov 2026. Todo lo que tiene nivel (disparadoras, enemigos, poderes y el nivel base) da premio cada 5 niveles: el 5, el 10, el 15, el 20 y los que vengan si algún día el tope pasa del 20. Lo que da cada premio es de cada cosa (abajo, en la suya). Nunca se escribe la lista de niveles a mano: la regla está en `LEVEL_MILESTONES` de `balance.ts` y en `src/game/core/levels.ts` (`isMilestone`, `milestonesReached`, `compoundGrowth`).
+- **Crecimiento compuesto:** el daño y la vida de plantas y enemigos crecen sobre lo que tenían en el nivel anterior, no sobre el nivel 1.
+
 ### Moneda
 - Hay una sola moneda. Sembrar, infundir y subir de nivel compiten por ella.
 - Se gana por enemigo eliminado y por goteo pasivo. No hay planta generadora en el brote 1 (D-01, cerrada el 19 nov 2026).
@@ -97,36 +101,37 @@ Decisiones F-01 a F-06 cerradas el 22 nov 2026 con la recomendación. Los valore
   - Si cae el jefe, caen todos y no sale ninguna copia.
 - **Minstrel (F-02 a F-06):** la tropa nueva. Se para a 3,5 casillas de lo primero sembrado que tiene delante en su carril (nunca antes de pisar el césped, así que las disparadoras de su carril siempre le pueden dar) y recita.
   - **Aviso (F-04):** antes de cada verso se hincha tomando aire durante 0,9 s. El primero llega 1,8 s después de pararse y luego uno cada 3,6 s.
-  - **El verso (F-02)** es una onda que nace en él y recorre el carril hacia la izquierda por encima de las plantas, a 2,5 casillas por segundo. Quita 15 (con su nivel y la fuerza de todos) a cada cosa sembrada que cruza, de delante atrás, una vez a cada una: disparadoras, minas (F-06; una mina destruida así no explota) y muros. Una planta que muere o se fusiona a su paso no la para.
+  - **El verso (F-02)** es una onda que nace en él y recorre el carril hacia la izquierda por encima de las plantas, a 2,5 casillas por segundo. Quita 21 (con su nivel y la fuerza de todos; 15 hasta T-035) a cada cosa sembrada que cruza, de delante atrás, una vez a cada una: disparadoras, minas (F-06; una mina destruida así no explota) y muros. Una planta que muere o se fusiona a su paso no la para.
   - **El escudo la para (F-05):** el primer muro o disparadora con escudo que encuentra recibe el daño y la onda se acaba ahí; lo de detrás no sufre nada (`waveReach`, T-024).
   - Sin nada sembrado delante en su carril no ataca: avanza y, si cruza el borde, resta una vida. No muerde nunca.
   - Dos Minstrel en el mismo carril sueltan cada uno su onda: cada una hace su daño por separado. Ralentizado, tarda más entre versos y en tomar aire, en la misma proporción en que avanza más despacio.
 
-### Nivel de los enemigos (T-009)
-Decidido el 20 nov 2026 (P-04 y P-05).
-- Cada enemigo sale con un nivel. Cada nivel más suma un 15 % a su vida y a su daño (mordisco o escupitajo) de nivel 1: un 5 % más que lo que suma al daño cada nivel de una disparadora. La velocidad no cambia. Por el nivel, un nivel 10 tiene 2,35 veces la vida y el daño del nivel 1 (encima va la fuerza de T-010, abajo).
+### Nivel de los enemigos (T-009; curva de T-035)
+Decidido el 20 nov 2026 (P-04 y P-05); la curva y el nivel máximo, por Carmine el 22 nov 2026 (T-035).
+- Cada enemigo sale con un nivel. Su vida y su daño (mordisco, escupitajo o verso) crecen en compuesto: cada nivel, un 18,5 % sobre los del nivel anterior, y en cada nivel con premio (5, 10...), un 27 %. La velocidad y la cadencia no cambian. Encima va la fuerza de T-010 (abajo).
+- **Nivel máximo (T-035):** en los brotes 1 y 2 ninguna tropa al azar pasa del nivel 9. Solo los aliados de los jefes llevan el 10: las copias de Creeper y las escoltas. Para los brotes siguientes, el nivel de los enemigos se pregunta a Carmine antes de escribir sus tablas.
 - El nivel sale al azar con los pesos de su ronda:
-  - Rondas 1 y 2: siempre nivel 1.
-  - Rondas 3 y 4: del 1 al 4, más probable cuanto más bajo (40, 30, 20 y 10 %).
-  - Rondas 5 a 7: del 1 al 7, con el pico en el 4 (24 %); menos el 1 (8 %) y aún menos el 7 (6 %).
-  - Rondas 8 a 10: del 3 al 10, con el pico en el 7 (22 %); menos el 3 (6 %) y aún menos el 10 (4 %).
-  - Desde la ronda 6 del brote 2 (T-026): del 5 al 12, con el pico en el 8 (20 %); menos el 5 (8 %) y aún menos el 12 (4 %). El brote 2 usa las del 1 al 4 en su ronda 1, del 1 al 7 en la 2 y la 3, y del 3 al 10 en la 4 y la 5.
+  - Rondas 1 y 2 del brote 1: siempre nivel 1.
+  - `early`: del 1 al 4, más probable cuanto más bajo (40, 30, 20 y 10 %). Rondas 3 y 4 del brote 1 y ronda 1 del brote 2.
+  - `mid`: del 1 al 7, con el pico en el 4 (24 %); menos el 1 (8 %) y aún menos el 7 (6 %). Rondas 5 a 7 del brote 1, y 2 y 3 del brote 2.
+  - `late`: del 3 al 9 (6, 10, 15, 20, 22, 15 y 12 %), con el pico en el 7. Rondas 8 a 10 del brote 1, y 4 y 5 del brote 2. Hasta T-035 llegaba al 10 (4 %).
+  - `high`: del 5 al 9 (12, 18, 25, 25 y 20 %), con el pico en el 7 y el 8. Rondas 6 a 8 del brote 2. Hasta T-035 iba del 5 al 12.
 - No cuentan para estas tablas Creeper y Elk Cloner (no tienen nivel), las copias de Creeper (nivel 10) ni las escoltas (nivel 10 desde T-010; la de Elk Cloner, sus acorazados y sus dos primeros Minstrel).
 - Lo que da cada enemigo no cambia con el nivel.
 - Desde el nivel 2 llevan en la nuca la misma medallita que las disparadoras y son un poco más grandes.
-- **Aura (T-030, Z-01 a Z-04, 21 nov 2026):** desde el nivel 5, donde empieza su salto de fuerza, llevan un aura muy suave del color de su medallita que sube del suelo por detrás: plata del 5 al 9, oro del 10 al 14, rubí del 15 al 19 y cristal en el 20. También las copias de Creeper; los jefes (Creeper y Elk Cloner) no. Sale en el tablero, la portada y la foto de la ficha. En gráficos Bajo no se ve, y en Medio va sin motas.
+- **Aura (T-030, Z-01 a Z-04, 21 nov 2026):** desde el nivel 5, su primer premio, llevan un aura muy suave del color de su medallita que sube del suelo por detrás: plata del 5 al 9, oro del 10 al 14, rubí del 15 al 19 y cristal en el 20. También las copias de Creeper; los jefes (Creeper y Elk Cloner) no. Sale en el tablero, la portada y la foto de la ficha. En gráficos Bajo no se ve, y en Medio va sin motas.
 - Los valores están como PROVISIONAL en `ENEMY_LEVELS` de `balance.ts`; cada ronda dice su tabla en `levels` de su guion en `OUTBREAKS`.
 
 ### Fuerza de los enemigos (T-010)
 Decidida el 20 nov 2026 (A-07) y bajada ese mismo día (de 15, 25 y 40 % a 10, 20 y 40 %). Vale para todos los enemigos, también Creeper, Elk Cloner y los que vengan en otros brotes.
-- **Todos:** un 10 % más de vida y de daño (mordisco, escupitajo y el golpe de Creeper al aterrizar). La velocidad no cambia.
-- **Por tramo de nivel**, encima de lo que ya suma el nivel: del 5 al 9, un 20 % más; desde el 10, un 40 % más (en vez del 20: no se acumulan). Son los niveles en los que la medallita cambia de color (plata y oro).
-- Se multiplica todo: vida o daño = base de su tipo × nivel × tramo × 1,10. Un nivel 5 tiene 1,6 × 1,20 × 1,10 = 2,11 veces la base; un nivel 10, 2,35 × 1,40 × 1,10 = 3,62. Ningún nivel es más débil que el anterior.
+- **Todos:** un 10 % más de vida y de daño (mordisco, escupitajo, verso, el golpe de Creeper al aterrizar y el poema de Elk Cloner). La velocidad no cambia.
+- **Por tramo de nivel (hasta T-035):** del 5 al 9 llevaban un 20 % más y desde el 10 un 40 %. Desde T-035 no hay tramo: lo sustituye el premio de cada 5 niveles de su curva.
+- Se multiplica todo: vida o daño = base de su tipo × nivel × 1,10. Un nivel 5 tiene 1,185³ × 1,27 × 1,10 = 2,33 veces la base; un nivel 9, 4,58; un nivel 10, 5,82. Ningún nivel es más débil que el anterior.
 
   | Nivel | 1 | 4 | 5 | 7 | 9 | 10 |
   |---|---|---|---|---|---|---|
-  | Vida de un gusano (antes de T-010) | 100 | 145 | 160 | 190 | 220 | 235 |
   | Vida de un gusano (T-010) | 110 | 160 | 211 | 251 | 290 | 362 |
+  | Vida de un gusano (T-035) | 110 | 183 | 232 | 326 | 458 | 582 |
 
 - Los valores están como PROVISIONAL en `ENEMY_POWER` de `balance.ts`.
 
@@ -151,7 +156,7 @@ Decisiones J-01 a J-05 cerradas el 20 nov 2026.
 
 ### Jefe: Elk Cloner (T-026)
 Decisiones L-01 a L-09 cerradas el 21 y el 22 nov 2026 (L-02, por Carmine; las demás, con la recomendación). Resumen y simulación en `05-brote-2-elk-cloner.md`.
-- **Avanza despacio (L-05):** a la mitad que Creeper, sin pararse, y muerde lo que toca (también un muro) como él. No tiene nivel: de la fuerza de T-010 solo le toca el 10 % de todos (9900 de vida y mordisco de 110).
+- **Avanza despacio (L-05):** 0,15 casillas por segundo (0,1 hasta T-035), algo menos que Creeper, sin pararse, y muerde lo que toca (también un muro) como él. No tiene nivel: de la fuerza de T-010 solo le toca el 10 % de todos (desde T-035, 10.890 de vida, mordisco de 143, verso de 75 y poema de 558).
 - **Versos (L-02):** mientras pisa el césped, cada poco toma aire (el aviso del Minstrel) y suelta un verso por su carril: la onda del Minstrel, más grande y más fuerte, que alcanza todo lo que no es escudo hasta el primer escudo, que lo recibe y la para. Ralentizado, tarda más entre versos.
 - **Poema entero (L-03):** tras unos pocos versos, en vez del siguiente anuncia el poema entero. Durante un aviso largo (5 s) se queda quieto (no avanza ni muerde) y en los cinco carriles se va encendiendo un pentagrama dorado, con la cuenta atrás sobre él; el aviso no va más lento aunque esté frenado. Luego suelta una onda por cada carril, todas desde él, con mucho más daño que un verso. Cada una la para el primer escudo de su carril, como un verso.
 - **No borra el tablero (L-04):** lo que tenía la vida entera, el poema lo deja como poco con el 25 % de su vida; lo ya dañado se lleva el golpe entero.
@@ -239,26 +244,27 @@ Decisiones O-01 a O-11 cerradas el 22 nov 2026 (O-04 a O-06 cambiadas por Carmin
 - No se puede deshacer una fusión ni mover una planta a una casilla vacía.
 
 ### Nivel (T-003)
-- **Tope por ronda (T-009, P-01; T-010, A-05):** 5 desde la ronda 2 hasta el final del brote 1 (hasta T-010 subía a 10 en la 7), y 10 desde la ronda 1 del brote 2 (T-026, L-08). En el tope, el panel dice "Máximo" y, si el tope fuera a subir en otra ronda, en cuál ("Tope 5: sube en la ronda 7"). El tope absoluto del juego es 20 (`LIMITS.maxLevel`), por encima del de cualquier ronda del brote 1. El brote siguiente empieza con el último tope del anterior hasta que una de sus rondas ponga otro (T-018, B-01).
+- **Tope por ronda (T-009, P-01; T-010, A-05; T-035):** 5 desde la ronda 2 del brote 1 (hasta T-010 subía a 10 en la 7) y en todo el brote 2 (hasta T-035 subía a 10 en su ronda 1, L-08). **Sube a 10 en el brote 5**, el primero tras la defensa del refugio: Patty le cuenta al jugador que sus plantas ya pueden llegar al 10 (decidido por Carmine el 22 nov 2026; se implementa con el brote 5). En el tope, el panel dice "Máximo" y, si el tope fuera a subir en otra ronda, en cuál ("Tope 5: sube en la ronda 7"). El tope absoluto del juego es 20 (`LIMITS.maxLevel`), por encima del de cualquier ronda del brote 1. El brote siguiente empieza con el último tope del anterior hasta que una de sus rondas ponga otro (T-018, B-01).
 - **Por partida (D-03, cerrada el 19 nov 2026 con la recomendación):** los niveles se pierden al acabar la partida. Lo que sí se guarda es la partida en curso, para seguirla otro día (T-011, ver "Menú de inicio y partida guardada"). De una partida a otra solo pasa el progreso permanente (T-017); de él, lo que toca al nivel es el nivel base con el que nacen las disparadoras (T-023).
 - Se sube seleccionando la disparadora con un clic (sin arrastrarla) y pulsando "Subir" en su panel. Se cobra en el acto.
-- **Cuánto mejora:** cada nivel suma un 10 % de daño y un 3 % de cadencia sobre los de nivel 1 (decidido el 19 nov 2026). El daño es el del disparo entero: en una fusionada se multiplica con el de los cañones, y la quemadura de una de fuego crece igual.
-- **Premio en los niveles 5, 10, 15 y 20 (T-027, decidido el 21 nov 2026):** llegar a ellos suma más que un nivel normal, y lo ganado se queda. Al 5 y al 15, un 50 % más que un nivel normal (+15 % de daño y +4,5 % de cadencia); al 10 y al 20, el doble (+20 % y +6 %). Son los niveles en los que la medallita cambia de color, y a sus pies le brota un jardincito que crece con cada premio.
+- **Cuánto mejora (T-035, decidido por Carmine el 22 nov 2026):** el daño crece en compuesto, un 12,5 % sobre el del nivel anterior en cada nivel. La cadencia suma un 3 % sobre la de nivel 1 en cada nivel (como desde el 19 nov 2026). La vida solo crece en los niveles con premio. El daño es el del disparo entero: en una fusionada se multiplica con el de los cañones, y la quemadura de una de fuego crece igual.
+- **Premio cada 5 niveles (T-027; T-035):** en el 5, el 10, el 15 y el 20 el daño crece un 20 % en vez del 12,5 %, y la vida un 25 % (compuesto: sobre la que tenía); la cadencia suma 1,5 veces lo de un nivel normal (+4,5 %), y el doble (+6 %) en los que son dos premios a la vez (el 10 y el 20). Lo ganado se queda. Son los niveles en los que la medallita cambia de color, y a sus pies le brota un jardincito que crece con cada premio.
 
   | Nivel | 2 | 4 | 5 | 6 | 9 | 10 | 15 | 20 |
   |---|---|---|---|---|---|---|---|---|
-  | Daño sobre el nivel 1 (antes) | +10 % | +30 % | +40 % | +50 % | +80 % | +90 % | +140 % | +190 % |
-  | Daño sobre el nivel 1 (con premio) | +10 % | +30 % | +45 % | +55 % | +85 % | +105 % | +160 % | +220 % |
-  | Cadencia sobre el nivel 1 (con premio) | +3 % | +9 % | +13,5 % | +16,5 % | +25,5 % | +31,5 % | +48 % | +66 % |
+  | Daño sobre el nivel 1 (T-027) | +10 % | +30 % | +45 % | +55 % | +85 % | +105 % | +160 % | +220 % |
+  | Daño sobre el nivel 1 (T-035) | +12,5 % | +42,4 % | +70,9 % | +92,2 % | +173,7 % | +228,4 % | +531,3 % | +1113,4 % |
+  | Vida (T-035, un cañón) | 300 | 300 | 375 | 375 | 375 | 469 | 586 | 732 |
+  | Cadencia sobre el nivel 1 | +3 % | +9 % | +13,5 % | +16,5 % | +25,5 % | +31,5 % | +48 % | +66 % |
 
   El panel de nivel avisa en dorado cuando el siguiente nivel da premio ("¡Premio en el nivel 5!") y subir a él suena distinto. En el brote 1 el tope es 5, así que solo se llega al primer premio.
   - Lo que frena una de hielo no cambia con el nivel: depende de sus cañones.
-  - Subir no cura ni recarga: la planta conserva su vida y su recarga.
+  - Subir no recarga. Tampoco cura, pero al llegar a un nivel con premio su vida máxima crece y la planta conserva la proporción de vida que tenía (a media vida sigue a media vida), como al infundir un escudo.
 - **Cuánto cuesta (D-05, cerrada el 19 nov 2026):** creciente. De nivel 1 a 2 cuesta 75 y cada nivel siguiente 25 más (75, 100, 125… hasta 525 de 19 a 20). Se paga por cañón, como al infundir: una de 3 cañones paga el triple, y el panel lo muestra como "×3 = 225".
 - No se puede subir sin saldo suficiente ni pasar del tope de la ronda; en el tope el botón dice "Máximo".
 - **Medallita:** sin cambio visual grande en la planta, solo una medallita con el número en la nuca. Cambia de color cada 5 niveles: bronce, plata (desde el 5), oro (10), rubí (15) y cristal irisado en el 20. Las de nivel 1 no llevan. Se ve también en las fusionadas y no tapa los puntos del tallo. Con nivel base comprado (T-023), lleva prendido el brote del Invernadero.
 - Al fusionar, la planta se queda con el nivel más bajo de las dos (ver "Fusionar").
-- Los valores están como PROVISIONAL en `LEVELING` de `balance.ts` (el premio, en `LEVELING.milestones`).
+- Los valores están como PROVISIONAL en `LEVELING` de `balance.ts`; qué niveles dan premio, en `LEVEL_MILESTONES`.
 
 ### Ficha de información (T-010)
 - Doble clic (o doble toque) sobre una disparadora, una mina o un enemigo, sin carta elegida: el juego queda en pausa y sale su ficha. Se cierra con su botón, con Esc o haciendo clic fuera, y el juego sigue.
@@ -350,9 +356,9 @@ Decisiones T-01 a T-04 cerradas el 22 nov 2026 (T-01 cambiada por Carmine: los p
 Decisiones N-01 a N-06 cerradas: N-01 el 21 nov 2026 y las demás el 22 nov 2026, con la recomendación. Reglas en `src/game/core/baseLevel.ts`; los valores, como PROVISIONAL en `BASE_LEVEL` de `balance.ts`.
 - **Qué es:** una mejora permanente con la que toda disparadora sembrada en una partida nueva nace en ese nivel, del 1 (sin comprar nada) al 5. Sembrarla e infundirla cuesta lo mismo. Vale también al rejugar un brote ya vencido (N-04).
 - **Dónde:** en el Invernadero, botón "Plantas" (dice el nivel base de ahora). Como la tienda, solo existe tras vencer a Creeper, así que el tour de subir de nivel ya se vio.
-- **Cuánto da cada paso (N-02, N-05):** lo mismo que un nivel de partida, con su premio: la que nace en el 5 es una planta de nivel 5 a todos los efectos, con +45 % de daño, +13,5 % de cadencia y su jardincito.
+- **Cuánto da cada paso (N-02, N-05):** lo mismo que un nivel de partida, con su premio: la que nace en el 5 es una planta de nivel 5 a todos los efectos, con +70,9 % de daño, +13,5 % de cadencia, +25 % de vida (T-035) y su jardincito.
 - **Precios (N-03):** subirlo al 2 cuesta 1500 semillas; al 3, 3000; al 4, 5500, y al 5, 10.000, el artículo más caro de la tienda. Del 1 al 5, 20.000. En el 5 dice "Máximo". Dos clics seguidos nunca cobran dos veces.
-- **En la partida (N-01, N-06):** el tope de nivel de cada ronda no cambia. En el brote 1 (tope 5), una de nivel base 5 nace al máximo y su panel dice "Máximo", como una subida al tope; en el brote 2 (tope 10) sube con normalidad desde su nivel, y subirla cuesta lo de su nivel (de 5 a 6, 175). En la ronda 1, aunque subir de nivel siga bloqueado, nacen con su nivel base. Fusionar deja el nivel más bajo de las dos, que nunca baja del nivel base. El nivel base nunca pasa del tope de ninguna ronda (un test lo comprueba).
+- **En la partida (N-01, N-06):** el tope de nivel de cada ronda no cambia. En los brotes 1 y 2 (tope 5), una de nivel base 5 nace al máximo y su panel dice "Máximo", como una subida al tope; con un tope mayor (el 10, desde el brote 5) sube con normalidad desde su nivel, y subirla cuesta lo de su nivel (de 5 a 6, 175). En la ronda 1, aunque subir de nivel siga bloqueado, nacen con su nivel base. Fusionar deja el nivel más bajo de las dos, que nunca baja del nivel base. El nivel base nunca pasa del tope de ninguna ronda (un test lo comprueba).
 - **Se copia al empezar la partida:** comprar otro paso con una partida a medias no la cambia, y una partida guardada antes de comprar sigue igual al cargarla. "Jugar otra vez" repite el de la partida que acaba.
 - **Dónde se ve:** las disparadoras de una partida con nivel base comprado llevan el brote del Invernadero, dos hojitas prendidas en la medallita (también las fusionadas y su foto de la ficha), y su ficha dice "Nivel base N, del Invernadero".
 - **Sonido:** subirlo suena como mejorar un poder; llegar al 5, como un desbloqueo.
@@ -426,7 +432,7 @@ Los valores recomendados ya están como PROVISIONAL en `src/game/config/balance.
 
 Las reglas de fusionar e infundir y el multiplicador de daño están en `src/game/core/plants.ts`, con tests en `plants.test.ts`. Fusionar dos plantas del tablero (destinos válidos, vida resultante, quién deja la casilla) está en `src/game/core/match.ts` (`fusionBlocker`, `fusionTargets`, `fusePlants`). El reparto del daño entre las balas de una fusionada, en `combat.ts` (`bulletDamage`). Los valores de D-02 están en `FUSION` de `balance.ts`.
 
-Subir de nivel (T-003): el costo, la subida y lo que suma cada nivel están en `plants.ts` (`levelUpCost`, `levelUp`, `levelBonus`; desde T-027, con el premio de los niveles 5, 10, 15 y 20: `isMilestoneLevel`, `levelStepBonus`, `milestonesReached`), y lo que ofrece el panel de una planta del tablero y la subida con su cobro, en `match.ts` (`levelUpOffer`, `levelUpPlant`). Los valores de D-05 están en `LEVELING` de `balance.ts`.
+Subir de nivel (T-003): el costo, la subida y lo que suma cada nivel están en `plants.ts` (`levelUpCost`, `levelUp`, `levelBonus`; desde T-027, con el premio de cada 5 niveles: `isMilestoneLevel`, `levelStepBonus`, `milestonesReached`, que desde T-035 salen de `levels.ts`), y lo que ofrece el panel de una planta del tablero y la subida con su cobro, en `match.ts` (`levelUpOffer`, `levelUpPlant`). Los valores de D-05 están en `LEVELING` de `balance.ts`.
 
 Nivel base (T-023): comprarlo y sus precios en `baseLevel.ts` (`nextBaseStep`, `baseLevelBlocker`, `buyBaseLevel`), con los valores en `BASE_LEVEL` de `balance.ts`; la partida lo lleva en `MatchState.baseLevel` y `playCard` siembra la disparadora en ese nivel.
 

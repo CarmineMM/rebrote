@@ -67,10 +67,9 @@ describe('desbloqueo', () => {
     expect(infusableElements(shieldMatch())).toEqual(['fire', 'ice', 'shield']);
   });
 
-  it('el brote 2 empieza con lo aprendido en el brote 1 y su ronda 1 solo sube el tope de nivel a 10 (T-026, L-08)', () => {
+  it('el brote 2 empieza con lo aprendido en el brote 1 y su ronda 1 no desbloquea nada: el tope sigue en 5 (T-035)', () => {
     expect(availableCards(createMatch(0, 0, BROTE2))).toEqual(['shooter', 'fire', 'ice']);
-    expect(roundUnlocks(BROTE2, 0)).toEqual([{ kind: 'levelCap', level: 10 }]);
-    expect(unlockPresenter(BROTE2, 0)).toBe('boxer');
+    expect(roundUnlocks(BROTE2, 0)).toEqual([]);
   });
 });
 

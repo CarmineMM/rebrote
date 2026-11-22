@@ -1,4 +1,5 @@
 import { COSTS, FUSION, LEVELING, LIMITS, SHIELD, SHOOTER } from '../config/balance';
+import { compoundGrowth, isDoubleMilestone, isMilestone } from './levels';
 
 /** Elementos que, sembrados solos, son una mina (T-004, T-005). */
 export type MineElement = 'fire' | 'ice';
@@ -92,35 +93,54 @@ export function levelUp(plant: Shooter): Shooter {
   return { ...plant, level: plant.level + 1 };
 }
 
-/** ¿Da premio llegar al nivel `level`? (5, 10, 15 y 20: `LEVELING.milestones`). */
+/** ¿Da premio llegar al nivel `level`? Cada 5 niveles (`LEVEL_MILESTONES`, T-035): el 5, el 10, el 15, el 20... */
 export function isMilestoneLevel(level: number): boolean {
-  return LEVELING.milestones[level] !== undefined;
+  return isMilestone(level);
 }
 
 /** Cuantos niveles con premio ha alcanzado una planta de nivel `level` (0 antes del 5, 4 en el 20). */
-export function milestonesReached(level: number): number {
-  return Object.keys(LEVELING.milestones).filter((milestone) => level >= Number(milestone)).length;
+export { milestonesReached } from './levels';
+
+/** Lo que da llegar a un nivel o a otro, en fracciones (0,2 = un 20 % mas). */
+export interface LevelBonus {
+  readonly damage: number;
+  readonly fireRate: number;
+  readonly hp: number;
 }
 
-/** Cuanto vale llegar al nivel `level` respecto a un nivel normal: 1, o su premio (x1,5 en el 5 y el 15, x2 en el 10 y el 20). */
-function levelWeight(level: number): number {
-  return LEVELING.milestones[level] ?? 1;
-}
-
-/** Lo que suma llegar al nivel `level` desde el anterior, en fracciones: dano del disparo y cadencia. */
-export function levelStepBonus(level: number): { damage: number; fireRate: number } {
-  const weight = level > 1 ? levelWeight(level) : 0;
-  return { damage: weight * LEVELING.damagePerLevel, fireRate: weight * LEVELING.fireRatePerLevel };
+/** Cuanto vale la cadencia de llegar al nivel `level` respecto a un nivel normal: 1, o su premio (x1,5, o x2 en el 10 y el 20). */
+function fireRateWeight(level: number): number {
+  if (isDoubleMilestone(level)) return LEVELING.fireRateDoubleMilestone;
+  return isMilestone(level) ? LEVELING.fireRateMilestone : 1;
 }
 
 /**
- * Lo que suma el nivel sobre el de nivel 1, en fracciones (0,2 = un 20 % mas): dano del disparo y cadencia. Cada nivel
- * suma lo suyo y los niveles con premio suman mas, asi que el premio se queda para siempre.
+ * Lo que da llegar al nivel `level` desde el anterior (T-035): dano y vida, sobre los del nivel anterior (compuesto: un
+ * 12,5 %, o un 20 % y un 25 % de vida en los niveles con premio); cadencia, lo que suma sobre la de nivel 1.
  */
-export function levelBonus(level: number): { damage: number; fireRate: number } {
-  let steps = 0;
-  for (let reached = 2; reached <= level; reached++) steps += levelWeight(reached);
-  return { damage: steps * LEVELING.damagePerLevel, fireRate: steps * LEVELING.fireRatePerLevel };
+export function levelStepBonus(level: number): LevelBonus {
+  if (level <= 1) return { damage: 0, fireRate: 0, hp: 0 };
+  const milestone = isMilestone(level);
+  return {
+    damage: milestone ? LEVELING.damagePerMilestone : LEVELING.damagePerLevel,
+    fireRate: fireRateWeight(level) * LEVELING.fireRatePerLevel,
+    hp: milestone ? LEVELING.hpPerMilestone : 0,
+  };
+}
+
+/**
+ * Lo que da el nivel sobre el de nivel 1, en fracciones (0,2 = un 20 % mas). Dano y vida crecen en compuesto (T-035): cada
+ * nivel multiplica lo del anterior. La cadencia suma lo de cada nivel, y los niveles con premio suman mas. Lo ganado se
+ * queda para siempre.
+ */
+export function levelBonus(level: number): LevelBonus {
+  let fireRate = 0;
+  for (let reached = 2; reached <= level; reached++) fireRate += fireRateWeight(reached) * LEVELING.fireRatePerLevel;
+  return {
+    damage: compoundGrowth(level, LEVELING.damagePerLevel, LEVELING.damagePerMilestone) - 1,
+    fireRate,
+    hp: compoundGrowth(level, 0, LEVELING.hpPerMilestone) - 1,
+  };
 }
 
 /** Dano total de cada disparo (todas sus balas juntas) respecto a una disparadora de un canon y nivel 1. */
@@ -135,10 +155,10 @@ export function fireRateMultiplier(plant: Shooter): number {
 }
 
 /**
- * Vida maxima de la planta: la de la disparadora por cada canon (D-02: la suma de las partes). La de escudo, por
- * `SHIELD.hpMultiplier` (T-024, E-05).
+ * Vida maxima de la planta: la de la disparadora por cada canon (D-02: la suma de las partes), con lo que da su nivel
+ * (T-035: un 25 % mas en cada nivel con premio, compuesto). La de escudo, por `SHIELD.hpMultiplier` (T-024, E-05).
  */
 export function plantMaxHp(plant: Shooter): number {
   const shield = plant.element === 'shield' ? SHIELD.hpMultiplier : 1;
-  return SHOOTER.hp * FUSION.hpByCannons[plant.cannons] * shield;
+  return SHOOTER.hp * FUSION.hpByCannons[plant.cannons] * shield * (1 + levelBonus(plant.level).hp);
 }
