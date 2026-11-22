@@ -29,9 +29,14 @@ const GESTURES = ['pointerdown', 'pointerup', 'touchend', 'click', 'keydown'] as
 
 type AudioContextClass = typeof AudioContext;
 
+/** Quien mas suena por el mismo contexto (la musica, T-015): recibe el contexto y la entrada del compresor final. */
+export type AudioReadyListener = (ctx: AudioContext, output: AudioNode) => void;
+
 class SfxEngine {
   private ctx: AudioContext | null = null;
   private master: GainNode | null = null;
+  private compressor: DynamicsCompressorNode | null = null;
+  private readonly readyListeners: AudioReadyListener[] = [];
   private readonly buses = new Map<SfxBus, GainNode>();
   private readonly buffers = new Map<string, AudioBuffer>();
   /** Decodificaciones en curso o acabadas, por archivo: un sonido pedido antes de tiempo espera a la suya. */
@@ -237,6 +242,7 @@ class SfxEngine {
     compressor.attack.value = c.attackMs / 1000;
     compressor.release.value = c.releaseMs / 1000;
     compressor.connect(ctx.destination);
+    this.compressor = compressor;
     this.master = ctx.createGain();
     this.master.connect(compressor);
     for (const bus of ['world', 'ui'] as const) {
@@ -249,6 +255,26 @@ class SfxEngine {
     else if (ctx.state !== 'running') ctx.resume().catch(() => undefined);
     this.preload();
     void this.decodeAll();
+    for (const listener of this.readyListeners) listener(ctx, compressor);
+  }
+
+  /**
+   * Avisa cuando ya hay contexto de audio (tras el primer gesto), o enseguida si ya lo hay. La musica (T-015) suena por
+   * el mismo contexto: se calla igual con la pestana oculta y el aviso de girar, y pasa por el mismo compresor.
+   */
+  whenReady(listener: AudioReadyListener): void {
+    if (this.ctx && this.compressor) listener(this.ctx, this.compressor);
+    else this.readyListeners.push(listener);
+  }
+
+  /** Formato que se descarga (OGG o, si el navegador no lo reproduce, MP3). */
+  get audioFormat(): AudioFormat {
+    return this.format;
+  }
+
+  /** Si este navegador no tiene audio: entonces tampoco hay musica. */
+  get unavailable(): boolean {
+    return this.disabled;
   }
 
   private applyVolume(): void {

@@ -1,4 +1,5 @@
 import type { RefObject } from 'react';
+import { LICENSE_URLS, MUSIC_TRACKS, MUSIC_TRACK_IDS } from '../game/config/music';
 import { ClaudeLogo } from './ClaudeLogo';
 import { useText } from './useText';
 
@@ -12,8 +13,9 @@ interface CreditsProps {
 const TECH = 'Phaser 4 · React 19 · Vite · TypeScript · Vitest';
 
 /**
- * Creditos (T-011, I-09): autor, desarrollo con Claude (con su logo), estetica inspirada en Plants vs. Zombies y los
- * creditos tecnicos, con el aviso de marca. Van en el panel de la derecha del menu de inicio.
+ * Creditos (T-011, I-09): autor, desarrollo con Claude (con su logo), estetica inspirada en Plants vs. Zombies, la musica
+ * (T-015: titulo, autor y licencia de cada pista, como piden sus licencias) y los creditos tecnicos, con el aviso de
+ * marca. Van en el panel de la derecha del menu de inicio.
  */
 export function Credits({ titleId, firstButton, onBack }: CreditsProps) {
   const t = useText();
@@ -62,6 +64,30 @@ export function Credits({ titleId, firstButton, onBack }: CreditsProps) {
           <dd>{c.enemiesValue}</dd>
         </div>
         <div className="credits-row" style={{ animationDelay: '0.4s' }}>
+          <dt>{c.music}</dt>
+          <dd>
+            <ul className="credits-music">
+              {MUSIC_TRACK_IDS.map((id) => {
+                const track = MUSIC_TRACKS[id];
+                return (
+                  <li key={id}>
+                    <a href={track.url} target="_blank" rel="noreferrer">
+                      <strong>{c.musicTitle(track.title)}</strong>
+                    </a>
+                    <small>
+                      {c.musicBy(track.author)} ·{' '}
+                      <a href={LICENSE_URLS[track.license]} target="_blank" rel="noreferrer">
+                        {track.license}
+                      </a>{' '}
+                      · {c.musicFor[id]}
+                    </small>
+                  </li>
+                );
+              })}
+            </ul>
+          </dd>
+        </div>
+        <div className="credits-row" style={{ animationDelay: '0.47s' }}>
           <dt>{c.tech}</dt>
           <dd>{TECH}</dd>
         </div>

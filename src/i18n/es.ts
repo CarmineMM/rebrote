@@ -230,6 +230,8 @@ export const es = {
     sound: 'Sonido',
     sfxVolume: 'Efectos de sonido',
     sfxVolumeHelp: 'Disparos, monedas, explosiones y botones.',
+    musicVolume: 'Música',
+    musicVolumeHelp: 'De fondo, en los menús, las rondas y los jefes.',
     screen: 'Pantalla',
     fullscreen: 'Pantalla completa',
     fullscreenHelp: 'Oculta las barras del navegador.',
@@ -898,6 +900,11 @@ export const es = {
     artValue: 'Pintados con código, sin imágenes',
     enemies: 'Enemigos',
     enemiesValue: 'Virus informáticos de verdad: Creeper (1971) fue el primer gusano',
+    /** Musica de fondo (T-015): el titulo y la licencia de cada pista van tal cual; esto es lo que los rodea. */
+    music: 'Música',
+    musicTitle: (title: string) => `«${title}»`,
+    musicBy: (author: string) => `de ${author}`,
+    musicFor: { menu: 'menús', round: 'rondas', boss: 'jefes' },
     tech: 'Hecho con',
     thanks: '¡Gracias por jugar!',
     legal:

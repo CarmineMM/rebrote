@@ -1,5 +1,5 @@
 /**
- * Fabrica los efectos de sonido (T-014, ADR-0013): `npm run audio`.
+ * Fabrica los efectos de sonido (T-014, ADR-0013) y la musica de fondo (T-015, `music.ts`): `npm run audio`.
  *
  * Lee `manifest.ts` y, por cada efecto, saca sus capas de los paquetes de Kenney (`audio-lab/kenney/<paquete>.zip`) o
  * las genera con jsfxr (`sfxr.ts`), las mezcla, quita el silencio del principio y del final, iguala el volumen y escribe
@@ -21,12 +21,15 @@ import { join } from 'node:path';
 import jsfxr from 'jsfxr';
 import { SFX, SFX_IDS, sfxFiles } from '../../src/game/config/audio.ts';
 import { KENNEY_PACKS, MANIFEST, type KenneyPack, type Layer, type Source } from './manifest.ts';
+import { buildMusic, missingMusic } from './music.ts';
 import { RECIPES, type RecipeName } from './sfxr.ts';
 
 const ROOT = new URL('../../', import.meta.url).pathname;
 const KENNEY_DIR = join(ROOT, 'audio-lab/kenney');
 const PUBLIC_DIR = join(ROOT, 'public/audio');
 const LAB_DIR = join(ROOT, 'audio-lab/candidatos');
+/** Musica (T-015): la elegida va con los efectos (`public/audio/musica/`); las alternativas, aparte. */
+const MUSIC_LAB_DIR = join(ROOT, 'audio-lab/musica/candidatos');
 const RATE = 44100;
 /** Volumen al que se igualan todos: el de la ventana de 50 ms mas fuerte, en dBFS. Luego `SFX` los mezcla. */
 const TARGET_RMS_DB = -14;
@@ -253,6 +256,7 @@ function preflight(): void {
     const zip = join(KENNEY_DIR, `${pack}.zip`);
     if (!existsSync(zip)) missing.push(`${zip} (bajalo de https://kenney.nl/assets/${pack})`);
   }
+  missing.push(...missingMusic(ROOT));
   if (missing.length) {
     rmSync(work, { recursive: true, force: true });
     process.stderr.write(`No se fabrica nada: falta\n${missing.map((m) => `- ${m}`).join('\n')}\npublic/audio/ no se ha tocado.\n`);
@@ -265,6 +269,7 @@ function main(): void {
   // Todo se fabrica primero en una carpeta temporal: si algo falla a medias, public/audio/ queda como estaba.
   const PUBLIC_OUT = join(work, 'public-audio');
   const LAB_OUT = join(work, 'candidatos');
+  const MUSIC_LAB_OUT = join(work, 'musica-candidatos');
   mkdirSync(PUBLIC_OUT, { recursive: true });
   mkdirSync(LAB_OUT, { recursive: true });
 
@@ -322,14 +327,16 @@ function main(): void {
     ].join('\n'),
   );
   writeFileSync(join(LAB_OUT, 'catalogo.json'), JSON.stringify({ sounds: catalog }, null, 2));
+  buildMusic(ROOT, join(PUBLIC_OUT, 'musica'), MUSIC_LAB_OUT, work);
   // Todo salio bien: ahora si se sustituyen las carpetas de verdad.
-  for (const [from, to] of [[PUBLIC_OUT, PUBLIC_DIR], [LAB_OUT, LAB_DIR]]) {
+  for (const [from, to] of [[PUBLIC_OUT, PUBLIC_DIR], [LAB_OUT, LAB_DIR], [MUSIC_LAB_OUT, MUSIC_LAB_DIR]]) {
     rmSync(to, { recursive: true, force: true });
     cpSync(from, to, { recursive: true });
   }
   rmSync(work, { recursive: true, force: true });
   const size = Number(run('du', ['-sk', PUBLIC_DIR]).toString().split('\t')[0]);
-  process.stdout.write(`\nListo: ${SFX_IDS.length} efectos en public/audio/ (${size} KB).\n`);
+  const musicSize = Number(run('du', ['-sk', join(PUBLIC_DIR, 'musica')]).toString().split('\t')[0]);
+  process.stdout.write(`\nListo: ${SFX_IDS.length} efectos y la musica en public/audio/ (${size} KB, ${musicSize} KB de musica).\n`);
 }
 
 try {

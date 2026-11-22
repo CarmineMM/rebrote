@@ -24,11 +24,11 @@ Decisiones de la task, tomadas con su recomendación el 22 nov 2026:
 | V-02 | En iPhone y iPad el botón abre una ayuda con los dos pasos (Compartir y "Añadir a pantalla de inicio") y avisa de que instalado empieza de cero |
 | V-03 | La versión nueva llega sola, sin aviso, y solo se aplica en la portada: nunca en mitad de una partida |
 | V-04 | Instalado se abre a pantalla completa y en horizontal |
-| V-05 | Los efectos de sonido se guardan al instalar; la música (T-015), solo cuando se haya oído una vez |
+| V-05 | Los efectos de sonido se guardan al instalar; la música (T-015), no. Desde T-015 (U-05, ADR-0022) la baja el juego después de la portada, en un solo formato, para jugar sin conexión |
 
 Cómo está hecho:
 
-- **Manifiesto y caché** (`src/pwa/manifest.ts`, que lee `vite.config.ts`). Nombre "Rebrote", `display: fullscreen` (con `standalone` de reserva, iPhone), `orientation: landscape`, el color de tema del icono (`THEME_COLOR`, T-028), el verde oscuro de la carga de fondo y los iconos de `npm run icons`, con los maskable para Android. Se guarda todo lo publicado: el código, los iconos y los efectos de `public/audio/` (unos 3,3 MB). Las subcarpetas de `audio/` no: la música irá en `audio/musica/` y la guarda una regla aparte (`rebrote-musica`) la primera vez que se pide.
+- **Manifiesto y caché** (`src/pwa/manifest.ts`, que lee `vite.config.ts`). Nombre "Rebrote", `display: fullscreen` (con `standalone` de reserva, iPhone), `orientation: landscape`, el color de tema del icono (`THEME_COLOR`, T-028), el verde oscuro de la carga de fondo y los iconos de `npm run icons`, con los maskable para Android. Se guarda todo lo publicado: el código, los iconos y los efectos de `public/audio/` (unos 3,3 MB). Las subcarpetas de `audio/` no: la música va en `audio/musica/` y la guarda el propio juego tras la portada en `rebrote-musica` (T-015, ADR-0022), que el service worker sirve primero (`CacheFirst`).
 - **Solo en la versión publicada.** El service worker se registra en `src/pwa/update.ts` solo con `import.meta.env.PROD`; en `npm run dev` no hay ni service worker ni manifiesto. Para probarlo en local: `npm run build` y `npm run preview`. Las páginas de desarrollo (`sonidos.html`, `disparadoras.html`...) no entran en el build, así que ni se publican ni se guardan.
 - **Botón "Instalar"** (`src/pwa/install.ts`, regla pura `installOffer` en `src/pwa/policy.ts`). Escucha `beforeinstallprompt` desde que arranca la página (antes de React) y le quita la barrita de Chrome en Android. El botón va al final del menú de la portada, debajo de Opciones y Créditos:
   - Chrome o Edge: abre su diálogo. Si el jugador acepta, el botón desaparece. Si cancela, el botón sigue; el aviso ya no vale, así que hasta que el navegador avise otra vez el botón abre la ayuda con los pasos de su menú.
@@ -45,7 +45,7 @@ Cómo está hecho:
 | Manifiesto y service worker a mano | Habría que mantener la lista de archivos con hash de cada build; es justo lo que resuelve el plugin |
 | `registerType: 'autoUpdate'` (la versión nueva entra y recarga en cuanto llega) | Recargaría en mitad de una partida |
 | Aviso "Hay una versión nueva" con botón | Más pantallas para algo que puede pasar solo en la portada |
-| Guardar también la música al instalar | Pesa mucho más que los efectos y aún no existe (T-015) |
+| Guardar también la música al instalar | Pesa mucho más que los efectos y se bajarían sus dos formatos. Desde T-015 la baja el juego después, en uno solo |
 
 ## Consecuencias
 

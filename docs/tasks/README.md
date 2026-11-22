@@ -18,7 +18,7 @@ Una task por archivo. El tamaño es orientativo.
 | T-012 | [Interfaz] Móvil: solo en horizontal, panel de nivel en las filas de abajo y ronda en pantalla pequeña | Completada (20 nov 2026) | S | T-011 | Ninguna (M-01 a M-05 cerradas) |
 | T-013 | [Interfaz] Tours de ayuda: cada cosa nueva se enseña la primera vez | Completada (20 nov 2026) | L | T-012 | Ninguna (G-01 a G-10 cerradas) |
 | T-014 | [Audio] Efectos de sonido y volumen | Completada (21 nov 2026) | M | Ninguna | Ninguna (S-01 a S-06 cerradas) |
-| T-015 | [Audio] Música de fondo | Pendiente | S | T-014 | U-01, U-02 (faltan las pistas) |
+| T-015 | [Audio] Música de fondo | Completada (22 nov 2026, 0.12.1) | S | T-014 | Ninguna (U-01 a U-05 cerradas) |
 | T-016 | [Arte] Rediseño de la disparadora | Completada (21 nov 2026) | M | Ninguna | Ninguna (X-01 a X-03 cerradas) |
 | T-017 | [Guardado] Progreso permanente separado de la partida en curso | Completada (21 nov 2026) | M | Ninguna | Ninguna (K-01 y K-02 cerradas) |
 | T-018 | [Brotes] Varios brotes y fin de "Mundo 1" | Completada (21 nov 2026) | L | T-017 | Ninguna (B-01 a B-04 cerradas) |
@@ -53,7 +53,7 @@ El estado se escribe en dos sitios: en esta tabla y en la cabecera de la task (`
 
 T-001, T-002, T-006, T-004, T-005, T-003, T-007, T-008, T-009, T-010, T-011, T-012, T-013.
 
-Después de T-013 se hicieron T-014, T-016 a T-034.
+Después de T-013 se hicieron T-014 a T-034.
 
 Al cerrar una task se sube la versión del juego (ADR-0017). Mientras el juego esté en desarrollo, ninguna task migra datos guardados (ADR-0014).
 
@@ -67,7 +67,7 @@ Orden sugerido para lo pendiente (revisado el 21 nov 2026):
 6. T-024, T-025 y T-026: escudo, tropas y Elk Cloner. Es el contenido nuevo: va antes que la tienda porque una tienda sin segundo brote vende ayuda para lo que ya se venció.
 7. T-021, T-022 y T-023: poderes, tienda y nivel base.
 8. T-029: instalable. Después de T-028 y de T-034.
-9. T-015: música, en cuanto Carmine elija las pistas.
+9. T-015: música (hecha el 22 nov 2026; Carmine puede cambiar las pistas de oído en `/musica.html`).
 
 La lista de jefes está en `../specs/03-ruta-de-brotes.md` y la historia en `../specs/04-historia.md`.
 

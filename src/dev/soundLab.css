@@ -35,6 +35,10 @@ body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.4 syst
 .lab-option { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 10px; border: 1px solid transparent; }
 .lab-option.is-chosen { border-color: var(--gold); background: rgba(255, 224, 102, 0.07); }
 .lab-option a { color: #8fd8ff; }
+/* Musica (T-015): la tarjeta entera de la candidata elegida. */
+.lab-sound { border: 1px solid transparent; }
+.lab-sound.is-chosen { border-color: var(--gold); background: #2a3a22; }
+.lab-sound a { color: #8fd8ff; }
 @media (max-width: 700px) {
   .lab-sound { grid-template-columns: 1fr; }
 }

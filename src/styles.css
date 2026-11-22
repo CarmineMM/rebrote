@@ -1225,6 +1225,11 @@ body {
 .credits-row dd { margin: 0; display: grid; gap: 1px; font-size: 0.86rem; font-weight: 700; line-height: 1.3; color: #f1f7ea; }
 .credits-row dd strong { font-size: 1rem; font-weight: 900; color: #fff6c0; }
 .credits-row dd small { font-size: 0.74rem; opacity: 0.7; }
+/* Musica (T-015): una linea por pista; el titulo lleva a su pagina y la licencia, a su texto. */
+.credits-music { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.credits-music li { display: grid; gap: 0; }
+.credits-music a { color: inherit; text-decoration: none; }
+.credits-music a:hover, .credits-music a:focus-visible { text-decoration: underline; }
 .credits-row.is-claude { background: rgba(217, 119, 87, 0.14); border-color: rgba(217, 119, 87, 0.55); }
 .credits-claude { display: inline-flex; align-items: center; gap: 8px; }
 .claude-logo { flex: none; filter: drop-shadow(0 2px 0 rgba(0, 0, 0, 0.3)); animation: claude-breathe 3.2s ease-in-out infinite; }

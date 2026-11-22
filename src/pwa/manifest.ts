@@ -33,13 +33,20 @@ export const MANIFEST: Partial<ManifestOptions> = {
 
 /**
  * Lo que se guarda al instalar para jugar sin conexion: el juego entero y los efectos de sonido (V-05: pesan poco).
- * Solo los de la carpeta `audio/`, sin subcarpetas: la musica (T-015) ira en `audio/musica/` y se guarda al oirla
- * (`MUSIC_CACHE`). Las paginas de desarrollo (`sonidos.html`, `disparadoras.html`...) no estan: el build no las publica.
+ * Solo los de la carpeta `audio/`, sin subcarpetas: la musica (T-015) va en `audio/musica/`, en los dos formatos, y no se
+ * guarda al instalar; la baja el juego despues de la portada, solo en el formato que usa el navegador (`MUSIC_CACHE`,
+ * U-05). Las paginas de desarrollo (`sonidos.html`, `disparadoras.html`...) no estan: el build no las publica.
  */
 export const PRECACHE_GLOBS = ['**/*.{js,css,html,ico,png,svg,webmanifest}', 'audio/*.{ogg,mp3}'];
 
-/** Lo que se guarda solo cuando se ha oido una vez (V-05): la musica de fondo (T-015). */
+/**
+ * Cache de la musica de fondo (T-015, U-05): la llena el juego (`src/game/audio/music.ts`) despues de la portada, para
+ * jugar sin conexion, y el service worker la usa (y la llena tambien si una pista le llega antes).
+ */
 export const MUSIC_CACHE = 'rebrote-musica';
+
+/** Direcciones de la musica para el service worker: `audio/musica/<pista>.<ogg|mp3>`, con su huella (`?v=`). */
+export const MUSIC_URL_PATTERN = /\/audio\/musica\/[^/?]+\.(?:ogg|mp3)(?:\?.*)?$/;
 
 /** Archivo mas grande que se guarda: Phaser solo pasa de 1 MB y no se puede partir mas. */
 export const PRECACHE_MAX_BYTES = 4 * 1024 * 1024;

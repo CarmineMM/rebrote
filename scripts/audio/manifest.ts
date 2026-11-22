@@ -1,3 +1,4 @@
+import type { MusicLicense, MusicTrackId } from '../../src/game/config/music.ts';
 import type { SfxId } from '../../src/game/config/audio.ts';
 import type { RecipeName } from './sfxr.ts';
 
@@ -377,5 +378,215 @@ export const MANIFEST: Readonly<Record<SfxId, SoundEntry>> = {
     about: 'Mejorar un poder en la tienda (T-022): arpegio que sube con un tintineo',
     pick: [ui('maximize_008'), rpg('handleCoins2', { gainDb: -8 })],
     alternatives: [ui('maximize_003'), [ui('confirmation_004'), digital('powerUp8', { gainDb: -6, delayMs: 80 })]],
+  },
+};
+
+/**
+ * Musica de fondo (T-015, U-01 y U-02): el original de cada pista, en `audio-lab/musica/`, y como se recorta. Licencias
+ * aceptadas: CC0 o CC BY (Incompetech u OpenGameArt). `pick` va a `public/audio/musica/`; las alternativas cuyo original
+ * este en `audio-lab/musica/` se oyen en `/musica.html`. Para cambiar la elegida, se mueve una alternativa a `pick`, se
+ * copian su titulo, autor, licencia y `loopSeconds` a `MUSIC_TRACKS` y se pasa `npm run audio`.
+ */
+export interface MusicSource {
+  /** Archivo original, dentro de `audio-lab/musica/`. */
+  readonly file: string;
+  readonly title: string;
+  readonly author: string;
+  readonly license: MusicLicense;
+  /** Pagina de la obra, de donde se bajo. */
+  readonly url: string;
+  /** Instrumentos y animo, para la pagina de prueba. */
+  readonly about: string;
+  /** Recorte del bucle en el original, en s. Sin ellos, el archivo entero (ya es un bucle sin salto). */
+  readonly loopStart?: number;
+  readonly loopEnd?: number;
+  /**
+   * El original es una vuelta del bucle con algo detras: la cola de las ultimas notas o, en un MP3 sin datos de retraso,
+   * el relleno del codificador. Lo que sigue a `loopEnd` se suma sobre el principio, como sonaria al repetirse. Asi
+   * `loopEnd` es solo la duracion del bucle (compases enteros), contada desde el principio del archivo.
+   */
+  readonly fold?: boolean;
+  /**
+   * Empalme fundido, en ms: lo que sigue al final del bucle en el original baja mientras sube su principio. Para un
+   * original que no es un bucle, recortado en dos puntos del mismo compas que suenan parecido.
+   */
+  readonly seamMs?: number;
+}
+
+export interface MusicEntry {
+  /** Que ambiente es, para la pagina de prueba. */
+  readonly about: string;
+  readonly pick: MusicSource;
+  readonly alternatives: readonly MusicSource[];
+}
+
+const KEVIN = 'Kevin MacLeod (incompetech.com)';
+const incompetech = (isrc: string) => `https://incompetech.com/music/royalty-free/index.html?isrc=${isrc}`;
+const oga = (page: string) => `https://opengameart.org/content/${page}`;
+
+/**
+ * Candidatas bajadas el 22 nov 2026 (15 en total: cuatro por ambiente y tres mas para la ronda; las propuso un agente por lo que dicen sus paginas,
+ * sin oirlas). Los bucles se midieron con ffmpeg: el tempo de cada una (y el de Incompetech, `pieces.json`) da su
+ * duracion en tiempos enteros, y en los MP3 sin datos de retraso lo que sobra se pliega sobre el principio (`fold`). Las
+ * elegidas de partida son las que mejor empalman y suenan como un mismo juego; la ultima palabra es de Carmine, de oido.
+ */
+export const MUSIC_MANIFEST: Readonly<Record<MusicTrackId, MusicEntry>> = {
+  menu: {
+    about: 'Portada, Invernadero, ruta y tienda: tranquila, cálida y juguetona (marimba, madera o ukelele)',
+    pick: {
+      file: 'cozy-puzzle-in-game-3.ogg',
+      title: 'Cozy Puzzle In-Game 3',
+      author: 'mintodog',
+      license: 'CC0 1.0',
+      url: oga('cozy-puzzle-in-game-3'),
+      about: 'Guitarra acústica, mazos y viento, a 108 BPM. Hermana de la de ronda. 56 compases justos: el archivo entero es el bucle',
+    },
+    alternatives: [
+      {
+        file: 'kalimba.ogg',
+        title: 'Short kalimba loop',
+        author: 'extenz',
+        license: 'CC0 1.0',
+        url: oga('short-kalimba-loop'),
+        about: 'Kalimba, celesta y cuerdas, suave. Corta (47 s): se nota más la vuelta',
+      },
+      {
+        file: 'carefree.mp3',
+        title: 'Carefree',
+        author: KEVIN,
+        license: 'CC BY 4.0',
+        url: incompetech('USUAN1400037'),
+        about: 'Ukelele, guitarra, marimba y glockenspiel, a 96 BPM. No es un bucle: se recortan los compases 2 a 34, que se repiten',
+        loopStart: 5.025057,
+        loopEnd: 85.025057,
+        seamMs: 250,
+      },
+      {
+        file: 'bassa-island-game-loop.mp3',
+        title: 'Bassa Island Game Loop',
+        author: KEVIN,
+        license: 'CC BY 4.0',
+        url: incompetech('USUAN1100840'),
+        about: 'Bajo, guitarra, marimba y percusión, a 125 BPM. 16 compases (31 s): muy corta',
+        loopEnd: 30.72,
+        fold: true,
+      },
+    ],
+  },
+  round: {
+    about: 'Rondas: la misma paleta con más empuje y algo de tensión, sin cansar en 15 minutos',
+    // Carmine eligio de oido Krakatoa (22 nov 2026), en vez de Cozy Puzzle In-Game 1.
+    pick: {
+      file: 'krakatoa.ogg',
+      title: 'Krakatoa',
+      author: 'Kistol',
+      license: 'CC0 1.0',
+      url: oga('krakatoa'),
+      about: 'Marimba con percusión tribal, con empuje, a 120 BPM. 36 compases (72 s): el archivo entero es el bucle',
+    },
+    alternatives: [
+      {
+        file: 'cozy-puzzle-in-game-1.ogg',
+        title: 'Cozy Puzzle In-Game 1',
+        author: 'mintodog',
+        license: 'CC0 1.0',
+        url: oga('cozy-puzzle-in-game-1'),
+        about: 'Mazos, flauta y saxo sobre un ritmo de bossa nova, a 118 BPM. 64 compases justos: el archivo entero es el bucle',
+      },
+      {
+        file: 'happy-pixie-town.ogg',
+        title: 'HitCtrl - Happy Pixie Town',
+        author: 'HitCtrl',
+        license: 'CC BY 3.0',
+        url: oga('hitctrl-happy-pixie-town'),
+        about: 'Marimba, flauta, oboe, flautín, bajo y batería con sonidos de Nintendo 64, soleada. 144 tiempos a 95 BPM',
+        loopEnd: 90.94737,
+        fold: true,
+      },
+      {
+        file: 'monkeys-spinning-monkeys.mp3',
+        title: 'Monkeys Spinning Monkeys',
+        author: KEVIN,
+        license: 'CC BY 4.0',
+        url: incompetech('USUAN1400011'),
+        about: 'Flautas y cuerdas en pizzicato, saltarina. Muy conocida: puede sonar a ya oída. 300 tiempos a 144 BPM',
+        loopEnd: 125,
+        fold: true,
+      },
+      // Tres mas, pedidas por Carmine el 22 nov 2026 para comparar con la elegida.
+      {
+        file: 'cozy-puzzle-in-game-2.ogg',
+        title: 'Cozy Puzzle In-Game 2',
+        author: 'mintodog',
+        license: 'CC0 1.0',
+        url: oga('cozy-puzzle-in-game-2'),
+        about: 'Hermana de la elegida: metales, sintetizador y piano, a 90 BPM, tranquila. 48 compases justos: el archivo entero es el bucle',
+      },
+      {
+        file: 'jaunty-gumption.mp3',
+        title: 'Jaunty Gumption',
+        author: KEVIN,
+        license: 'CC BY 4.0',
+        url: incompetech('USUAN1300017'),
+        about: 'Marimba, órgano, flautas, sintetizadores y percusión, a 146 BPM: música de videojuego feliz de los 90. 288 tiempos: el archivo es un bucle',
+        loopEnd: 118.356168,
+        fold: true,
+      },
+      {
+        file: 'glitter-blast.mp3',
+        title: 'Glitter Blast',
+        author: KEVIN,
+        license: 'CC BY 4.0',
+        url: incompetech('USUAN1900001'),
+        about: 'Ukelele, flautas, glockenspiel y percusión, a 100 BPM. No es un bucle: se recortan los compases 35 a 67 (con su parte tranquila), que se repiten',
+        loopStart: 84.165329,
+        loopEnd: 160.965329,
+        seamMs: 250,
+      },
+    ],
+  },
+  boss: {
+    about: 'Jefes de la defensa del refugio (brotes 1 a 4): más tensa y digital, sin dejar de ser de dibujos',
+    // Carmine eligio de oido la chiptune (22 nov 2026), en vez de Nano Hoedown.
+    pick: {
+      file: 'chipped-urgency-loop.ogg',
+      title: 'Chipped urgency (combat)',
+      author: 'centurionofwar',
+      license: 'CC0 1.0',
+      url: oga('chipped-urgencycombat'),
+      about: 'Chiptune de sintetizador, urgente, a 90 BPM. 12 compases (32 s): el archivo entero es el bucle',
+    },
+    alternatives: [
+      {
+        file: 'nano-hoedown.mp3',
+        title: 'Nano Hoedown',
+        author: KEVIN,
+        license: 'CC BY 4.0',
+        url: incompetech('USUAN1500034'),
+        about: 'Sintetizadores y percusión, a 150 BPM: «cuando los circuitos montan una fiesta». Intensa y con gracia. 384 tiempos',
+        loopEnd: 153.6,
+        fold: true,
+      },
+      {
+        file: '8-bit-danger-strong-boss.mp3',
+        title: '8-bit Danger!! Strong Boss',
+        author: 'Hydrogene',
+        license: 'CC0 1.0',
+        url: oga('8-bit-danger-strong-boss'),
+        about: '8 bits al estilo NES, de peligro. 352 tiempos a 158 BPM',
+        loopEnd: 133.670884,
+        fold: true,
+      },
+      {
+        file: 'reformat.mp3',
+        title: 'Reformat',
+        author: KEVIN,
+        license: 'CC BY 4.0',
+        url: incompetech('USUAN1500020'),
+        about: 'Sintetizadores con aire de fallo de vídeo de 8 bits: le pega a un virus. Larga (3:39). 512 tiempos a 140 BPM',
+        loopEnd: 219.428571,
+        fold: true,
+      },
+    ],
   },
 };
