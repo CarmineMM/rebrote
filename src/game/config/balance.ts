@@ -1032,3 +1032,15 @@ export const SHOP = {
   upgradePerLevel: 200,
   milestoneFactor: 2,
 } as const;
+
+/**
+ * Nivel base de la disparadora (T-023; N-01 a N-06 decididas el 22 nov 2026 con la recomendacion): una mejora permanente
+ * del Invernadero con la que toda disparadora sembrada nace en ese nivel, sin cambiar el precio de sembrarla. Cada paso
+ * da lo mismo que un nivel de partida (N-02: `LEVELING`, con el premio del nivel 5, N-05). `max` nunca pasa del tope de
+ * nivel de ninguna ronda (un test lo comprueba). `prices[i]` es lo que cuesta subirlo al nivel `i + 2`: crecientes, y el
+ * paso al 5, el articulo mas caro de la tienda (N-03: unas 10.000 semillas). 20.000 del 1 al 5. PROVISIONAL.
+ */
+export const BASE_LEVEL = {
+  max: 5,
+  prices: [1500, 3000, 5500, 10_000],
+} as const;

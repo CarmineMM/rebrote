@@ -173,13 +173,26 @@ function ShopItem({ id, index, progress, cheer, onAct }: ShopItemProps) {
   );
 }
 
-/** Los niveles del poder en hojitas: las ganadas, verdes; las que faltan, en sombra; las de premio (5 y 10), mas grandes. */
-function LevelLeaves({ level, label }: { level: number; label: string }) {
+/**
+ * Los niveles en hojitas: las ganadas, verdes; las que faltan, en sombra; las de premio, mas grandes. Por defecto, los de
+ * un poder (del 1 al 10, con premio en el 5 y el 10); el nivel base de la disparadora (T-023) pasa los suyos.
+ */
+export function LevelLeaves({
+  level,
+  label,
+  max = POWER_LEVELS.max,
+  bonus = isPowerMilestone,
+}: {
+  level: number;
+  label: string;
+  max?: number;
+  bonus?: (level: number) => boolean;
+}) {
   return (
     <p className="shop-level" aria-label={label} title={label}>
-      {Array.from({ length: POWER_LEVELS.max }, (_, i) => {
+      {Array.from({ length: max }, (_, i) => {
         const n = i + 1;
-        return <span key={n} className={`shop-leaf${n <= level ? ' is-on' : ''}${isPowerMilestone(n) ? ' is-bonus' : ''}`} aria-hidden="true" />;
+        return <span key={n} className={`shop-leaf${n <= level ? ' is-on' : ''}${bonus(n) ? ' is-bonus' : ''}`} aria-hidden="true" />;
       })}
     </p>
   );

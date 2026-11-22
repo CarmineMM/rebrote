@@ -214,14 +214,21 @@ export function actionCue(action: PlayerAction, x: number): SfxCue | null {
 }
 
 /** Lo que hizo el jugador en la tienda (T-022): comprar un poder o subirlo a un nivel. */
-export type ShopAction = { readonly type: 'buy' } | { readonly type: 'upgrade'; readonly level: number };
+export type ShopAction =
+  | { readonly type: 'buy' }
+  | { readonly type: 'upgrade'; readonly level: number }
+  /** Subir el nivel base de la disparadora (T-023) al nivel `level`. */
+  | { readonly type: 'baseLevel'; readonly level: number };
 
 /**
  * Lo que suena en la tienda (T-022): comprar, un tintineo con ta-da; mejorar, un arpegio que sube; llegar a un nivel con
- * premio (5 y 10), el "¡ya lo tienes!" de los desbloqueos, como en las plantas. Lo que no se pudo hacer no suena.
+ * premio (5 y 10), el "¡ya lo tienes!" de los desbloqueos, como en las plantas. Subir el nivel base de la disparadora
+ * (T-023) suena como mejorar un poder, y llegar al 5, el nivel con premio de las plantas, como un desbloqueo. Lo que no se
+ * pudo hacer no suena.
  */
 export function shopCue(action: ShopAction): SfxCue {
   if (action.type === 'buy') return centered('purchase');
+  if (action.type === 'baseLevel') return centered(isMilestoneLevel(action.level) ? 'unlock' : 'powerUpgrade');
   return centered(isPowerMilestone(action.level) ? 'unlock' : 'powerUpgrade');
 }
 

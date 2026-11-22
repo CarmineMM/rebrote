@@ -17,6 +17,7 @@ import {
   type MineElement,
   type Shooter,
 } from './plants';
+import { NO_BASE_LEVEL, isBaseLevel } from './baseLevel';
 import { FIRST_OUTBREAK, outbreakScript, type OutbreakId } from './outbreaks';
 import { loadoutSlots, type CarriedPower, type PowerSlot } from './powers';
 import { createRound, infuseFeature, isUnlocked, levelCap, levelCapRaisedAfter, sowFeature, type RoundState } from './rounds';
@@ -97,6 +98,11 @@ export interface MatchState {
   readonly grenades: readonly Grenade[];
   /** Poderes que lleva la partida, en el orden del panel, con sus cargas (T-021). Vacio: sin panel. */
   readonly powers: readonly PowerSlot[];
+  /**
+   * Nivel con el que nace cada disparadora sembrada (T-023): el nivel base del Invernadero al empezar la partida. No
+   * cambia aunque se compre otro paso con la partida a medias, asi que una guardada sigue igual al cargarla.
+   */
+  readonly baseLevel: number;
   /** Ronda en curso: preparacion o ataque, y que grupos del guion ya salieron (T-007). */
   readonly round: RoundState;
   /**
@@ -118,7 +124,8 @@ export interface MatchState {
  * se dice otro, el saldo inicial del brote (T-018, B-02: no se trae nada de otro brote). El juego siempre empieza en la
  * primera ronda; empezar en otra sirve para probar lo que desbloquean las siguientes. `replay` dice si su jefe ya estaba
  * vencido: entonces las semillas dan menos (T-020, C-03). `loadout`, los poderes que trae (T-021) con su nivel (T-022),
- * que salen de la tienda y se eligen antes del brote; sin el, ninguno.
+ * que salen de la tienda y se eligen antes del brote; sin el, ninguno. `baseLevel`, el nivel con el que nacen sus
+ * disparadoras (T-023); sin el, el 1.
  */
 export function createMatch(
   balance?: number,
@@ -126,7 +133,9 @@ export function createMatch(
   outbreak: OutbreakId = FIRST_OUTBREAK,
   replay = false,
   loadout?: readonly CarriedPower[],
+  baseLevel = NO_BASE_LEVEL,
 ): MatchState {
+  if (!isBaseLevel(baseLevel)) throw new Error(`Nivel base invalido: ${baseLevel}`);
   const start = balance ?? outbreakScript(outbreak).startingBalance;
   assertWholeAmount(start);
   const plants = Array.from({ length: BOARD.lanes }, () => Array.from({ length: BOARD.columns }, (): Sown | null => null));
@@ -141,6 +150,7 @@ export function createMatch(
     verses: [],
     grenades: [],
     powers: loadoutSlots(loadout),
+    baseLevel,
     round: createRound(outbreak, roundIndex),
     incomeMs: 0,
     seeds: newMatchSeeds(replay),
@@ -293,7 +303,10 @@ export function cardPlay(state: MatchState, card: CardId, cell: Cell): CardPlay 
   return { action: 'infuse', cost, multiplier: shooter.cannons, blocker };
 }
 
-/** Juega la carta en la casilla (siembra o infunde) y cobra su costo. No modifica el estado recibido. */
+/**
+ * Juega la carta en la casilla (siembra o infunde) y cobra su costo. La disparadora nace en el nivel base de la partida
+ * (T-023) y cuesta lo mismo. No modifica el estado recibido.
+ */
 export function playCard(state: MatchState, card: CardId, cell: Cell): MatchState {
   const play = cardPlay(state, card, cell);
   if (play.blocker) {
@@ -304,7 +317,7 @@ export function playCard(state: MatchState, card: CardId, cell: Cell): MatchStat
   if (play.action === 'infuse' && element) {
     placed = infusedPlant(plantAt(state, cell) as Plant, element);
   } else {
-    placed = element ? createSownElement(element) : createPlant();
+    placed = element ? createSownElement(element) : createPlant(createShooter(state.baseLevel));
   }
   const plants = state.plants.map((lane, laneIndex) =>
     laneIndex === cell.lane ? lane.map((sown, col) => (col === cell.col ? placed : sown)) : lane,

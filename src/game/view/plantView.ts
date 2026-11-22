@@ -6,7 +6,7 @@ import { type Effects, mixColor } from './effects';
 import { entityDepth, perspective } from './layout';
 import { gardenTier } from './gardenArt';
 import { LevelGarden } from './levelGarden';
-import { MEDAL_TIERS, medalTier, showsMedal } from './levelMedal';
+import { MEDAL_SPROUT, MEDAL_TIERS, medalTier, showsMedal, showsSprout } from './levelMedal';
 import { SHOOTER, type ShooterDesign } from './shooterShape';
 import { text } from '../../i18n';
 import { TEX, artInv, medalTexture, shooterTexture, shooterVariant, type ShooterVariant } from './textures';
@@ -110,6 +110,9 @@ export class PlantView {
   private level: number;
   /** Medallita de nivel (T-003), en la nuca. No la llevan las de nivel 1. */
   private medal?: Phaser.GameObjects.Image;
+  /** Nivel base de la partida (T-023): con uno comprado, la medallita lleva el brote del Invernadero (`medalSprout`). */
+  private baseLevel = 1;
+  private medalSprout?: Phaser.GameObjects.Image;
   /** Matas y flores de los niveles con premio, a los pies. */
   private readonly garden: LevelGarden;
   private wiltTint = 0xffffff;
@@ -237,7 +240,23 @@ export class PlantView {
     this.dimmed = dimmed;
     if (!this.flashTimer) this.body.setTint(this.restingTint());
     this.medal?.setTint(this.medalTint());
+    this.medalSprout?.setTint(this.medalTint());
     this.garden.setTint(this.medalTint());
+  }
+
+  /**
+   * Nivel base de la partida (T-023): con uno comprado, la medallita lleva el brote del Invernadero. Al brotar la planta
+   * (`pop`), el brote sale despues de ella con un saltito y unas hojas.
+   */
+  setBaseLevel(baseLevel: number, pop: boolean): this {
+    this.baseLevel = baseLevel;
+    this.syncMedal();
+    const sprout = this.medalSprout;
+    if (pop && sprout) {
+      sprout.setScale(0).setAngle(-30);
+      this.scene.tweens.add({ targets: sprout, scale: this.scale, angle: 0, delay: 300, duration: 420, ease: 'Back.Out', easeParams: [3] });
+    }
+    return this;
   }
 
   /** Se esta arrastrando: sigue en su casilla a efectos de combate, pero medio transparente. Al soltar vuelve con un saltito. */
@@ -491,7 +510,7 @@ export class PlantView {
 
   /** Todo lo que se anima de la planta, para cortarlo de golpe al irse. */
   private parts(): Phaser.GameObjects.GameObject[] {
-    return [this.holder, this.figure, this.body, this.shadow, ...(this.medal ? [this.medal] : [])];
+    return [this.holder, this.figure, this.body, this.shadow, ...(this.medal ? [this.medal] : []), ...(this.medalSprout ? [this.medalSprout] : [])];
   }
 
   /** Tinte de reposo: el marchitarse por la vida y, si toca, el oscurecido mientras se arrastra otra planta. */
@@ -533,6 +552,7 @@ export class PlantView {
       if (this.medal) this.scene.tweens.killTweensOf(this.medal);
       this.medal?.destroy();
       this.medal = undefined;
+      this.syncSprout();
       return;
     }
     const offset = this.medalOffset();
@@ -541,6 +561,30 @@ export class PlantView {
       this.figure.add(this.medal);
     }
     this.medal.setTexture(medalTexture(this.level)).setPosition(offset.x, offset.y).setTint(this.medalTint());
+    this.syncSprout();
+  }
+
+  /** Pone o quita el brote del Invernadero (T-023), prendido en el borde de la medallita, por encima de ella. */
+  private syncSprout(): void {
+    if (!showsSprout(this.level, this.baseLevel)) {
+      if (this.medalSprout) this.scene.tweens.killTweensOf(this.medalSprout);
+      this.medalSprout?.destroy();
+      this.medalSprout = undefined;
+      return;
+    }
+    const medal = this.design.medal(this.cannons);
+    const offset = this.textureOffset({ x: medal.x + MEDAL_SPROUT.dx, y: medal.y + MEDAL_SPROUT.dy });
+    if (!this.medalSprout) {
+      this.medalSprout = this.scene.add
+        .image(0, 0, TEX.medalSprout)
+        .setOrigin(MEDAL_SPROUT.foot.x / MEDAL_SPROUT.size, MEDAL_SPROUT.foot.y / MEDAL_SPROUT.size)
+        .setScale(this.scale);
+      this.figure.add(this.medalSprout);
+    } else {
+      // Siempre encima de la medallita, aunque esta se haya vuelto a crear.
+      this.figure.bringToTop(this.medalSprout);
+    }
+    this.medalSprout.setPosition(offset.x, offset.y).setTint(this.medalTint());
   }
 
   private setWilt(hpRatio: number): void {

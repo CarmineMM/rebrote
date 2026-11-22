@@ -7,7 +7,7 @@ import { Effects } from '../view/effects';
 import { greenhouseCast } from '../view/greenhouseGarden';
 import { DEPTH, perspective } from '../view/layout';
 import { PLANT_LOOK } from '../view/plantView';
-import { bossCutouts } from '../view/portrait';
+import { bossCutouts, nurseryPortraits } from '../view/portrait';
 import { QUALITY_PROFILES, type QualityLevel, type QualityProfile } from '../view/quality';
 import { TEX, artInvOf, registerGardenLand, registerTextures } from '../view/textures';
 import { TitleCover, type CoverCast } from '../view/titleCover';
@@ -107,6 +107,7 @@ export class TitleScene extends Phaser.Scene {
         resume: request.resume,
         outbreak: request.outbreak,
         loadout: request.loadout,
+        baseLevel: request.baseLevel,
         pendingUnlock: request.pendingUnlock ?? null,
       };
       this.input.setDefaultCursor('default');
@@ -114,7 +115,11 @@ export class TitleScene extends Phaser.Scene {
     };
     EventBus.on(GameEvents.matchRequested, onMatch);
     // Los jefes de la ruta de brotes (T-019), con las texturas ya pintadas: React solo los ensena.
-    const onStateRequested = () => EventBus.emit(GameEvents.routeArt, bossCutouts(this));
+    // Y la disparadora de cada nivel base, para las plantas del Invernadero (T-023).
+    const onStateRequested = () => {
+      EventBus.emit(GameEvents.routeArt, bossCutouts(this));
+      EventBus.emit(GameEvents.nurseryArt, nurseryPortraits(this));
+    };
     EventBus.on(GameEvents.stateRequested, onStateRequested);
     // Portada <-> Invernadero (T-019): fundido, y la escena vuelve a empezar en el otro sitio.
     const onPlace = (place: MenuPlace) => {

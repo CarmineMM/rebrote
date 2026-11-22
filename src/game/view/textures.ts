@@ -5,7 +5,7 @@ import type { ElementType, MineElement } from '../core/plants';
 import type { ScreenPoint } from './perspective';
 import { SCENERY, VIEW, WORLD, perspective } from './layout';
 import { GARDEN, GARDEN_PARTS, GARDEN_TIERS, paintGardenPiece, type GardenPart } from './gardenArt';
-import { MEDAL, MEDAL_TIERS, medalTier } from './levelMedal';
+import { MEDAL, MEDAL_SPROUT, MEDAL_TIERS, medalTier } from './levelMedal';
 import { AURA_LOOK, AURA_TIERS, paintAuraVeil } from './wormAuraArt';
 import { text } from '../../i18n';
 import { type Ctx, circle, ellipse, leafShape, smallFlower } from './canvasKit';
@@ -92,6 +92,8 @@ export const TEX = {
   levelGarden: 'unit-level-garden',
   /** Medallita de nivel de la disparadora (T-003), una por nivel con su numero (usar `medalTexture`). */
   medal: 'ui-medal',
+  /** Brote del Invernadero en el borde de la medallita (T-023): la planta nacio con el nivel base comprado. */
+  medalSprout: 'ui-medal-sprout',
   /** Semilla normal, de fuego y de hielo (usar `seedTexture`). */
   seed: 'unit-seed',
   fireSeed: 'unit-seed-fire',
@@ -387,6 +389,7 @@ export function registerTextures(scene: Phaser.Scene, scale = 1): void {
   for (let level = 2; level <= LIMITS.maxLevel; level++) {
     paint(medalTexture(level), MEDAL.size, MEDAL.size, (ctx) => paintMedal(ctx, level));
   }
+  paint(TEX.medalSprout, MEDAL_SPROUT.size, MEDAL_SPROUT.size, paintMedalSprout);
   for (let tier = 1; tier <= GARDEN_TIERS; tier++) {
     for (const part of GARDEN_PARTS) paint(levelGardenTexture(tier, part), GARDEN.width, GARDEN.height, (ctx) => paintGardenPiece(ctx, tier, part));
   }
@@ -1540,6 +1543,77 @@ const LEAF_OUTLINE = '#2a6b22';
  * cualquier cabeza (tambien la azul clarita del hielo), un brillo y el numero en blanco con borde.
  * El color cambia cada 5 niveles (`medalTier`); la del nivel maximo es de cristal irisado con dos destellos.
  */
+/**
+ * Brote del Invernadero (T-023): un tallito que sale del borde de la medallita con dos hojas, la grande hacia arriba a la
+ * izquierda (fuera de la cabeza, sobre el fondo) y la pequena hacia arriba, en el verde de la planta con su contorno, un
+ * nervio claro y un ribete crema alrededor para no perderse sobre la cabeza verde, la naranja o la azul.
+ */
+function paintMedalSprout(ctx: Ctx): void {
+  const { x, y } = MEDAL_SPROUT.foot;
+  const outline = '#2a6b22';
+  const base = { x: x - 1, y: y - 5 };
+  const leaves = [
+    { tip: { x: x + 3, y: y - 12 }, bulge: 3 },
+    { tip: { x: x - 16, y: y - 18 }, bulge: 5.5 },
+  ];
+  const leafPath = (tip: { x: number; y: number }, bulge: number) => {
+    const mx = (base.x + tip.x) / 2;
+    const my = (base.y + tip.y) / 2;
+    const nx = -(tip.y - base.y);
+    const ny = tip.x - base.x;
+    const len = Math.hypot(nx, ny) || 1;
+    ctx.beginPath();
+    ctx.moveTo(base.x, base.y);
+    ctx.quadraticCurveTo(mx + (nx / len) * bulge, my + (ny / len) * bulge, tip.x, tip.y);
+    ctx.quadraticCurveTo(mx - (nx / len) * bulge, my - (ny / len) * bulge, base.x, base.y);
+    ctx.closePath();
+    return { mx, my };
+  };
+  const stem = () => {
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.quadraticCurveTo(x + 0.5, y - 3, base.x, base.y);
+  };
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  // Ribete crema por fuera de todo.
+  ctx.strokeStyle = '#fff7d6';
+  ctx.lineWidth = 6;
+  stem();
+  ctx.stroke();
+  ctx.lineWidth = 4.4;
+  for (const { tip, bulge } of leaves) {
+    leafPath(tip, bulge);
+    ctx.stroke();
+  }
+  // Tallo.
+  ctx.strokeStyle = outline;
+  ctx.lineWidth = 3.6;
+  stem();
+  ctx.stroke();
+  ctx.strokeStyle = '#6cc244';
+  ctx.lineWidth = 1.8;
+  ctx.stroke();
+  for (const { tip, bulge } of leaves) {
+    const g = ctx.createLinearGradient(base.x, base.y, tip.x, tip.y);
+    g.addColorStop(0, '#4fa832');
+    g.addColorStop(1, '#c4f58a');
+    const { mx, my } = leafPath(tip, bulge);
+    ctx.fillStyle = g;
+    ctx.fill();
+    ctx.strokeStyle = outline;
+    ctx.lineWidth = 1.6;
+    ctx.stroke();
+    // Nervio claro.
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(base.x, base.y);
+    ctx.lineTo(mx + (tip.x - mx) * 0.5, my + (tip.y - my) * 0.5);
+    ctx.stroke();
+  }
+}
+
 function paintMedal(ctx: Ctx, level: number): void {
   const palette = MEDAL_TIERS[medalTier(level)];
   const c = MEDAL.size / 2;

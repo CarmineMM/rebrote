@@ -1,6 +1,6 @@
 # [Progresión] Nivel base permanente de la disparadora
 
-**Estado:** Pendiente · **Prioridad:** Baja · **Tamaño estimado:** M (orientativo) · **Depende de:** T-019, T-020, T-022 · **Bloquea a:** ninguna · **Origen:** conversación de diseño del 20 nov 2026
+**Estado:** Completada (22 nov 2026, 0.12.0) · **Prioridad:** Baja · **Tamaño estimado:** M (orientativo) · **Depende de:** T-019, T-020, T-022 · **Bloquea a:** ninguna · **Origen:** conversación de diseño del 20 nov 2026
 
 ## Contexto
 En la partida, cada disparadora empieza en nivel 1 y sube pagando moneda: cada nivel suma un 10 % de daño y un 3 % de cadencia (`LEVELING` en `balance.ts`, `levelBonus` en `src/game/core/plants.ts`). Desde T-027 (21 nov 2026), llegar a los niveles 5 y 15 suma 1,5 veces eso y llegar al 10 y al 20, el doble: como la mejora se cuenta como niveles (N-01 a), hay que decidir si la planta nace con esos premios (N-05). Cada ronda pone un tope de nivel: en el brote 1 es 5 desde la ronda 2 (`levelCap` en las rondas de `OUTBREAKS`, T-009, T-010 y T-018). Subir de nivel se desbloquea en la ronda 2 y tiene su tour.
@@ -22,30 +22,40 @@ Carmine quiere una mejora permanente y muy cara, con tope 5, para que las planta
 | # | Pregunta | Opciones | Recomendación | Decide |
 |---|---|---|---|---|
 | N-01 | ¿Cómo se aplica la mejora? | **Cerrada (21 nov 2026): a.** La planta nace en nivel N y el tope de cada ronda sigue igual; los brotes futuros suben el tope | Cerrada | Carmine |
-| N-05 | La planta que nace en nivel 5, ¿trae el premio del nivel 5 (T-027)? | Sí o no | Sí: es una planta de nivel 5 a todos los efectos, con su jardincito | Carmine |
-| N-06 | ¿Cuánto cuesta subirla en la partida? | a) Lo que cuesta desde su nivel (más caro). b) Como si partiera de nivel 1 | a: no hay que tocar la regla de costos, y compensa lo que ya trae | Carmine |
-| N-02 | ¿Cuánto da cada paso? | Valores libres | Lo mismo que un nivel de partida: 10 % de daño y 3 % de cadencia | Carmine |
-| N-03 | Precios | Valores libres. Con la economía de T-020, una primera victoria sin perder vidas da unas 1000 semillas en el brote 1 y algo más en los siguientes | Crecientes; el quinto paso, el artículo más caro de la tienda (unas 10.000 semillas, lo que dijo Carmine al cerrar T-020) | Carmine |
-| N-04 | ¿Afecta a rejugar brotes ya vencidos? | Sí o no | Sí: que el jugador sienta lo que compró | Carmine |
+| N-05 | La planta que nace en nivel 5, ¿trae el premio del nivel 5 (T-027)? | **Cerrada (22 nov 2026): sí.** Es una planta de nivel 5 a todos los efectos, con su jardincito | Cerrada | Carmine |
+| N-06 | ¿Cuánto cuesta subirla en la partida? | **Cerrada (22 nov 2026): a.** Lo que cuesta desde su nivel; no se toca la regla de costos | Cerrada | Carmine |
+| N-02 | ¿Cuánto da cada paso? | **Cerrada (22 nov 2026):** lo mismo que un nivel de partida (10 % de daño y 3 % de cadencia, con el premio del 5) | Cerrada | Carmine |
+| N-03 | Precios | **Cerrada (22 nov 2026):** crecientes, 1500, 3000, 5500 y 10.000 (del 1 al 5, 20.000); el paso al 5 es el artículo más caro de la tienda | Cerrada | Carmine |
+| N-04 | ¿Afecta a rejugar brotes ya vencidos? | **Cerrada (22 nov 2026): sí.** Toda partida nueva, también la de un brote ya vencido | Cerrada | Carmine |
 
 ## Criterios de aceptación
-- [ ] En el Invernadero, la disparadora muestra su nivel base (de 1 a 5), el precio del siguiente paso y lo que aporta.
-- [ ] Comprar un paso descuenta las semillas y queda guardado.
-- [ ] No se puede pasar de 5; en 5 dice "Máximo".
-- [ ] Toda disparadora sembrada en una partida nueva trae la mejora aplicada.
-- [ ] El precio de sembrar y de infundir en la partida no cambia. El de subir de nivel sigue N-06.
-- [ ] Si la planta nace en el tope de la ronda, su panel dice que está al máximo para esta ronda, igual que hoy una planta subida al tope.
-- [ ] En un brote con tope mayor que la mejora, se puede subir de nivel con normalidad desde el nivel con el que nace.
-- [ ] Un jugador sin la mejora ve el tour de subir de nivel como hasta ahora.
-- [ ] La mejora se ve en la planta y en su ficha de información, también en plantas fusionadas.
-- [ ] Fusionar dos plantas no pierde ni duplica la mejora.
-- [ ] Una partida guardada antes de comprar la mejora no cambia al cargarla.
+- [x] En el Invernadero, la disparadora muestra su nivel base (de 1 a 5), el precio del siguiente paso y lo que aporta.
+- [x] Comprar un paso descuenta las semillas y queda guardado.
+- [x] No se puede pasar de 5; en 5 dice "Máximo".
+- [x] Toda disparadora sembrada en una partida nueva trae la mejora aplicada.
+- [x] El precio de sembrar y de infundir en la partida no cambia. El de subir de nivel sigue N-06.
+- [x] Si la planta nace en el tope de la ronda, su panel dice que está al máximo para esta ronda, igual que hoy una planta subida al tope.
+- [x] En un brote con tope mayor que la mejora, se puede subir de nivel con normalidad desde el nivel con el que nace.
+- [x] Un jugador sin la mejora ve el tour de subir de nivel como hasta ahora.
+- [x] La mejora se ve en la planta y en su ficha de información, también en plantas fusionadas.
+- [x] Fusionar dos plantas no pierde ni duplica la mejora.
+- [x] Una partida guardada antes de comprar la mejora no cambia al cargarla.
 
 ### Calidad
-- [ ] El efecto se calcula en `src/game/core/` con tests; valores en `balance.ts`.
-- [ ] Simular el brote 1 con nivel base 1 y con nivel base 5 y anotar el resultado en la spec: con nivel base 1 se sigue pudiendo ganar.
-- [ ] Textos en español e inglés.
-- [ ] `npm test` y `npm run build` pasan.
+- [x] El efecto se calcula en `src/game/core/` con tests; valores en `balance.ts`.
+- [x] Simular el brote 1 con nivel base 1 y con nivel base 5 y anotar el resultado en la spec: con nivel base 1 se sigue pudiendo ganar.
+- [x] Textos en español e inglés.
+- [x] `npm test` y `npm run build` pasan.
+
+## Cómo quedó (22 nov 2026)
+- Carmine aceptó todas las recomendaciones al empezar la task (N-02 a N-06).
+- Reglas en `src/game/core/baseLevel.ts` (con test); precios y tope en `BASE_LEVEL` de `balance.ts`. El nivel base va en el progreso (`Progress.baseLevel`, `PROGRESS_VERSION` 5) y en la partida (`MatchState.baseLevel`, `SAVE_VERSION` 9): se copia al empezarla, así que comprar con una partida a medias no la cambia. Lo guardado con la versión anterior se descarta (ADR-0014, regla 11).
+- Se compra en "Plantas", en el Invernadero (antes con candado). La foto de la disparadora la compone la escena (`nurseryPortraits`).
+- Marca visual: el brote del Invernadero, dos hojitas con ribete crema prendidas en la medallita (también en las fusionadas y en la foto de la ficha), y en la ficha la pastilla "Nivel base N, del Invernadero".
+- Suena como mejorar un poder; llegar al 5, como un desbloqueo (`shopCue`).
+- No lleva tour: no es una mecánica de partida (no tiene `Feature`), sino un artículo del Invernadero, como los poderes de la tienda.
+- En desarrollo, `?nivelbase=N` hace que las partidas nuevas nazcan con ese nivel base.
+- Simulación (`npm run sim`, bot sin escudos, 10 partidas del brote 1): nivel base 1, 9 de 10 ganadas y combate final de 57 s; nivel base 3, 10 de 10 y 50 s; nivel base 5, 10 de 10 y 44 s. Las rondas duran casi lo mismo (salen por tiempo): la mejora ayuda pero no trivializa el brote.
 
 ## Casos límite y riesgos
 - Rejugar el brote 1 con nivel base 5: todas las disparadoras nacen al tope y subir de nivel no hace nada en ese brote. Revisar que no lo trivialice (y que eso no dispare el farmeo de semillas de T-020).

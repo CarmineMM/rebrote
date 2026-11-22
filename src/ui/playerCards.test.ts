@@ -60,6 +60,12 @@ describe('pantalla de jugadores (T-034)', () => {
     expect(lostLines(text('es'), describePlayer(profile, store))).toEqual(['Jefes vencidos: Creeper', '2 poderes comprados en la tienda']);
   });
 
+  it('al borrarlo tambien se pierde el nivel base de la disparadora (T-023)', () => {
+    const store = memoryStore();
+    store.setItem(PROGRESS_KEY, encodeProgress({ ...recordDefeat(emptyProgress(), 'creeper'), baseLevel: 3 }));
+    expect(lostLines(text('es'), describePlayer(profile, store))).toEqual(['Jefes vencidos: Creeper', 'La disparadora en nivel base 3']);
+  });
+
   it('quien solo vio la historia tambien tiene algo que perder (T-031)', () => {
     const store = memoryStore();
     store.setItem(PROGRESS_KEY, encodeProgress(recordStory(emptyProgress(), 'opening')));

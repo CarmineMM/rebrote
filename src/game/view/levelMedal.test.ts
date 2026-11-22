@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { LIMITS } from '../config/balance';
-import { MEDAL, MEDAL_TIERS, medalTier, showsMedal } from './levelMedal';
+import { MEDAL, MEDAL_TIERS, medalTier, showsMedal, showsSprout } from './levelMedal';
 
 /** Hasta donde llegan las ondas del borde de la medallita (ver `paintMedal`). */
 const MEDAL_REACH = MEDAL.radius + 3;
@@ -24,5 +24,14 @@ describe('medallita de nivel', () => {
 
   it('cabe en su textura', () => {
     expect(MEDAL_REACH * 2).toBeLessThanOrEqual(MEDAL.size);
+  });
+});
+
+describe('brote del Invernadero (T-023)', () => {
+  it('lo lleva la medallita de una partida con nivel base comprado; sin comprar, nunca', () => {
+    expect(showsSprout(5, 5)).toBe(true);
+    expect(showsSprout(7, 3)).toBe(true);
+    expect(showsSprout(5, 1)).toBe(false);
+    expect(showsSprout(1, 1)).toBe(false);
   });
 });

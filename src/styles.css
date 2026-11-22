@@ -1010,6 +1010,7 @@ body {
 .info-tag.is-ice { background: rgba(110, 196, 255, 0.24); border-color: #8fd8ff; color: #e2f6ff; }
 .info-tag.is-haste { background: rgba(57, 255, 136, 0.18); border-color: #39ff88; color: #c8ffe0; }
 .info-tag.is-alert { background: rgba(255, 90, 95, 0.24); border-color: #ff8a8a; color: #ffe0e0; }
+.info-tag.is-nursery { background: rgba(128, 209, 83, 0.24); border-color: #9be36a; color: #e4ffd2; }
 .info-tag.is-calm { background: rgba(255, 255, 255, 0.1); border-color: rgba(255, 255, 255, 0.35); color: #e6f2de; }
 @keyframes tag-in { from { opacity: 0; transform: scale(0.6); } to { opacity: 1; transform: none; } }
 
@@ -1480,6 +1481,28 @@ body {
 }
 @keyframes shop-ring { from { opacity: 0.9; transform: scale(0.4); } to { opacity: 0; transform: scale(1.6); } }
 
+/* ---------- Plantas del Invernadero (T-023): el nivel base de la disparadora, como una tarjeta de la tienda ---------- */
+.route-card.plant-shop-card { width: min(640px, 100%); grid-template-rows: auto auto auto; }
+.plant-shop-item {
+  display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 18px; text-align: left; padding: 16px 18px;
+}
+.plant-shop-photo {
+  position: relative; width: 168px; height: 168px; padding: 6px 6px 16px; border-radius: 6px; rotate: -3deg;
+  background: #fffdf6; box-shadow: 0 6px 14px rgba(0, 0, 0, 0.35);
+}
+.plant-shop-photo::before {
+  content: ''; position: absolute; left: 50%; top: -9px; width: 54px; height: 18px; margin-left: -27px; rotate: 4deg;
+  background: rgba(255, 236, 170, 0.75); border-radius: 2px;
+}
+.plant-shop-photo img { display: block; width: 100%; height: 100%; object-fit: cover; border-radius: 3px; animation: plant-shop-photo 0.5s cubic-bezier(0.2, 1.4, 0.4, 1) both; }
+@keyframes plant-shop-photo { from { opacity: 0; transform: scale(0.7) rotate(-6deg); } to { opacity: 1; transform: none; } }
+.plant-shop-body { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; min-width: 0; }
+.plant-shop-body .shop-buy { align-self: stretch; margin-top: 4px; }
+.plant-shop-level { margin: 0; font-size: 0.78rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: #9fd88a; }
+.plant-shop-bonus { color: #e3f7d2; font-weight: 800; }
+.plant-shop-item .shop-cheer { left: 98px; top: 70px; }
+.greenhouse-plants .btn-line > span[aria-hidden] { color: #b9f27c; }
+
 /* ---------- Poderes del brote (T-022): antes de empezar, en el panel del Invernadero ---------- */
 .loadout-hint { margin: 6px 0 10px; text-align: center; font-size: 0.85rem; font-weight: 700; color: #d8eecb; opacity: 0.85; }
 .loadout-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
@@ -1529,6 +1552,9 @@ body {
   .shop-buy { padding: 6px 10px; font-size: 0.86rem; }
   .shop-price .seed-icon { width: 15px; height: 15px; }
   .shop-cheer { top: 22px; font-size: 1.05rem; }
+  .plant-shop-item { gap: 12px; padding: 10px 12px; }
+  .plant-shop-photo { width: 120px; height: 120px; padding: 4px 4px 11px; }
+  .plant-shop-item .shop-cheer { left: 68px; top: 48px; }
   .loadout-hint { margin: 2px 0 6px; font-size: 0.76rem; }
   .loadout-list { gap: 5px; }
   .loadout-power { padding: 4px 10px; gap: 8px; font-size: 0.92rem; }
@@ -1551,6 +1577,9 @@ body {
   .shop-name { font-size: 0.9rem; }
   .shop-about { font-size: 0.66rem; }
   .shop-next { display: none; }
+  .plant-shop-photo { width: 92px; height: 92px; padding: 3px 3px 9px; }
+  .plant-shop-level { display: none; }
+  .plant-shop-item .shop-cheer { left: 52px; top: 36px; }
   .victory-shop { padding: 3px 10px; }
   .victory-shop .shop-icon { width: 22px; height: 20px; }
   .victory-shop-text { display: none; }
@@ -1778,6 +1807,12 @@ button.route-stop-body:focus-visible .route-ring { outline-color: #ffe066; }
 @media (max-height: 420px) {
   .greenhouse-locked .btn-detail { display: none; }
   .route-detail-body.is-confirm .route-detail-note { display: none; }
+}
+/* Movil estrecho con la historia vista (568 px): tres en fila no caben con sus dibujos, asi que solo van los nombres. */
+@media (max-width: 640px) {
+  .greenhouse-locked.has-story .btn .shop-icon,
+  .greenhouse-locked.has-story .btn > [aria-hidden],
+  .greenhouse-locked.has-story .btn-line > [aria-hidden] { display: none; }
 }
 
 /* ---------- Tours de ayuda (T-013, ADR-0012): velo con huecos, aros que laten, la mano y el bocadillo con Brotito ---------- */

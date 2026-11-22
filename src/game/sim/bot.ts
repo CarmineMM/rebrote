@@ -228,10 +228,13 @@ const STEP_MS = 50;
 const THINK_MS = 250;
 const LIMIT_MS = 60 * 60 * 1000;
 
-/** Juega el brote `outbreak` entero con el bot `style`, con las preparaciones enteras. */
-export function simulate(outbreak: OutbreakId, style: BotStyle, seed: number): SimResult {
+/**
+ * Juega el brote `outbreak` entero con el bot `style`, con las preparaciones enteras. `baseLevel`, el nivel con el que
+ * nacen sus disparadoras (T-023); sin el, el 1.
+ */
+export function simulate(outbreak: OutbreakId, style: BotStyle, seed: number, baseLevel = 1): SimResult {
   const random = seeded(seed);
-  let state = createMatch(undefined, 0, outbreak);
+  let state = createMatch(undefined, 0, outbreak, false, undefined, baseLevel);
   let time = 0;
   let thought = -Infinity;
   let bossStart: number | null = null;

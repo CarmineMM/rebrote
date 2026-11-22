@@ -2,6 +2,7 @@ import { BOARD, ENEMIES, LIMITS, LIVES } from './config/balance';
 import type { Burn, Enemy, Jump, Recital, Slow } from './core/combat';
 import type { MatchState, Sown } from './core/match';
 import { isOutbreakId, roundCount, type OutbreakId } from './core/outbreaks';
+import { isBaseLevel } from './core/baseLevel';
 import { chargesAt, isPowerId, isPowerLevel } from './core/powers';
 import type { UnlockInfo } from './EventBus';
 import { profiles } from './profiles';
@@ -25,9 +26,9 @@ export const SAVE_KEY = 'partida';
  * recital de Elk Cloner (`Enemy.recital`) y quien recita cada verso y si es del poema entero (`Verse.by`, `Verse.poem`); la 7
  * (T-021), los poderes con sus cargas (`MatchState.powers`), las granadas en vuelo (`MatchState.grenades`) y los bloques
  * del muro de hielo; la 8 (T-022), el nivel de cada poder (`PowerSlot.level`), el dano y el alcance de cada granada y la
- * vida entera de cada bloque de hielo (`IceBlock.maxHp`).
+ * vida entera de cada bloque de hielo (`IceBlock.maxHp`); la 9 (T-023), el nivel base de la partida (`MatchState.baseLevel`).
  */
-export const SAVE_VERSION = 8;
+export const SAVE_VERSION = 9;
 
 export interface SavedGame {
   readonly version: number;
@@ -254,6 +255,7 @@ export function isMatchState(value: unknown): value is MatchState {
     Array.isArray(grenades) &&
     grenades.every(isGrenade) &&
     isPowers(value.powers) &&
+    isBaseLevel(value.baseLevel) &&
     isRound(value.round, value.outbreak) &&
     isNumber(value.incomeMs) &&
     isMatchSeeds(value.seeds, value.outbreak) &&

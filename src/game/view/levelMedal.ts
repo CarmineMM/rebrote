@@ -16,6 +16,19 @@ export const MEDAL = {
   onHead: 0.97,
 } as const;
 
+/**
+ * Brote del Invernadero (T-023): dos hojitas prendidas en el borde de la medallita, arriba a la izquierda (fuera de la
+ * cabeza, para leerse sobre el fondo), que dicen que la disparadora nacio con el nivel base comprado. Lo llevan todas las de una partida con nivel base mayor que 1 (tambien
+ * las fusionadas, que nunca bajan de el). `dx`, `dy`: donde apoya su tallo respecto al centro de la medallita; `foot`, el
+ * punto de apoyo dentro de su textura. Medidas en pixeles de la textura de la disparadora.
+ */
+export const MEDAL_SPROUT = {
+  size: 28,
+  dx: -6,
+  dy: -12,
+  foot: { x: 21, y: 24 },
+} as const;
+
 /** Colores de un tramo de la medallita: disco (luz, tono y sombra), contorno y borde del numero. */
 export interface MedalPalette {
   readonly light: string;
@@ -39,6 +52,11 @@ export const MEDAL_TIERS: readonly MedalPalette[] = [
 /** La de nivel 1 no lleva medallita: asi se distinguen de un vistazo las que se han subido. */
 export function showsMedal(level: number): boolean {
   return level > 1;
+}
+
+/** Lleva el brote del Invernadero (T-023): una partida con nivel base comprado y una planta con medallita. */
+export function showsSprout(level: number, baseLevel: number): boolean {
+  return baseLevel > 1 && showsMedal(level);
 }
 
 /** Tramo de color de la medallita: cambia en los niveles 5, 10 y 15, y el maximo tiene el suyo. */
