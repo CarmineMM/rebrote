@@ -55,3 +55,9 @@ Condiciones previas:
 - El terreno del Invernadero ocupa en memoria lo mismo que el del juego (en Ultra, una textura grande más) desde la primera vez que se entra.
 - **Una planta nueva** (el escudo de T-024) sale en el jardín del Invernadero cuando se añade su pieza a `EXHIBITS` en `greenhouseGarden.ts`, con lo que necesita y su casilla.
 - El texto del ADR-0010 sobre "Cargar partida" y la lista de jefes queda sustituido por este.
+
+## Actualización (T-036, 22 nov 2026)
+El jardín del Invernadero se quitó. Carmine eligió un refugio de noche entre tres propuestas (`/invernadero.html`). La decisión de fondo no cambia: la escena de portada pinta el sitio y React pinta encima el panel y lo demás. Lo que cambia:
+- En el Invernadero la escena no crea ni el ambiente del jardín ni `TitleCover`: pinta el refugio (`createRefuge` en `view/refuge.ts`, con sus medidas y pintores en `view/refugeArt.ts`). Sus tres texturas grandes (fuera, circuitos y sala) se pintan la primera vez que se entra, como antes el terreno del jardín, que ya no existe (ni `greenhouseCast`, ni `registerGardenLand`, ni la tierra removida).
+- La tienda y las plantas ya no se abren encima: son el Laboratorio de Patty (`ui/PattyLab.tsx`), siempre abierto a la izquierda del panel. La foto del vivero la sigue mandando la escena (`nurseryArt`), ahora recortada sin fondo.
+- Una planta nueva ya no sale en el Invernadero: el punto sobre `EXHIBITS` de arriba deja de valer.

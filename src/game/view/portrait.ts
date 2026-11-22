@@ -135,12 +135,12 @@ export function portraitUrl(scene: Phaser.Scene, subject: PortraitSubject, { bac
 
 /**
  * La disparadora recien sembrada en cada nivel base (T-023), del 1 al maximo, con su medallita, su brote del Invernadero y,
- * en el 5, su jardincito. Es la foto de la pantalla de las plantas del Invernadero.
+ * en el 5, su jardincito. Recortada sobre transparente: va en su lata, en el vivero del Laboratorio de Patty (T-036).
  */
 export function nurseryPortraits(scene: Phaser.Scene): Record<number, string> {
   const art: Record<number, string> = {};
   for (let level = 1; level <= BASE_LEVEL.max; level++) {
-    art[level] = portraitUrl(scene, { kind: 'shooter', cannons: 1, element: null, level, baseLevel: level });
+    art[level] = portraitUrl(scene, { kind: 'shooter', cannons: 1, element: null, level, baseLevel: level }, { backdrop: false });
   }
   return art;
 }

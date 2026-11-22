@@ -1,16 +1,12 @@
 import * as Phaser from 'phaser';
-import { ownedSoFar } from '../core/route';
 import { EventBus, GameEvents, type MatchRequest, type MenuPlace } from '../EventBus';
-import { playerProgress } from '../progress';
 import { createAmbience, type Ambience } from '../view/ambience';
 import { Effects } from '../view/effects';
-import { greenhouseCast } from '../view/greenhouseGarden';
-import { DEPTH, perspective } from '../view/layout';
-import { PLANT_LOOK } from '../view/plantView';
 import { bossCutouts, nurseryPortraits } from '../view/portrait';
 import { QUALITY_PROFILES, type QualityLevel, type QualityProfile } from '../view/quality';
-import { TEX, artInvOf, registerGardenLand, registerTextures } from '../view/textures';
-import { TitleCover, type CoverCast } from '../view/titleCover';
+import { createRefuge } from '../view/refuge';
+import { registerRefugeTextures, registerTextures } from '../view/textures';
+import { TitleCover } from '../view/titleCover';
 import type { BoardSceneData } from './BoardScene';
 import { SCENES } from './keys';
 import { FpsMeter, applyPostFx, fitCamera } from './sceneKit';
@@ -18,7 +14,7 @@ import { FpsMeter, applyPostFx, fitCamera } from './sceneKit';
 /** Datos con los que arranca la portada (ver createGame). */
 export interface TitleSceneData {
   quality: QualityLevel;
-  /** Portada (la batalla de Creeper) o Invernadero (el jardin de las plantas del jugador, T-019). Sin el, la portada. */
+  /** Portada (la batalla de Creeper) o Invernadero (el refugio de noche, T-036). Sin el, la portada. */
   place?: MenuPlace;
   /** Viene de cambiar de sitio: entra con un fundido. */
   fadeIn?: boolean;
@@ -35,8 +31,6 @@ const LOOK = {
   fadeOutMs: 180,
   fadeInMs: 320,
   fade: { r: 29, g: 43, b: 31 },
-  /** Tierra removida al pie de cada planta del Invernadero: ancho en casillas, y cuando aparece (con el brote de la planta). */
-  soilPatch: { width: 0.8, delayMs: 120, growMs: 420 },
 } as const;
 
 /**
@@ -44,10 +38,8 @@ const LOOK = {
  * en plena batalla a la izquierda (`TitleCover`). React pinta encima el titulo y el menu. Al pedir una partida deja
  * paso al tablero (`BoardScene`), en el mismo juego: las texturas ya estan pintadas.
  *
- * En el Invernadero (T-019) la batalla se cambia por el jardin del jugador: solo las plantas que ya tiene, en calma y sin
- * enemigos (`greenhouseCast` con lo de `ownedSoFar`), sobre un cesped liso sin casillas ni suelo corrupto, cada una en
- * su trozo de tierra removida y algo corrida de donde iria en el tablero: sembradas a mano. Al pasar de un sitio a otro
- * la escena se funde y vuelve a empezar en el nuevo, y todo brota otra vez.
+ * En el Invernadero (T-019) no hay jardin ni batalla: es el refugio de noche (T-036, `createRefuge`), con el Laboratorio
+ * de Patty que React pinta encima. Al pasar de un sitio a otro la escena se funde y vuelve a empezar en el nuevo.
  */
 export class TitleScene extends Phaser.Scene {
   private level: QualityLevel = 'medium';
@@ -56,8 +48,9 @@ export class TitleScene extends Phaser.Scene {
   /** Ya se esta fundiendo para cambiar de sitio: otro cambio no lo interrumpe. */
   private leaving = false;
   private quality: QualityProfile = QUALITY_PROFILES.medium;
-  private ambience!: Ambience;
-  private cover!: TitleCover;
+  /** La portada; en el Invernadero no hay ni jardin ni batalla. */
+  private ambience: Ambience | null = null;
+  private cover: TitleCover | null = null;
   private readonly fps = new FpsMeter();
 
   constructor() {
@@ -75,30 +68,28 @@ export class TitleScene extends Phaser.Scene {
   create(): void {
     registerTextures(this, this.quality.renderScale);
     const greenhouse = this.place === 'greenhouse';
-    // El terreno del Invernadero se pinta la primera vez que se entra; despues se queda en el juego.
-    if (greenhouse) registerGardenLand(this);
+    // El refugio se pinta la primera vez que se entra en el Invernadero; despues se queda en el juego.
+    if (greenhouse) registerRefugeTextures(this);
     this.fitView();
     this.scale.on(Phaser.Scale.Events.RESIZE, this.fitView, this);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.scale.off(Phaser.Scale.Events.RESIZE, this.fitView, this));
-    this.ambience = createAmbience(this, this.quality, { garden: greenhouse });
-    applyPostFx(this, this.quality);
-    const fx = new Effects(this, this.quality);
-    // En el Invernadero, lo que el jugador ya tiene (lo dice el progreso permanente, que comparten Phaser y React).
     if (greenhouse) {
-      const cast = greenhouseCast(ownedSoFar(playerProgress.read().defeated));
-      this.cover = new TitleCover(this, fx, cast);
-      this.addSoilPatches(cast);
+      this.ambience = null;
+      this.cover = null;
+      createRefuge(this, this.quality);
     } else {
-      this.cover = new TitleCover(this, fx);
+      this.ambience = createAmbience(this, this.quality);
+      this.cover = new TitleCover(this, new Effects(this, this.quality));
     }
+    applyPostFx(this, this.quality);
     if (this.fadeIn) this.cameras.main.fadeIn(LOOK.fadeInMs, LOOK.fade.r, LOOK.fade.g, LOOK.fade.b);
 
     // El tablero pudo dejar otro cursor (arrastrar una planta): la portada empieza con el de siempre.
     this.input.setDefaultCursor('default');
     this.input.on(Phaser.Input.Events.POINTER_DOWN, (pointer: Phaser.Input.Pointer) => {
-      if (pointer.button === 0) this.cover.press(pointer.worldX, pointer.worldY);
+      if (pointer.button === 0) this.cover?.press(pointer.worldX, pointer.worldY);
     });
-    this.input.on(Phaser.Input.Events.POINTER_MOVE, (pointer: Phaser.Input.Pointer) => this.cover.hover(pointer.worldX, pointer.worldY));
+    this.input.on(Phaser.Input.Events.POINTER_MOVE, (pointer: Phaser.Input.Pointer) => this.cover?.hover(pointer.worldX, pointer.worldY));
 
     // Nueva partida o la guardada: el tablero toma el relevo con la misma calidad.
     const onMatch = (request: MatchRequest) => {
@@ -115,7 +106,7 @@ export class TitleScene extends Phaser.Scene {
     };
     EventBus.on(GameEvents.matchRequested, onMatch);
     // Los jefes de la ruta de brotes (T-019), con las texturas ya pintadas: React solo los ensena.
-    // Y la disparadora de cada nivel base, para las plantas del Invernadero (T-023).
+    // Y la disparadora de cada nivel base, para el vivero del Laboratorio de Patty (T-023, T-036).
     const onStateRequested = () => {
       EventBus.emit(GameEvents.routeArt, bossCutouts(this));
       EventBus.emit(GameEvents.nurseryArt, nurseryPortraits(this));
@@ -146,26 +137,13 @@ export class TitleScene extends Phaser.Scene {
   }
 
   update(_time: number, delta: number): void {
-    this.ambience.update(delta);
-    this.cover.update(delta);
+    this.ambience?.update(delta);
+    this.cover?.update(delta);
     this.fps.tick();
   }
 
-  /** Un trozo de tierra removida al pie de cada disparadora del Invernadero, que se abre cuando ella brota. */
-  private addSoilPatches(cast: CoverCast): void {
-    const { width, delayMs, growMs } = LOOK.soilPatch;
-    for (const { cell } of cast.plants) {
-      const at = this.cover.placeOf(cell);
-      const foot = { x: at.col + 0.5, y: at.lane + PLANT_LOOK.footY };
-      const p = perspective.toScreen(foot);
-      const scale = (perspective.cellWidthAt(foot) * width * artInvOf(TEX.soilPatch)) / 100;
-      const patch = this.add.image(p.x, p.y, TEX.soilPatch).setScale(0).setDepth(DEPTH.groundFx);
-      this.tweens.add({ targets: patch, scale, delay: delayMs, duration: growMs, ease: 'Back.Out' });
-    }
-  }
-
-  /** Lienzo y camara a la medida de la pantalla (ADR-0007), algo corrida para dejar sitio al menu. */
+  /** Lienzo y camara a la medida de la pantalla (ADR-0007); en la portada, algo corrida para dejar sitio al menu. */
   private fitView(): void {
-    fitCamera(this, this.quality.renderScale, LOOK.shiftX);
+    fitCamera(this, this.quality.renderScale, this.place === 'greenhouse' ? 0 : LOOK.shiftX);
   }
 }

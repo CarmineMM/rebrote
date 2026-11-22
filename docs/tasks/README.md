@@ -39,6 +39,7 @@ Una task por archivo. El tamaño es orientativo.
 | T-033 | [Historia] El jugador elige su nombre | Completada (21 nov 2026, 0.4.0) | S | T-031, T-034 | Ninguna (NJ-01 a NJ-06 cerradas) |
 | T-034 | [Guardado] Perfiles de jugador en el navegador | Completada (21 nov 2026, 0.2.0) | M | T-017, T-019 | Ninguna (PF-01 a PF-07 cerradas) |
 | T-035 | [Balance] Curva de niveles compuesta, premio cada 5 niveles y dificultad de los brotes 1 y 2 | Completada (22 nov 2026, 0.12.2) | M | T-023, T-026, T-027 | Ninguna (CN-01 a CN-07 cerradas) |
+| T-036 | [Interfaz] Invernadero refugio y Laboratorio de Patty | Completada (22 nov 2026, 0.12.3) | L | T-019, T-022, T-023, T-032 | Ninguna (LP-01 a LP-04 cerradas) |
 
 ## Estados
 
@@ -52,7 +53,7 @@ El estado se escribe en dos sitios: en esta tabla y en la cabecera de la task (`
 
 ## Orden en que se hicieron
 
-T-001, T-002, T-006, T-004, T-005, T-003, T-007, T-008, T-009, T-010, T-011, T-012, T-013. Después, T-014 a T-034; luego T-015 (música) y T-035 (curva de niveles, 22 nov 2026), la última.
+T-001, T-002, T-006, T-004, T-005, T-003, T-007, T-008, T-009, T-010, T-011, T-012, T-013. Después, T-014 a T-034; luego T-015 (música), T-035 (curva de niveles) y T-036 (Invernadero refugio, 22 nov 2026), la última.
 
 No queda ninguna task pendiente (22 nov 2026). Lo siguiente según el plan son los brotes 3 y 4 (Brain y Morris), que cierran la defensa del refugio; sus ideas están en `../specs/03-ruta-de-brotes.md` y la historia en `../specs/04-historia.md`.
 

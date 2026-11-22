@@ -10,12 +10,10 @@ import { summarizeSave, type SavedGame } from '../game/save';
 import { formatSavedAt } from '../i18n';
 import { GreenhousePatty } from './GreenhousePatty';
 import { outbreakTitle } from './outbreakName';
-import { PlantShop } from './PlantShop';
+import { PattyLab } from './PattyLab';
 import { PowerIcon } from './PowerPanel';
 import { RouteMap } from './RouteMap';
 import { SeedBalance } from './SeedsEarned';
-import { Shop } from './Shop';
-import { ShopIcon } from './ShopIcon';
 import { replayableStories, storyTitle, type StoryId } from './story/stories';
 import { NO_AUTO_FULLSCREEN } from './useFullscreen';
 import { useLanguage, useText } from './useText';
@@ -27,7 +25,7 @@ interface GreenhouseProps {
   progress: Progress;
   /** Jefe de cada brote, recortado por la escena, para los lugares de la ruta. */
   art: RouteArt | null;
-  /** La disparadora de cada nivel base (T-023), compuesta por la escena, para las plantas. */
+  /** La disparadora de cada nivel base (T-023), recortada por la escena, para el vivero del laboratorio. */
   nurseryArt: NurseryArt | null;
   onResume: () => void;
   /**
@@ -35,12 +33,12 @@ interface GreenhouseProps {
    * ya estan en el progreso).
    */
   onPlay: (outbreak: OutbreakId) => void;
-  /** Tienda (T-022): comprar y mejorar un poder; true si se pudo. */
+  /** Laboratorio de Patty (T-022, T-036): fabricar y mejorar un invento; true si se pudo. */
   onBuy: (id: PowerId) => boolean;
   onUpgrade: (id: PowerId) => boolean;
-  /** Plantas (T-023): sube un paso el nivel base de la disparadora; true si se pudo. */
+  /** Vivero (T-023): sube un paso el nivel base de la disparadora; true si se pudo. */
   onBuyBaseLevel: () => boolean;
-  /** Llevar o dejar un poder en el siguiente brote (T-022, T-04). */
+  /** Llevar o dejar un invento en el siguiente brote (T-022, T-04). */
   onToggleCarried: (id: PowerId) => void;
   /** Vuelve a ver una secuencia de la historia ya vista (T-031, Y-05). */
   onReplay: (story: StoryId) => void;
@@ -56,8 +54,6 @@ type View =
   | { readonly name: 'main' }
   | { readonly name: 'route' }
   | { readonly name: 'story' }
-  | { readonly name: 'shop' }
-  | { readonly name: 'plants' }
   | { readonly name: 'confirm'; readonly outbreak: OutbreakId }
   | { readonly name: 'loadout'; readonly outbreak: OutbreakId };
 
@@ -77,13 +73,14 @@ function LockedButton({ label, detail }: { label: string; detail: string }) {
 
 /**
  * Invernadero (T-019): el sitio entre un brote y el siguiente, con todo lo que se hace fuera de la partida. Se abre al
- * vencer a Creeper (R-01) y se llega desde "Continuar" en la portada o desde la victoria. Va en el panel de la derecha,
- * como el menu de la portada: reanudar la partida a medias (con su brote y su ronda), jugar el siguiente brote, abrir la
- * ruta de brotes, la historia vista para volver a verla (T-031), la tienda (T-022) y las plantas (el nivel base, T-023)
- * y volver a la portada. Arriba, las semillas del jugador (T-020). Empezar un brote con una partida a medias pide confirmacion. Esc vuelve atras: de la confirmacion
- * o de la historia al Invernadero y de ahi a la portada. Dentro esta Patty (T-032, VT-05), junto al panel: a veces dice
- * algo al entrar; con la ruta abierta se esconde. La tienda (T-022) se abre encima, como la ruta, y quien tiene poderes los
- * elige antes de empezar cada brote (T-04), en el panel. Las plantas (T-023) se abren encima, como la tienda.
+ * vencer a Creeper (R-01) y se llega desde "Continuar" en la portada o desde la victoria. Desde T-036 es un refugio de
+ * noche (lo pinta la escena) con el Laboratorio de Patty siempre abierto a la izquierda (`PattyLab`: los inventos y el
+ * vivero) y, en el panel de la derecha, como el menu de la portada: las semillas (T-020), reanudar la partida a medias
+ * (con su brote y su ronda), jugar el siguiente brote, abrir la ruta de brotes y la historia vista para volver a verla
+ * (T-031). "Volver a la portada", abajo a la izquierda. Empezar un brote con una partida a medias pide confirmacion, y
+ * quien tiene inventos elige antes los que lleva (T-04), en el panel. Esc vuelve atras: de la confirmacion o de la
+ * historia al Invernadero y de ahi a la portada. Patty (T-032, VT-05) asoma junto al panel: a veces dice algo al entrar;
+ * con la ruta abierta se esconde, y el laboratorio tambien.
  */
 export function Greenhouse({
   saved,
@@ -107,8 +104,6 @@ export function Greenhouse({
   const titleId = useId();
   const firstButton = useRef<HTMLButtonElement>(null);
   const routeButton = useRef<HTMLButtonElement>(null);
-  const shopButton = useRef<HTMLButtonElement>(null);
-  const plantsButton = useRef<HTMLButtonElement>(null);
   const owned = ownedPowers(progress);
   const lastView = useRef<View['name']>(view.name);
   const summary = saved ? summarizeSave(saved) : null;
@@ -120,18 +115,16 @@ export function Greenhouse({
   useEffect(() => {
     const from = lastView.current;
     lastView.current = view.name;
-    if (view.name === 'route' || view.name === 'shop' || view.name === 'plants') return;
-    // Al cerrar la ruta, la historia, la tienda o las plantas, el foco vuelve a su boton; si no, al primero del panel.
+    if (view.name === 'route') return;
+    // Al cerrar la ruta o la historia, el foco vuelve a su boton; si no, al primero del panel.
     if (view.name === 'main' && from === 'route') routeButton.current?.focus({ preventScroll: true });
     else if (view.name === 'main' && from === 'story') storyButton.current?.focus({ preventScroll: true });
-    else if (view.name === 'main' && from === 'shop') shopButton.current?.focus({ preventScroll: true });
-    else if (view.name === 'main' && from === 'plants') plantsButton.current?.focus({ preventScroll: true });
     else firstButton.current?.focus({ preventScroll: true });
   }, [view]);
 
   useEffect(() => {
-    // La ruta, la tienda y las plantas atienden su propio Esc.
-    if (view.name === 'route' || view.name === 'shop' || view.name === 'plants') return;
+    // La ruta atiende su propio Esc.
+    if (view.name === 'route') return;
     const onKey = (event: KeyboardEvent) => {
       if (event.key !== 'Escape' || event.repeat) return;
       if (view.name === 'confirm' || view.name === 'story' || view.name === 'loadout') setView(MAIN);
@@ -141,13 +134,13 @@ export function Greenhouse({
     return () => window.removeEventListener('keydown', onKey);
   }, [view, onBack]);
 
-  /** Ya confirmado (o sin partida a medias): con poderes comprados, antes se eligen los que se llevan (T-04). */
+  /** Ya confirmado (o sin partida a medias): con inventos fabricados, antes se eligen los que se llevan (T-04). */
   const play = (outbreak: OutbreakId) => (owned.length > 0 ? setView({ name: 'loadout', outbreak }) : onPlay(outbreak));
   /** Empezar un brote: con una partida a medias, antes se confirma. */
   const start = (outbreak: OutbreakId) => (summary ? setView({ name: 'confirm', outbreak }) : play(outbreak));
 
-  // Patty sigue montada con la ruta, la tienda o las plantas abiertas (escondida): al cerrarlas no vuelve a saludar como si acabara de entrar.
-  const patty = <GreenhousePatty hidden={quiet || view.name === 'route' || view.name === 'shop' || view.name === 'plants'} name={name} />;
+  // Patty sigue montada con la ruta abierta (escondida): al cerrarla no vuelve a saludar como si acabara de entrar.
+  const patty = <GreenhousePatty hidden={quiet || view.name === 'route'} name={name} />;
 
   if (view.name === 'route') {
     return (
@@ -158,27 +151,13 @@ export function Greenhouse({
     );
   }
 
-  if (view.name === 'shop') {
-    return (
-      <>
-        {patty}
-        <Shop progress={progress} onBuy={onBuy} onUpgrade={onUpgrade} onClose={() => setView(MAIN)} />
-      </>
-    );
-  }
-
-  if (view.name === 'plants') {
-    return (
-      <>
-        {patty}
-        <PlantShop progress={progress} art={nurseryArt} onBuy={onBuyBaseLevel} onClose={() => setView(MAIN)} />
-      </>
-    );
-  }
-
   return (
     <>
+      <PattyLab progress={progress} art={nurseryArt} onBuy={onBuy} onUpgrade={onUpgrade} onBuyBaseLevel={onBuyBaseLevel} />
       {patty}
+      <button type="button" className="btn greenhouse-home" onClick={onBack} {...{ [NO_AUTO_FULLSCREEN]: '' }}>
+        <span aria-hidden="true">⌂</span> <span className="greenhouse-home-text">{t.greenhouse.back}</span>
+      </button>
       <nav className="title-panel pause-card greenhouse-panel" aria-labelledby={titleId} {...{ [NO_AUTO_FULLSCREEN]: '' }}>
         {view.name === 'main' && (
           <>
@@ -227,29 +206,11 @@ export function Greenhouse({
                 </span>
                 <small className="btn-detail">{t.greenhouse.routeDetail(defeated)}</small>
               </button>
-              {/* La historia vista va en la fila de la tienda y las plantas: asi el panel cabe en un movil en horizontal. */}
-              <div className={`greenhouse-locked${stories.length > 0 ? ' has-story' : ''}`}>
-                {stories.length > 0 && (
-                  <button ref={storyButton} type="button" className="btn" title={t.story.replayDetail} onClick={() => setView({ name: 'story' })}>
-                    <span aria-hidden="true">✎</span> {t.story.replay}
-                  </button>
-                )}
-                <button ref={shopButton} type="button" className="btn has-detail greenhouse-shop" onClick={() => setView({ name: 'shop' })}>
-                  <span className="btn-line">
-                    <ShopIcon /> {t.greenhouse.shop}
-                  </span>
-                  <small className="btn-detail">{t.greenhouse.shopDetail}</small>
+              {stories.length > 0 && (
+                <button ref={storyButton} type="button" className="btn" title={t.story.replayDetail} onClick={() => setView({ name: 'story' })}>
+                  <span aria-hidden="true">✎</span> {t.story.replay}
                 </button>
-                <button ref={plantsButton} type="button" className="btn has-detail greenhouse-plants" onClick={() => setView({ name: 'plants' })}>
-                  <span className="btn-line">
-                    <span aria-hidden="true">❦</span> {t.greenhouse.plants}
-                  </span>
-                  <small className="btn-detail">{t.greenhouse.plantsDetail(progress.baseLevel)}</small>
-                </button>
-              </div>
-              <button type="button" className="btn" onClick={onBack}>
-                <span aria-hidden="true">⌂</span> {t.greenhouse.back}
-              </button>
+              )}
             </div>
           </>
         )}

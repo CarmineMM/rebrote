@@ -10,10 +10,12 @@
 | Nivel | Mejora individual de una disparadora (daño y cadencia) |
 | Variante | Normal, de fuego, de hielo o con escudo (T-024) |
 | Muro | El escudo sembrado solo (T-024) |
-| Poder | Habilidad de un uso que se lanza desde el panel izquierdo: recolocar, granada y muro de hielo (T-021) |
-| Carga | Cada uso de un poder en una partida (T-021) |
-| Nivel de un poder | Lo que se mejora en la tienda, del 1 al 10 (T-022) |
-| Nivel base | Nivel con el que nace toda disparadora sembrada, del 1 al 5; se compra en "Plantas", en el Invernadero (T-023) |
+| Invento | Habilidad de un uso que se lanza desde el panel izquierdo: recolocar, granada y muro de hielo (T-021). Los fabrica Patty en su laboratorio. Hasta T-036 se llamaba "poder": en el código sigue siendo `power` |
+| Carga | Cada uso de un invento en una partida (T-021) |
+| Nivel de un invento | Lo que se mejora en el Laboratorio de Patty, del 1 al 10 (T-022) |
+| Laboratorio de Patty | Donde se fabrican y mejoran los inventos y se sube el nivel base (el vivero), en el Invernadero (T-036; antes, la tienda y las plantas) |
+| Fabricar | Comprar un invento con semillas (T-036; antes, "comprar") |
+| Nivel base | Nivel con el que nace toda disparadora sembrada, del 1 al 5; se mejora en el vivero del Laboratorio de Patty (T-023) |
 
 No se usa la palabra "combinar": se confundía con fusionar.
 
@@ -190,7 +192,7 @@ Decisiones E-01 a E-06 cerradas el 21 nov 2026 (E-01 a E-04 y E-06 con la recome
 - **No hay mezclas:** una disparadora con fuego o hielo no admite escudo, y una con escudo no admite fuego ni hielo ("Ya tiene escudo").
 - **Ficha:** la del muro dice que no ataca, que para lo de detrás, que se puede llevar a una disparadora y si está agrietado o a punto de romperse; la de la disparadora con escudo, que para lo de detrás.
 
-### Poderes (T-021)
+### Inventos (T-021; antes "poderes")
 Decisiones O-01 a O-11 cerradas el 22 nov 2026 (O-04 a O-06 cambiadas por Carmine: granada en vez de meteorito, muro de hielo de tres casillas que bloquea el paso, y a los jefes igual que a todos). Cómo se hace: ADR-0020. Los valores están como PROVISIONAL en `POWERS`, `GRENADE` e `ICE_WALL` de `balance.ts`.
 - **Qué son:** habilidades de un uso que se lanzan desde un panel a la izquierda. Se compran una vez en la tienda (T-022) y cada uno trae **1 carga por partida** (O-01, b; recolocar, más con su nivel). Se llevan **2** a una partida (O-02), elegidos antes de empezar el brote (ver "Tienda (T-022)"). Sin ninguno comprado, la partida no tiene panel. Hasta T-022, cada partida traía los tres (O-08). En desarrollo, `?poderes=` en la dirección elige otros con su nivel (`?poderes=granada,muro:10`) o ninguno (`?poderes=`).
 - **Nivel (T-022):** cada poder se mejora en la tienda del nivel 1 al 10. Lo de abajo es el nivel 1; lo que suma cada nivel está en "Tienda (T-022)". El botón del panel enseña su nivel desde el 2.
@@ -294,8 +296,8 @@ Decisiones I-01 a I-12 cerradas el 20 nov 2026.
 ### Invernadero y ruta de brotes (T-019)
 Decisiones R-01 a R-04 cerradas el 21 nov 2026 con la recomendación. Cómo se hace: ADR-0016.
 - **El Invernadero** es el sitio entre un brote y el siguiente. Aparece al vencer a Creeper (R-01): un jugador nuevo va directo a jugar y nunca ve un Invernadero vacío. Se llega desde "Continuar" en la portada (R-02) y desde la victoria.
-- **Se ve distinto de la portada:** el título grande dice "INVERNADERO" y, en vez de la batalla, el jardín tiene solo las plantas que el jugador ya tiene, sin enemigos, sembradas a mano sobre un césped liso: sin casillas y sin el suelo corrupto con los agujeros por donde salen los enemigos. "Ya tiene" es lo desbloqueado hasta el último brote vencido (con los de antes); lo de una partida a medias no cuenta.
-- **Tiene:** reanudar la partida a medias (con su brote, su ronda y cuándo se guardó), el siguiente brote (el primero abierto sin vencer; si no hay más brotes en el juego, con candado y "Próximamente"), la ruta de brotes, la tienda (T-022), las plantas (el nivel base de la disparadora, T-023) y volver a la portada.
+- **Se ve distinto de la portada (T-036, LP-01 y LP-02):** el título grande dice "INVERNADERO" y, en vez de la batalla, es un refugio: el invernadero atrincherado de noche, con la corrupción fuera y luz cálida dentro. No hay plantas en el jardín. A la izquierda, el Laboratorio de Patty siempre abierto. Hasta T-036 era el jardín con las plantas que el jugador ya tenía.
+- **Tiene (LP-03):** a la izquierda, el Laboratorio de Patty (los inventos, T-022, y el vivero con el nivel base de la disparadora, T-023); en el menú de la derecha, reanudar la partida a medias (con su brote, su ronda y cuándo se guardó), el siguiente brote (el primero abierto sin vencer; si no hay más brotes en el juego, con candado y "Próximamente"), la ruta de brotes y la historia vista; abajo a la izquierda, volver a la portada.
 - **Empezar un brote con una partida a medias** pide confirmación y dice cuál se pierde. El progreso se conserva.
 - **La ruta** es un camino con un lugar por brote (R-03): los vencidos, superados, con un sello; el que toca, destacado con una flecha; el siguiente en sombra, con su jefe en silueta y un candado; y el destino final, pequeño y a lo lejos. Si el siguiente brote aún no existe, su lugar dice "Próximamente". El suelo está sano hasta donde llegó el jugador y corrupto después.
 - **Tocar un lugar** vencido o el que toca enseña abajo su nombre, su jefe, sus rondas y el botón para jugarlo ("Jugar" o "Volver a jugar"); si la partida a medias es de ese brote, "Reanudar" y "Empezar de cero". Los lugares en sombra no se pueden elegir.
@@ -336,9 +338,9 @@ Decisiones C-01 a C-05 cerradas el 21 nov 2026. Los valores están en `SEEDS` de
 
   Contando la subida por brote y suponiendo brotes de 10 rondas, las primeras victorias sin perder vidas suman, de media, unas 1080 semillas tras el brote 1, 4600 tras el 4, 13.000 tras el 10 y 45.000 tras los 26 de la ruta (unas 260 rondas); el brote 26 da unas 2400. La tienda debería costar más que eso en total, para que haya que repetir algún brote para comprarlo todo. Perder a propósito nunca da más que volver a ganar un brote ya vencido (hay un test que lo comprueba).
 
-### Tienda (T-022)
+### Laboratorio de Patty (T-022, T-036; antes "tienda")
 Decisiones T-01 a T-04 cerradas el 22 nov 2026 (T-01 cambiada por Carmine: los poderes también se mejoran por niveles). Reglas en `src/game/core/shop.ts` y lo que da cada nivel en `src/game/core/powers.ts` (`relocateAt`, `grenadeAt`, `iceWallAt`). Los valores están como PROVISIONAL en `SHOP`, `POWER_LEVELS`, `RELOCATE`, `GRENADE` e `ICE_WALL` de `balance.ts`.
-- **Dónde:** en el Invernadero, botón "Tienda". Se abre al vencer a Creeper, como el Invernadero, así que nadie la ve cerrada: la primera vez que cae Creeper, la victoria dice "¡Tienda abierta!".
+- **Dónde:** en el Invernadero, siempre abierto a la izquierda (T-036). Se abre al vencer a Creeper, como el Invernadero, así que nadie lo ve cerrado: la primera vez que cae Creeper, la victoria dice "¡Laboratorio abierto!". Patty fabrica los inventos: el botón dice "Fabricar" (LP-04).
 - **Comprar un poder** es para siempre y no se devuelve (T-03). Cuesta según cuántos se tienen ya: el primero, sea cual sea, 1000; el segundo, 1500, y el tercero, 2000 (T-02). Llega en el nivel 1 y, si caben, va directo a los que se llevan.
 - **Mejorarlo** sube su nivel hasta el 10. Subir al nivel N cuesta 200 × N semillas, y los niveles 5 y 10, el doble: 13.800 por poder del 1 al 10. La tienda entera cuesta 45.900, algo más de lo que dan las primeras victorias de los 26 brotes.
 
@@ -355,7 +357,7 @@ Decisiones T-01 a T-04 cerradas el 22 nov 2026 (T-01 cambiada por Carmine: los p
 ### Nivel base de la disparadora (T-023)
 Decisiones N-01 a N-06 cerradas: N-01 el 21 nov 2026 y las demás el 22 nov 2026, con la recomendación. Reglas en `src/game/core/baseLevel.ts`; los valores, como PROVISIONAL en `BASE_LEVEL` de `balance.ts`.
 - **Qué es:** una mejora permanente con la que toda disparadora sembrada en una partida nueva nace en ese nivel, del 1 (sin comprar nada) al 5. Sembrarla e infundirla cuesta lo mismo. Vale también al rejugar un brote ya vencido (N-04).
-- **Dónde:** en el Invernadero, botón "Plantas" (dice el nivel base de ahora). Como la tienda, solo existe tras vencer a Creeper, así que el tour de subir de nivel ya se vio.
+- **Dónde:** en el vivero del Laboratorio de Patty, debajo de los inventos (T-036). Como el laboratorio, solo existe tras vencer a Creeper, así que el tour de subir de nivel ya se vio.
 - **Cuánto da cada paso (N-02, N-05):** lo mismo que un nivel de partida, con su premio: la que nace en el 5 es una planta de nivel 5 a todos los efectos, con +70,9 % de daño, +13,5 % de cadencia, +25 % de vida (T-035) y su jardincito.
 - **Precios (N-03):** subirlo al 2 cuesta 1500 semillas; al 3, 3000; al 4, 5500, y al 5, 10.000, el artículo más caro de la tienda. Del 1 al 5, 20.000. En el 5 dice "Máximo". Dos clics seguidos nunca cobran dos veces.
 - **En la partida (N-01, N-06):** el tope de nivel de cada ronda no cambia. En los brotes 1 y 2 (tope 5), una de nivel base 5 nace al máximo y su panel dice "Máximo", como una subida al tope; con un tope mayor (el 10, desde el brote 5) sube con normalidad desde su nivel, y subirla cuesta lo de su nivel (de 5 a 6, 175). En la ronda 1, aunque subir de nivel siga bloqueado, nacen con su nivel base. Fusionar deja el nivel más bajo de las dos, que nunca baja del nivel base. El nivel base nunca pasa del tope de ninguna ronda (un test lo comprueba).

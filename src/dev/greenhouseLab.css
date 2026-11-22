@@ -1,0 +1,1724 @@
+/* Galeria de propuestas del Invernadero: solo en desarrollo. `styles.css` se carga para el menu, los botones y las
+   tarjetas de la tienda; aqui va la galeria y lo propio de cada maqueta. */
+
+/* ---------- Galeria ---------- */
+html:not(.ghl-solo),
+html:not(.ghl-solo) body,
+html:not(.ghl-solo) #root {
+  height: auto;
+  min-height: 100%;
+  overflow: auto;
+  background: #1d2b1f;
+}
+
+.ghl {
+  min-height: 100%;
+  color: #f4ffe9;
+  font-family: ui-rounded, 'Nunito', system-ui, sans-serif;
+}
+
+.ghl-bar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 18px;
+  padding: 10px 16px;
+  background: #24361f;
+  border-bottom: 2px solid #3f5a2f;
+}
+
+.ghl-bar h1 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.ghl-bar h1 span {
+  margin-left: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #b9d99a;
+}
+
+.ghl-tabs,
+.ghl-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.ghl-tools {
+  margin-left: auto;
+}
+
+.ghl-bar button,
+.ghl-bar select {
+  font: inherit;
+  font-size: 14px;
+  font-weight: 800;
+  color: #1d2b1f;
+  background: #e9f7d8;
+  border: 2px solid #2a6b22;
+  border-radius: 999px;
+  padding: 5px 12px;
+  cursor: pointer;
+}
+
+.ghl-bar button.is-on {
+  background: #80d153;
+}
+
+.ghl-main {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+}
+
+.ghl-about {
+  max-width: 1180px;
+}
+
+.ghl-about h2 {
+  margin: 0 0 6px;
+  font-size: 22px;
+  font-weight: 900;
+}
+
+.ghl-about p {
+  margin: 0 0 6px;
+  font-size: 14.5px;
+  line-height: 1.45;
+  color: #d8eecb;
+}
+
+.ghl-about a {
+  color: #ffe066;
+  font-weight: 800;
+}
+
+.ghl-frames {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 18px;
+}
+
+.ghl-frame {
+  margin: 0;
+}
+
+.ghl-frame figcaption {
+  margin-bottom: 6px;
+  font-size: 13px;
+  font-weight: 800;
+  color: #b9d99a;
+}
+
+.ghl-screen {
+  position: relative;
+  overflow: hidden;
+  border: 2px solid #3f5a2f;
+  border-radius: 10px;
+  background: #000000;
+}
+
+.ghl-screen iframe {
+  position: absolute;
+  left: 0;
+  top: 0;
+  border: 0;
+  transform-origin: 0 0;
+}
+
+/* ---------- Comun a las tres maquetas ---------- */
+.gh-screen {
+  /* Donde va cada cosa: el menu a la derecha, Patty a su izquierda y la tienda en lo que queda. */
+  --edge: max(24px, 3vw, env(safe-area-inset-left));
+  --menu-right: max(24px, 4vw, env(safe-area-inset-right));
+  --menu-w: min(380px, 30vw);
+  --gap: 22px;
+  --patty-h: clamp(180px, 36vh, 330px);
+  --patty-w: calc(var(--patty-h) * 320 / 360);
+  --patty-room: calc(var(--patty-w) + 6px);
+  --top: calc(max(24px, 4vh) + clamp(2.4rem, 5vw, 4.4rem) + 26px);
+  --bottom: calc(max(18px, 3vh) + 62px);
+  /* Escala de los marcos de los dibujos (campanas, tarros, cajas, macetas). */
+  --k: 1;
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.gh-backdrop {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.gh-logo {
+  position: absolute;
+  left: var(--edge);
+  top: max(24px, 4vh);
+  margin: 0;
+  display: flex;
+  font-size: clamp(2.4rem, 5vw, 4.4rem);
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: 0.01em;
+  pointer-events: none;
+}
+
+.gh-shop-area {
+  position: absolute;
+  left: var(--edge);
+  right: calc(var(--menu-right) + var(--menu-w) + var(--gap) + var(--patty-room));
+  top: var(--top);
+  bottom: var(--bottom);
+  display: grid;
+  place-items: center;
+}
+
+.gh-shop {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: min(100%, 880px);
+  max-height: 100%;
+  animation: pop-in 0.45s 0.1s cubic-bezier(0.2, 1.3, 0.4, 1) both;
+}
+
+.gh-shop-hint {
+  margin: 0 0 4px;
+  text-align: center;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.gh-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 4px 0 2px;
+  font-size: 0.74rem;
+  font-weight: 900;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.gh-group::after {
+  content: '';
+  flex: 1;
+  height: 2px;
+  border-radius: 2px;
+  background: currentColor;
+  opacity: 0.3;
+}
+
+.gh-powers {
+  position: relative;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.gh-offer {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 0;
+  animation: pop-in 0.4s calc(0.25s + var(--i, 0) * 0.09s) cubic-bezier(0.2, 1.3, 0.4, 1) both;
+}
+
+.gh-offer-art {
+  position: relative;
+  display: grid;
+  place-items: end center;
+  width: 100%;
+}
+
+.gh-offer-art .shop-owned {
+  right: 8%;
+  top: 4px;
+}
+
+.gh-offer-label {
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  padding: 10px 12px 12px;
+  text-align: center;
+}
+
+.gh-offer-name {
+  margin: 0;
+  font-size: 1.12rem;
+  font-weight: 900;
+  line-height: 1.1;
+}
+
+.gh-offer-about {
+  margin: 0;
+  font-size: 0.78rem;
+  line-height: 1.3;
+}
+
+.gh-offer-stats {
+  margin: 0;
+  font-size: 0.84rem;
+  font-weight: 900;
+}
+
+.gh-offer-next {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.gh-offer .shop-buy {
+  width: 100%;
+  margin-top: auto;
+}
+
+.gh-offer .shop-cheer {
+  top: 30px;
+  z-index: 2;
+}
+
+.gh-plant {
+  display: grid;
+  grid-template-columns: calc(170px * var(--k)) minmax(0, 1fr);
+  align-items: end;
+  column-gap: 16px;
+  animation-delay: 0.55s;
+}
+
+.gh-plant .gh-offer-label {
+  align-items: flex-start;
+  text-align: left;
+}
+
+.gh-plant .shop-buy {
+  width: min(100%, 300px);
+}
+
+.gh-plant .shop-cheer {
+  left: calc(85px * var(--k));
+  top: 40px;
+}
+
+.gh-plant-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+}
+
+.gh-plant-level {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.gh-shooter {
+  display: block;
+  width: 100%;
+  height: auto;
+  transform-origin: 50% 100%;
+  animation: gh-breathe 3.2s ease-in-out infinite;
+}
+
+.gh-patty {
+  position: absolute;
+  bottom: 0;
+  right: calc(var(--menu-right) + var(--menu-w) + 10px);
+  width: var(--patty-w);
+  pointer-events: none;
+  animation: gh-rise 0.7s 0.45s cubic-bezier(0.2, 1.4, 0.4, 1) both;
+}
+
+.gh-patty img {
+  display: block;
+  width: 100%;
+  height: auto;
+  transform-origin: 50% 100%;
+  animation: gh-breathe 3.8s ease-in-out infinite;
+}
+
+.gh-menu {
+  position: absolute;
+  right: var(--menu-right);
+  top: 50%;
+  translate: 0 -50%;
+  width: var(--menu-w);
+  max-height: calc(100% - 32px);
+  padding: 20px;
+  animation: title-panel-in 0.55s 0.3s cubic-bezier(0.2, 1.3, 0.4, 1) both;
+}
+
+.gh-home.btn {
+  position: absolute;
+  left: var(--edge);
+  bottom: max(18px, 3vh);
+  width: auto;
+  padding: 10px 18px;
+  animation: pop-in 0.4s 0.5s cubic-bezier(0.2, 1.3, 0.4, 1) both;
+}
+
+/* Las bombillas, las estrellas, las motas y lo que se mece. */
+.gh-bulb,
+.gh-bulb-glow {
+  animation: gh-bulb 2.1s ease-in-out infinite;
+}
+.gh-twinkle {
+  animation: gh-twinkle 3.2s ease-in-out infinite;
+}
+.gh-mote {
+  animation: gh-mote 9s ease-in-out infinite;
+}
+.gh-drift {
+  animation: gh-drift 40s ease-in-out infinite alternate;
+}
+.gh-sway {
+  transform-box: view-box;
+  animation: gh-sway 3s ease-in-out infinite;
+}
+.gh-sway-soft {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: gh-sway-soft 5s ease-in-out infinite;
+}
+
+@keyframes gh-breathe {
+  0%,
+  100% {
+    transform: scale(1, 1);
+  }
+  50% {
+    transform: scale(1.015, 1.03);
+  }
+}
+@keyframes gh-rise {
+  from {
+    opacity: 0;
+    transform: translateY(40%);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes gh-bulb {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+@keyframes gh-twinkle {
+  0%,
+  100% {
+    opacity: 0.9;
+  }
+  50% {
+    opacity: 0.25;
+  }
+}
+@keyframes gh-mote {
+  0% {
+    transform: translate(0, 0);
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.8;
+  }
+  80% {
+    opacity: 0.8;
+  }
+  100% {
+    transform: translate(40px, -70px);
+    opacity: 0;
+  }
+}
+@keyframes gh-drift {
+  from {
+    transform: translateX(-30px);
+  }
+  to {
+    transform: translateX(40px);
+  }
+}
+@keyframes gh-sway {
+  0%,
+  100% {
+    transform: rotate(-6deg);
+  }
+  50% {
+    transform: rotate(6deg);
+  }
+}
+@keyframes gh-sway-soft {
+  0%,
+  100% {
+    transform: rotate(-1.5deg);
+  }
+  50% {
+    transform: rotate(1.5deg);
+  }
+}
+
+/* ---------- 1. Laboratorio de Patty ---------- */
+.lab-sun-glow {
+  transform-box: fill-box;
+  transform-origin: 50% 50%;
+  animation: lab-pulse 6s ease-in-out infinite;
+}
+.lab-rays {
+  animation: lab-rays 7s ease-in-out infinite;
+}
+.lab-vine {
+  transform-box: view-box;
+  animation: lab-vine 4.6s ease-in-out infinite;
+}
+.lab-bubble {
+  transform-box: fill-box;
+  animation: lab-bubble 2.4s ease-in infinite;
+}
+@keyframes lab-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.9;
+  }
+  50% {
+    transform: scale(1.06);
+    opacity: 1;
+  }
+}
+@keyframes lab-rays {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+@keyframes lab-vine {
+  0%,
+  100% {
+    transform: rotate(-2.5deg);
+  }
+  50% {
+    transform: rotate(2.5deg);
+  }
+}
+@keyframes lab-bubble {
+  0% {
+    transform: translateY(0);
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-46px);
+    opacity: 0;
+  }
+}
+
+/* La vitrina: madera pintada de verde salvia, fondo de tablas color crema y baldas de madera. */
+.gh-lab .gh-shop {
+  padding: 30px 24px 22px;
+  border-radius: 26px 26px 14px 14px;
+  border: 9px solid #4f8a6e;
+  background:
+    linear-gradient(180deg, rgba(60, 40, 10, 0.18), rgba(60, 40, 10, 0) 28%), repeating-linear-gradient(90deg, #f3ead0 0 78px, #e6dcbd 78px 80px), #f3ead0;
+  box-shadow:
+    0 0 0 3px #2f5e48,
+    0 22px 44px rgba(20, 40, 20, 0.4),
+    inset 0 0 0 3px rgba(255, 255, 255, 0.35),
+    inset 0 18px 30px rgba(60, 40, 10, 0.25);
+  color: #3b3a2a;
+}
+.gh-lab .gh-shop-hint {
+  color: #5b5a48;
+}
+.gh-lab .gh-group {
+  color: #2f5e48;
+}
+.lab-crown {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  translate: -50% -62%;
+}
+.lab-plaque {
+  position: relative;
+  display: inline-block;
+  padding: 6px 34px 7px;
+  border-radius: 10px;
+  background: linear-gradient(180deg, #fff1a8, #e3b23a);
+  border: 3px solid #8a5a10;
+  color: #4a3000;
+  font-size: 1.25rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  box-shadow:
+    0 4px 0 #8a5a10,
+    0 8px 14px rgba(0, 0, 0, 0.3);
+}
+.lab-plaque::before,
+.lab-plaque::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 8px;
+  height: 8px;
+  margin-top: -4px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #fff6d0, #9a6a10);
+}
+.lab-plaque::before {
+  left: 10px;
+}
+.lab-plaque::after {
+  right: 10px;
+}
+/* La balda: una tabla bajo los dibujos de cada fila, de lado a lado de la vitrina. */
+.gh-lab .gh-powers .gh-offer-art::after,
+.gh-lab .gh-plant::before {
+  content: '';
+  position: absolute;
+  bottom: -6px;
+  left: -8px;
+  right: -8px;
+  height: 14px;
+  border-radius: 3px;
+  background: linear-gradient(180deg, #d39a60, #9a6634);
+  border-top: 2px solid #ebbd85;
+  box-shadow: 0 6px 8px rgba(60, 40, 10, 0.3);
+}
+.gh-lab .gh-offer:first-child .gh-offer-art::after {
+  left: -26px;
+}
+.gh-lab .gh-offer:last-child .gh-offer-art::after {
+  right: -26px;
+}
+.gh-lab .gh-plant {
+  position: relative;
+  padding-bottom: 14px;
+}
+.gh-lab .gh-plant::before {
+  bottom: 0;
+  left: -26px;
+  right: -26px;
+}
+/* La etiqueta de laboratorio, sujeta con una chincheta. */
+.gh-lab .gh-offer-label {
+  margin-top: 14px;
+  border-radius: 6px;
+  background: #fffdf5;
+  border: 1px solid #e3d8bb;
+  box-shadow: 0 4px 8px rgba(60, 40, 10, 0.2);
+  rotate: calc((var(--i, 0) - 1) * 0.8deg);
+}
+.gh-lab .gh-offer-label::before {
+  content: '';
+  position: absolute;
+  top: -6px;
+  left: 50%;
+  width: 12px;
+  height: 12px;
+  margin-left: -6px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #ff9a9a, #c0262f);
+  box-shadow: 0 2px 2px rgba(0, 0, 0, 0.3);
+}
+.gh-lab .gh-plant .gh-offer-label {
+  margin: 0 0 12px;
+  rotate: -0.6deg;
+}
+.gh-lab .gh-plant .gh-offer-label::before {
+  left: 24px;
+}
+.gh-lab .gh-offer-name {
+  color: #2f5e48;
+}
+.gh-lab .gh-offer-about,
+.gh-lab .gh-offer-next {
+  color: #6b6a58;
+}
+.gh-lab .gh-offer-next strong {
+  color: #3b3a2a;
+}
+.gh-lab .gh-offer-stats {
+  color: #3f8a2e;
+}
+.gh-lab .gh-plant-level {
+  color: #4f8a6e;
+}
+.gh-lab .shop-leaf {
+  background: rgba(60, 40, 10, 0.15);
+  border-color: rgba(47, 94, 72, 0.35);
+}
+.gh-lab .shop-leaf.is-on {
+  background: linear-gradient(160deg, #c8f59a, #62c046);
+  border-color: #1f4d16;
+}
+
+/* La campana de cristal, con su peana de madera; un brillo la recorre de vez en cuando. */
+.lab-cloche {
+  position: relative;
+  display: block;
+  width: calc(112px * var(--k));
+  height: calc(128px * var(--k));
+}
+.lab-cloche-art {
+  position: absolute;
+  left: 50%;
+  bottom: calc(26px * var(--k));
+  width: calc(64px * var(--k));
+  height: calc(64px * var(--k));
+  translate: -50% 0;
+}
+.lab-cloche-art .power-icon,
+.ref-jar-art .power-icon,
+.st-crate-art .power-icon {
+  width: 100%;
+  height: 100%;
+  animation: shop-bob 2.6s calc(var(--i, 0) * -0.9s) ease-in-out infinite;
+}
+.lab-cloche-glass {
+  position: absolute;
+  left: 6%;
+  right: 6%;
+  top: 8%;
+  bottom: calc(10px * var(--k));
+  overflow: hidden;
+  border-radius: 50% 50% 8px 8px / 62% 62% 8px 8px;
+  border: 2px solid rgba(255, 255, 255, 0.85);
+  background:
+    radial-gradient(ellipse at 30% 22%, rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0) 28%),
+    linear-gradient(90deg, rgba(170, 225, 240, 0.4), rgba(255, 255, 255, 0.06) 40%, rgba(170, 225, 240, 0.35));
+  box-shadow:
+    inset -6px -4px 14px rgba(90, 150, 170, 0.35),
+    0 0 0 1px rgba(90, 150, 170, 0.4);
+}
+.lab-cloche-glass::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(110deg, transparent 38%, rgba(255, 255, 255, 0.7) 48%, transparent 58%);
+  background-size: 320% 100%;
+  animation: lab-shine 5.5s calc(var(--i, 0) * 0.8s) ease-in-out infinite;
+}
+.lab-cloche::before {
+  content: '';
+  position: absolute;
+  z-index: 1;
+  left: 50%;
+  top: 2%;
+  width: calc(16px * var(--k));
+  height: calc(12px * var(--k));
+  translate: -50% 0;
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 35%, #ffffff, #b9dfe9);
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 0 0 1px rgba(90, 150, 170, 0.5);
+}
+.lab-cloche-base {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: calc(16px * var(--k));
+  border-radius: 50%;
+  background: linear-gradient(180deg, #c8925b, #8a5a2e);
+  border: 2px solid #5e3a1a;
+}
+@keyframes lab-shine {
+  0%,
+  60% {
+    background-position: 130% 0;
+  }
+  100% {
+    background-position: -40% 0;
+  }
+}
+
+/* La maceta de barro con su lampara de cultivo. */
+.lab-pot {
+  position: relative;
+  display: block;
+  width: calc(150px * var(--k));
+  height: calc(176px * var(--k));
+}
+.lab-lamp {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: calc(110px * var(--k));
+  height: calc(18px * var(--k));
+  translate: -50% 0;
+  border-radius: 10px 10px 4px 4px;
+  background: linear-gradient(180deg, #6f7d80, #3a4446);
+  border: 2px solid #283133;
+}
+.lab-lamp::after {
+  content: '';
+  position: absolute;
+  left: -12%;
+  right: -12%;
+  top: 100%;
+  height: calc(130px * var(--k));
+  clip-path: polygon(14% 0, 86% 0, 100% 100%, 0 100%);
+  background: linear-gradient(180deg, rgba(255, 140, 230, 0.55), rgba(255, 140, 230, 0));
+  animation: lab-hum 3s ease-in-out infinite;
+}
+@keyframes lab-hum {
+  0%,
+  100% {
+    opacity: 0.75;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+.lab-pot-plant {
+  position: absolute;
+  left: 50%;
+  bottom: calc(34px * var(--k));
+  width: calc(100px * var(--k));
+  translate: -50% 0;
+}
+.lab-pot-clay {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: calc(92px * var(--k));
+  height: calc(52px * var(--k));
+  translate: -50% 0;
+  clip-path: polygon(0 0, 100% 0, 86% 100%, 14% 100%);
+  background: linear-gradient(90deg, #a9512b, #e48c5b 38%, #c56a3c 70%, #a9512b);
+}
+.lab-pot-clay::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 26%;
+  background: linear-gradient(180deg, #f0a06c, #c8683a);
+  border-bottom: 2px solid #7d3a1e;
+}
+
+/* ---------- 2. Refugio en la noche ---------- */
+.ref-rain {
+  animation: ref-rain 6s linear infinite;
+}
+.ref-worm {
+  animation: ref-worm 26s linear infinite;
+}
+.ref-flash {
+  opacity: 0;
+  animation: ref-flash 11s linear infinite;
+}
+.ref-circuit {
+  animation: ref-circuit 2.6s ease-in-out infinite;
+}
+.ref-corrupt {
+  animation: lab-rays 5s ease-in-out infinite;
+}
+.ref-lamp {
+  transform-box: view-box;
+  animation: ref-lamp 5s ease-in-out infinite;
+}
+.ref-glow {
+  animation: ref-glow 4s ease-in-out infinite;
+}
+@keyframes ref-rain {
+  from {
+    transform: translateY(-160px);
+  }
+  to {
+    transform: translateY(700px);
+  }
+}
+@keyframes ref-worm {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(1900px);
+  }
+}
+@keyframes ref-flash {
+  0%,
+  86%,
+  100% {
+    opacity: 0;
+  }
+  87% {
+    opacity: 0.45;
+  }
+  88% {
+    opacity: 0.05;
+  }
+  89.5% {
+    opacity: 0.35;
+  }
+  92% {
+    opacity: 0;
+  }
+}
+@keyframes ref-circuit {
+  0%,
+  100% {
+    opacity: 0.45;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+@keyframes ref-lamp {
+  0%,
+  100% {
+    transform: rotate(-2.2deg);
+  }
+  50% {
+    transform: rotate(2.2deg);
+  }
+}
+@keyframes ref-glow {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  46% {
+    opacity: 0.92;
+  }
+  48% {
+    opacity: 0.8;
+  }
+  50% {
+    opacity: 0.95;
+  }
+}
+
+/* La despensa: tablas oscuras atornilladas, con chapas en las esquinas y TIENDA pintado a plantilla. */
+.gh-refuge .gh-shop {
+  padding: 18px 22px 20px;
+  border-radius: 10px;
+  border: 6px solid #2b1a0e;
+  background:
+    linear-gradient(90deg, rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0) 12%, rgba(0, 0, 0, 0) 88%, rgba(0, 0, 0, 0.35)),
+    repeating-linear-gradient(180deg, #5c3b22 0 46px, #4a2f1a 46px 49px), #5c3b22;
+  box-shadow:
+    0 22px 50px rgba(0, 0, 0, 0.6),
+    inset 0 0 0 2px rgba(255, 200, 120, 0.12),
+    0 0 80px rgba(255, 170, 80, 0.18);
+  color: #f3e6cf;
+}
+.gh-refuge .gh-shop::before,
+.gh-refuge .gh-shop::after {
+  content: '';
+  position: absolute;
+  top: 8px;
+  width: 26px;
+  height: 26px;
+  border-radius: 4px;
+  background: radial-gradient(circle at 50% 50%, #8c8c8c 3px, transparent 4px), linear-gradient(135deg, #9a9a9a, #5a5a5a);
+  box-shadow: 0 2px 3px rgba(0, 0, 0, 0.5);
+}
+.gh-refuge .gh-shop::before {
+  left: 8px;
+}
+.gh-refuge .gh-shop::after {
+  right: 8px;
+}
+.ref-stencil {
+  align-self: center;
+  margin: -4px 0 2px;
+  font-size: 1.6rem;
+  font-weight: 900;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: rgba(255, 236, 200, 0.85);
+  text-shadow: 0 0 1px rgba(255, 236, 200, 0.6);
+  rotate: -2deg;
+  -webkit-mask-image: repeating-linear-gradient(90deg, #000 0 9px, rgba(0, 0, 0, 0.55) 9px 11px);
+  mask-image: repeating-linear-gradient(90deg, #000 0 9px, rgba(0, 0, 0, 0.55) 9px 11px);
+}
+.gh-refuge .gh-shop-hint {
+  color: rgba(243, 230, 207, 0.75);
+}
+.gh-refuge .gh-group {
+  color: #e8b04f;
+}
+/* La balda: una tabla clara con escuadras de hierro. */
+.gh-refuge .gh-powers .gh-offer-art::after,
+.gh-refuge .gh-plant::before {
+  content: '';
+  position: absolute;
+  bottom: -6px;
+  left: -8px;
+  right: -8px;
+  height: 12px;
+  background: linear-gradient(180deg, #a9773f, #74491f);
+  border-top: 2px solid #c99a5e;
+  box-shadow: 0 6px 10px rgba(0, 0, 0, 0.45);
+}
+.gh-refuge .gh-offer:first-child .gh-offer-art::after {
+  left: -24px;
+}
+.gh-refuge .gh-offer:last-child .gh-offer-art::after {
+  right: -24px;
+}
+.gh-refuge .gh-plant {
+  position: relative;
+  padding-bottom: 12px;
+}
+.gh-refuge .gh-plant::before {
+  bottom: 0;
+  left: -24px;
+  right: -24px;
+}
+/* Etiqueta de papel de estraza atada con cordel. */
+.gh-refuge .gh-offer-label {
+  margin-top: 16px;
+  border-radius: 4px 4px 10px 10px;
+  background: linear-gradient(180deg, #e2c393, #cfa86f);
+  color: #3d2410;
+  box-shadow: 0 5px 10px rgba(0, 0, 0, 0.45);
+  rotate: calc((var(--i, 0) - 1) * -1.4deg);
+}
+.gh-refuge .gh-offer-label::before {
+  content: '';
+  position: absolute;
+  top: -14px;
+  left: 50%;
+  width: 2px;
+  height: 18px;
+  background: #e8dcc0;
+}
+.gh-refuge .gh-offer-label::after {
+  content: '';
+  position: absolute;
+  top: 5px;
+  left: 50%;
+  width: 9px;
+  height: 9px;
+  margin-left: -4px;
+  border-radius: 50%;
+  background: #5c3b22;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.6);
+}
+.gh-refuge .gh-offer-name {
+  margin-top: 6px;
+  color: #3d2410;
+}
+.gh-refuge .gh-offer-about,
+.gh-refuge .gh-offer-next {
+  color: #5e4026;
+}
+.gh-refuge .gh-offer-next strong {
+  color: #3d2410;
+}
+.gh-refuge .gh-offer-stats {
+  color: #2f6e24;
+}
+.gh-refuge .gh-plant .gh-offer-label {
+  margin: 0 0 12px;
+  rotate: 0.8deg;
+}
+.gh-refuge .gh-plant .gh-offer-label::before,
+.gh-refuge .gh-plant .gh-offer-label::after {
+  left: 28px;
+}
+.gh-refuge .gh-plant-level {
+  color: #7a4a1c;
+}
+.gh-refuge .shop-leaf {
+  background: rgba(60, 30, 10, 0.25);
+  border-color: rgba(60, 30, 10, 0.4);
+}
+.gh-refuge .shop-leaf.is-on {
+  background: linear-gradient(160deg, #c8f59a, #62c046);
+  border-color: #1f4d16;
+}
+/* El tarro de cristal con tapa de corcho; dentro, el poder brilla como una luciernaga. */
+.ref-jar {
+  position: relative;
+  display: block;
+  width: calc(96px * var(--k));
+  height: calc(122px * var(--k));
+}
+.ref-jar-lid {
+  position: absolute;
+  z-index: 1;
+  left: 22%;
+  right: 22%;
+  top: 0;
+  height: calc(20px * var(--k));
+  border-radius: 6px 6px 3px 3px;
+  background: repeating-radial-gradient(circle at 30% 40%, #c9945e 0 2px, #b07d4b 2px 4px);
+  border: 2px solid #6b4320;
+}
+.ref-jar-glass {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(16px * var(--k));
+  bottom: 0;
+  overflow: hidden;
+  border-radius: 30% 30% 18% 18% / 16% 16% 12% 12%;
+  border: 2px solid rgba(220, 240, 255, 0.55);
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0) 22%, rgba(255, 255, 255, 0) 78%, rgba(255, 255, 255, 0.18)),
+    rgba(180, 220, 240, 0.14);
+  box-shadow: inset 0 -10px 18px rgba(0, 0, 0, 0.25);
+}
+.ref-jar-glass::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 90%;
+  aspect-ratio: 1;
+  translate: -50% -50%;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--glow, rgba(255, 214, 90, 0.75)), transparent 65%);
+  animation: ref-firefly 2.8s calc(var(--i, 0) * -0.7s) ease-in-out infinite;
+}
+.ref-jar-art {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: calc(58px * var(--k));
+  height: calc(58px * var(--k));
+  translate: -50% -50%;
+}
+.power-grenade .ref-jar-glass {
+  --glow: rgba(255, 110, 110, 0.7);
+}
+.power-iceWall .ref-jar-glass {
+  --glow: rgba(120, 220, 255, 0.75);
+}
+@keyframes ref-firefly {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(0.85);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+}
+/* La lata con la disparadora, bajo un cerco de luz calida. */
+.ref-pot {
+  position: relative;
+  display: block;
+  width: calc(150px * var(--k));
+  height: calc(170px * var(--k));
+}
+.ref-pot-glow {
+  position: absolute;
+  left: 50%;
+  top: 6%;
+  width: 120%;
+  aspect-ratio: 1;
+  translate: -50% 0;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 200, 110, 0.55), transparent 62%);
+  animation: ref-glow 4s ease-in-out infinite;
+}
+.ref-pot-plant {
+  position: absolute;
+  left: 50%;
+  bottom: calc(40px * var(--k));
+  width: calc(100px * var(--k));
+  translate: -50% 0;
+}
+.ref-pot-tin {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: calc(80px * var(--k));
+  height: calc(56px * var(--k));
+  translate: -50% 0;
+  border-radius: 4px 4px 8px 8px;
+  background:
+    repeating-linear-gradient(180deg, rgba(0, 0, 0, 0) 0 8px, rgba(0, 0, 0, 0.18) 8px 10px), linear-gradient(90deg, #6f7d80, #c9d4d6 35%, #8a979a 70%, #5a6568);
+  border: 2px solid #343d3f;
+}
+.ref-pot-tin::after {
+  content: '';
+  position: absolute;
+  left: 14%;
+  right: 14%;
+  top: 30%;
+  height: 34%;
+  border-radius: 3px;
+  background: #c9463b;
+  box-shadow: inset 0 0 0 2px #fff0d0;
+}
+/* El menu y el boton de volver, en madera. */
+.ref-menu.pause-card {
+  border-color: #b07d4b;
+  background: linear-gradient(180deg, #4d3220 0%, #2a190d 100%);
+  box-shadow:
+    0 24px 60px rgba(0, 0, 0, 0.6),
+    inset 0 2px 0 rgba(255, 220, 170, 0.1),
+    0 0 60px rgba(255, 170, 80, 0.12);
+}
+.ref-menu .seed-balance {
+  background: rgba(20, 10, 4, 0.5);
+  border-color: rgba(255, 200, 120, 0.35);
+}
+.ref-menu .btn:not(.btn-primary),
+.gh-refuge .gh-home.btn {
+  border-color: #b07d4b;
+  background: linear-gradient(180deg, #7a5232, #573620);
+  box-shadow: 0 4px 0 #2a190d;
+}
+
+/* ---------- 3. Puesto en la azotea ---------- */
+.st-window {
+  animation: st-window 10s ease-in-out infinite;
+}
+.st-beacon {
+  animation: st-beacon 1.6s steps(1) infinite;
+}
+.st-bird {
+  animation: st-bird 22s linear infinite;
+}
+.st-firefly {
+  animation: st-firefly 6s ease-in-out infinite;
+}
+@keyframes st-window {
+  0%,
+  30% {
+    opacity: 0.15;
+  }
+  40%,
+  100% {
+    opacity: 1;
+  }
+}
+@keyframes st-beacon {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.15;
+  }
+}
+@keyframes st-bird {
+  from {
+    transform: translate(-300px, 40px);
+  }
+  to {
+    transform: translate(1700px, -60px);
+  }
+}
+@keyframes st-firefly {
+  0%,
+  100% {
+    transform: translate(0, 0);
+    opacity: 0.2;
+  }
+  30% {
+    opacity: 1;
+  }
+  50% {
+    transform: translate(18px, -26px);
+    opacity: 0.9;
+  }
+  75% {
+    transform: translate(-12px, -10px);
+    opacity: 0.4;
+  }
+}
+
+/* El toldo hace de titulo: sin el rotulo grande, y la tienda baja para que quepa el toldo. */
+.gh-stall {
+  --top: 104px;
+}
+.gh-stall .gh-logo {
+  display: none;
+}
+
+/* El puesto: toldo a rayas con su borde de ondas, postes, fondo de listones y pizarras. */
+.gh-stall .gh-shop {
+  padding: 16px 22px 18px;
+  margin-top: 30px;
+  border-radius: 6px 6px 12px 12px;
+  border: 8px solid #8a5a2e;
+  border-top: 0;
+  background:
+    linear-gradient(180deg, rgba(40, 20, 10, 0.45), rgba(40, 20, 10, 0) 30%), repeating-linear-gradient(90deg, #c08a55 0 36px, #a8723f 36px 38px), #c08a55;
+  box-shadow: 0 22px 44px rgba(40, 10, 40, 0.45);
+  color: #f4f1e6;
+}
+.st-awning {
+  position: absolute;
+  z-index: 1;
+  left: -30px;
+  right: -30px;
+  top: -58px;
+  height: 58px;
+  border-radius: 14px 14px 0 0;
+  background: repeating-linear-gradient(90deg, #3f9a35 0 44px, #fff3d6 44px 88px);
+  box-shadow:
+    inset 0 10px 0 rgba(255, 255, 255, 0.2),
+    0 6px 10px rgba(0, 0, 0, 0.25);
+  transform-origin: 50% 0;
+  animation: st-flutter 4s ease-in-out infinite;
+}
+.st-awning::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 100%;
+  height: 22px;
+  background:
+    radial-gradient(circle at 22px 0, #3f9a35 21px, transparent 22px) 0 0 / 88px 22px repeat-x,
+    radial-gradient(circle at 66px 0, #fff3d6 21px, transparent 22px) 0 0 / 88px 22px repeat-x;
+  filter: drop-shadow(0 4px 3px rgba(0, 0, 0, 0.25));
+}
+@keyframes st-flutter {
+  0%,
+  100% {
+    transform: scaleY(1);
+  }
+  50% {
+    transform: scaleY(1.04) skewX(-0.6deg);
+  }
+}
+.st-sign {
+  position: absolute;
+  left: 50%;
+  top: -26px;
+  translate: -50% -50%;
+  padding: 4px 22px 5px;
+  border-radius: 8px;
+  border: 4px solid #a8723f;
+  background: #2d3a33;
+  color: #fffbe8;
+  font-size: 1.2rem;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  box-shadow: 0 6px 10px rgba(0, 0, 0, 0.35);
+  rotate: -2deg;
+}
+.gh-stall .gh-shop-hint {
+  margin-top: 26px;
+  color: #3b220e;
+}
+.gh-stall .gh-group {
+  color: #3b220e;
+}
+/* Pizarra con marco de madera. */
+.gh-stall .gh-offer-label {
+  margin-top: 8px;
+  border-radius: 6px;
+  border: 5px solid #8a5a2e;
+  background: radial-gradient(ellipse at 30% 20%, #3f4f46, #2a352f 70%);
+  box-shadow:
+    0 5px 10px rgba(40, 20, 10, 0.4),
+    inset 0 0 12px rgba(0, 0, 0, 0.4);
+}
+.gh-stall .gh-offer-name {
+  color: #ffe9a0;
+}
+.gh-stall .gh-offer-about,
+.gh-stall .gh-offer-next {
+  color: rgba(244, 241, 230, 0.82);
+}
+.gh-stall .gh-offer-next strong {
+  color: #ffffff;
+}
+.gh-stall .gh-offer-stats {
+  color: #b9f27c;
+}
+.gh-stall .gh-plant-level {
+  color: #9fd88a;
+}
+.gh-stall .gh-plant {
+  position: relative;
+  margin-top: 8px;
+}
+.gh-stall .gh-plant .gh-offer-label {
+  margin-top: 0;
+}
+/* Caja de fruta: listones con hueco; el poder asoma por encima. */
+.st-crate {
+  position: relative;
+  display: block;
+  width: calc(124px * var(--k));
+  height: calc(112px * var(--k));
+}
+.st-crate-art {
+  position: absolute;
+  left: 50%;
+  bottom: calc(30px * var(--k));
+  width: calc(66px * var(--k));
+  height: calc(66px * var(--k));
+  translate: -50% 0;
+}
+.st-crate-box {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: calc(52px * var(--k));
+  border-radius: 4px;
+  border: 3px solid #6b4320;
+  background: repeating-linear-gradient(180deg, #e2ab70 0 calc(13px * var(--k)), #6b4320 calc(13px * var(--k)) calc(17px * var(--k)));
+  box-shadow: 0 6px 8px rgba(40, 20, 10, 0.35);
+}
+.st-crate-box::before,
+.st-crate-box::after {
+  content: '';
+  position: absolute;
+  top: -3px;
+  bottom: -3px;
+  width: 12%;
+  background: #c08a55;
+  border: 3px solid #6b4320;
+}
+.st-crate-box::before {
+  left: -3px;
+}
+.st-crate-box::after {
+  right: -3px;
+}
+.st-pot {
+  position: relative;
+  display: block;
+  width: calc(150px * var(--k));
+  height: calc(160px * var(--k));
+}
+.st-pot-plant {
+  position: absolute;
+  left: 50%;
+  bottom: calc(34px * var(--k));
+  width: calc(100px * var(--k));
+  translate: -50% 0;
+}
+.st-pot-clay {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: calc(92px * var(--k));
+  height: calc(52px * var(--k));
+  translate: -50% 0;
+  clip-path: polygon(0 0, 100% 0, 86% 100%, 14% 100%);
+  background:
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0) 0 14px, rgba(255, 255, 255, 0.25) 14px 18px),
+    linear-gradient(90deg, #2f7fb5, #5fb2e6 38%, #3f8fc4 70%, #2f7fb5);
+}
+.st-pot-clay::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 26%;
+  background: linear-gradient(180deg, #8fd0f5, #3f8fc4);
+  border-bottom: 2px solid #1d4f74;
+}
+.st-patty {
+  z-index: 0;
+}
+
+/* ---------- Pantallas medianas: sin Patty, para que quepa la tienda ---------- */
+@media (max-width: 1180px), (max-height: 640px) {
+  .gh-screen {
+    --patty-room: 0px;
+  }
+  .gh-patty {
+    display: none;
+  }
+}
+
+/* ---------- Pantallas pequenas (movil en horizontal) ---------- */
+@media (max-width: 860px), (max-height: 560px) {
+  .gh-screen {
+    --edge: max(12px, env(safe-area-inset-left));
+    --menu-right: max(12px, env(safe-area-inset-right));
+    --menu-w: min(300px, 38vw);
+    --gap: 12px;
+    --top: 30px;
+    --bottom: 56px;
+    --k: 0.66;
+  }
+  .gh-logo,
+  .gh-shop-hint {
+    display: none;
+  }
+  .gh-menu {
+    padding: 12px;
+    border-radius: 18px;
+  }
+  .gh-menu .title-actions {
+    gap: 8px;
+  }
+  .gh-menu .btn {
+    padding: 7px 10px;
+    font-size: 0.9rem;
+    border-radius: 12px;
+  }
+  .gh-menu .btn.has-detail {
+    padding-top: 5px;
+    padding-bottom: 5px;
+  }
+  .gh-menu .seed-balance {
+    margin-bottom: 8px;
+    padding: 1px 10px;
+  }
+  .gh-menu .seed-balance strong {
+    font-size: 1.05rem;
+  }
+  .gh-menu .seed-balance .seed-icon {
+    width: 20px;
+    height: 20px;
+  }
+  .gh-home.btn {
+    bottom: max(10px, env(safe-area-inset-bottom));
+    padding: 6px 12px;
+    font-size: 0.86rem;
+    border-radius: 12px;
+  }
+  .gh-powers {
+    gap: 8px;
+  }
+  .gh-offer-label {
+    gap: 2px;
+    padding: 6px 7px 7px;
+  }
+  .gh-offer-name {
+    font-size: 0.92rem;
+  }
+  .gh-offer-about {
+    font-size: 0.66rem;
+    line-height: 1.2;
+  }
+  .gh-offer-stats {
+    font-size: 0.72rem;
+  }
+  .gh-offer-next {
+    font-size: 0.64rem;
+  }
+  .gh-offer .shop-buy {
+    padding: 5px 8px;
+    font-size: 0.8rem;
+    border-radius: 11px;
+  }
+  .gh-offer .shop-price .seed-icon {
+    width: 14px;
+    height: 14px;
+  }
+  .gh-offer .shop-cheer {
+    top: 10px;
+    font-size: 1rem;
+  }
+  .gh-plant {
+    column-gap: 10px;
+  }
+  .gh-lab .gh-shop {
+    padding: 20px 14px 12px;
+    border-width: 6px;
+  }
+  .lab-plaque {
+    padding: 3px 22px 4px;
+    font-size: 0.95rem;
+  }
+  .gh-lab .gh-offer:first-child .gh-offer-art::after,
+  .gh-refuge .gh-offer:first-child .gh-offer-art::after {
+    left: -16px;
+  }
+  .gh-lab .gh-offer:last-child .gh-offer-art::after,
+  .gh-refuge .gh-offer:last-child .gh-offer-art::after {
+    right: -16px;
+  }
+  .gh-lab .gh-plant::before,
+  .gh-refuge .gh-plant::before {
+    left: -16px;
+    right: -16px;
+  }
+  .gh-lab .gh-offer-label,
+  .gh-refuge .gh-offer-label {
+    margin-top: 10px;
+  }
+  .gh-refuge .gh-shop {
+    padding: 10px 14px 12px;
+    border-width: 4px;
+  }
+  .gh-refuge .gh-shop::before,
+  .gh-refuge .gh-shop::after {
+    width: 16px;
+    height: 16px;
+    top: 5px;
+  }
+  .ref-stencil {
+    font-size: 1.05rem;
+  }
+  .gh-stall .gh-shop {
+    margin-top: 34px;
+    padding: 10px 14px 12px;
+    border-width: 5px;
+  }
+  .st-awning {
+    left: -16px;
+    right: -16px;
+    top: -34px;
+    height: 34px;
+    background-size: 56px 100%;
+    background-image: repeating-linear-gradient(90deg, #3f9a35 0 28px, #fff3d6 28px 56px);
+  }
+  .st-awning::after {
+    height: 14px;
+    background:
+      radial-gradient(circle at 14px 0, #3f9a35 13px, transparent 14px) 0 0 / 56px 14px repeat-x,
+      radial-gradient(circle at 42px 0, #fff3d6 13px, transparent 14px) 0 0 / 56px 14px repeat-x;
+  }
+  .st-sign {
+    top: -10px;
+    padding: 2px 14px 3px;
+    font-size: 0.9rem;
+    border-width: 3px;
+  }
+  .gh-stall .gh-offer-label {
+    border-width: 3px;
+  }
+}
+
+/* Movil en horizontal de verdad (375 o 320 de alto): solo lo que hace falta para decidir. */
+@media (max-height: 420px) {
+  .gh-screen {
+    --top: 10px;
+    --bottom: 44px;
+    --k: 0.42;
+    --menu-w: min(270px, 36vw);
+  }
+  .gh-offer-about,
+  .gh-offer-next,
+  .gh-plant-level,
+  .gh-group,
+  .lab-crown,
+  .ref-stencil,
+  .st-sign {
+    display: none;
+  }
+  .gh-lab .gh-shop,
+  .gh-refuge .gh-shop {
+    padding: 8px 12px;
+  }
+  .gh-offer-label {
+    padding: 4px 6px 6px;
+  }
+  .gh-offer-name {
+    font-size: 0.82rem;
+  }
+  .gh-offer-stats {
+    font-size: 0.64rem;
+    line-height: 1.15;
+  }
+  .gh-lab .gh-offer-label,
+  .gh-refuge .gh-offer-label {
+    margin-top: 8px;
+  }
+  .gh-refuge .gh-offer-label::before {
+    top: -10px;
+    height: 12px;
+  }
+  .gh-refuge .gh-offer-label::after {
+    top: 3px;
+    width: 6px;
+    height: 6px;
+    margin-left: -3px;
+  }
+  .gh-refuge .gh-offer-name {
+    margin-top: 4px;
+  }
+  .gh-plant .gh-offer-stats {
+    display: none;
+  }
+  .gh-home.btn {
+    padding: 5px 10px;
+    font-size: 0.8rem;
+  }
+  .gh-lab .gh-shop {
+    padding-top: 16px;
+  }
+  .gh-plant {
+    align-items: center;
+  }
+  .gh-lab .gh-plant .gh-offer-label,
+  .gh-refuge .gh-plant .gh-offer-label {
+    margin-bottom: 8px;
+  }
+  .gh-stall .gh-shop {
+    margin-top: 20px;
+    padding: 8px 12px;
+  }
+  .st-awning {
+    top: -20px;
+    height: 20px;
+  }
+  .st-awning::after {
+    height: 10px;
+    background:
+      radial-gradient(circle at 14px 0, #3f9a35 13px, transparent 14px) 0 0 / 56px 10px repeat-x,
+      radial-gradient(circle at 42px 0, #fff3d6 13px, transparent 14px) 0 0 / 56px 10px repeat-x;
+  }
+  .gh-stall .gh-plant {
+    margin-top: 6px;
+  }
+}
+
+/* El mas pequeno (568 x 320): la columna del menu, mas estrecha. */
+@media (max-width: 640px) and (max-height: 420px) {
+  .gh-screen {
+    --menu-w: 200px;
+  }
+  .gh-menu .btn {
+    font-size: 0.84rem;
+  }
+  .gh-menu .btn-detail {
+    font-size: 0.66rem;
+  }
+  .gh-home-text {
+    display: none;
+  }
+  /* En el boton de un poder solo cabe el precio: el dorado ya dice que se compra. */
+  .gh-powers .shop-buy {
+    justify-content: center;
+  }
+  .gh-powers .shop-buy > span:first-child {
+    display: none;
+  }
+}

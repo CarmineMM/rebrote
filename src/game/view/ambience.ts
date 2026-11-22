@@ -44,21 +44,16 @@ function breathe(scene: Phaser.Scene, target: Phaser.GameObjects.GameObject, pro
 /** Cantidad de cosas segun el nivel, sin bajar de `min`. */
 const amount = (base: number, factor: number, min = 1) => Math.max(min, Math.round(base * factor));
 
-/**
- * `garden`: el escenario del Invernadero (T-019), con su cesped liso y sin suelo corrupto (`registerGardenLand`): sin
- * el brillo de los agujeros ni los bits que suben de ellos. Lo demas (cielo, ciudad, arbol, flores, bichos) es igual.
- */
-export function createAmbience(scene: Phaser.Scene, quality: QualityProfile, { garden = false }: { garden?: boolean } = {}): Ambience {
+export function createAmbience(scene: Phaser.Scene, quality: QualityProfile): Ambience {
   scene.add.image(WORLD.left, WORLD.top, TEX.sky).setOrigin(0).setScale(artInvOf(TEX.sky)).setDepth(DEPTH.sky);
   addSun(scene, quality);
   const drifters = addClouds(scene, quality);
   scheduleBirds(scene, quality);
 
-  const land = garden ? TEX.gardenLand : TEX.land;
-  scene.add.image(WORLD.left, LAND_TOP, land).setOrigin(0).setScale(artInvOf(land)).setDepth(DEPTH.land);
+  scene.add.image(WORLD.left, LAND_TOP, TEX.land).setOrigin(0).setScale(artInvOf(TEX.land)).setDepth(DEPTH.land);
   addCanopy(scene);
   addSkylineLights(scene, quality);
-  if (!garden) addCorruption(scene, quality);
+  addCorruption(scene, quality);
   if (quality.cloudShadows) drifters.push(addCloudShadow(scene));
   if (quality.wind) addWind(scene);
   if (quality.extras) {
