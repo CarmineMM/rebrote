@@ -230,6 +230,14 @@ export class CreeperView implements EnemyView {
     this.worm.spat();
   }
 
+  inhale(): void {
+    this.worm.inhale();
+  }
+
+  sang(): void {
+    this.worm.sang();
+  }
+
   hit(): void {
     this.worm.hit();
   }

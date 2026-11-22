@@ -1,10 +1,10 @@
 import * as Phaser from 'phaser';
-import { ENEMIES } from '../config/balance';
+import { CLONE, ENEMIES } from '../config/balance';
 import { hpFraction, isEnraged, type Enemy, type EnemyKind } from '../core/combat';
 import type { Effects } from './effects';
 import { entityDepth, perspective } from './layout';
-import { FLAME_SIZE, FROST_SIZE, TEX, WORM_SIZE, artInv, medalTexture } from './textures';
-import { WormAura } from './wormAura';
+import { FLAME_SIZE, FROST_SIZE, HAT_SIZE, TEX, WORM_SIZE, artInv, medalTexture } from './textures';
+import { WormAura, type AuraHost } from './wormAura';
 import { auraTier } from './wormAuraArt';
 
 /**
@@ -53,8 +53,23 @@ export const WORM_LOOK = {
   frozenTint: 0xd8f3ff,
   /** Escupidor (T-007): lo que dura la carga antes de cada escupitajo (se echa atras e hincha los mofletes). */
   spitChargeMs: 650,
-  /** Boca del escupidor respecto a la cabeza (pixeles de la textura de la cabeza, desde su centro). */
+  /** Boca del escupidor (y del juglar) respecto a la cabeza (pixeles de la textura de la cabeza, desde su centro). */
   mouth: { x: -20, y: 17 },
+  /**
+   * Juglar (T-025): cuanto se hincha mientras toma aire antes del verso (el aviso, F-04: lo que dura sale de
+   * `ENEMIES.minstrel.warnMs`), cuanto se yergue y lo que dura la cara de recitar.
+   */
+  minstrel: { swell: 0.16, rear: 1.4, singMs: 520 },
+  /**
+   * Disquete a la espalda de los copiones (T-025): de pie sobre el lomo, entre el segundo y el tercer anillo (respecto
+   * al punto medio de los dos), algo echado hacia atras. Sigue la joroba al andar.
+   */
+  pack: { x: 2, y: -36, scale: 0.92, angle: 14 },
+  /**
+   * Copia de un copion (T-025): mas pequena (`CLONE.size`), algo transparente y, cada tanto, un parpadeo de interferencia
+   * (`glitchMs`): es una copia. Al salir, nace del tamano de su copion y encoge con un destello.
+   */
+  clone: { alpha: 0.9, glitchMs: 1700, glitchShift: 5, popMs: 420 },
   /** Acelerado por Creeper (T-008): rayas de velocidad detras de la cola, que titilan mientras avanza. */
   streak: { x: 74, y: -24, scale: 1.3 },
   /**
@@ -78,30 +93,71 @@ export const WORM_LOOK = {
 
 interface HeadSet {
   idle: string;
+  /** Atacando: mordiendo, cargando el escupitajo o, el juglar, tomando aire (T-025). */
   attack: string;
   hurt: string;
+  /** Al soltar el ataque, si tiene cara propia: el juglar recitando (T-025). */
+  release?: string;
 }
+
+/** Lo que cambia con cada enemigo (ver `KIND_LOOK`). */
+export interface KindLook {
+  readonly head: HeadSet;
+  readonly angryHead?: HeadSet;
+  readonly segment: string;
+  readonly size: number;
+  /** Armadura: casco sobre la cabeza y una placa por anillo (el acorazado de acero; el copion, de disquete), o null. */
+  readonly armor: { readonly helmet: string; readonly plate: string } | null;
+  /** Lo que lleva a la espalda (el disquete de los copiones, T-025), o null. Sus copias no lo llevan. */
+  readonly pack: string | null;
+  /** Sombrero sobre la cabeza (el del juglar, T-025, en su lienzo `HAT_SIZE`, con el centro de la cabeza de origen), o null. */
+  readonly hat: string | null;
+}
+
+const WORM_HEAD: HeadSet = { idle: TEX.wormHead, attack: TEX.wormHeadBite, hurt: TEX.wormHeadHurt };
+const COPYCAT_HEAD: HeadSet = { idle: TEX.copycatHead, attack: TEX.copycatHeadBite, hurt: TEX.copycatHeadHurt };
+const STEEL_ARMOR = { helmet: TEX.armorHelmet, plate: TEX.armorPlate } as const;
+const FLOPPY_ARMOR = { helmet: TEX.floppyHelmet, plate: TEX.floppyPlate } as const;
+const plain = { armor: null, pack: null, hat: null } as const;
 
 /**
  * Lo que cambia con cada enemigo (T-007): texturas de la cabeza (tranquila, atacando y dolorida) y del anillo,
  * tamano, y si lleva armadura. El acorazado es un gusano mas grande con casco y una placa por anillo. El Creeper
- * (T-008) es mucho mas grande, con cabeza de monitor, y en su fase 2 cambia de cara (`angryHead`).
+ * (T-008) es mucho mas grande, con cabeza de monitor, y en su fase 2 cambia de cara (`angryHead`). Las tropas del brote 2
+ * (T-025) son las del brote 1 en otros colores con un disquete a la espalda (el acorazado, con armadura de disquete), y
+ * el juglar, rojo y con gorro de pluma. La foto de la ficha (`portrait.ts`) pinta lo mismo.
  */
-const KIND_LOOK: Record<EnemyKind, { head: HeadSet; angryHead?: HeadSet; segment: string; size: number; armor: boolean }> = {
-  worm: { head: { idle: TEX.wormHead, attack: TEX.wormHeadBite, hurt: TEX.wormHeadHurt }, segment: TEX.wormSegment, size: 1, armor: false },
-  armored: { head: { idle: TEX.wormHead, attack: TEX.wormHeadBite, hurt: TEX.wormHeadHurt }, segment: TEX.wormSegment, size: 1.12, armor: true },
+export const KIND_LOOK: Record<EnemyKind, KindLook> = {
+  worm: { head: WORM_HEAD, segment: TEX.wormSegment, size: 1, ...plain },
+  armored: { head: WORM_HEAD, segment: TEX.wormSegment, size: 1.12, ...plain, armor: STEEL_ARMOR },
   spitter: {
     head: { idle: TEX.spitterHead, attack: TEX.spitterHeadCharge, hurt: TEX.spitterHeadHurt },
     segment: TEX.spitterSegment,
     size: 1,
-    armor: false,
+    ...plain,
   },
   creeper: {
     head: { idle: TEX.creeperHead, attack: TEX.creeperHeadBite, hurt: TEX.creeperHeadHurt },
     angryHead: { idle: TEX.creeperHeadAngry, attack: TEX.creeperHeadAngryBite, hurt: TEX.creeperHeadAngryHurt },
     segment: TEX.creeperSegment,
     size: 1.7,
-    armor: false,
+    ...plain,
+  },
+  copycat: { head: COPYCAT_HEAD, segment: TEX.copycatSegment, size: 1, ...plain, pack: TEX.floppy },
+  copycatArmored: { head: COPYCAT_HEAD, segment: TEX.copycatSegment, size: 1.12, ...plain, armor: FLOPPY_ARMOR, pack: TEX.floppy },
+  copycatSpitter: {
+    head: { idle: TEX.copycatSpitterHead, attack: TEX.copycatSpitterHeadCharge, hurt: TEX.copycatSpitterHeadHurt },
+    segment: TEX.copycatSpitterSegment,
+    size: 1,
+    ...plain,
+    pack: TEX.floppy,
+  },
+  minstrel: {
+    head: { idle: TEX.minstrelHead, attack: TEX.minstrelHeadInhale, hurt: TEX.minstrelHeadHurt, release: TEX.minstrelHeadSing },
+    segment: TEX.minstrelSegment,
+    size: 1.04,
+    ...plain,
+    hat: TEX.minstrelHat,
   },
 };
 
@@ -114,6 +170,10 @@ export interface EnemyView {
   sync(enemy: Enemy, stride?: number): void;
   chomp(): void;
   spat(): void;
+  /** El juglar toma aire (T-025, F-04): el aviso de su verso. */
+  inhale(): void;
+  /** El juglar suelta su verso (T-025). */
+  sang(): void;
   hit(): void;
   blasted(): void;
   frosted(): void;
@@ -139,7 +199,7 @@ export function jumpPose(enemy: Enemy): { lane: number; lift: number; crouch: nu
   return { lane: jump.from + (jump.to - jump.from) * eased, lift: Math.sin(t * Math.PI), crouch: Math.max(0, 1 - t * 5) };
 }
 
-/** Armadura del acorazado: el casco y una placa por anillo, de la cola a la cabeza. Las placas se caen con la vida. */
+/** Armadura del acorazado (de acero, o de disquete el copion): casco y una placa por anillo. Las placas se caen con la vida. */
 interface Armor {
   readonly helmet: Phaser.GameObjects.Image;
   readonly plates: Phaser.GameObjects.Image[];
@@ -165,6 +225,13 @@ export class WormView implements EnemyView {
   private readonly streak: Phaser.GameObjects.Image;
   /** Medallita de nivel (T-009), o null si es de nivel 1 o el Creeper. */
   private readonly medal: Phaser.GameObjects.Image | null = null;
+  /** Disquete a la espalda (los copiones, T-025), o null. */
+  private readonly pack: Phaser.GameObjects.Image | null = null;
+  /** Gorro (el juglar, T-025), o null. */
+  private readonly hat: Phaser.GameObjects.Image | null = null;
+  /** Copia de un copion (T-025): pequena, algo transparente y con su parpadeo de interferencia. */
+  private readonly clone: boolean;
+  private glitchTimer?: Phaser.Time.TimerEvent;
   private footY: number;
   private cellWidth: number;
   private scale: number;
@@ -188,6 +255,10 @@ export class WormView implements EnemyView {
   private readonly shiver: Pulse = { v: 0 };
   /** Aplastado al aterrizar de un salto (Creeper, T-008). */
   private readonly thud: Pulse = { v: 0 };
+  /** Copia recien salida (T-025): nace del tamano de su copion (1) y encoge al suyo (0). */
+  private readonly shrink: Pulse = { v: 0 };
+  /** Parpadeo de interferencia de la copia (T-025). */
+  private readonly glitch: Pulse = { v: 0 };
   private flashTimer?: Phaser.Time.TimerEvent;
   private readonly flames: Phaser.GameObjects.Image[];
   private burning = false;
@@ -211,7 +282,8 @@ export class WormView implements EnemyView {
     emergeDelayMs = 0,
   ) {
     this.look = KIND_LOOK[enemy.kind];
-    this.size = this.look.size * (1 + (enemy.level - 1) * WORM_LOOK.growthPerLevel);
+    this.clone = enemy.clone;
+    this.size = this.look.size * (1 + (enemy.level - 1) * WORM_LOOK.growthPerLevel) * (enemy.clone ? CLONE.size : 1);
     this.headKey = this.look.head.idle;
     this.footY = enemy.lane + WORM_LOOK.footY;
     const ground = perspective.toScreen({ x: enemy.x, y: this.footY });
@@ -233,12 +305,20 @@ export class WormView implements EnemyView {
     const headOrigin = { x: head.cx / head.width, y: head.cy / head.height };
     this.head = scene.add.image(WORM_LOOK.head.x, WORM_LOOK.head.y, this.headKey).setOrigin(headOrigin.x, headOrigin.y).setScale(artInv());
     // Acorazado: casco sobre la cabeza y una placa sobre cada anillo, que tapa el anillo siguiente (hacia la cabeza).
-    if (this.look.armor) {
+    const armorLook = this.look.armor;
+    if (armorLook) {
       this.armor = {
-        helmet: scene.add.image(0, 0, TEX.armorHelmet).setOrigin(headOrigin.x, headOrigin.y).setScale(artInv()),
-        plates: WORM_LOOK.segments.map((s) => scene.add.image(s.x, s.y, TEX.armorPlate).setScale(s.scale * artInv())),
+        helmet: scene.add.image(0, 0, armorLook.helmet).setOrigin(headOrigin.x, headOrigin.y).setScale(artInv()),
+        plates: WORM_LOOK.segments.map((s) => scene.add.image(s.x, s.y, armorLook.plate).setScale(s.scale * artInv())),
         lost: 0,
       };
+    }
+    // Copiones (T-025): el disquete a la espalda; sus copias no lo llevan. Juglar: su gorro, como el casco.
+    if (this.look.pack && !enemy.clone) {
+      this.pack = scene.add.image(0, 0, this.look.pack).setScale(WORM_LOOK.pack.scale * artInv());
+    }
+    if (this.look.hat) {
+      this.hat = scene.add.image(0, 0, this.look.hat).setOrigin(HAT_SIZE.cx / HAT_SIZE.width, HAT_SIZE.cy / HAT_SIZE.height).setScale(artInv());
     }
     // Medallita de nivel (T-009): la misma de las disparadoras, en la nuca.
     if (enemy.level > 1 && enemy.kind !== 'creeper') {
@@ -263,12 +343,22 @@ export class WormView implements EnemyView {
     // la escarcha y las llamas.
     const armor = this.armor;
     const body = this.segments.flatMap((segment, i) => (armor ? [segment, armor.plates[i]] : [segment]));
-    const top = [this.head, ...(armor ? [armor.helmet] : []), ...(this.medal ? [this.medal] : [])];
-    this.holder = scene.add.container(ground.x, ground.y, [this.streak, ...body, ...top, ...this.frost, ...this.flames]).setDepth(depth);
-    // Aura de los tramos de nivel (T-030): detras y alrededor del cuerpo, sin tocar su dibujo.
+    const back = this.pack ? [this.pack] : [];
+    const top = [this.head, ...(armor ? [armor.helmet] : []), ...(this.hat ? [this.hat] : []), ...(this.medal ? [this.medal] : [])];
+    this.holder = scene.add.container(ground.x, ground.y, [this.streak, ...body, ...back, ...top, ...this.frost, ...this.flames]).setDepth(depth);
+    // Aura de los tramos de nivel (T-030): detras y alrededor del cuerpo, sin tocar su dibujo. La de una copia, a su tamano.
     const tier = auraTier(enemy.kind, enemy.level);
-    if (tier > 0 && fx.quality.auras > 0) this.aura = new WormAura(scene, fx, tier, this, emerge ? emergeDelayMs : 0);
+    if (tier > 0 && fx.quality.auras > 0) this.aura = new WormAura(scene, fx, tier, this.auraHost(), emerge ? emergeDelayMs : 0);
     this.lastSync = scene.time.now;
+    if (enemy.clone) {
+      this.holder.setAlpha(WORM_LOOK.clone.alpha);
+      this.glitchTimer = scene.time.addEvent({
+        delay: WORM_LOOK.clone.glitchMs,
+        startAt: Math.random() * WORM_LOOK.clone.glitchMs,
+        loop: true,
+        callback: () => this.flicker(),
+      });
+    }
 
     if (emerge && emergeDelayMs > 0) {
       this.rise.v = 0;
@@ -302,17 +392,21 @@ export class WormView implements EnemyView {
     const walking = enemy.attackMs === null && enemy.jump === null;
     this.walk += ((walking ? 1 : 0) - this.walk) * 0.25;
     if (walking) this.phase = this.phaseOffset - (enemy.x - stride) * WORM_LOOK.wavesPerCell * Math.PI * 2;
-    // Se echa atras mientras espera el mordisco (o carga el escupitajo) y se lanza al atacar (ver chomp y spat).
-    const chargeMs = stats.attack === 'spit' ? WORM_LOOK.spitChargeMs : stats.firstBiteMs;
+    // Se echa atras mientras espera el mordisco (o carga el escupitajo, o el juglar toma aire) y se lanza al atacar (ver
+    // chomp, spat y sang).
+    const chargeMs = stats.attack === 'spit' ? WORM_LOOK.spitChargeMs : stats.attack === 'verse' ? stats.warnMs : stats.firstBiteMs;
     const windup = walking ? 0 : Phaser.Math.Clamp(1 - (enemy.attackMs ?? 0) / chargeMs, 0, 1);
     const lean = windup * windup;
-    // El escupidor se yergue para escupir: la cabeza sube mas que al morder.
-    const rear = stats.attack === 'spit' ? 2 : 1;
+    // El escupidor se yergue para escupir: la cabeza sube mas que al morder. El juglar, algo menos, y se hincha (F-04).
+    const rear = stats.attack === 'spit' ? 2 : stats.attack === 'verse' ? WORM_LOOK.minstrel.rear : 1;
+    const swell = stats.attack === 'verse' ? Math.sin((windup * Math.PI) / 2) * WORM_LOOK.minstrel.swell : 0;
     const rise = this.rise.v;
     const hurt = this.hurt.v;
     const lunge = this.lunge.v;
+    // Copia recien salida (T-025): del tamano de su copion al suyo.
+    const shrink = 1 + this.shrink.v * (1 / CLONE.size - 1);
 
-    const grow = this.scale * (0.3 + 0.7 * rise);
+    const grow = this.scale * (0.3 + 0.7 * rise) * shrink * (1 + swell);
     const hop = Math.sin(this.hop.v * Math.PI) * 26 * this.scale;
     const shiver = Math.sin(this.shiver.v * Math.PI * 9) * 3.5 * this.shiver.v;
     // Salto de carril: agachado tiembla y se aplasta; en el aire sube en curva y se estira; al caer se aplasta.
@@ -321,8 +415,9 @@ export class WormView implements EnemyView {
     const lift = pose.lift * this.cellWidth * (look.liftCells + look.liftPerLane * span);
     const shake = pose.crouch * Math.sin(this.scene.time.now / 28) * look.crouchShake;
     const squash = pose.crouch * look.crouchSquash + this.thud.v * 0.22 - pose.lift * 0.08;
+    const jitter = this.glitch.v * Math.sin(this.scene.time.now / 11) * WORM_LOOK.clone.glitchShift;
     this.holder
-      .setPosition(ground.x + (this.kick.v * 10 + shiver + shake) * this.scale, ground.y + (1 - rise) * 20 * this.scale - hop - lift)
+      .setPosition(ground.x + (this.kick.v * 10 + shiver + shake + jitter) * this.scale, ground.y + (1 - rise) * 20 * this.scale - hop - lift)
       .setScale(grow * (1 + hurt * 0.1 + squash * 0.6), grow * (1 - hurt * 0.1 - squash));
     this.shadow
       .setPosition(ground.x, ground.y)
@@ -344,11 +439,28 @@ export class WormView implements EnemyView {
       .setPosition(WORM_LOOK.head.x + lean * 10 - lunge * 16, WORM_LOOK.head.y - lean * 7 * rear + lunge * 9 + bob)
       .setAngle(lean * 10 * rear - lunge * 12 + Math.sin(this.phase) * 4 * this.walk);
     const head = this.look.angryHead && isEnraged(enemy) ? this.look.angryHead : this.look.head;
-    // Agachado para saltar o en el aire, pone la cara decidida.
+    // Agachado para saltar o en el aire, pone la cara decidida. El juglar, al soltar el verso, pone cara de recitar.
     const jumping = enemy.jump !== null;
-    this.setHead(hurt > 0.25 ? head.hurt : lunge > 0.45 ? head.idle : windup > 0.35 || jumping ? head.attack : head.idle);
+    const face =
+      hurt > 0.25
+        ? head.hurt
+        : head.release && lunge > 0.12
+          ? head.release
+          : lunge > 0.45
+            ? head.idle
+            : windup > 0.35 || jumping
+              ? head.attack
+              : head.idle;
+    this.setHead(face);
     if (this.medal) {
       this.medal.setPosition(this.head.x + WORM_LOOK.medal.x, this.head.y + WORM_LOOK.medal.y).setAngle(this.head.angle * 0.6);
+    }
+    if (this.hat) this.hat.setPosition(this.head.x, this.head.y).setAngle(this.head.angle);
+    if (this.pack) {
+      const [, middle, front] = this.segments;
+      const { pack } = WORM_LOOK;
+      const tilt = (front.y - middle.y - (WORM_LOOK.segments[2].y - WORM_LOOK.segments[1].y)) * 1.5;
+      this.pack.setPosition((middle.x + front.x) / 2 + pack.x, Math.min(middle.y, front.y) + pack.y).setAngle(pack.angle - tilt);
     }
     if (this.armor) this.syncArmor(hpFraction(enemy));
 
@@ -438,6 +550,34 @@ export class WormView implements EnemyView {
     this.fx.goo(mouth.x, mouth.y, 4);
   }
 
+  /**
+   * El juglar toma aire (T-025, F-04): lo que se hincha sale del estado en `sync`; aqui, un destello rosa en la boca para
+   * que se vea que va a soltar algo.
+   */
+  inhale(): void {
+    const mouth = this.mouth();
+    this.fx.glow(mouth.x, mouth.y, this.cellWidth * 0.5 * this.size, 0xff8ad8, this.holder.depth + 0.4, 360);
+  }
+
+  /** El juglar suelta su verso (T-025): se lanza con la cara de recitar y le salen notas de la boca. El verso lo pinta su vista. */
+  sang(): void {
+    this.pulse(this.lunge, WORM_LOOK.minstrel.singMs);
+    const mouth = this.mouth();
+    this.fx.notes(mouth.x, mouth.y, 4);
+    this.fx.ring(mouth.x, mouth.y, this.cellWidth * 0.45 * this.size, 0xff5fd2, this.holder.depth + 0.4, 260, 0.7);
+  }
+
+  /**
+   * Copia recien salida de un copion (T-025, F-01): nace del tamano de su copion, en blanco, y encoge al suyo con un
+   * rebote. Los anillos y el destello verdes de "copiarse" los pone la escena.
+   */
+  popOut(): void {
+    this.rise.v = 1;
+    this.shrink.v = 1;
+    this.scene.tweens.add({ targets: this.shrink, v: 0, duration: WORM_LOOK.clone.popMs, ease: 'Back.Out' });
+    this.flash(0xffffff, 140);
+  }
+
   /** Golpe recibido: destello blanco, retroceso y cara de "ay". Contra la armadura, ademas, saltan esquirlas de acero. */
   hit(): void {
     this.pulse(this.hurt, 260);
@@ -482,8 +622,10 @@ export class WormView implements EnemyView {
     const frozen = this.chilled && !charred;
     this.stopReactions();
     this.aura?.fadeOut(300);
-    // Al acorazado le sale volando el casco.
+    // Al acorazado le sale volando el casco; al copion (T-025), el disquete, del que sale su copia; al juglar, el gorro.
     if (this.armor) this.fling(this.armor.helmet, -1, 1.4);
+    if (this.pack) this.fling(this.pack, 1, 1.8);
+    if (this.hat) this.fling(this.hat, -1, 1.2);
     const parts = this.bodyParts();
     parts.forEach((part) => part.setTint(frozen ? WORM_LOOK.frozenTint : 0xffffff).setTintMode(Phaser.TintModes.FILL));
     this.head.setTexture(this.look.head.hurt);
@@ -727,10 +869,34 @@ export class WormView implements EnemyView {
     });
   }
 
-  /** Lo que se tine y destella: cabeza, anillos y, en el acorazado, su armadura. */
+  /** Lo que se tine y destella: cabeza, anillos y, en el acorazado, su armadura; tambien el disquete y el gorro (T-025). */
   private bodyParts(): Phaser.GameObjects.Image[] {
     const armor = this.armor ? [this.armor.helmet, ...this.armor.plates] : [];
-    return [this.head, ...this.segments, ...armor];
+    const extras = [...(this.pack ? [this.pack] : []), ...(this.hat ? [this.hat] : [])];
+    return [this.head, ...this.segments, ...armor, ...extras];
+  }
+
+  /**
+   * Lo que el aura (T-030) sabe del cuerpo: sus pies y su profundidad. La de una copia (T-025) va a su tamano: el aura mide
+   * en anchos de casilla.
+   */
+  private auraHost(): AuraHost {
+    if (!this.clone) return this;
+    return {
+      ground: () => {
+        const ground = this.ground();
+        return { ...ground, cellWidth: ground.cellWidth * CLONE.size };
+      },
+      depth: () => this.depth(),
+    };
+  }
+
+  /** Parpadeo de interferencia de la copia (T-025): tiembla de lado y se apaga un instante, con algun pixel suelto. */
+  private flicker(): void {
+    if (!this.holder.active || this.hurt.v > 0.5) return;
+    this.pulse(this.glitch, 200);
+    this.scene.tweens.add({ targets: this.holder, alpha: WORM_LOOK.clone.alpha * 0.55, duration: 70, yoyo: true });
+    if (this.fx.quality.extras) this.fx.bits(this.holder.x, this.holder.y - 40 * this.scale, 3);
   }
 
   /** Tinte de reposo: azul frio mientras va lento, anaranjado mientras arde (con las dos cosas, el frio). */
@@ -765,7 +931,9 @@ export class WormView implements EnemyView {
     this.burnTimer = undefined;
     this.chillTimer?.remove();
     this.chillTimer = undefined;
-    this.scene.tweens.killTweensOf([this.rise, this.lunge, this.hurt, this.kick, this.hop, this.shiver, this.thud]);
+    this.glitchTimer?.remove();
+    this.glitchTimer = undefined;
+    this.scene.tweens.killTweensOf([this.rise, this.lunge, this.hurt, this.kick, this.hop, this.shiver, this.thud, this.shrink, this.glitch]);
   }
 
   private fadeShadow(durationMs: number): void {

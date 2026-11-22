@@ -1196,6 +1196,142 @@
       ]
     },
     {
+      "id": "minstrelInhale",
+      "about": "El juglar toma aire antes de su verso (T-025, F-04): un soplido que se hincha",
+      "spec": {
+        "bus": "world",
+        "volume": 0.45,
+        "maxVoices": 2,
+        "minGapMs": 150,
+        "burst": 2,
+        "pitchJitter": 0.8,
+        "variants": 1
+      },
+      "pick": [
+        {
+          "url": "audio/minstrelInhale",
+          "source": "jsfxr: receta `inhale`",
+          "seconds": 0.392
+        }
+      ],
+      "alternatives": [
+        {
+          "url": "audio-lab/candidatos/minstrelInhale/1",
+          "source": "Kenney RPG Audio: `cloth1.ogg` (velocidad 1.2, -2 dB)",
+          "seconds": 0.466,
+          "recipes": []
+        },
+        {
+          "url": "audio-lab/candidatos/minstrelInhale/2",
+          "source": "Kenney Interface Sounds: `maximize_003.ogg` (velocidad 0.7)",
+          "seconds": 0.287,
+          "recipes": []
+        }
+      ]
+    },
+    {
+      "id": "verse",
+      "about": "El juglar suelta su verso (T-025): un punteo corto de cuerda, como un laúd",
+      "spec": {
+        "bus": "world",
+        "volume": 0.55,
+        "maxVoices": 2,
+        "minGapMs": 150,
+        "burst": 2,
+        "pitchJitter": 1,
+        "variants": 1
+      },
+      "pick": [
+        {
+          "url": "audio/verse",
+          "source": "Kenney Music Jingles: `jingles_PIZZI05.ogg`",
+          "seconds": 0.526
+        }
+      ],
+      "alternatives": [
+        {
+          "url": "audio-lab/candidatos/verse/1",
+          "source": "Kenney Music Jingles: `jingles_PIZZI08.ogg`",
+          "seconds": 0.56,
+          "recipes": []
+        },
+        {
+          "url": "audio-lab/candidatos/verse/2",
+          "source": "Kenney Music Jingles: `jingles_SAX05.ogg` (-2 dB)",
+          "seconds": 0.354,
+          "recipes": []
+        }
+      ]
+    },
+    {
+      "id": "verseHit",
+      "about": "El verso pasa por una planta o una mina (T-025): un tintineo de cristal, bajito (si es un escudo, suena su toc de madera)",
+      "spec": {
+        "bus": "world",
+        "volume": 0.3,
+        "maxVoices": 3,
+        "minGapMs": 70,
+        "burst": 2,
+        "pitchJitter": 1.5,
+        "variants": 1
+      },
+      "pick": [
+        {
+          "url": "audio/verseHit",
+          "source": "Kenney Interface Sounds: `glass_001.ogg` (velocidad 0.9, -3 dB)",
+          "seconds": 0.3
+        }
+      ],
+      "alternatives": [
+        {
+          "url": "audio-lab/candidatos/verseHit/1",
+          "source": "Kenney Interface Sounds: `pluck_002.ogg` (velocidad 1.25, sin agudos por encima de 3600 Hz)",
+          "seconds": 0.092,
+          "recipes": []
+        },
+        {
+          "url": "audio-lab/candidatos/verseHit/2",
+          "source": "Kenney Interface Sounds: `pluck_001.ogg` (velocidad 1.5)",
+          "seconds": 0.066,
+          "recipes": []
+        }
+      ]
+    },
+    {
+      "id": "clone",
+      "about": "Un copión cae y deja su copia (T-025, F-01): blip digital de copiarse",
+      "spec": {
+        "bus": "world",
+        "volume": 0.45,
+        "maxVoices": 2,
+        "minGapMs": 90,
+        "burst": 2,
+        "pitchJitter": 1.2,
+        "variants": 1
+      },
+      "pick": [
+        {
+          "url": "audio/clone",
+          "source": "Kenney Digital Audio: `phaseJump2.ogg` (recortado 0-320 ms)",
+          "seconds": 0.265
+        }
+      ],
+      "alternatives": [
+        {
+          "url": "audio-lab/candidatos/clone/1",
+          "source": "Kenney Digital Audio: `pepSound2.ogg` (recortado 0-320 ms)",
+          "seconds": 0.219,
+          "recipes": []
+        },
+        {
+          "url": "audio-lab/candidatos/clone/2",
+          "source": "Kenney Digital Audio: `powerUp2.ogg` (recortado 0-320 ms, -2 dB)",
+          "seconds": 0.172,
+          "recipes": []
+        }
+      ]
+    },
+    {
       "id": "attackStarted",
       "about": "Empieza el ataque (\"¡Ahí vienen!\"): trino de 8 bits",
       "spec": {

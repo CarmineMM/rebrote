@@ -4,7 +4,7 @@ import { sfx } from '../audio/sfx';
 import { panAt } from '../audio/voices';
 import { BOARD, CREEPER, ECONOMY, ENEMIES, LIMITS, MINE, SHIELD } from '../config/balance';
 import { cellAt, cellCenter, type BoardPoint, type Cell } from '../core/board';
-import { enemyMaxHp, isDefeated, isEnraged, spawnEnemy, stepCombat, type CombatEvent, type Enemy, type EnemyKind } from '../core/combat';
+import { enemyMaxHp, enemyReward, isDefeated, isEnraged, spawnEnemy, stepCombat, type CombatEvent, type Enemy, type EnemyKind } from '../core/combat';
 import { rollKillReward, stepIncome } from '../core/economy';
 import {
   cardCost,
@@ -90,10 +90,11 @@ import { PlantView, plantPlacement } from '../view/plantView';
 import { portraitUrl, type PortraitSubject } from '../view/portrait';
 import { QUALITY_PROFILES, type QualityLevel, type QualityProfile } from '../view/quality';
 import { SpitView } from '../view/spitView';
+import { VerseView } from '../view/verseView';
 import { MINE_SIZE, SHOOTER_SIZE, TEX, WALL_SIZE, registerTextures, shooterTexture, mineTexture, wallTexture } from '../view/textures';
 import { wallWear } from '../view/wallArt';
 import { tourCells } from '../view/tourSpots';
-import { WormView, type EnemyView } from '../view/wormView';
+import { WORM_LOOK, WormView, type EnemyView } from '../view/wormView';
 import { formatAmount, text } from '../../i18n';
 import { isOutbreakDefeated, playerProgress } from '../progress';
 import { clearSave, writeSave } from '../save';
@@ -164,7 +165,10 @@ const LOOK = {
 const DEBUG = {
   /** Lo que da la tecla M. */
   coins: 500,
-} as const;
+  /** Lo que sueltan las teclas J (un juglar) y K (un copion de cada tipo, por turnos) para probar las tropas de T-025. */
+  minstrel: 'minstrel',
+  copycats: ['copycat', 'copycatArmored', 'copycatSpitter'],
+} as const satisfies { coins: number; minstrel: EnemyKind; copycats: readonly EnemyKind[] };
 
 /** Prueba de rendimiento en desarrollo (tecla H): el presupuesto de T-002, 20 plantas y 60 enemigos. */
 const STRESS = {
@@ -267,6 +271,10 @@ export class BoardScene extends Phaser.Scene {
   /** Muros (T-024): el escudo sembrado solo. */
   private wallViews = new Map<string, WallView>();
   private spitViews = new Map<number, SpitView>();
+  /** Versos de los juglares en vuelo (T-025). */
+  private verseViews = new Map<number, VerseView>();
+  /** Siguiente copion que suelta la tecla K en desarrollo (T-025). */
+  private debugCopycat = 0;
   /** Rotulo sobre la disparadora a la que apunta una carta de elemento: lo que costaria infundirla o por que no se puede. */
   private cardLabel!: BoardLabel;
   /** Ultimo precio de infusion enviado al HUD, para avisar solo cuando cambia. */
@@ -343,6 +351,7 @@ export class BoardScene extends Phaser.Scene {
     this.mineViews = new Map();
     this.wallViews = new Map();
     this.spitViews = new Map();
+    this.verseViews = new Map();
     this.previewKey = '';
     this.omen = null;
     this.lostToBoss = false;
@@ -442,11 +451,12 @@ export class BoardScene extends Phaser.Scene {
   }
 
   /**
-   * Recompensa por un enemigo de `kind` eliminado en `at` (punto del tablero): la suya (`ENEMIES[kind].reward`, T-009).
-   * La mayoria de las veces se cobra sola; a veces la moneda queda en el suelo. El que no da nada (Creeper), nada.
+   * Recompensa por un enemigo eliminado en `at` (punto del tablero): la de su tipo (`ENEMIES[kind].reward`, T-009), o la de
+   * una copia (T-025, `enemyReward`). La mayoria de las veces se cobra sola; a veces la moneda queda en el suelo. El que no
+   * da nada (Creeper), nada.
    */
-  rewardKill(at: BoardPoint, kind: EnemyKind, random?: () => number): void {
-    const base = ENEMIES[kind].reward;
+  rewardKill(at: BoardPoint, enemy: Pick<Enemy, 'kind' | 'clone'>, random?: () => number): void {
+    const base = enemyReward(enemy);
     if (base <= 0) return;
     const reward = rollKillReward(base, random);
     if (reward.kind === 'auto') {
@@ -471,6 +481,7 @@ export class BoardScene extends Phaser.Scene {
     this.match.enemies.forEach((enemy) => this.addWormView(enemy, false));
     this.match.bullets.forEach((bullet) => this.bulletViews.set(bullet.id, new BulletView(this, this.fx, bullet, false)));
     this.match.spits.forEach((spit) => this.spitViews.set(spit.id, new SpitView(this, this.fx, spit, false)));
+    this.match.verses.forEach((verse) => this.verseViews.set(verse.id, new VerseView(this, this.fx, verse, false)));
   }
 
   private createCursorFeedback(): void {
@@ -648,6 +659,21 @@ export class BoardScene extends Phaser.Scene {
     // N: salta a la preparacion de la ronda siguiente; M: da moneda (T-007, para probar las rondas).
     this.input.keyboard?.on('keydown-N', () => this.skipRound());
     this.input.keyboard?.on('keydown-M', () => !this.defeated && !this.won && this.credit(DEBUG.coins));
+    // J: suelta un juglar; K: un copion (gusano, acorazado y escupidor, por turnos), en el carril del puntero (T-025).
+    this.input.keyboard?.on('keydown-J', () => this.debugSpawn(DEBUG.minstrel));
+    this.input.keyboard?.on('keydown-K', () => {
+      this.debugSpawn(DEBUG.copycats[this.debugCopycat]);
+      this.debugCopycat = (this.debugCopycat + 1) % DEBUG.copycats.length;
+    });
+  }
+
+  /** Saca un enemigo de `kind` por el agujero del carril del puntero (el del centro si no esta sobre el tablero). */
+  private debugSpawn(kind: EnemyKind): void {
+    if (this.defeated || this.won) return;
+    const pointer = this.input.activePointer;
+    const lane = this.cellAtScreen(pointer.worldX, pointer.worldY)?.lane ?? Math.floor(BOARD.lanes / 2);
+    this.match = spawnEnemy(this.match, kind, lane, SCENERY.holeX);
+    this.addWormView(this.match.enemies[this.match.enemies.length - 1], true);
   }
 
   /** Pasa a la preparacion de la ronda siguiente sin esperar; los enemigos que hubiera siguen ahi. */
@@ -716,6 +742,7 @@ export class BoardScene extends Phaser.Scene {
     for (const enemy of this.match.enemies) this.wormViews.get(enemy.id)?.sync(enemy);
     for (const bullet of this.match.bullets) this.bulletViews.get(bullet.id)?.sync(bullet);
     for (const spit of this.match.spits) this.spitViews.get(spit.id)?.sync(spit);
+    for (const verse of this.match.verses) this.verseViews.get(verse.id)?.sync(verse);
     this.mineViews.forEach((view, key) => {
       const mine = mineAt(this.match, keyCell(key));
       if (mine) view.sync(mine);
@@ -878,6 +905,30 @@ export class BoardScene extends Phaser.Scene {
         this.spitViews.get(event.spitId)?.vanish();
         this.spitViews.delete(event.spitId);
         break;
+      case 'verseWarned':
+        this.wormViews.get(event.enemyId)?.inhale();
+        break;
+      case 'sang':
+        this.wormViews.get(event.enemyId)?.sang();
+        this.verseViews.set(event.verse.id, new VerseView(this, this.fx, event.verse, true));
+        break;
+      case 'verseHit':
+        // Lo que cruza reacciona como a un escupitajo; el escudo que lo para (F-05), ademas, deshace el verso.
+        if (event.blocked) {
+          this.verseViews.get(event.verseId)?.blocked();
+          this.verseViews.delete(event.verseId);
+        } else {
+          this.verseViews.get(event.verseId)?.crossed();
+        }
+        this.sownHurt(event.cell);
+        break;
+      case 'verseGone':
+        this.verseViews.get(event.verseId)?.vanish();
+        this.verseViews.delete(event.verseId);
+        break;
+      case 'cloned':
+        this.showClone(event.clone);
+        break;
       case 'plantDestroyed': {
         const key = cellKey(event.cell);
         // Una disparadora, una mina (que asi no explota) o un muro (T-024).
@@ -920,7 +971,7 @@ export class BoardScene extends Phaser.Scene {
         view?.die();
         this.wormViews.delete(event.enemyId);
         if (view instanceof CreeperView) this.cameras.main.shake(380, 0.008);
-        this.rewardKill(event.at, event.kind);
+        this.rewardKill(event.at, event);
         break;
       }
       case 'enemyEscaped':
@@ -958,6 +1009,22 @@ export class BoardScene extends Phaser.Scene {
     this.fx.glow(at.x, at.y - width * 0.3, width * 1.4, LOOK.copyGlow, entityDepth(at.y) + 1, 420);
     this.fx.ring(at.x, at.y - width * 0.3, width * 1.1, LOOK.copyGlow, entityDepth(at.y) + 1, 320);
     this.fx.bits(at.x, at.y - width * 0.3, 8);
+  }
+
+  /**
+   * Copia que deja un copion al caer (T-025, F-01): sale de su disquete, del tamano del copion, y encoge al suyo con un
+   * destello y un anillo verdes de "copiarse", como las del Creeper.
+   */
+  private showClone(clone: Enemy): void {
+    this.addWormView(clone, false);
+    const view = this.wormViews.get(clone.id);
+    if (view instanceof WormView) view.popOut();
+    const foot = { x: clone.x, y: clone.lane + WORM_LOOK.footY };
+    const at = perspective.toScreen(foot);
+    const width = perspective.cellWidthAt(foot);
+    this.fx.glow(at.x, at.y - width * 0.25, width * 1.1, LOOK.copyGlow, entityDepth(at.y) + 1, 380);
+    this.fx.ring(at.x, at.y - width * 0.25, width * 0.85, LOOK.copyGlow, entityDepth(at.y) + 1, 300);
+    this.fx.bits(at.x, at.y - width * 0.25, 6);
   }
 
   /** El Creeper cruzo el jardin (T-008): la partida se pierde en el acto, con un temblor fuerte. */
@@ -1076,12 +1143,14 @@ export class BoardScene extends Phaser.Scene {
     return { payout, balance: progress.seeds };
   }
 
-  /** Balas y escupitajos en vuelo se apagan (la partida acabo y ya no se mueven). */
+  /** Balas, escupitajos y versos en vuelo se apagan (la partida acabo y ya no se mueven). */
   private clearProjectiles(): void {
     this.bulletViews.forEach((bullet) => bullet.vanish());
     this.bulletViews.clear();
     this.spitViews.forEach((spit) => spit.vanish());
     this.spitViews.clear();
+    this.verseViews.forEach((verse) => verse.vanish());
+    this.verseViews.clear();
   }
 
   // -------------------------------------------------------------------------
@@ -1638,7 +1707,7 @@ export class BoardScene extends Phaser.Scene {
       const enemy = this.match.enemies.find((e) => e.id === target.id);
       if (!enemy) return;
       data = enemyInfo(enemy);
-      subject = { kind: 'enemy', enemy: enemy.kind, level: enemy.level, enraged: isEnraged(enemy), hasted: enemy.haste > 1 };
+      subject = { kind: 'enemy', enemy: enemy.kind, level: enemy.level, enraged: isEnraged(enemy), hasted: enemy.haste > 1, clone: enemy.clone };
     } else if (target.kind === 'plant') {
       const plant = plantAt(this.match, target.cell);
       if (!plant) return;

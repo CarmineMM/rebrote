@@ -50,6 +50,7 @@ export class Effects {
   private readonly gooBurst: Phaser.GameObjects.Particles.ParticleEmitter;
   private readonly scrapBurst: Phaser.GameObjects.Particles.ParticleEmitter;
   private readonly barkBurst: Phaser.GameObjects.Particles.ParticleEmitter;
+  private readonly noteBurst: Phaser.GameObjects.Particles.ParticleEmitter;
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -265,6 +266,22 @@ export class Effects {
       },
       DEPTH.foreground - 1,
     );
+    // Juglar (T-025): notas que salen de su boca al recitar, que suelta el verso al pasar por una planta y que se
+    // desparraman al chocar con un escudo. Mezcla normal y contorno oscuro: se leen sobre el cesped.
+    this.noteBurst = burst(
+      TEX.note,
+      {
+        speed: { min: 40, max: 150 },
+        angle: { min: -160, max: -20 },
+        gravityY: -70,
+        rotate: { min: -25, max: 25 },
+        lifespan: { min: 520, max: 900 },
+        scale: { start: 0.95 * artInv(), end: 0.5 * artInv() },
+        alpha: { start: 1, end: 0, ease: 'Quad.In' },
+        tint: [0xffffff, 0xffe6a8, 0xffc2ee],
+      },
+      DEPTH.foreground - 1,
+    );
   }
 
   /** Particulas de respuesta a una accion: menos en Bajo, pero nunca ninguna (son parte del gesto). */
@@ -348,6 +365,16 @@ export class Effects {
   /** Astillas de corteza: un mordisco o un escupitajo que da a un escudo, o el muro que pierde placas o se rompe (T-024). */
   bark(x: number, y: number, base: number): void {
     this.barkBurst.explode(this.count(base), x, y);
+  }
+
+  /** Notas musicales que suben: el juglar recita, su verso pasa por una planta o choca con un escudo (T-025). */
+  notes(x: number, y: number, base: number): void {
+    this.noteBurst.explode(this.count(base), x, y);
+  }
+
+  /** Una nota suelta que sube: la estela del verso en vuelo (T-025). Ambiental: su ritmo va con `ambientDelay`. */
+  note(x: number, y: number): void {
+    this.noteBurst.explode(1, x, y);
   }
 
   /** Espera entre particulas ambientales: `base` en Alto, mas larga en Bajo (ADR-0006). */

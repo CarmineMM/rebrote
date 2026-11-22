@@ -38,6 +38,7 @@ const GROUPS: Array<{ title: string; ids: SfxId[] }> = [
   { title: 'Combate', ids: ['hit', 'hitFire', 'hitIce', 'hitArmor', 'bite', 'spit', 'spitHit', 'enemyKilled', 'enemyEscaped'] },
   { title: 'Minas', ids: ['mineTick', 'fireExplosion', 'iceExplosion'] },
   { title: 'Escudo (T-024)', ids: ['sowWall', 'infuseShield', 'wallHit', 'wallBreak'] },
+  { title: 'Tropas del brote 2 (T-025)', ids: ['minstrelInhale', 'verse', 'verseHit', 'clone'] },
   { title: 'Creeper', ids: ['creeperWarn', 'creeperTakeoff', 'creeperLand', 'creeperTalk', 'creeperRage', 'creeperDefeated'] },
   { title: 'Rondas, partida y menus', ids: ['attackStarted', 'roundCleared', 'unlock', 'defeat', 'victory', 'button'] },
 ];
@@ -128,10 +129,10 @@ function SoundLab() {
     const events: CombatEvent[] = [];
     runTest('kills', 2200, (t) => {
       events.length = 0;
-      if (t < 1000 && t % 80 < 16) events.push({ type: 'enemyKilled', enemyId: t, kind: 'worm', at: { x: 2 + (t % 7), y: 1.5 } });
+      if (t < 1000 && t % 80 < 16) events.push({ type: 'enemyKilled', enemyId: t, kind: 'worm', clone: false, at: { x: 2 + (t % 7), y: 1.5 } });
       if (t >= 1400 && t < 1416) {
         events.push({ type: 'mineExploded', cell: { lane: 2, col: 4 }, element: 'fire', enemyIds: [1, 2, 3, 4, 5, 6] });
-        for (let id = 1; id <= 6; id++) events.push({ type: 'enemyKilled', enemyId: id, kind: 'worm', at: { x: 4.5, y: 2.5 } });
+        for (let id = 1; id <= 6; id++) events.push({ type: 'enemyKilled', enemyId: id, kind: 'worm', clone: false, at: { x: 4.5, y: 2.5 } });
       }
       sfx.playCues(combatCues(events, createMatch()));
     });

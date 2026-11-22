@@ -50,6 +50,10 @@ Cada efecto va en OGG Vorbis y en MP3, en mono, con el volumen igualado y sin si
 | `creeperTalk` | jsfxr: receta `terminal` | propio, generado con jsfxr (dominio público) |
 | `creeperRage` | jsfxr: receta `rage` | propio, generado con jsfxr (dominio público) |
 | `creeperDefeated` | Kenney Digital Audio: `phaserDown3.ogg` + Kenney Sci-Fi Sounds: `explosionCrunch_003.ogg` (-6 dB) | CC0 1.0 (Kenney, www.kenney.nl) |
+| `minstrelInhale` | jsfxr: receta `inhale` | propio, generado con jsfxr (dominio público) |
+| `verse` | Kenney Music Jingles: `jingles_PIZZI05.ogg` | CC0 1.0 (Kenney, www.kenney.nl) |
+| `verseHit` | Kenney Interface Sounds: `glass_001.ogg` (velocidad 0.9, -3 dB) | CC0 1.0 (Kenney, www.kenney.nl) |
+| `clone` | Kenney Digital Audio: `phaseJump2.ogg` (recortado 0-320 ms) | CC0 1.0 (Kenney, www.kenney.nl) |
 | `attackStarted` | Kenney Music Jingles: `jingles_NES13.ogg` | CC0 1.0 (Kenney, www.kenney.nl) |
 | `roundCleared` | Kenney Music Jingles: `jingles_PIZZI04.ogg` | CC0 1.0 (Kenney, www.kenney.nl) |
 | `unlock` | Kenney Music Jingles: `jingles_PIZZI02.ogg` | CC0 1.0 (Kenney, www.kenney.nl) |
@@ -70,3 +74,4 @@ El enlace abre la receta en sfxr.me para oírla y afinarla.
 | `alarm` | Alarma digital que repite dos tonos: Creeper se prepara para saltar | https://sfxr.me/#111118JWVRMC5GhGFAGieDD4kipadk1BA95NSRJHZJuYjqXLNvskaaE4ZJKeU4WyvavNDxzTivC8wToZNPVYmDjTRYcDrJxREHW6WXjfm3rcgA1wMEcR2hMH |
 | `terminal` | Pitidos de terminal antiguo: Creeper habla | https://sfxr.me/#111113svfEh1y7ApJDbe7j8Pf4rb4P8pp5MeHA8g72WBTWur1S6KjZHCNRnc36Bp8wHh8hQf3ubkFDTCpmYdvfoVEKN25LsRhVbws6BqiuZusQvMdquoSmoV |
 | `rage` | Gruñido digital que baja y vibra: Creeper se enfada | https://sfxr.me/#34T6PkyDSCg1eVgkvBbVnuohFy3iRjan2cJBmXd47eXVewSbR7xegyiEGf9wE7jSztYzi8jxRft7ZNasTaDSse5PVFW87sbHQjGX9Zw6hNgLYqNDrRHCmYakf |
+| `inhale` | Soplido que se hincha de grave a agudo: el juglar toma aire antes del verso (T-025) | https://sfxr.me/#7vYG4aBE9jJVf8bGuRqjWiUJXFnu8ntQSt5wCdp9QgJVP7S7D8AJTzSHPs793jbcvzibESRd4zQ513qw7LfPLLpet2ZFFEJQpqhZMbuRPP8LGFVtU1LRTcTxB |

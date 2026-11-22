@@ -1,6 +1,6 @@
 import { BOARD, COSTS, LIVES, MINE, SHIELD } from '../config/balance';
 import { isOnBoard, type Cell } from './board';
-import type { Bullet, Enemy, Spit } from './combat';
+import type { Bullet, Enemy, Spit, Verse } from './combat';
 import {
   canInfuse,
   createShooter,
@@ -72,6 +72,8 @@ export interface MatchState {
   readonly bullets: readonly Bullet[];
   /** Escupitajos de los escupidores en vuelo (T-007). */
   readonly spits: readonly Spit[];
+  /** Versos de los juglares en vuelo (T-025): ondas que cruzan el carril hasta el primer escudo. */
+  readonly verses: readonly Verse[];
   /** Ronda en curso: preparacion o ataque, y que grupos del guion ya salieron (T-007). */
   readonly round: RoundState;
   /**
@@ -106,6 +108,7 @@ export function createMatch(balance?: number, roundIndex = 0, outbreak: Outbreak
     enemies: [],
     bullets: [],
     spits: [],
+    verses: [],
     round: createRound(outbreak, roundIndex),
     incomeMs: 0,
     seeds: newMatchSeeds(replay),

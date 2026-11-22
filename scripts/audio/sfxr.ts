@@ -113,6 +113,10 @@ export const RECIPES = {
     about: 'Subida con soplido: algo prende',
     params: { wave_type: 3, p_env_attack: 0.12, p_env_sustain: 0.25, p_env_decay: 0.35, p_base_freq: 0.2, p_freq_ramp: 0.22, p_lpf_freq: 0.5, p_lpf_ramp: 0.15 },
   },
+  inhale: {
+    about: 'Soplido que se hincha de grave a agudo: el juglar toma aire antes del verso (T-025)',
+    params: { wave_type: 3, p_env_attack: 0.38, p_env_sustain: 0.12, p_env_decay: 0.12, p_base_freq: 0.24, p_freq_ramp: 0.12, p_lpf_freq: 0.22, p_lpf_ramp: 0.2, p_hpf_freq: 0.06 },
+  },
   voiceLow: {
     about: 'Bip corto y grave de cuadrada suave: una silaba de Boxer en las viñetas',
     params: { wave_type: 0, p_env_sustain: 0.05, p_env_punch: 0.2, p_env_decay: 0.09, p_base_freq: 0.26, p_freq_ramp: -0.05, p_duty: 0.45, p_lpf_freq: 0.5, p_hpf_freq: 0.04 },

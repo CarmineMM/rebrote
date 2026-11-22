@@ -102,66 +102,74 @@ export const SHIELD = {
   hpMultiplier: 2,
 } as const;
 
+/** Gusano (T-002): avanza y muerde lo que toca. Lo repite el copion del brote 2 (T-025). */
+const WORM = {
+  reward: 15,
+  hp: 100, // PROVISIONAL
+  /** Casillas por segundo. PROVISIONAL. */
+  speed: 0.25,
+  attack: 'bite',
+  biteDamage: 50, // PROVISIONAL
+  biteIntervalMs: 1000, // PROVISIONAL
+  /** Lo que tarda el primer mordisco desde que toca la planta. PROVISIONAL. */
+  firstBiteMs: 450,
+  /** Distancia entre el centro del gusano y el de la planta a la que empieza a morderla. */
+  reach: 0.6,
+  /** Del centro del gusano a su hocico: ahi le dan las balas. */
+  halfLength: 0.4,
+} as const;
+
+/** Gusano acorazado (T-007, desde la ronda 4): muerde como el gusano, con mucha mas vida y mas lento. */
+const ARMORED = {
+  reward: 25,
+  /** Cuatro veces la del gusano. PROVISIONAL. */
+  hp: 400,
+  /** Casillas por segundo. PROVISIONAL. */
+  speed: 0.16,
+  attack: 'bite',
+  biteDamage: 50, // PROVISIONAL
+  biteIntervalMs: 1000, // PROVISIONAL
+  firstBiteMs: 450,
+  reach: 0.6,
+  halfLength: 0.42,
+} as const;
+
+/**
+ * Gusano escupidor (T-007, desde la ronda 6): se para a `range` casillas de lo primero sembrado en su carril
+ * (planta o mina) y le escupe. Nunca se para antes de pisar el cesped, para que las plantas puedan darle.
+ */
+const SPITTER = {
+  reward: 20,
+  hp: 140, // PROVISIONAL
+  /** Casillas por segundo. PROVISIONAL. */
+  speed: 0.28,
+  attack: 'spit',
+  /**
+   * Distancia de centro a centro a la que se para. Mayor que `MINE.detectRadius`: asi puede reventar una mina
+   * sin que llegue a armarse. PROVISIONAL.
+   */
+  range: 2.6,
+  spitDamage: 25, // PROVISIONAL
+  spitIntervalMs: 1800, // PROVISIONAL
+  /** Lo que tarda el primer escupitajo desde que se para. PROVISIONAL. */
+  firstSpitMs: 900,
+  /** Velocidad del escupitajo, en casillas por segundo. PROVISIONAL. */
+  spitSpeed: 4,
+  halfLength: 0.4,
+} as const;
+
 /**
  * Enemigos. Posiciones y velocidades en casillas (ADR-0005): la logica no sabe de pixeles.
- * `attack` dice como ataca: `bite` muerde lo que toca; `spit` se para a distancia y escupe (T-007).
+ * `attack` dice como ataca: `bite` muerde lo que toca; `spit` se para a distancia y escupe (T-007); `verse` se para a
+ * distancia y suelta versos, ondas que cruzan el carril por encima de las plantas (T-025, el juglar).
  * `hp` y el dano son la base de nivel 1: cada nivel suma `ENEMY_LEVELS.perLevel` (T-009) y despues los multiplica la
  * fuerza de `ENEMY_POWER` (T-010). `reward` es la moneda que da al caer (T-009, P-03): fija por tipo, sea cual sea su
  * nivel.
  */
 export const ENEMIES = {
-  worm: {
-    reward: 15,
-    hp: 100, // PROVISIONAL
-    /** Casillas por segundo. PROVISIONAL. */
-    speed: 0.25,
-    attack: 'bite',
-    biteDamage: 50, // PROVISIONAL
-    biteIntervalMs: 1000, // PROVISIONAL
-    /** Lo que tarda el primer mordisco desde que toca la planta. PROVISIONAL. */
-    firstBiteMs: 450,
-    /** Distancia entre el centro del gusano y el de la planta a la que empieza a morderla. */
-    reach: 0.6,
-    /** Del centro del gusano a su hocico: ahi le dan las balas. */
-    halfLength: 0.4,
-  },
-  /** Gusano acorazado (T-007, desde la ronda 4): muerde como el gusano, con mucha mas vida y mas lento. */
-  armored: {
-    reward: 25,
-    /** Cuatro veces la del gusano. PROVISIONAL. */
-    hp: 400,
-    /** Casillas por segundo. PROVISIONAL. */
-    speed: 0.16,
-    attack: 'bite',
-    biteDamage: 50, // PROVISIONAL
-    biteIntervalMs: 1000, // PROVISIONAL
-    firstBiteMs: 450,
-    reach: 0.6,
-    halfLength: 0.42,
-  },
-  /**
-   * Gusano escupidor (T-007, desde la ronda 6): se para a `range` casillas de lo primero sembrado en su carril
-   * (planta o mina) y le escupe. Nunca se para antes de pisar el cesped, para que las plantas puedan darle.
-   */
-  spitter: {
-    reward: 20,
-    hp: 140, // PROVISIONAL
-    /** Casillas por segundo. PROVISIONAL. */
-    speed: 0.28,
-    attack: 'spit',
-    /**
-     * Distancia de centro a centro a la que se para. Mayor que `MINE.detectRadius`: asi puede reventar una mina
-     * sin que llegue a armarse. PROVISIONAL.
-     */
-    range: 2.6,
-    spitDamage: 25, // PROVISIONAL
-    spitIntervalMs: 1800, // PROVISIONAL
-    /** Lo que tarda el primer escupitajo desde que se para. PROVISIONAL. */
-    firstSpitMs: 900,
-    /** Velocidad del escupitajo, en casillas por segundo. PROVISIONAL. */
-    spitSpeed: 4,
-    halfLength: 0.4,
-  },
+  worm: WORM,
+  armored: ARMORED,
+  spitter: SPITTER,
   /**
    * Creeper (T-008), jefe del brote 1 y unico enemigo de la ronda 10: muerde como el gusano, con mucha mas vida, y
    * salta de carril al perder vida (`CREEPER`). Mas grande que el gusano: le dan antes y se para mas lejos a morder.
@@ -180,6 +188,66 @@ export const ENEMIES = {
     reach: 0.85,
     halfLength: 0.62,
   },
+  /**
+   * Tropas del brote 2, el de Elk Cloner (T-025, F-01): las del brote 1 con otra cara y los mismos numeros, pero al caer
+   * dejan una copia pequena y debil (`CLONE`), una sola vez. Elk Cloner se copiaba a cada disquete que tocaba.
+   */
+  copycat: WORM,
+  copycatArmored: ARMORED,
+  copycatSpitter: SPITTER,
+  /**
+   * Juglar (T-025, F-02 a F-06): se para a `range` casillas de lo primero sembrado en su carril (nunca antes de pisar el
+   * cesped), toma aire `warnMs` (se hincha: el aviso, F-04) y suelta un verso cada `verseIntervalMs`. El verso es una onda
+   * que recorre el carril hacia la izquierda (`VERSE`) y quita `verseDamage` a todo lo sembrado que cruza, minas incluidas
+   * (F-06), hasta el primer escudo, que lo recibe y lo para (F-05, `waveReach`). Sin nada sembrado delante, avanza: no
+   * muerde. Ralentizado, tarda mas entre versos.
+   */
+  minstrel: {
+    reward: 25,
+    hp: 150, // PROVISIONAL
+    /** Casillas por segundo. PROVISIONAL. */
+    speed: 0.25,
+    attack: 'verse',
+    /** Distancia de centro a centro a la que se para: mas lejos que el escupidor, porque su verso cruza el carril. PROVISIONAL. */
+    range: 3.5,
+    /** Lo que quita el verso a cada cosa que cruza: poco, porque da a todas (F-06: las minas aguantan varios). PROVISIONAL. */
+    verseDamage: 15,
+    verseIntervalMs: 3600, // PROVISIONAL
+    /** Lo que tarda el primer verso desde que se para. Mas que `warnMs`: siempre avisa. PROVISIONAL. */
+    firstVerseMs: 1800,
+    /** Aviso (F-04): lo que dura hinchado, tomando aire, antes de cada verso. PROVISIONAL. */
+    warnMs: 900,
+    halfLength: 0.4,
+  },
+} as const;
+
+/**
+ * Verso (T-025): la onda del juglar (y, con T-026, la de Elk Cloner). Nace en el centro de quien recita y recorre su
+ * carril hacia la izquierda por encima de las plantas: da a todo lo sembrado que cruza, de delante atras, hasta el primer
+ * escudo, que lo recibe y lo para (`waveReach`). Lo que hay detras de un escudo no sufre nada. PROVISIONAL.
+ */
+export const VERSE = {
+  /** Casillas por segundo: mas despacio que el escupitajo, para que se vea pasar. */
+  speed: 2.5,
+} as const;
+
+/**
+ * Copias de las tropas del brote 2 (T-025, F-01): al caer un copion deja en su sitio una copia suya, pequena y debil, que
+ * ataca igual (muerde o escupe) y ya no deja otra. Hereda el nivel y lo acelerado; nada de la quemadura ni del frio.
+ * Si se cuela, resta una vida como cualquier otro. Si cae el jefe, no salen copias. PROVISIONAL.
+ */
+export const CLONE = {
+  /** Las tropas que dejan copia al caer. */
+  kinds: ['copycat', 'copycatArmored', 'copycatSpitter'],
+  /** Parte de la vida y del dano de su tipo y nivel. */
+  hp: 0.3,
+  damage: 0.5,
+  /** Tamano respecto al de su tipo: tambien su cuerpo (le dan algo mas tarde) y su alcance al morder. */
+  size: 0.62,
+  /** Moneda que da al caer, en vez de la de su tipo. */
+  reward: 5,
+  /** Una explosion de mina que tumba a muchos copiones solo deja estas copias, las de los primeros que alcanza. */
+  maxPerBlast: 2,
 } as const;
 
 /**
@@ -504,24 +572,25 @@ const CREEPER_ROUNDS: readonly RoundScript[] = [
 ];
 
 /**
- * Las rondas del brote 2, el de Elk Cloner, PROVISIONALES (T-024): sirven para jugar el escudo mientras no exista su guion
- * de verdad, que trae T-026 con su jefe y sus tropas (T-025). Sacan las tropas del brote 1. Como todo brote, empiezan con
- * lo aprendido en el anterior (B-01) y el escudo llega en la ronda 2 (decidido por Carmine). Mientras su jefe no este en
- * el juego (`boss: null`), el brote no se puede jugar fuera del modo desarrollo: la ruta lo da por "Proximamente".
+ * Las rondas del brote 2, el de Elk Cloner, PROVISIONALES (T-024): sirven para jugar el escudo y las tropas del brote 2
+ * (T-025) mientras no exista su guion de verdad, que trae T-026 con su jefe. Como todo brote, empiezan con lo aprendido en
+ * el anterior (B-01) y el escudo llega en la ronda 2 (decidido por Carmine); el juglar sale en la 3, como recomienda L-07.
+ * Mientras su jefe no este en el juego (`boss: null`), el brote no se puede jugar fuera del modo desarrollo: la ruta lo da
+ * por "Proximamente".
  */
 const ELK_CLONER_ROUNDS: readonly RoundScript[] = [
   {
     unlocks: [],
     levels: ENEMY_LEVELS.tables.mid,
     groups: [
-      { atMs: 3_000, kind: 'worm', lanes: [1, 3] },
-      { atMs: 10_000, kind: 'armored', lanes: [2] },
-      { atMs: 16_000, kind: 'spitter', lanes: [0] },
-      { atMs: 22_000, kind: 'worm', lanes: [0, 2, 4] },
-      { atMs: 32_000, kind: 'armored', lanes: [1, 3] },
-      { atMs: 40_000, kind: 'spitter', lanes: [4] },
-      { atMs: 48_000, kind: 'worm', lanes: [0, 1, 2, 3, 4] },
-      { atMs: 60_000, kind: 'armored', lanes: [0, 4] },
+      { atMs: 3_000, kind: 'copycat', lanes: [1, 3] },
+      { atMs: 10_000, kind: 'copycatArmored', lanes: [2] },
+      { atMs: 16_000, kind: 'copycatSpitter', lanes: [0] },
+      { atMs: 22_000, kind: 'copycat', lanes: [0, 2, 4] },
+      { atMs: 32_000, kind: 'copycatArmored', lanes: [1, 3] },
+      { atMs: 40_000, kind: 'copycatSpitter', lanes: [4] },
+      { atMs: 48_000, kind: 'copycat', lanes: [0, 1, 2, 3, 4] },
+      { atMs: 60_000, kind: 'copycatArmored', lanes: [0, 4] },
     ],
   },
   {
@@ -529,33 +598,35 @@ const ELK_CLONER_ROUNDS: readonly RoundScript[] = [
     levels: ENEMY_LEVELS.tables.mid,
     // Muchos escupidores: el muro les para los escupitajos antes de que lleguen a las disparadoras.
     groups: [
-      { atMs: 3_000, kind: 'spitter', lanes: [2] },
-      { atMs: 9_000, kind: 'worm', lanes: [1, 3] },
-      { atMs: 16_000, kind: 'spitter', lanes: [0, 4] },
-      { atMs: 24_000, kind: 'armored', lanes: [2] },
-      { atMs: 30_000, kind: 'spitter', lanes: [1, 3] },
-      { atMs: 38_000, kind: 'worm', lanes: [0, 2, 4] },
-      { atMs: 46_000, kind: 'spitter', lanes: [0, 2, 4] },
-      { atMs: 56_000, kind: 'armored', lanes: [1, 3] },
-      { atMs: 64_000, kind: 'spitter', lanes: [1, 2, 3] },
-      { atMs: 72_000, kind: 'worm', lanes: [0, 1, 2, 3, 4] },
+      { atMs: 3_000, kind: 'copycatSpitter', lanes: [2] },
+      { atMs: 9_000, kind: 'copycat', lanes: [1, 3] },
+      { atMs: 16_000, kind: 'copycatSpitter', lanes: [0, 4] },
+      { atMs: 24_000, kind: 'copycatArmored', lanes: [2] },
+      { atMs: 30_000, kind: 'copycatSpitter', lanes: [1, 3] },
+      { atMs: 38_000, kind: 'copycat', lanes: [0, 2, 4] },
+      { atMs: 46_000, kind: 'copycatSpitter', lanes: [0, 2, 4] },
+      { atMs: 56_000, kind: 'copycatArmored', lanes: [1, 3] },
+      { atMs: 64_000, kind: 'copycatSpitter', lanes: [1, 2, 3] },
+      { atMs: 72_000, kind: 'copycat', lanes: [0, 1, 2, 3, 4] },
     ],
   },
   {
     unlocks: [],
     levels: ENEMY_LEVELS.tables.late,
+    // Llegan los juglares: sus versos cruzan el carril y solo los para un escudo.
     groups: [
-      { atMs: 3_000, kind: 'armored', lanes: [0, 4] },
-      { atMs: 8_000, kind: 'spitter', lanes: [1, 3] },
-      { atMs: 14_000, kind: 'worm', lanes: [0, 1, 2, 3, 4] },
-      { atMs: 22_000, kind: 'spitter', lanes: [2] },
-      { atMs: 26_000, kind: 'armored', lanes: [1, 2, 3] },
-      { atMs: 34_000, kind: 'spitter', lanes: [0, 4] },
-      { atMs: 40_000, kind: 'worm', lanes: [0, 1, 2, 3, 4] },
-      { atMs: 48_000, kind: 'spitter', lanes: [1, 2, 3] },
-      { atMs: 56_000, kind: 'armored', lanes: [0, 2, 4] },
-      { atMs: 64_000, kind: 'worm', lanes: [0, 1, 2, 3, 4] },
-      { atMs: 70_000, kind: 'spitter', lanes: [0, 1, 3, 4] },
+      { atMs: 3_000, kind: 'copycatArmored', lanes: [0, 4] },
+      { atMs: 6_000, kind: 'minstrel', lanes: [2] },
+      { atMs: 12_000, kind: 'copycat', lanes: [0, 1, 2, 3, 4] },
+      { atMs: 20_000, kind: 'minstrel', lanes: [1, 3] },
+      { atMs: 26_000, kind: 'copycatArmored', lanes: [1, 2, 3] },
+      { atMs: 34_000, kind: 'copycatSpitter', lanes: [0, 4] },
+      { atMs: 40_000, kind: 'copycat', lanes: [0, 1, 2, 3, 4] },
+      { atMs: 46_000, kind: 'minstrel', lanes: [0, 2, 4] },
+      { atMs: 56_000, kind: 'copycatArmored', lanes: [0, 2, 4] },
+      { atMs: 64_000, kind: 'copycat', lanes: [0, 1, 2, 3, 4] },
+      { atMs: 70_000, kind: 'minstrel', lanes: [1, 3] },
+      { atMs: 74_000, kind: 'copycatSpitter', lanes: [0, 1, 3, 4] },
     ],
   },
 ];

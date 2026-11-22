@@ -58,9 +58,9 @@ describe('combatCues', () => {
   it('los enemigos que caen en una explosion no suenan aparte; los demas, si', () => {
     const events: CombatEvent[] = [
       { type: 'mineExploded', cell: { lane: 1, col: 4 }, element: 'fire', enemyIds: [7, 8] },
-      { type: 'enemyKilled', enemyId: 7, kind: 'worm', at: { x: 4.5, y: 1.5 } },
-      { type: 'enemyKilled', enemyId: 8, kind: 'worm', at: { x: 4.6, y: 1.5 } },
-      { type: 'enemyKilled', enemyId: 9, kind: 'spitter', at: { x: 7, y: 3.5 } },
+      { type: 'enemyKilled', enemyId: 7, kind: 'worm', clone: false, at: { x: 4.5, y: 1.5 } },
+      { type: 'enemyKilled', enemyId: 8, kind: 'worm', clone: false, at: { x: 4.6, y: 1.5 } },
+      { type: 'enemyKilled', enemyId: 9, kind: 'spitter', clone: false, at: { x: 7, y: 3.5 } },
     ];
     expect(ids(combatCues(events, empty))).toEqual(['fireExplosion', 'enemyKilled']);
     expect(ids(combatCues([{ type: 'mineExploded', cell: { lane: 0, col: 1 }, element: 'ice', enemyIds: [] }], empty))).toEqual(['iceExplosion']);
@@ -68,9 +68,9 @@ describe('combatCues', () => {
 
   it('si cae el Creeper suena su derrota y no la de sus copias', () => {
     const events: CombatEvent[] = [
-      { type: 'enemyKilled', enemyId: 1, kind: 'creeper', at: { x: 5, y: 2.5 } },
-      { type: 'enemyKilled', enemyId: 2, kind: 'worm', at: { x: 6, y: 1.5 } },
-      { type: 'enemyKilled', enemyId: 3, kind: 'worm', at: { x: 6, y: 3.5 } },
+      { type: 'enemyKilled', enemyId: 1, kind: 'creeper', clone: false, at: { x: 5, y: 2.5 } },
+      { type: 'enemyKilled', enemyId: 2, kind: 'worm', clone: false, at: { x: 6, y: 1.5 } },
+      { type: 'enemyKilled', enemyId: 3, kind: 'worm', clone: false, at: { x: 6, y: 3.5 } },
     ];
     expect(ids(combatCues(events, empty))).toEqual(['creeperDefeated']);
   });
@@ -193,6 +193,69 @@ describe('escudo (T-024)', () => {
     expect(actionCue({ type: 'sow', card: 'shield' }, 2)?.id).toBe('sowWall');
     expect(actionCue({ type: 'infuse', element: 'shield', dragged: false }, 2)?.id).toBe('infuseShield');
     expect(actionCue({ type: 'infuse', element: 'shield', dragged: true }, 2)?.id).toBe('infuseShield');
+  });
+});
+
+describe('tropas del brote 2 (T-025)', () => {
+  const lane = 2;
+  const cell = (col: number) => ({ lane, col });
+
+  it('el juglar suena al tomar aire y al soltar su verso, desde donde esta', () => {
+    const state = spawnEnemy(createMatch(), 'minstrel', lane, 7);
+    const juglar = state.enemies[0];
+    const verse = { id: 50, lane, x: juglar.x, damage: 15 };
+    const cues = combatCues(
+      [
+        { type: 'verseWarned', enemyId: juglar.id },
+        { type: 'sang', enemyId: juglar.id, verse },
+      ],
+      state,
+    );
+    expect(ids(cues)).toEqual(['minstrelInhale', 'verse']);
+    expect(cues[0].pan).toBeGreaterThan(0);
+  });
+
+  it('el verso suena bajito en cada cosa que cruza y a madera en el escudo que lo para; al salir, nada', () => {
+    const state = createMatch();
+    const events: CombatEvent[] = [
+      { type: 'verseHit', verseId: 50, cell: cell(5), blocked: false },
+      { type: 'verseHit', verseId: 50, cell: cell(4), blocked: false },
+      { type: 'verseHit', verseId: 50, cell: cell(3), blocked: true },
+      { type: 'verseGone', verseId: 51 },
+    ];
+    expect(ids(combatCues(events, state))).toEqual(['verseHit', 'verseHit', 'wallHit']);
+  });
+
+  it('la copia que sale de un copion suena a copiarse; si cae el jefe, no', () => {
+    const state = spawnEnemy(createMatch(), 'copycat', lane, 5);
+    const copycat = state.enemies[0];
+    const clone = { ...copycat, id: 99, clone: true };
+    const killed: CombatEvent = { type: 'enemyKilled', enemyId: copycat.id, kind: 'copycat', clone: false, at: { x: 5, y: 2.5 } };
+    expect(ids(combatCues([killed, { type: 'cloned', parentId: copycat.id, clone }], state))).toEqual(['enemyKilled', 'clone']);
+    const boss: CombatEvent = { type: 'enemyKilled', enemyId: 1, kind: 'creeper', clone: false, at: { x: 5, y: 1.5 } };
+    expect(ids(combatCues([boss, killed, { type: 'cloned', parentId: copycat.id, clone }], state))).toEqual(['creeperDefeated']);
+  });
+
+  it('la semilla normal que da a un acorazado copion suena a metal', () => {
+    const state = { ...spawnEnemy(createMatch(), 'copycatArmored', 1, 5), bullets: [bullet(7, null)] };
+    const hit: CombatEvent = { type: 'hit', bulletId: 7, enemyId: state.enemies[0].id, at: { x: 4.5, y: 1.5 } };
+    expect(ids(combatCues([hit], state))).toEqual(['hitArmor']);
+  });
+
+  it('en una partida de verdad, un juglar frente a una planta suena con cada verso', () => {
+    let state = createMatch();
+    state = { ...state, plants: state.plants.map((row, l) => row.map((p, c) => (l === lane && c === 1 ? createPlant(createShooter()) : p))) };
+    state = spawnEnemy(state, 'minstrel', lane, 4.9, 1e9);
+    const heard: string[] = [];
+    for (let t = 0; t < 4_000; t += 16) {
+      const before = state;
+      const step = stepCombat(state, 16);
+      state = step.state;
+      heard.push(...ids(combatCues(step.events, before)));
+    }
+    expect(heard.filter((id) => id === 'minstrelInhale')).toHaveLength(1);
+    expect(heard.filter((id) => id === 'verse')).toHaveLength(1);
+    expect(heard.filter((id) => id === 'verseHit')).toHaveLength(1);
   });
 });
 

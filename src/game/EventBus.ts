@@ -239,7 +239,20 @@ export interface UnlockInfo {
 }
 
 /** Color de la ficha de informacion (T-010): el de la planta, su elemento o el enemigo. */
-export type InfoTone = 'plant' | 'fire' | 'ice' | 'shield' | 'worm' | 'armored' | 'spitter' | 'creeper';
+export type InfoTone =
+  | 'plant'
+  | 'fire'
+  | 'ice'
+  | 'shield'
+  | 'worm'
+  | 'armored'
+  | 'spitter'
+  | 'creeper'
+  // Tropas del brote 2 (T-025): las copias van con el tono de su copion.
+  | 'copycat'
+  | 'copycatArmored'
+  | 'copycatSpitter'
+  | 'minstrel';
 
 /** Una fila de datos de la ficha: "Mordisco 57,5 (cada 1 s)". */
 export interface InfoStat {

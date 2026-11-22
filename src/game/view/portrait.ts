@@ -6,10 +6,10 @@ import type { CannonCount, ElementType, MineElement } from '../core/plants';
 import { GARDEN, gardenSpots, gardenTier } from './gardenArt';
 import { MEDAL, showsMedal } from './levelMedal';
 import { SHOOTER } from './shooterShape';
-import { HASTE_STREAK_SIZE, MINE_SIZE, SHOOTER_SIZE, TEX, WALL_SIZE, WORM_SIZE, levelGardenTexture, medalTexture, mineTexture, shooterTexture, wallTexture } from './textures';
+import { FLOPPY_SIZE, HAT_SIZE, HASTE_STREAK_SIZE, MINE_SIZE, SHOOTER_SIZE, TEX, WALL_SIZE, WORM_SIZE, levelGardenTexture, medalTexture, mineTexture, shooterTexture, wallTexture } from './textures';
 import type { WallWear } from './wallArt';
 import { AURA_LOOK, auraTier, veilSize, veilStrength } from './wormAuraArt';
-import { WORM_LOOK } from './wormView';
+import { KIND_LOOK, WORM_LOOK } from './wormView';
 
 /**
  * Foto de la ficha de informacion (T-010): la planta, la mina o el enemigo en reposo sobre un fondo de jardin, como
@@ -29,6 +29,8 @@ export type PortraitSubject =
       readonly enraged: boolean;
       /** Acelerado: lleva sus rayas de velocidad. */
       readonly hasted: boolean;
+      /** Copia de un copion (T-025): sin su disquete. Sin decir, no lo es. */
+      readonly clone?: boolean;
     };
 
 /** Lado de la foto en pixeles CSS; el lienzo va al doble para que se vea nitida en pantallas densas. */
@@ -66,6 +68,8 @@ interface Piece {
   flipX?: boolean;
   /** Opacidad (el aura de los gusanos, T-030); sin ella, opaca. */
   alpha?: number;
+  /** Giro en grados alrededor de su origen (el disquete de los copiones, T-025). */
+  angle?: number;
 }
 
 /**
@@ -210,17 +214,13 @@ function piecesFor(subject: PortraitSubject): Piece[] {
   return wormPieces(subject);
 }
 
-/** Texturas del cuerpo de cada enemigo, como en `KIND_LOOK` de wormView.ts. */
-const ENEMY_ART: Record<EnemyKind, { head: string; angryHead?: string; segment: string; armor: boolean }> = {
-  worm: { head: TEX.wormHead, segment: TEX.wormSegment, armor: false },
-  armored: { head: TEX.wormHead, segment: TEX.wormSegment, armor: true },
-  spitter: { head: TEX.spitterHead, segment: TEX.spitterSegment, armor: false },
-  creeper: { head: TEX.creeperHead, angryHead: TEX.creeperHeadAngry, segment: TEX.creeperSegment, armor: false },
-};
-
-/** El gusano en reposo, con la postura de `WORM_LOOK`: rayas de velocidad, anillos (y placas), cabeza (y casco) y medallita. */
+/**
+ * El gusano en reposo, con la postura de `WORM_LOOK` y las texturas de su tipo (`KIND_LOOK`, las del tablero): rayas de
+ * velocidad, anillos (y placas), el disquete de la espalda de los copiones (T-025), cabeza (y casco, o el gorro del juglar)
+ * y medallita.
+ */
 function wormPieces(subject: Extract<PortraitSubject, { kind: 'enemy' }>): Piece[] {
-  const art = ENEMY_ART[subject.enemy];
+  const art = KIND_LOOK[subject.enemy];
   const { head, segment } = WORM_SIZE;
   const pieces: Piece[] = [];
   // Aura de los tramos de nivel (T-030, Z-03): un velo quieto detras del cuerpo, como en el tablero en lo mas alto.
@@ -248,12 +248,31 @@ function wormPieces(subject: Extract<PortraitSubject, { kind: 'enemy' }>): Piece
   }
   for (const s of WORM_LOOK.segments) {
     pieces.push({ key: art.segment, x: s.x, y: s.y, scale: s.scale, ox: 0.5, oy: 0.5, width: segment.size, height: segment.size });
-    if (art.armor) pieces.push({ key: TEX.armorPlate, x: s.x, y: s.y, scale: s.scale, ox: 0.5, oy: 0.5, width: segment.size, height: segment.size });
+    if (art.armor) pieces.push({ key: art.armor.plate, x: s.x, y: s.y, scale: s.scale, ox: 0.5, oy: 0.5, width: segment.size, height: segment.size });
   }
-  const headKey = subject.enraged && art.angryHead ? art.angryHead : art.head;
+  if (art.pack && !subject.clone) {
+    const [, middle, front] = WORM_LOOK.segments;
+    const { pack } = WORM_LOOK;
+    pieces.push({
+      key: art.pack,
+      x: (middle.x + front.x) / 2 + pack.x,
+      y: Math.min(middle.y, front.y) + pack.y,
+      scale: pack.scale,
+      ox: 0.5,
+      oy: 0.5,
+      width: FLOPPY_SIZE.width,
+      height: FLOPPY_SIZE.height,
+      angle: pack.angle,
+    });
+  }
+  const headKey = subject.enraged && art.angryHead ? art.angryHead.idle : art.head.idle;
   const headPiece = { x: WORM_LOOK.head.x, y: WORM_LOOK.head.y, scale: 1, ox: head.cx / head.width, oy: head.cy / head.height, width: head.width, height: head.height };
   pieces.push({ key: headKey, ...headPiece });
-  if (art.armor) pieces.push({ key: TEX.armorHelmet, ...headPiece });
+  if (art.armor) pieces.push({ key: art.armor.helmet, ...headPiece });
+  if (art.hat) {
+    const { width, height, cx, cy } = HAT_SIZE;
+    pieces.push({ key: art.hat, x: headPiece.x, y: headPiece.y, scale: 1, ox: cx / width, oy: cy / height, width, height });
+  }
   if (subject.enemy !== 'creeper' && subject.level > 1) {
     const { medal } = WORM_LOOK;
     pieces.push({
@@ -316,6 +335,14 @@ function drawPiece(ctx: CanvasRenderingContext2D, scene: Phaser.Scene, piece: Pi
   const w = piece.width * piece.scale;
   const h = piece.height * piece.scale;
   ctx.globalAlpha = piece.alpha ?? 1;
+  if (piece.angle) {
+    ctx.save();
+    ctx.translate(piece.x, piece.y);
+    ctx.rotate((piece.angle * Math.PI) / 180);
+    ctx.drawImage(image, -piece.ox * w, -piece.oy * h, w, h);
+    ctx.restore();
+    return;
+  }
   if (!piece.flipX) {
     ctx.drawImage(image, piece.x - piece.ox * w, piece.y - piece.oy * h, w, h);
     return;

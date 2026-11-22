@@ -1,13 +1,15 @@
-import { BOARD, CREEPER, ENEMIES, MINE, SHIELD } from '../config/balance';
+import { BOARD, CLONE, CREEPER, ENEMIES, MINE, SHIELD } from '../config/balance';
 import type { Cell } from '../core/board';
 import {
   bulletDamage,
   bulletEffect,
   enemyDamage,
   enemyMaxHp,
+  enemyReward,
   enemyTierBonus,
   fireIntervalMs,
   isEnraged,
+  leavesClone,
   mineBlast,
   slamDamage,
   type Enemy,
@@ -131,10 +133,20 @@ export function wallInfo(wall: Wall, cell: Cell): EntityInfoData {
   };
 }
 
-/** Como funciona cada enemigo, en el idioma en curso. */
-function enemyAbout(kind: Enemy['kind']): string {
+/** Como funciona cada enemigo, en el idioma en curso. Una copia (T-025) cuenta de donde sale y lo que tiene de su copion. */
+function enemyAbout(enemy: Enemy): string {
   const about = text().info.enemy.about;
-  return kind === 'spitter' ? about.spitter(formatNumber(ENEMIES.spitter.range)) : about[kind];
+  if (enemy.clone) return about.clone(formatPercent(CLONE.hp), formatPercent(CLONE.damage));
+  const { kind } = enemy;
+  if (kind === 'spitter' || kind === 'copycatSpitter' || kind === 'minstrel') return about[kind](formatNumber(ENEMIES[kind].range));
+  return about[kind];
+}
+
+/** Nombre del enemigo: el de su tipo o, si es una copia (T-025), el de la copia de su copion. */
+function enemyName(enemy: Enemy): string {
+  const { names, cloneNames } = text().info.enemy;
+  if (!enemy.clone) return names[enemy.kind];
+  return (cloneNames as Partial<Record<Enemy['kind'], string>>)[enemy.kind] ?? names[enemy.kind];
 }
 
 /** "Jefe del brote 1" (T-018: el brote del que es jefe), y su fase. */
@@ -144,7 +156,10 @@ function bossSubtitle(enemy: Enemy): string {
   return isEnraged(enemy) ? subtitle.bossEnraged(number) : subtitle.boss(number);
 }
 
-/** Ficha de un enemigo: su nivel y su tramo (T-009 y T-010), lo que quita, lo rapido que va y lo que le pasa ahora. */
+/**
+ * Ficha de un enemigo: su nivel y su tramo (T-009 y T-010), lo que quita, lo rapido que va y lo que le pasa ahora. Los
+ * copiones (T-025) dicen que dejan copia; el juglar, su verso y si toma aire.
+ */
 export function enemyInfo(enemy: Enemy): EntityInfoData {
   const t = text().info;
   const stats = ENEMIES[enemy.kind];
@@ -153,6 +168,8 @@ export function enemyInfo(enemy: Enemy): EntityInfoData {
   const rows: InfoStat[] = [];
   if (stats.attack === 'spit') {
     rows.push({ label: t.stats.spit, value: damage, note: t.stats.spitNote(formatSeconds(stats.spitIntervalMs), formatNumber(stats.range)) });
+  } else if (stats.attack === 'verse') {
+    rows.push({ label: t.stats.verse, value: damage, note: t.stats.verseNote(formatSeconds(stats.verseIntervalMs), formatNumber(stats.range)) });
   } else {
     rows.push({ label: t.stats.bite, value: damage, note: t.stats.biteNote(formatSeconds(stats.biteIntervalMs)) });
   }
@@ -164,13 +181,16 @@ export function enemyInfo(enemy: Enemy): EntityInfoData {
     rows.push({ label: t.stats.nextJump, value: next === undefined ? t.stats.noMoreJumps : t.stats.jumpAt(formatPercent(next)) });
     rows.push({ label: t.stats.onDefeat, value: t.stats.youWin });
   } else {
-    rows.push({ label: t.stats.reward, value: t.stats.rewardValue(stats.reward) });
+    if (leavesClone(enemy)) rows.push({ label: t.stats.onDefeat, value: t.stats.leavesClone });
+    rows.push({ label: t.stats.reward, value: t.stats.rewardValue(enemyReward(enemy)) });
   }
 
   const tags: InfoTag[] = [];
   if (boss && isEnraged(enemy)) tags.push({ text: t.tags.enraged, tone: 'alert' });
   if (enemy.jump) tags.push({ text: t.tags.jumping, tone: 'alert' });
-  else if (enemy.attackMs !== null) tags.push({ text: stats.attack === 'spit' ? t.tags.spitting : t.tags.biting, tone: 'alert' });
+  else if (enemy.attackMs !== null && stats.attack === 'verse') {
+    tags.push({ text: enemy.attackMs <= stats.warnMs ? t.tags.inhaling : t.tags.reciting, tone: 'alert' });
+  } else if (enemy.attackMs !== null) tags.push({ text: stats.attack === 'spit' ? t.tags.spitting : t.tags.biting, tone: 'alert' });
   if (enemy.burn) tags.push({ text: t.tags.burning(formatNumber(enemy.burn.dps)), tone: 'fire' });
   if (enemy.slow) tags.push({ text: t.tags.slowed(formatPercent(enemy.slow.amount)), tone: 'ice' });
   if (enemy.haste > 1) tags.push({ text: t.tags.hasted(formatPercent(enemy.haste - 1)), tone: 'haste' });
@@ -180,8 +200,8 @@ export function enemyInfo(enemy: Enemy): EntityInfoData {
   return {
     id: `enemigo:${enemy.id}`,
     tone: enemy.kind,
-    title: t.enemy.names[enemy.kind],
-    subtitle: enemy.kind === 'creeper' ? bossSubtitle(enemy) : subtitle[enemy.kind],
+    title: enemyName(enemy),
+    subtitle: enemy.kind === 'creeper' ? bossSubtitle(enemy) : enemy.clone ? subtitle.clone : subtitle[enemy.kind],
     level: boss
       ? null
       : {
@@ -189,10 +209,10 @@ export function enemyInfo(enemy: Enemy): EntityInfoData {
           medalTier: showsMedal(enemy.level) ? medalTier(enemy.level) : null,
           note: tier > 0 ? t.enemy.tier(formatPercent(tier)) : null,
         },
-    hp: hpOf(enemy.hp, enemyMaxHp(enemy.kind, enemy.level)),
+    hp: hpOf(enemy.hp, enemyMaxHp(enemy.kind, enemy.level, enemy.clone)),
     stats: rows,
     tags,
-    about: enemyAbout(enemy.kind),
+    about: enemyAbout(enemy),
     lore: bossLore(enemy.kind),
   };
 }

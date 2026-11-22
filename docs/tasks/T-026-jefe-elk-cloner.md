@@ -9,6 +9,8 @@ Sustituye a la task del jefe Blaster, que pasó al brote 11 (21 nov 2026). Carmi
 
 **Desde T-024** el brote 2 ya existe en `OUTBREAKS` con un guion provisional de 3 rondas (tropas del brote 1 y el escudo en la ronda 2) y sin jefe (`boss: null`): está en preparación, cerrado al jugador, y en desarrollo se juega con `?brote=2` (ADR-0015, "Brotes en preparación"). Esta task sustituye ese guion por el de verdad, pone a Elk Cloner como `boss` (y quita su nombre de `outbreak.comingBoss`) y lo abre. Lo que cuenta Boxer de él ya está en `story.lore.elkCloner`; repasarlo si hace falta. Los ataques que cruzan el carril tienen su regla de bloqueo en `waveReach` (`combat.ts`).
 
+**Desde T-025** están sus tropas: los Copycat (gusano, escupidor y acorazado, que al caer dejan una copia pequeña) y el Minstrel, que recita versos (`Verse`, `MatchState.verses`, eventos `verseWarned`, `sang`, `verseHit` y `verseGone`; la onda en pantalla es `VerseView`). Los versos de Elk Cloner pueden ser los mismos, más grandes. El guion provisional ya las usa (el Minstrel, en la ronda 3). Ojo: hoy, al caer Creeper caen todos y no sale ninguna copia (`bossDown` en `combat.ts`, solo con `kind === 'creeper'`); el jefe del brote 2 tiene que entrar en esa regla.
+
 En el juego es **Elk Cloner, el Poeta**. El combate de Creeper sirve de modelo: barra de jefe (`BossBar`), jefe esperando a la derecha (`bossPreparing`), tests propios (`creeper.test.ts`) y vista propia (`creeperView.ts`). El brote 2 no cambia de escenario.
 
 ## Objetivos
@@ -23,13 +25,13 @@ En el juego es **Elk Cloner, el Poeta**. El combate de Creeper sirve de modelo: 
 ## Decisiones pendientes
 | # | Pregunta | Opciones | Recomendación | Decide |
 |---|---|---|---|---|
-| L-01 | ¿Cuántas rondas tiene el brote 2? | 7, 10 u otro | 8: el jugador ya sabe jugar y hay dos conceptos nuevos (escudo y juglar) | Carmine |
+| L-01 | ¿Cuántas rondas tiene el brote 2? | 7, 10 u otro | 8: el jugador ya sabe jugar y hay dos conceptos nuevos (escudo y Minstrel) | Carmine |
 | L-02 | Mecánica principal | **Cerrada (21 nov 2026): a.** Recita versos: cada verso es una onda por un carril que atraviesa todas las plantas y solo se para en un escudo | Cerrada | Carmine |
 | L-03 | ¿Y el guiño a los 50 arranques? | a) Nada. b) Cada cierto número de versos recita el poema entero: una onda por los cinco carriles a la vez, con aviso largo | b: es el momento grande del combate y premia tener escudos repartidos | Carmine |
 | L-04 | ¿Cómo se sobrevive al poema entero sin escudos? | a) No se sobrevive bien. b) El daño es alto pero no mata plantas con la vida completa | b: castiga sin borrar el tablero de golpe | Carmine |
 | L-05 | ¿Elk Cloner avanza? | a) Se queda al fondo. b) Avanza despacio | b: si no avanza, no hay presión de tiempo | Carmine |
-| L-06 | ¿Trae escolta? | Sí o no | Sí, juglares y acorazados, para que las minas sigan sirviendo | Carmine |
-| L-07 | ¿Qué desbloquea cada ronda? | Libre | Ronda 2: escudo. Ronda 3: llega el juglar. Resto: mezcla y subida de dificultad | Carmine |
+| L-06 | ¿Trae escolta? | Sí o no | Sí, Minstrel y acorazados, para que las minas sigan sirviendo | Carmine |
+| L-07 | ¿Qué desbloquea cada ronda? | Libre | Ronda 2: escudo. Ronda 3: llega el Minstrel. Resto: mezcla y subida de dificultad | Carmine |
 | L-08 | ¿Topes de nivel del brote 2? | Libre | Tope 10 desde la ronda 1: es la progresión que quedó sin usar en el brote 1 y lo que da margen al nivel base de T-023 | Carmine |
 | L-09 | ¿Qué aspecto tiene? | Libre | Un bicho con un disquete por cabeza, como Creeper lleva un monitor | Carmine |
 

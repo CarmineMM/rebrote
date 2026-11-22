@@ -48,6 +48,9 @@ Cómo se escriben los textos de Rebrote para que salgan en español y en inglés
   | Mina | Mine |
   | Escudo, muro (T-024) | Shield, wall |
   | Gusano, acorazado, escupidor | Worm, armored worm, spitter worm |
+  | Copycat, Copycat acorazado, Copycat escupidor (T-025) | Copycat, Armored Copycat, Spitter Copycat |
+  | Copia (de un Copycat) | Copy |
+  | Minstrel, verso (T-025) | Minstrel, verse |
   | Moneda | Coin |
   | Semillas (T-020) | Seeds |
   | Vidas | Lives |
@@ -56,7 +59,8 @@ Cómo se escriben los textos de Rebrote para que salgan en español y en inglés
   | Ficha | Info card |
 
 - Creeper habla en mayúsculas, como en su terminal. En inglés su frase de entrada es la del original de 1971: "I'M THE CREEPER: CATCH ME IF YOU CAN!".
-- No se traducen: "Rebrote", Creeper, Boxer, Patty, los nombres de tecnologías, el nombre de cada idioma en el selector y el apodo que pone Boxer, "Rookie" (T-033, NJ-03), que vive en `src/game/playerName.ts` porque se guarda en el perfil como un nombre más.
+- **Nombres que se conocen en inglés (22 nov 2026, Carmine):** si el nombre de un enemigo, un personaje o una pieza es más conocido en todo el mundo en inglés, se queda en inglés también en español, como un nombre propio y con mayúscula: Creeper, Copycat, Minstrel. Lo que lo describe sí se traduce ("Copycat acorazado" / "Armored Copycat"), y en plural no cambia ("los Copycat"). Si hay duda, se pregunta a Carmine.
+- No se traducen: "Rebrote", Creeper, Copycat y Minstrel (T-025), Boxer, Patty, los nombres de tecnologías, el nombre de cada idioma en el selector y el apodo que pone Boxer, "Rookie" (T-033, NJ-03), que vive en `src/game/playerName.ts` porque se guarda en el perfil como un nombre más.
 - El nombre del jugador (T-033) es un dato: nunca se traduce y siempre va como argumento dentro de la frase (`story.lines`, `greenhouse.hello`, `name.saved`).
 - La IA de la historia es "ella" en español y "she" en inglés (T-031).
 - **Quién habla (T-032).** Las frases de los tours las dice Boxer: de tú, con prisa y algo de gracia, pero cortas e igual de claras. Lo que presenta un desbloqueo lo dice Boxer en el brote 1 y Patty desde el brote 2 (`unlock.presenters`: Patty siempre empieza por "¡He creado algo nuevo!"). Patty en el Invernadero (`greenhouse.patty`): frases cortas que puedan salir en cualquier momento, sin contar nada del juego.

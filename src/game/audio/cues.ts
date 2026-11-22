@@ -37,6 +37,8 @@ const INFUSE_OF: Record<ElementType, SfxId> = { fire: 'infuseFire', ice: 'infuse
  * - Si cae el Creeper, suena su derrota y no la de sus copias, que caen con el.
  * - Un mordisco o un escupitajo que da a un escudo (muro o disparadora con escudo, T-024) suena a madera, y el muro que se
  *   rompe, a madera que se parte.
+ * - El juglar (T-025) toma aire y suelta su verso; el verso suena bajito en cada planta o mina que cruza y, en el escudo
+ *   que lo para, a madera. Un copion que deja su copia suena a copiarse. El acorazado copion suena a metal, como el otro.
  */
 export function combatCues(events: readonly CombatEvent[], before: MatchState): SfxCue[] {
   const cues: SfxCue[] = [];
@@ -55,7 +57,8 @@ export function combatCues(events: readonly CombatEvent[], before: MatchState): 
         break;
       case 'hit': {
         const element = bulletElement.get(event.bulletId) ?? null;
-        const armored = enemies.get(event.enemyId)?.kind === 'armored';
+        const kind = enemies.get(event.enemyId)?.kind;
+        const armored = kind === 'armored' || kind === 'copycatArmored';
         cues.push(at(element === null && armored ? 'hitArmor' : HIT_OF[element ?? 'none'], event.at.x));
         break;
       }
@@ -83,6 +86,18 @@ export function combatCues(events: readonly CombatEvent[], before: MatchState): 
       case 'mineExploded':
         cues.push(at(event.element === 'fire' ? 'fireExplosion' : 'iceExplosion', event.cell.col + 0.5));
         break;
+      case 'verseWarned':
+        cues.push(at('minstrelInhale', enemies.get(event.enemyId)?.x ?? BOARD.columns / 2));
+        break;
+      case 'sang':
+        cues.push(at('verse', event.verse.x));
+        break;
+      case 'verseHit':
+        cues.push(at(event.blocked ? 'wallHit' : 'verseHit', event.cell.col + 0.5));
+        break;
+      case 'cloned':
+        if (!bossDown) cues.push(at('clone', event.clone.x));
+        break;
       case 'jumpWarned':
         cues.push(at('creeperWarn', enemies.get(event.enemyId)?.x ?? BOARD.columns / 2));
         break;
@@ -96,6 +111,7 @@ export function combatCues(events: readonly CombatEvent[], before: MatchState): 
       case 'mineArmed':
       case 'bulletGone':
       case 'spitGone':
+      case 'verseGone':
         break;
     }
   }

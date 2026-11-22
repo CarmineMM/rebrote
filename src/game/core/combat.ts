@@ -1,4 +1,4 @@
-import { BOARD, CREEPER, ENEMIES, ENEMY_LEVELS, ENEMY_POWER, FIRE, ICE, MINE, SHOOTER } from '../config/balance';
+import { BOARD, CLONE, CREEPER, ENEMIES, ENEMY_LEVELS, ENEMY_POWER, FIRE, ICE, MINE, SHOOTER, VERSE } from '../config/balance';
 import type { BoardPoint, Cell } from './board';
 import type { MatchState, Mine, Sown } from './match';
 import { damageMultiplier, fireRateMultiplier, type MineElement, type Shooter } from './plants';
@@ -68,6 +68,11 @@ export interface Enemy {
   readonly jump: Jump | null;
   /** Umbrales de vida de `CREEPER.jumpAt` ya gastados en saltos (solo cuenta en el Creeper). */
   readonly jumpsUsed: number;
+  /**
+   * Copia que dejo un copion al caer (T-025, F-01): con `CLONE.hp` de la vida y `CLONE.damage` del dano de su tipo y nivel,
+   * mas pequena (`CLONE.size`), da `CLONE.reward` y no deja otra copia.
+   */
+  readonly clone: boolean;
 }
 
 /** Lo que deja una bala infundida al impactar, ademas de su dano: la de fuego quema y la de hielo frena. */
@@ -95,6 +100,19 @@ export interface Spit {
   readonly damage: number;
 }
 
+/**
+ * Verso de un juglar (T-025): una onda que nace en su centro y recorre su carril hacia la izquierda por encima de las
+ * plantas (`VERSE.speed`). Quita `damage` a todo lo sembrado que cruza hasta el primer escudo, que lo recibe y lo para
+ * (`waveReach`), o hasta salir del tablero.
+ */
+export interface Verse {
+  readonly id: number;
+  readonly lane: number;
+  /** Frente de la onda, en casillas. Avanza hacia la izquierda, hacia x = 0. */
+  readonly x: number;
+  readonly damage: number;
+}
+
 /** Lo que paso durante un paso. La vista lo anima; la regla ya esta aplicada en el estado. */
 export type CombatEvent =
   /** Una planta de N canones dispara N balas a la vez, un evento por bala. `cannon` es el canon (0 es el de arriba). */
@@ -112,9 +130,23 @@ export type CombatEvent =
   | { readonly type: 'plantDestroyed'; readonly cell: Cell }
   /**
    * Un enemigo se quedo sin vida. Al caer el Creeper (T-008) caen tambien los demas: sus copias se desconectan.
-   * `kind` dice cuanta moneda da (`ENEMIES[kind].reward`, T-009).
+   * `kind` dice cuanta moneda da (`ENEMIES[kind].reward`, T-009); una copia (`clone`, T-025) da `CLONE.reward`
+   * (`enemyReward`).
    */
-  | { readonly type: 'enemyKilled'; readonly enemyId: number; readonly kind: EnemyKind; readonly at: BoardPoint }
+  | { readonly type: 'enemyKilled'; readonly enemyId: number; readonly kind: EnemyKind; readonly clone: boolean; readonly at: BoardPoint }
+  /** Un copion cayo y dejo su copia (T-025, F-01), ya en el estado, donde estaba el. Va despues de su `enemyKilled`. */
+  | { readonly type: 'cloned'; readonly parentId: number; readonly clone: Enemy }
+  /** El juglar toma aire (T-025, F-04): se hincha y suelta su verso dentro de `ENEMIES.minstrel.warnMs`. */
+  | { readonly type: 'verseWarned'; readonly enemyId: number }
+  /** El juglar suelta un verso: nace en su centro. */
+  | { readonly type: 'sang'; readonly enemyId: number; readonly verse: Verse }
+  /**
+   * Un verso cruzo lo sembrado en `cell` y le quito vida (si lo destruyo, sigue `plantDestroyed`). Si era un escudo,
+   * `blocked`: el verso se acaba ahi.
+   */
+  | { readonly type: 'verseHit'; readonly verseId: number; readonly cell: Cell; readonly blocked: boolean }
+  /** Un verso salio del tablero por la izquierda. */
+  | { readonly type: 'verseGone'; readonly verseId: number }
   /** Cruzo el borde izquierdo: resta una vida. Si es el Creeper (T-008), se pierde la partida. */
   | { readonly type: 'enemyEscaped'; readonly enemyId: number; readonly lane: number; readonly kind: EnemyKind }
   /** El Creeper (T-008) cruzo un umbral de vida: se agacha para saltar y marca el carril de destino durante `warnMs`. */
@@ -197,9 +229,37 @@ export function fireIntervalMs(shooter: Shooter): number {
   return SHOOTER.fireIntervalMs / fireRateMultiplier(shooter);
 }
 
+/** Lo que mide una copia respecto a su tipo (T-025): su cuerpo y su alcance encogen con ella. */
+const sizeOf = (enemy: Pick<Enemy, 'clone'>): number => (enemy.clone ? CLONE.size : 1);
+
+/** Del centro del enemigo a su hocico: el de su tipo, o menos si es una copia (T-025). */
+export function enemyHalfLength(enemy: Pick<Enemy, 'kind' | 'clone'>): number {
+  return ENEMIES[enemy.kind].halfLength * sizeOf(enemy);
+}
+
 /** Hocico del enemigo: lo primero que encuentra una bala. */
 export function enemyFront(enemy: Enemy): number {
-  return enemy.x - ENEMIES[enemy.kind].halfLength;
+  return enemy.x - enemyHalfLength(enemy);
+}
+
+/**
+ * Distancia de su centro al de la planta a la que empieza a morder. La copia (T-025), mas corta, se acerca lo que le falta
+ * de hocico: muerde con la boca donde la pondria su tipo.
+ */
+export function enemyReach(enemy: Pick<Enemy, 'kind' | 'clone'>): number {
+  const stats = ENEMIES[enemy.kind];
+  if (stats.attack !== 'bite') return 0;
+  return stats.reach - (stats.halfLength - enemyHalfLength(enemy));
+}
+
+/** ¿Deja una copia al caer (T-025, F-01)? Las tropas del brote 2, una sola vez: la copia ya no deja otra. */
+export function leavesClone(enemy: Pick<Enemy, 'kind' | 'clone'>): boolean {
+  return !enemy.clone && (CLONE.kinds as readonly EnemyKind[]).includes(enemy.kind);
+}
+
+/** Moneda que da al caer (T-009, P-03): la de su tipo, o la de una copia (T-025). */
+export function enemyReward(enemy: Pick<Enemy, 'kind' | 'clone'>): number {
+  return enemy.clone ? CLONE.reward : ENEMIES[enemy.kind].reward;
 }
 
 /** Se pierde al quedarse sin vidas (D-07, provisional). Sin vidas, el combate no avanza. */
@@ -209,7 +269,7 @@ export function isDefeated(state: MatchState): boolean {
 
 /** Evento de un enemigo que se quedo sin vida. */
 function killed(e: Enemy): CombatEvent {
-  return { type: 'enemyKilled', enemyId: e.id, kind: e.kind, at: { x: e.x, y: e.lane + 0.5 } };
+  return { type: 'enemyKilled', enemyId: e.id, kind: e.kind, clone: e.clone, at: { x: e.x, y: e.lane + 0.5 } };
 }
 
 /**
@@ -245,16 +305,22 @@ function powerLevel(kind: EnemyKind, level: number): number {
   return kind === 'creeper' ? 1 : level;
 }
 
-/** Vida llena de un enemigo de `kind` y nivel `level`, con su fuerza. El Creeper no tiene nivel: la suya por la fuerza de todos. */
-export function enemyMaxHp(kind: EnemyKind, level = 1): number {
-  return ENEMIES[kind].hp * enemyPower(powerLevel(kind, level));
+/**
+ * Vida llena de un enemigo de `kind` y nivel `level`, con su fuerza. El Creeper no tiene nivel: la suya por la fuerza de
+ * todos. Una copia (`clone`, T-025), `CLONE.hp` de la de su tipo y nivel.
+ */
+export function enemyMaxHp(kind: EnemyKind, level = 1, clone = false): number {
+  return ENEMIES[kind].hp * enemyPower(powerLevel(kind, level)) * (clone ? CLONE.hp : 1);
 }
 
-/** Dano de cada mordisco (los que muerden, tambien el Creeper) o escupitajo (el escupidor), con su fuerza. */
-export function enemyDamage(enemy: Pick<Enemy, 'kind' | 'level'>): number {
+/**
+ * Dano de cada mordisco (los que muerden, tambien el Creeper), escupitajo (el escupidor) o verso (el juglar, T-025), con
+ * su fuerza. Una copia (T-025) quita `CLONE.damage` de lo de su tipo y nivel.
+ */
+export function enemyDamage(enemy: Pick<Enemy, 'kind' | 'level'> & { readonly clone?: boolean }): number {
   const stats = ENEMIES[enemy.kind];
-  const base = stats.attack === 'spit' ? stats.spitDamage : stats.biteDamage;
-  return base * enemyPower(powerLevel(enemy.kind, enemy.level));
+  const base = stats.attack === 'spit' ? stats.spitDamage : stats.attack === 'verse' ? stats.verseDamage : stats.biteDamage;
+  return base * enemyPower(powerLevel(enemy.kind, enemy.level)) * (enemy.clone ? CLONE.damage : 1);
 }
 
 /** Golpe del Creeper al aterrizar de un salto (J-05), con la fuerza de todos (T-010). */
@@ -279,8 +345,16 @@ export function rollEnemyLevel(table: Readonly<Record<number, number>> | undefin
 }
 
 /** Enemigo recien salido: avanza, sin efectos ni salto. */
-function newEnemy(id: number, kind: EnemyKind, lane: number, x: number, hp: number, haste: number, level: number): Enemy {
-  return { id, kind, lane, x, hp, attackMs: null, burn: null, slow: null, haste, level, jump: null, jumpsUsed: 0 };
+function newEnemy(id: number, kind: EnemyKind, lane: number, x: number, hp: number, haste: number, level: number, clone = false): Enemy {
+  return { id, kind, lane, x, hp, attackMs: null, burn: null, slow: null, haste, level, jump: null, jumpsUsed: 0, clone };
+}
+
+/**
+ * Copia que deja un copion al caer (T-025, F-01): de su tipo, nivel y paso, en su sitio, con la vida llena de una copia.
+ * No hereda la quemadura ni el frio: es otra.
+ */
+function cloneOf(parent: Enemy, id: number): Enemy {
+  return newEnemy(id, parent.kind, parent.lane, parent.x, enemyMaxHp(parent.kind, parent.level, true), parent.haste, parent.level, true);
 }
 
 /**
@@ -314,9 +388,9 @@ export function isAirborne(enemy: Enemy): boolean {
   return enemy.jump?.stage === 'air';
 }
 
-/** Fraccion de su vida llena (la de su tipo y nivel) que le queda. */
+/** Fraccion de su vida llena (la de su tipo y nivel, y si es una copia) que le queda. */
 export function hpFraction(enemy: Enemy): number {
-  return enemy.hp / enemyMaxHp(enemy.kind, enemy.level);
+  return enemy.hp / enemyMaxHp(enemy.kind, enemy.level, enemy.clone);
 }
 
 /** Fase 2 del Creeper (T-008): con la mitad de la vida o menos salta mas a menudo, avisa menos y deja mas copias. */
@@ -339,7 +413,7 @@ export function hasTarget(enemies: readonly Enemy[], cell: Cell): boolean {
   return enemies.some((e) => e.lane === cell.lane && e.hp > 0 && e.x > plantX && onLawn(e) && !isAirborne(e));
 }
 
-/** Ya pisa el cesped: las plantas le pueden disparar (y el escupidor puede pararse a escupir). */
+/** Ya pisa el cesped: las plantas le pueden disparar (y el escupidor y el juglar pueden pararse a atacar). */
 export function onLawn(enemy: Enemy): boolean {
   return enemyFront(enemy) <= BOARD.columns;
 }
@@ -361,9 +435,10 @@ export function stepCombat(state: MatchState, dtMs: number, random: () => number
 }
 
 /**
- * Un paso: primero arden, se mueven y atacan los enemigos (muerden o escupen, mas despacio si estan ralentizados; el
- * Creeper, ademas, salta de carril); luego vuelan los escupitajos; despues cuentan y explotan las minas, vuelan las
- * balas y al final disparan las plantas. Si el Creeper cae, caen con el los demas enemigos.
+ * Un paso: primero arden, se mueven y atacan los enemigos (muerden, escupen o recitan, mas despacio si estan ralentizados;
+ * el Creeper, ademas, salta de carril); luego vuelan los escupitajos y los versos; despues cuentan y explotan las minas,
+ * vuelan las balas, los copiones caidos dejan su copia y al final disparan las plantas. Si el Creeper cae, caen con el
+ * los demas enemigos, y sin copias.
  */
 function substep(state: MatchState, dtMs: number, events: CombatEvent[], random: () => number): MatchState {
   const plants = state.plants.map((lane) => [...lane]);
@@ -373,12 +448,21 @@ function substep(state: MatchState, dtMs: number, events: CombatEvent[], random:
   /** Copias que deja el Creeper al despegar: entran en juego despues de mover a los demas. */
   const copies: Enemy[] = [];
   let bossDown = false;
+  /** Copiones que cayeron en este paso (T-025): dejan su copia al final, si el jefe no cayo con ellos. */
+  const fallen: Enemy[] = [];
+  /** Un enemigo se queda sin vida. `mayClone`: si es un copion, deja su copia (en una explosion, solo los primeros). */
+  const fall = (e: Enemy, mayClone = true) => {
+    events.push(killed(e));
+    if (e.kind === 'creeper') bossDown = true;
+    if (mayClone && leavesClone(e)) fallen.push(e);
+  };
 
   // Enemigos: arden si tienen una quemadura, y atacan o avanzan, mas despacio si estan ralentizados. Los que muerden
   // atacan lo que tocan (planta o mina); el escupidor, lo primero sembrado en su carril a su distancia. Los que
   // cruzan el borde izquierdo restan una vida.
   const enemies: Array<Mutable<Enemy>> = [];
   const launched: Spit[] = [];
+  const sung: Verse[] = [];
   for (const enemy of state.enemies) {
     const stats = ENEMIES[enemy.kind];
     const e: Mutable<Enemy> = { ...enemy };
@@ -387,8 +471,7 @@ function substep(state: MatchState, dtMs: number, events: CombatEvent[], random:
       e.hp -= (e.burn.dps * Math.min(dtMs, e.burn.ms)) / 1000;
       e.burn = e.burn.ms > dtMs ? { ...e.burn, ms: e.burn.ms - dtMs } : null;
       if (e.hp <= 0) {
-        events.push(killed(e));
-        if (e.kind === 'creeper') bossDown = true;
+        fall(e);
         continue;
       }
     }
@@ -412,7 +495,7 @@ function substep(state: MatchState, dtMs: number, events: CombatEvent[], random:
     }
     const lane = plants[e.lane];
     if (stats.attack === 'spit') {
-      const col = spitColumn(lane, e, stats.range);
+      const col = rangedColumn(lane, e, stats.range);
       if (col !== null) {
         e.attackMs = (e.attackMs ?? stats.firstSpitMs) - attackClockMs;
         if (e.attackMs <= 0) {
@@ -424,8 +507,24 @@ function substep(state: MatchState, dtMs: number, events: CombatEvent[], random:
         enemies.push(e);
         continue;
       }
+    } else if (stats.attack === 'verse') {
+      // Juglar (T-025): se para a su distancia de lo primero sembrado, toma aire (el aviso, F-04) y suelta su verso.
+      const col = rangedColumn(lane, e, stats.range);
+      if (col !== null) {
+        const before = e.attackMs ?? stats.firstVerseMs;
+        e.attackMs = before - attackClockMs;
+        if (before > stats.warnMs && e.attackMs <= stats.warnMs) events.push({ type: 'verseWarned', enemyId: e.id });
+        if (e.attackMs <= 0) {
+          e.attackMs += stats.verseIntervalMs;
+          const verse: Verse = { id: nextId++, lane: e.lane, x: e.x, damage: enemyDamage(e) };
+          sung.push(verse);
+          events.push({ type: 'sang', enemyId: e.id, verse });
+        }
+        enemies.push(e);
+        continue;
+      }
     } else {
-      const col = bittenColumn(lane, e.x, stats.reach);
+      const col = bittenColumn(lane, e.x, enemyReach(e));
       if (col !== null) {
         e.attackMs = (e.attackMs ?? stats.firstBiteMs) - attackClockMs;
         if (e.attackMs <= 0) {
@@ -468,6 +567,24 @@ function substep(state: MatchState, dtMs: number, events: CombatEvent[], random:
     }
   }
 
+  // Versos (T-025): cruzan el carril por encima de las plantas y quitan vida a todo lo sembrado que pasan, minas incluidas
+  // (F-06), hasta el primer escudo, que lo recibe y los para (F-05). Una planta que muere al paso no los para. Los que
+  // acaban de salir esperan al siguiente paso.
+  const verses: Verse[] = [];
+  for (const verse of state.verses) {
+    const from = verse.x;
+    const to = from - (VERSE.speed * dtMs) / 1000;
+    const reach = waveReach(plants[verse.lane], from, to);
+    for (const col of reach.cols) {
+      const cell = { lane: verse.lane, col };
+      events.push({ type: 'verseHit', verseId: verse.id, cell, blocked: col === reach.blockedAt });
+      damageSown(plants, cell, verse.damage, events);
+    }
+    if (reach.blockedAt !== null) continue;
+    if (to < 0) events.push({ type: 'verseGone', verseId: verse.id });
+    else verses.push({ ...verse, x: to });
+  }
+
   // Minas: la que detecta a un enemigo empieza a contar; la que acaba el conteo explota y deja su casilla,
   // haya o no enemigos en su radio. Una mina destruida a mordiscos en este paso ya no esta.
   plants.forEach((lane, laneIndex) =>
@@ -487,7 +604,7 @@ function substep(state: MatchState, dtMs: number, events: CombatEvent[], random:
         return;
       }
       lane[col] = null;
-      explode(sown, cell, enemies, events);
+      explode(sown, cell, enemies, events, fall);
     }),
   );
 
@@ -506,24 +623,30 @@ function substep(state: MatchState, dtMs: number, events: CombatEvent[], random:
         enemyId: target.id,
         at: { x: Math.max(from, enemyFront(target)), y: bullet.lane + 0.5 },
       });
-      if (target.hp <= 0) {
-        events.push(killed(target));
-      }
+      if (target.hp <= 0) fall(target);
     } else if (to > BOARD.columns) {
       events.push({ type: 'bulletGone', bulletId: bullet.id });
     } else {
       bullets.push({ ...bullet, x: to });
     }
   }
-  // Sin el Creeper (T-008), sus copias y los demas se desconectan: la partida esta ganada.
-  if (bossDown || enemies.some((e) => e.kind === 'creeper' && e.hp <= 0)) {
+  // Sin el Creeper (T-008), sus copias y los demas se desconectan: la partida esta ganada. Nadie deja copia.
+  if (bossDown) {
     for (const e of enemies) {
       if (e.hp <= 0) continue;
       e.hp = 0;
       events.push(killed(e));
     }
   }
-  const alive = enemies.filter((e) => e.hp > 0);
+  const alive: Enemy[] = enemies.filter((e) => e.hp > 0);
+  // Los copiones caidos dejan su copia donde estaban (T-025, F-01).
+  if (!bossDown) {
+    for (const parent of fallen) {
+      const clone = cloneOf(parent, nextId++);
+      alive.push(clone);
+      events.push({ type: 'cloned', parentId: parent.id, clone });
+    }
+  }
 
   // Plantas: recargan y disparan si tienen a quien, una bala por canon. Si la recarga acaba a mitad de paso,
   // lo que sobra cuenta para el siguiente disparo; una planta que esperaba lista no acumula nada.
@@ -550,7 +673,7 @@ function substep(state: MatchState, dtMs: number, events: CombatEvent[], random:
     }),
   );
 
-  return { ...state, lives, plants, enemies: alive, bullets, spits: [...spits, ...launched], nextId };
+  return { ...state, lives, plants, enemies: alive, bullets, spits: [...spits, ...launched], verses: [...verses, ...sung], nextId };
 }
 
 /** Distancia del centro del enemigo al centro de la casilla, en casillas. Cuenta tambien en otros carriles. */
@@ -560,16 +683,21 @@ export function distanceToCell(enemy: Enemy, cell: Cell): number {
 
 /**
  * La mina explota: alcanza a todos los enemigos vivos de su radio, en cualquier carril, con lo que hace la de su
- * elemento (`mineBlast`): la de fuego dana y la de hielo frena.
+ * elemento (`mineBlast`): la de fuego dana y la de hielo frena. De los copiones que tumba, solo los primeros
+ * `CLONE.maxPerBlast` dejan copia (T-025): una mina no llena el carril de copias.
  */
-function explode(mine: Mine, cell: Cell, enemies: Array<Mutable<Enemy>>, events: CombatEvent[]): void {
+function explode(mine: Mine, cell: Cell, enemies: Array<Mutable<Enemy>>, events: CombatEvent[], fall: (e: Enemy, mayClone: boolean) => void): void {
   const hit = enemies.filter((e) => e.hp > 0 && !isAirborne(e) && distanceToCell(e, cell) <= MINE.blastRadius);
   const { damage, slow } = mineBlast(mine.element);
   events.push({ type: 'mineExploded', cell, element: mine.element, enemyIds: hit.map((e) => e.id) });
+  let clones = 0;
   for (const e of hit) {
     e.hp -= damage;
     if (slow) e.slow = refreshSlow(e.slow, slow);
-    if (e.hp <= 0) events.push(killed(e));
+    if (e.hp > 0) continue;
+    const mayClone = leavesClone(e) && clones < CLONE.maxPerBlast;
+    if (mayClone) clones++;
+    fall(e, mayClone);
   }
 }
 
@@ -671,10 +799,11 @@ function damageSown(plants: Array<Array<Sown | null>>, cell: Cell, damage: numbe
 }
 
 /**
- * Columna de lo sembrado (planta o mina) a la que escupe el escupidor: lo primero que tiene delante en su carril,
- * a `range` casillas o menos de su centro. Null si no hay nada a su alcance o aun no pisa el cesped.
+ * Columna de lo sembrado (planta, mina o muro) a la que ataca desde lejos el escupidor (T-007) o el juglar (T-025): lo
+ * primero que tiene delante en su carril, a `range` casillas o menos de su centro. Null si no hay nada a su alcance o aun
+ * no pisa el cesped.
  */
-function spitColumn(lane: ReadonlyArray<Sown | null>, enemy: Enemy, range: number): number | null {
+function rangedColumn(lane: ReadonlyArray<Sown | null>, enemy: Enemy, range: number): number | null {
   if (!onLawn(enemy)) return null;
   for (let col = lane.length - 1; col >= 0; col--) {
     const gap = enemy.x - (col + 0.5);
@@ -687,8 +816,8 @@ function spitColumn(lane: ReadonlyArray<Sown | null>, enemy: Enemy, range: numbe
 /**
  * ¿Para lo sembrado lo que va por su carril hacia lo de detras (T-024)? El muro y la disparadora con escudo (E-02): ningun
  * disparo enemigo ni salto pasa por encima de ellos, y lo que paran les quita vida (E-01). Las demas plantas y las minas,
- * no: hoy no importa, porque el escupitajo da a lo primero que encuentra, pero los ataques que cruzan el carril por encima
- * de las plantas (los versos de Elk Cloner y sus juglares, T-025 y T-026) atraviesan todo lo que no es escudo.
+ * no: el escupitajo da a lo primero que encuentra, pero los ataques que cruzan el carril por encima de las plantas (los
+ * versos del juglar, T-025, y de Elk Cloner, T-026) atraviesan todo lo que no es escudo.
  */
 export function isShield(sown: Sown | null | undefined): boolean {
   if (!sown) return false;
@@ -697,15 +826,16 @@ export function isShield(sown: Sown | null | undefined): boolean {
 
 /**
  * Lo que alcanza un ataque que cruza el carril por encima de las plantas al ir de `from` a `to` (hacia la izquierda), como
- * una onda (T-024; la usaran los versos de T-025 y T-026): las columnas de todo lo sembrado cuyo centro cruza, de derecha a
- * izquierda, hasta el primer escudo, que lo recibe y lo para. Lo que hay detras de un escudo no recibe nada. `blockedAt`
- * es la columna del escudo que lo paro, o null si sigue.
+ * una onda (T-024; la usan los versos del juglar, T-025, y los de Elk Cloner, T-026): las columnas de todo lo sembrado cuyo
+ * centro cruza, de derecha a izquierda, hasta el primer escudo, que lo recibe y lo para. Lo que hay detras de un escudo no
+ * recibe nada. `blockedAt` es la columna del escudo que lo paro, o null si sigue. Cruza el centro que queda en (`to`,
+ * `from`]: paso a paso, una onda nunca da dos veces a lo mismo.
  */
 export function waveReach(lane: ReadonlyArray<Sown | null>, from: number, to: number): { readonly cols: number[]; readonly blockedAt: number | null } {
   const cols: number[] = [];
   for (let col = lane.length - 1; col >= 0; col--) {
     const center = col + 0.5;
-    if (!lane[col] || center > from || center < to) continue;
+    if (!lane[col] || center > from || center <= to) continue;
     cols.push(col);
     if (isShield(lane[col])) return { cols, blockedAt: col };
   }

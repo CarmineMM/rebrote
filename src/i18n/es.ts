@@ -272,11 +272,11 @@ export const es = {
         'Creeper casi está listo: aún más tropas y más rápidas',
         '¡Llega Creeper con su escolta! Salta de carril: reparte tus defensas',
       ],
-      // T-024: guion provisional del brote 2 hasta que T-026 traiga el suyo.
+      // T-024: guion provisional del brote 2 hasta que T-026 traiga el suyo (con las tropas de T-025).
       elkCloner: [
-        'Lo aprendido sigue contigo: disparadoras, minas, infundir y fusionar',
+        'Lo aprendido sigue contigo. Ojo: los Copycat dejan una copia al caer',
         'Siembra el escudo solo y para los disparos, o suéltalo sobre una disparadora',
-        'Escupidores en todos los carriles: ¡pon muros delante!',
+        '¡Llegan los Minstrel! Sus versos cruzan el carril: solo los para un escudo',
       ],
     },
   },
@@ -577,6 +577,11 @@ export const es = {
       damageEach: (damage: string) => `${damage} a cada enemigo`,
       spit: 'Escupitajo',
       spitNote: (time: string, cells: string) => `cada ${time}, a ${cells} casillas`,
+      /** Minstrel (T-025): lo que quita su verso a cada cosa que cruza. */
+      verse: 'Verso',
+      verseNote: (time: string, cells: string) => `a cada cosa, cada ${time}, desde ${cells} casillas`,
+      /** Copycat (T-025): lo que dejan al caer. */
+      leavesClone: 'Deja una copia',
       bite: 'Mordisco',
       biteNote: (time: string) => `cada ${time}`,
       slam: 'Golpe al caer',
@@ -606,6 +611,9 @@ export const es = {
       jumping: 'Saltando de carril',
       spitting: 'Escupiendo',
       biting: 'Mordiendo',
+      /** Minstrel (T-025): parado a su distancia, y tomando aire antes del verso (F-04). */
+      reciting: 'Recitando',
+      inhaling: '¡Toma aire!',
       burning: (amount: string) => `Quemado: −${amount} por segundo`,
       slowed: (percent: string) => `Frenado un ${percent}`,
       hasted: (percent: string) => `Acelerado +${percent}`,
@@ -642,11 +650,28 @@ export const es = {
       },
     },
     enemy: {
-      names: { worm: 'Gusano', armored: 'Gusano acorazado', spitter: 'Gusano escupidor', creeper: 'Creeper' },
+      names: {
+        worm: 'Gusano',
+        armored: 'Gusano acorazado',
+        spitter: 'Gusano escupidor',
+        creeper: 'Creeper',
+        /** Tropas del brote 2 (T-025). */
+        copycat: 'Copycat',
+        copycatArmored: 'Copycat acorazado',
+        copycatSpitter: 'Copycat escupidor',
+        minstrel: 'Minstrel',
+      },
+      /** La copia que deja cada Copycat al caer (T-025, F-01). */
+      cloneNames: { copycat: 'Copia de Copycat', copycatArmored: 'Copia acorazada', copycatSpitter: 'Copia escupidora' },
       subtitle: {
         worm: 'Gusano informático',
         armored: 'Con casco y placas de acero',
         spitter: 'Ataca desde lejos',
+        copycat: 'Viaja en disquete',
+        copycatArmored: 'Con placas de disquete',
+        copycatSpitter: 'Escupe y se copia',
+        minstrel: 'Recita versos',
+        clone: 'Pequeña y débil',
         boss: (outbreak: number) => `Jefe del brote ${outbreak}`,
         bossEnraged: (outbreak: number) => `Jefe del brote ${outbreak} · fase 2`,
       },
@@ -656,6 +681,12 @@ export const es = {
         armored: 'Como el gusano, con cuatro veces su vida y más lento. Se le caen las placas al perder vida.',
         spitter: (cells: string) => `Se para a ${cells} casillas de lo primero sembrado y le escupe. Puede reventar una mina antes de que explote.`,
         creeper: 'Salta de carril al perder vida y deja copias suyas. Si cruza el jardín, se pierde la partida.',
+        copycat: 'Muerde como el gusano. Al caer deja una copia pequeña y débil, una sola vez.',
+        copycatArmored: 'Como el acorazado, con placas de disquete. Al caer deja una copia pequeña y débil, una sola vez.',
+        copycatSpitter: (cells: string) => `Se para a ${cells} casillas de lo primero sembrado y le escupe. Al caer deja una copia pequeña y débil, una sola vez.`,
+        minstrel: (cells: string) =>
+          `Se para a ${cells} casillas de lo primero sembrado, se hincha y suelta un verso: una onda que cruza el carril y daña todo lo que pasa, minas incluidas. Solo la para un escudo.`,
+        clone: (hp: string, damage: string) => `Salió de un Copycat al caer. Ataca como él, con el ${hp} de su vida y el ${damage} de su fuerza, y ya no deja otra copia.`,
       },
     },
   },

@@ -240,6 +240,27 @@ export const MANIFEST: Readonly<Record<SfxId, SoundEntry>> = {
     pick: [digital('phaserDown3'), scifi('explosionCrunch_003', { gainDb: -6 })],
     alternatives: [digital('lowDown'), sfxr('powerDown')],
   },
+  minstrelInhale: {
+    about: 'El juglar toma aire antes de su verso (T-025, F-04): un soplido que se hincha',
+    pick: sfxr('inhale'),
+    alternatives: [rpg('cloth1', { fadeInMs: 300, rate: 1.2, gainDb: -2 }), ui('maximize_003', { rate: 0.7, fadeInMs: 80 })],
+  },
+  verse: {
+    about: 'El juglar suelta su verso (T-025): un punteo corto de cuerda, como un laúd',
+    pick: jingle('jingles_PIZZI05'),
+    alternatives: [jingle('jingles_PIZZI08'), jingle('jingles_SAX05', { gainDb: -2 })],
+  },
+  verseHit: {
+    about: 'El verso pasa por una planta o una mina (T-025): un tintineo de cristal, bajito (si es un escudo, suena su toc de madera)',
+    // Elegido de oido por Carmine (22 nov 2026).
+    pick: ui('glass_001', { rate: 0.9, gainDb: -3 }),
+    alternatives: [ui('pluck_002', { rate: 1.25, fadeOutMs: 60, lowpassHz: 3600 }), ui('pluck_001', { rate: 1.5 })],
+  },
+  clone: {
+    about: 'Un copión cae y deja su copia (T-025, F-01): blip digital de copiarse',
+    pick: digital('phaseJump2', { lengthMs: 320, fadeOutMs: 140 }),
+    alternatives: [digital('pepSound2', { lengthMs: 320, fadeOutMs: 150 }), digital('powerUp2', { lengthMs: 320, fadeOutMs: 150, gainDb: -2 })],
+  },
   attackStarted: {
     about: 'Empieza el ataque ("¡Ahí vienen!"): trino de 8 bits',
     pick: jingle('jingles_NES13'),

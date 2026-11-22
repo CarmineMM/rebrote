@@ -19,9 +19,10 @@ export const SAVE_KEY = 'partida';
 
 /**
  * Sube cuando cambia la forma de `MatchState` o de la guardada: las de otra version se ignoran. La 2 (T-018) anade el
- * brote; la 3 (T-020), las semillas de la partida; la 4 (T-024), el muro y la disparadora con escudo.
+ * brote; la 3 (T-020), las semillas de la partida; la 4 (T-024), el muro y la disparadora con escudo; la 5 (T-025), las
+ * copias de los copiones (`Enemy.clone`) y los versos de los juglares en vuelo (`MatchState.verses`).
  */
-export const SAVE_VERSION = 4;
+export const SAVE_VERSION = 5;
 
 export interface SavedGame {
   readonly version: number;
@@ -174,7 +175,8 @@ function isEnemy(value: unknown): value is Enemy {
     value.haste > 0 &&
     isInt(value.level, 1) &&
     isNullOr(value.jump, isJump) &&
-    isInt(value.jumpsUsed, 0)
+    isInt(value.jumpsUsed, 0) &&
+    typeof value.clone === 'boolean'
   );
 }
 
@@ -198,7 +200,7 @@ function isRound(value: unknown, outbreak: OutbreakId): boolean {
 
 export function isMatchState(value: unknown): value is MatchState {
   if (!isRecord(value)) return false;
-  const { plants, enemies, bullets, spits } = value;
+  const { plants, enemies, bullets, spits, verses } = value;
   return (
     isOutbreakId(value.outbreak) &&
     isInt(value.balance, 0) &&
@@ -212,6 +214,8 @@ export function isMatchState(value: unknown): value is MatchState {
     bullets.every((bullet) => isProjectile(bullet) && isNullOr(bullet.effect, isBulletEffect)) &&
     Array.isArray(spits) &&
     spits.every(isProjectile) &&
+    Array.isArray(verses) &&
+    verses.every(isProjectile) &&
     isRound(value.round, value.outbreak) &&
     isNumber(value.incomeMs) &&
     isMatchSeeds(value.seeds, value.outbreak) &&

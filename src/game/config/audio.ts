@@ -45,6 +45,11 @@ export type SfxId =
   | 'creeperTalk'
   | 'creeperRage'
   | 'creeperDefeated'
+  // Tropas del brote 2 (T-025): el juglar toma aire, suelta su verso y el verso da a lo sembrado; un copion deja su copia
+  | 'minstrelInhale'
+  | 'verse'
+  | 'verseHit'
+  | 'clone'
   // Rondas y partida
   | 'attackStarted'
   | 'roundCleared'
@@ -133,6 +138,11 @@ export const SFX: Readonly<Record<SfxId, SfxSpec>> = {
   creeperTalk: world(0.45, 1, 300, 0.5, 1, 0),
   creeperRage: world(0.8, 1, 0, 0),
   creeperDefeated: world(0.9, 1, 0, 0),
+  // Un verso cruza varias plantas seguidas: su golpe va bajo, corto y con pocas voces.
+  minstrelInhale: world(0.45, 2, 150, 0.8),
+  verse: world(0.55, 2, 150, 1),
+  verseHit: world(0.3, 3, 70, 1.5),
+  clone: world(0.45, 2, 90, 1.2),
   attackStarted: world(0.55, 1, 0, 0),
   roundCleared: world(0.6, 1, 0, 0),
   unlock: ui(0.6),

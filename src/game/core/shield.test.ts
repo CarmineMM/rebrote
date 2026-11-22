@@ -321,8 +321,8 @@ describe('bloqueo', () => {
 });
 
 describe('partida guardada', () => {
-  it('acepta muros y disparadoras con escudo (version 4)', () => {
-    expect(SAVE_VERSION).toBe(4);
+  it('acepta muros y disparadoras con escudo (desde la version 4)', () => {
+    expect(SAVE_VERSION).toBeGreaterThanOrEqual(4);
     let state = put(shieldMatch(), { lane: 0, col: 2 }, { kind: 'wall', hp: 700 });
     state = put(state, { lane: 1, col: 1 }, createPlant(shooter({ element: 'shield', cannons: 2 })));
     const loaded = decodeSave(encodeSave(state, null, 1));

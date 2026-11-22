@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { CREEPER, ENEMIES, MINE, SHIELD, SHOOTER } from '../config/balance';
+import { CLONE, CREEPER, ENEMIES, MINE, SHIELD, SHOOTER } from '../config/balance';
 import { enemyMaxHp, spawnEnemy, type Enemy } from '../core/combat';
 import { createMatch, createMine, createPlant } from '../core/match';
 import { createShooter, type Shooter } from '../core/plants';
@@ -140,6 +140,44 @@ describe('ficha de un enemigo', () => {
   });
 });
 
+describe('ficha de las tropas del brote 2 (T-025)', () => {
+  it('los Copycat dicen que dejan una copia al caer', () => {
+    for (const [kind, title] of [
+      ['copycat', 'Copycat'],
+      ['copycatArmored', 'Copycat acorazado'],
+      ['copycatSpitter', 'Copycat escupidor'],
+    ] as const) {
+      const info = enemyInfo(enemy(kind));
+      expect(info, kind).toMatchObject({ tone: kind, title });
+      expect(stat(info, 'Al caer')?.value, kind).toBe('Deja una copia');
+      expect(stat(info, 'Recompensa')?.value, kind).toBe(`${ENEMIES[kind].reward} monedas`);
+      expect(info.about, kind).toMatch(/copia pequeña y débil, una sola vez/);
+    }
+    expect(stat(enemyInfo(enemy('copycatSpitter')), 'Escupitajo')?.note).toBe('cada 1,8 s, a 2,6 casillas');
+  });
+
+  it('la copia: su nombre, pequena y debil, con su vida y su moneda, y sin dejar otra', () => {
+    const clone: Enemy = { ...enemy('copycatArmored', 4), clone: true, hp: enemyMaxHp('copycatArmored', 4, true) };
+    const info = enemyInfo(clone);
+    expect(info).toMatchObject({ tone: 'copycatArmored', title: 'Copia acorazada', subtitle: 'Pequeña y débil' });
+    expect(info.hp.max).toBe(Math.round(enemyMaxHp('copycatArmored', 4) * CLONE.hp));
+    expect(stat(info, 'Al caer')).toBeUndefined();
+    expect(stat(info, 'Recompensa')?.value).toBe(`${CLONE.reward} monedas`);
+    expect(info.about).toBe('Salió de un Copycat al caer. Ataca como él, con el 30 % de su vida y el 50 % de su fuerza, y ya no deja otra copia.');
+  });
+
+  it('el Minstrel: su verso, su distancia, y si recita o toma aire', () => {
+    const Minstrel = enemy('minstrel');
+    const info = enemyInfo(Minstrel);
+    expect(info).toMatchObject({ tone: 'minstrel', title: 'Minstrel', subtitle: 'Recita versos', tags: [] });
+    expect(stat(info, 'Verso')).toEqual({ label: 'Verso', value: '16,5', note: 'a cada cosa, cada 3,6 s, desde 3,5 casillas' });
+    expect(info.about).toMatch(/^Se para a 3,5 casillas/);
+    expect(info.about).toMatch(/Solo la para un escudo/);
+    expect(enemyInfo({ ...Minstrel, attackMs: ENEMIES.minstrel.warnMs + 500 }).tags).toEqual([{ text: 'Recitando', tone: 'alert' }]);
+    expect(enemyInfo({ ...Minstrel, attackMs: ENEMIES.minstrel.warnMs - 100 }).tags).toEqual([{ text: '¡Toma aire!', tone: 'alert' }]);
+  });
+});
+
 describe('ficha en ingles (T-011)', () => {
   afterEach(() => setLanguage('es'));
 
@@ -155,5 +193,8 @@ describe('ficha en ingles (T-011)', () => {
     expect(mine.tags).toEqual([{ text: 'Explodes in 1.24 s!', tone: 'alert' }]);
     const armored = enemyInfo(enemy('armored', 10));
     expect(armored).toMatchObject({ title: 'Armored worm', level: { note: '+40% strength from its tier' } });
+    expect(enemyInfo(enemy('minstrel'))).toMatchObject({ title: 'Minstrel', subtitle: 'Recites verses' });
+    expect(stat(enemyInfo(enemy('minstrel')), 'Verse')?.note).toBe('to each thing, every 3.6 s, from 3.5 tiles');
+    expect(enemyInfo({ ...enemy('copycat'), clone: true })).toMatchObject({ title: 'Copycat copy', subtitle: 'Small and weak' });
   });
 });
