@@ -1,6 +1,6 @@
 import { useId, type PointerEvent as ReactPointerEvent } from 'react';
 import { GRENADE, ICE_WALL } from '../game/config/balance';
-import type { PowerId } from '../game/core/powers';
+import { iceWallAt, type PowerId } from '../game/core/powers';
 import { EventBus, GameEvents, type PagePoint, type PowerInfo } from '../game/EventBus';
 import { formatSeconds } from '../i18n';
 import { useText } from './useText';
@@ -33,13 +33,20 @@ export function PowerPanel({ powers, selected }: PowerPanelProps) {
 
 function PowerButton({ power, selected }: { power: PowerInfo; selected: boolean }) {
   const t = useText();
-  const { id, charges, blocker } = power;
+  const { id, level, charges, blocker } = power;
   const usable = blocker === null;
   const waiting = blocker === 'attack-only';
   const help = t.hud.powers.help;
-  const about = id === 'grenade' ? help.grenade(formatSeconds(GRENADE.fuseMs)) : id === 'iceWall' ? help.iceWall(formatSeconds(ICE_WALL.durationMs)) : help.relocate;
+  const about =
+    id === 'grenade'
+      ? help.grenade(formatSeconds(GRENADE.fuseMs))
+      : id === 'iceWall'
+        ? help.iceWall(iceWallAt(level).span, formatSeconds(ICE_WALL.durationMs))
+        : help.relocate;
   const state = waiting ? t.hud.powers.attackOnly : !usable ? t.hud.powers.noCharges : t.hud.powers.charges(charges);
-  const title = `${about} · ${state}`;
+  // Con nivel (T-022), tambien lo dice la ayuda y una pastilla verde abajo.
+  const levelText = level > 1 ? t.hud.powers.level(level) : null;
+  const title = [about, levelText, state].filter(Boolean).join(' · ');
 
   function onPointerDown(event: ReactPointerEvent<HTMLButtonElement>) {
     if (event.button !== 0) return;
@@ -81,7 +88,7 @@ function PowerButton({ power, selected }: { power: PowerInfo; selected: boolean 
       className={`power power-${id}${waiting ? ' is-waiting' : ''}`}
       aria-pressed={selected}
       aria-disabled={!usable}
-      aria-label={`${t.hud.powers.names[id]}: ${state}`}
+      aria-label={`${t.hud.powers.names[id]}${levelText ? ` (${levelText})` : ''}: ${state}`}
       title={title}
       data-tour={`power-${id}`}
       onPointerDown={onPointerDown}
@@ -92,6 +99,11 @@ function PowerButton({ power, selected }: { power: PowerInfo; selected: boolean 
         {charges}
       </span>
       {waiting && <span className="power-wait" aria-hidden="true" />}
+      {level > 1 && (
+        <span className="power-level" aria-hidden="true">
+          {level}
+        </span>
+      )}
     </button>
   );
 }

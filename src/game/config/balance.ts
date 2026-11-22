@@ -940,47 +940,95 @@ export const ICE = {
 
 /**
  * Poderes (T-021, O-01 a O-11 decididas el 22 nov 2026): habilidades de un uso que se lanzan desde el panel izquierdo. Se
- * compran una vez en la tienda (T-022) y traen `chargesPerMatch` cargas a cada partida (O-01, b). Se llevan `maxCarried`
- * (O-02); hasta que exista la tienda, cada partida trae `trialLoadout` (O-08). En la preparacion solo se recoloca (O-07).
- * Afectan a los jefes igual que a los demas (O-06). PROVISIONAL.
+ * compran una vez en la tienda (T-022) y traen `chargesPerMatch` cargas a cada partida (O-01, b; recolocar, mas con sus
+ * niveles: `RELOCATE`). Se llevan `maxCarried` (O-02), elegidos antes de empezar el brote (T-04). En la preparacion solo
+ * se recoloca (O-07). Afectan a los jefes igual que a los demas (O-06). PROVISIONAL.
  */
 export const POWERS = {
-  /** Cargas de cada poder en cada partida (O-01, b). */
+  /** Cargas de cada poder en cada partida (O-01, b), en su nivel 1. */
   chargesPerMatch: 1,
-  /** Cuantos se llevan a una partida (O-02): los elige la tienda (T-022). */
+  /** Cuantos se llevan a una partida (O-02). */
   maxCarried: 2,
-  /** Lo que trae cada partida hasta la tienda (O-08): los tres, para poder probarlos. En orden del panel, de arriba abajo. */
-  trialLoadout: ['relocate', 'grenade', 'iceWall'],
   /** Si se puede usar en la preparacion (O-07): solo recolocar; la granada y el muro, en el ataque. */
   usableInPrep: { relocate: true, grenade: false, iceWall: false },
+} as const;
+
+/**
+ * Niveles de los poderes (T-022, T-01 decidida por Carmine el 22 nov 2026): cada poder comprado empieza en el nivel 1 y
+ * se mejora en la tienda hasta `max`. Cada nivel suma lo suyo (`RELOCATE`, `GRENADE`, `ICE_WALL`) y los `milestones`
+ * suman mas y dan un salto: una carga mas de recolocar, mas alcance de la granada y una casilla mas de muro.
+ */
+export const POWER_LEVELS = {
+  max: 10,
+  /** Niveles con premio, como los de las plantas (T-027). */
+  milestones: [5, 10],
+} as const;
+
+/**
+ * Recolocar con nivel (T-022): cada nivel por encima del 1 cura a la planta que se mueve `healPerLevel` de su vida entera
+ * (45 % en el nivel 10), y cada nivel con premio trae `chargesPerMilestone` cargas mas por partida (2 en el 5, 3 en el 10).
+ * PROVISIONAL.
+ */
+export const RELOCATE = {
+  healPerLevel: 0.05,
+  chargesPerMilestone: 1,
 } as const;
 
 /**
  * Granada (T-021, O-04): alguien la lanza desde detras de las plantas, vuela en curva `flightMs` hasta el centro de la
  * casilla elegida, cuenta `fuseMs` y explota. Es invulnerable y no ocupa la casilla: los enemigos no la atacan ni se paran.
  * Alcanza mas que la mina (`MINE.blastRadius`) y hace el dano de la de fuego; no dana plantas ni le da a Creeper en el aire.
+ * Con nivel (T-022): cada nivel suma `damagePerLevel` del dano del nivel 1 y los niveles con premio, `damagePerMilestone`
+ * (570 en el nivel 10), y estos alargan el alcance `radiusPerMilestone` casillas (2,4 en el 10).
  */
 export const GRENADE = {
   /** Del lanzamiento a caer en la casilla. Solo aspecto de la curva, pero cuenta: la explosion llega despues. PROVISIONAL. */
   flightMs: 900,
   /** Desde que cae hasta que explota (O-04: "a los 2 s"). */
   fuseMs: 2000,
-  /** Alcanza a todos los enemigos a esta distancia o menos de su casilla, en cualquier carril: mas que la mina (1,5). PROVISIONAL. */
+  /** En el nivel 1, alcanza a todos los enemigos a esta distancia o menos de su casilla, en cualquier carril: mas que la mina (1,5). PROVISIONAL. */
   blastRadius: 1.8,
-  /** El de la mina de fuego (O-04). */
+  /** En el nivel 1, el de la mina de fuego (O-04). */
   damage: FIRE.blastDamage,
+  /** Dano que suma cada nivel, en fraccion del de nivel 1 (T-01: un 15 %). */
+  damagePerLevel: 0.15,
+  /** Lo que suman los niveles 5 y 10 en vez de eso (T-01: un 40 %). */
+  damagePerMilestone: 0.4,
+  /** Alcance que suman los niveles 5 y 10, en casillas. PROVISIONAL. */
+  radiusPerMilestone: 0.3,
 } as const;
 
 /**
  * Muro de hielo (T-021, O-05, O-09 a O-11): tres bloques de hielo en una columna, la casilla elegida y las de arriba y abajo
  * (`span`; en el carril de arriba o el de abajo se mete dentro del tablero). Cada bloque es un muro (bloquea el paso y para
  * lo que va hacia lo de detras, como el escudo) con la vida de una disparadora de nivel 1 y se derrite a los `durationMs`.
+ * Con nivel (T-022): cada nivel suma `hpPerLevel` de la vida de nivel 1 a cada bloque y los niveles con premio,
+ * `hpPerMilestone` (930 en el nivel 10), y estos lo alargan `spanPerMilestone` casillas (4 desde el 5 y 5, la columna
+ * entera, en el 10).
  */
 export const ICE_WALL = {
-  /** Carriles que ocupa, en una columna (O-09). */
+  /** Carriles que ocupa en el nivel 1, en una columna (O-09). */
   span: 3,
-  /** Vida de cada bloque (O-05, O-10): la de una disparadora de nivel 1. */
+  /** Vida de cada bloque en el nivel 1 (O-05, O-10): la de una disparadora de nivel 1. */
   hp: SHOOTER.hp,
   /** Lo que dura cada bloque antes de derretirse (O-05: "unos 10 s"). PROVISIONAL. */
   durationMs: 10_000,
+  /** Vida que suma cada nivel, en fraccion de la de nivel 1 (T-01: un 20 %). */
+  hpPerLevel: 0.2,
+  /** Lo que suman los niveles 5 y 10 en vez de eso (T-01: un 35 %). */
+  hpPerMilestone: 0.35,
+  /** Casillas que suman los niveles 5 y 10 (T-01: 4 desde el 5 y 5 en el 10). */
+  spanPerMilestone: 1,
+} as const;
+
+/**
+ * Tienda (T-022; T-01 a T-04 decididas el 22 nov 2026). Los poderes cuestan `powerPrices` segun el orden en que se
+ * compran: el primero, sea cual sea, 1000 (al alcance tras vencer a Creeper una vez sin perder vidas). Mejorar un poder
+ * al nivel N cuesta `upgradePerLevel` x N, y los niveles con premio (5 y 10), `milestoneFactor` veces eso: 13.800 por poder
+ * del 1 al 10. Lo comprado no se devuelve (T-03). PROVISIONAL.
+ */
+export const SHOP = {
+  powerPrices: [1000, 1500, 2000],
+  upgradePerLevel: 200,
+  milestoneFactor: 2,
 } as const;

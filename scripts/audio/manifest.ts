@@ -361,4 +361,14 @@ export const MANIFEST: Readonly<Record<SfxId, SoundEntry>> = {
     pick: ui('select_001'),
     alternatives: [ui('click_002'), ui('toggle_002')],
   },
+  purchase: {
+    about: 'Comprar un poder en la tienda (T-022): las semillas tintinean y suena un ta-da',
+    pick: [rpg('handleCoins', { lengthMs: 520, fadeOutMs: 220, gainDb: -2 }), ui('confirmation_002', { delayMs: 160 })],
+    alternatives: [[rpg('handleCoins2'), jingle('jingles_PIZZI00', { delayMs: 120, gainDb: -4 })], jingle('jingles_STEEL02')],
+  },
+  powerUpgrade: {
+    about: 'Mejorar un poder en la tienda (T-022): arpegio que sube con un tintineo',
+    pick: [ui('maximize_008'), rpg('handleCoins2', { gainDb: -8 })],
+    alternatives: [ui('maximize_003'), [ui('confirmation_004'), digital('powerUp8', { gainDb: -6, delayMs: 80 })]],
+  },
 };

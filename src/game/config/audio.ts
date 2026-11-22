@@ -65,6 +65,9 @@ export type SfxId =
   | 'iceHit'
   | 'iceBreak'
   | 'iceMelt'
+  // Tienda (T-022): comprar un poder y mejorarlo
+  | 'purchase'
+  | 'powerUpgrade'
   // Rondas y partida
   | 'attackStarted'
   | 'roundCleared'
@@ -178,6 +181,8 @@ export const SFX: Readonly<Record<SfxId, SfxSpec>> = {
   voiceBoxer: voice(0.4),
   voicePatty: voice(0.36),
   button: ui(0.45, 2, 40),
+  purchase: ui(0.65, 1, 120),
+  powerUpgrade: ui(0.6, 1, 120),
 };
 
 export const SFX_IDS = Object.keys(SFX) as SfxId[];

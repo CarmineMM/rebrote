@@ -76,6 +76,8 @@ Cada efecto va en OGG Vorbis y en MP3, en mono, con el volumen igualado y sin si
 | `voiceBoxer` | Kenney Interface Sounds: `pluck_001.ogg` (velocidad 0.78) | CC0 1.0 (Kenney, www.kenney.nl) |
 | `voicePatty` | Kenney Interface Sounds: `pluck_001.ogg` (velocidad 1.22) | CC0 1.0 (Kenney, www.kenney.nl) |
 | `button` | Kenney Interface Sounds: `select_001.ogg` | CC0 1.0 (Kenney, www.kenney.nl) |
+| `purchase` | Kenney RPG Audio: `handleCoins.ogg` (recortado 0-520 ms, -2 dB) + Kenney Interface Sounds: `confirmation_002.ogg` (+160 ms) | CC0 1.0 (Kenney, www.kenney.nl) |
+| `powerUpgrade` | Kenney Interface Sounds: `maximize_008.ogg` + Kenney RPG Audio: `handleCoins2.ogg` (-8 dB) | CC0 1.0 (Kenney, www.kenney.nl) |
 
 ## Recetas de jsfxr
 

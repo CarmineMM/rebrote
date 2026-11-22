@@ -2,7 +2,7 @@ import * as Phaser from 'phaser';
 import { actionCue, combatCues, grenadeTicks, mineTicks, roundCues } from '../audio/cues';
 import { sfx } from '../audio/sfx';
 import { panAt } from '../audio/voices';
-import { BOARD, CREEPER, ECONOMY, ELK_CLONER, ENEMIES, GRENADE, ICE_WALL, LIMITS, MINE, SHIELD } from '../config/balance';
+import { BOARD, CREEPER, ECONOMY, ELK_CLONER, ENEMIES, ICE_WALL, LIMITS, MINE, SHIELD } from '../config/balance';
 import { cellAt, cellCenter, type BoardPoint, type Cell } from '../core/board';
 import { enemyMaxHp, enemyReward, isBoss, isDefeated, isEnraged, poemWarning, spawnEnemy, stepCombat, type BossKind, type CombatEvent, type Enemy, type EnemyKind } from '../core/combat';
 import { rollKillReward, stepIncome } from '../core/economy';
@@ -37,15 +37,19 @@ import {
   type Wall,
 } from '../core/match';
 import {
+  ICE_WALL_MAX_SPAN,
+  grenadeAt,
   grenadeBlocker,
   iceWallBlocker,
-  iceWallCells,
+  iceWallCellsIn,
   placeIceWall,
   powerBlocker,
+  powerLevel,
   relocateBlocker,
   relocateSourceBlocker,
   relocatePlant,
   throwGrenade,
+  type CarriedPower,
   type PowerId,
 } from '../core/powers';
 import { FIRST_OUTBREAK, outbreakScript, roundCount, type OutbreakId } from '../core/outbreaks';
@@ -152,6 +156,9 @@ const LOOK = {
   defeatDelayMs: 1100,
   /** Texto que salta sobre la planta al fusionar (y al recolocarla, T-021). */
   fusedText: { color: '#efffdf', stroke: '#24561c' },
+  /** Lo que cura recolocar con nivel (T-022): verde hoja, poco despues de "¡Recolocada!". */
+  healText: { color: '#b8ff8a', stroke: '#1d4a14' },
+  healTextDelayMs: 260,
   /**
    * Poderes (T-021): casilla a la que apunta la granada y su alcance (rojo granada), las del muro de hielo (azul helado) y la
    * disparadora que se puede recolocar (dorada, como la seleccionada). El muro fantasma, mas transparente que la planta.
@@ -301,10 +308,10 @@ export interface BoardSceneData {
   /** Arrancar en pausa (por ejemplo, si se cambia la calidad desde el menu de pausa). */
   paused?: boolean;
   /**
-   * Poderes de la partida nueva (T-021); sin ellos, los de prueba hasta la tienda (`POWERS.trialLoadout`, O-08). En
-   * desarrollo, `?poderes=` en la direccion. Una partida que se continua ya lleva los suyos.
+   * Poderes de la partida nueva (T-021) con su nivel (T-022): los comprados que se eligieron antes del brote; sin ellos,
+   * ninguno. En desarrollo, `?poderes=` en la direccion. Una partida que se continua ya lleva los suyos.
    */
-  loadout?: PowerId[];
+  loadout?: CarriedPower[];
 }
 
 /**
@@ -355,7 +362,7 @@ export class BoardScene extends Phaser.Scene {
   /** Ultimo panel de poderes enviado al HUD, para avisar solo cuando cambia. */
   private powersKey = '';
   /** Poderes de la partida nueva (T-021): se guardan para "Jugar otra vez". */
-  private loadout: PowerId[] | undefined;
+  private loadout: CarriedPower[] | undefined;
   /** Siguiente copion que suelta la tecla K en desarrollo (T-025). */
   private debugCopycat = 0;
   /** Rotulo sobre la disparadora a la que apunta una carta de elemento: lo que costaria infundirla o por que no se puede. */
@@ -593,8 +600,8 @@ export class BoardScene extends Phaser.Scene {
       .setAlpha(0.55)
       .setVisible(false);
     this.tweens.add({ targets: this.ghost, alpha: 0.3, duration: 650, yoyo: true, repeat: -1, ease: 'Sine.InOut' });
-    // Muro de hielo fantasma (T-021): un bloque por casilla.
-    this.iceGhosts = Array.from({ length: ICE_WALL.span }, () =>
+    // Muro de hielo fantasma (T-021): un bloque por casilla, tantos como el muro mas largo (T-022).
+    this.iceGhosts = Array.from({ length: ICE_WALL_MAX_SPAN }, () =>
       this.add
         .image(0, 0, iceBlockTexture(0))
         .setOrigin(ICE_BLOCK_SIZE.footX / ICE_BLOCK_SIZE.width, ICE_BLOCK_SIZE.footY / ICE_BLOCK_SIZE.height)
@@ -1954,7 +1961,7 @@ export class BoardScene extends Phaser.Scene {
       const blocked = grenadeBlocker(this.match, cell) !== null;
       drawCell(this.highlight, cell, blocked ? LOOK.highlightBlocked : LOOK.powerColors.grenade, 0.25, 4);
       if (!blocked) {
-        drawArea(this.highlight, cellCenter(cell), GRENADE.blastRadius, LOOK.powerColors.grenade, 0.1, 2);
+        drawArea(this.highlight, cellCenter(cell), grenadeAt(powerLevel(this.match, 'grenade')).radius, LOOK.powerColors.grenade, 0.1, 2);
         const foot = grenadeFoot(cell);
         const at = perspective.toScreen(foot);
         this.ghost
@@ -1966,7 +1973,7 @@ export class BoardScene extends Phaser.Scene {
           .setVisible(true);
       }
     } else if (this.power === 'iceWall') {
-      const cells = iceWallCells(cell);
+      const cells = iceWallCellsIn(this.match, cell);
       const blocker = iceWallBlocker(this.match, cell);
       cells.forEach((c, i) => {
         drawCell(this.highlight, c, sownAt(this.match, c) ? LOOK.highlightBlocked : LOOK.powerColors.iceWall, 0.25, 4);
@@ -2099,6 +2106,7 @@ export class BoardScene extends Phaser.Scene {
     const r = this.relocation;
     if (!r || relocateBlocker(this.match, r.from, to) !== null) return;
     this.relocation = null;
+    const before = plantAt(this.match, r.from);
     this.match = relocatePlant(this.match, r.from, to);
     const fromKey = cellKey(r.from);
     const fromView = this.plantViews.get(fromKey);
@@ -2111,6 +2119,14 @@ export class BoardScene extends Phaser.Scene {
     this.fx.groundRing(screen.x, screen.y, cellWidth, cellWidth * 0.32, LOOK.powerColors.relocate, entityDepth(screen.y) - 0.4, 380, 0.85);
     this.fx.leaves(screen.x, screen.y - cellWidth * 0.4, 6);
     this.fx.floatText(text().board.relocated, screen.x, screen.y - cellWidth * 1.05, LOOK.fusedText);
+    // Con nivel, llega curada (T-022): lo que gano sube un poco despues, en verde, con unos destellos.
+    const healed = Math.round(plant.hp - (before?.hp ?? plant.hp));
+    if (healed > 0) {
+      this.time.delayedCall(LOOK.healTextDelayMs, () => {
+        this.fx.floatText(text().board.healed(healed), screen.x, screen.y - cellWidth * 0.72, LOOK.healText);
+        this.fx.sparkles(screen.x, screen.y - cellWidth * 0.45, 6);
+      });
+    }
     this.cancelPower();
     this.emitPowers();
     this.refreshHighlight();
@@ -2137,7 +2153,7 @@ export class BoardScene extends Phaser.Scene {
 
   /** Avisa al panel de poderes de sus cargas y de si se pueden usar ahora, solo si cambia. */
   private emitPowers(): void {
-    const info: PowerInfo[] = this.match.powers.map((slot) => ({ id: slot.id, charges: slot.charges, blocker: powerBlocker(this.match, slot.id) }));
+    const info: PowerInfo[] = this.match.powers.map((slot) => ({ id: slot.id, level: slot.level, charges: slot.charges, blocker: powerBlocker(this.match, slot.id) }));
     const key = JSON.stringify(info);
     if (key === this.powersKey) return;
     this.powersKey = key;
@@ -2243,7 +2259,7 @@ export class BoardScene extends Phaser.Scene {
       const block = iceAt(this.match, target.cell);
       if (!block) return;
       data = iceInfo(block, target.cell);
-      subject = { kind: 'ice', wear: iceWear(block.hp / ICE_WALL.hp) };
+      subject = { kind: 'ice', wear: iceWear(block.hp / block.maxHp) };
     } else {
       const mine = mineAt(this.match, target.cell);
       if (!mine) return;
@@ -2405,7 +2421,7 @@ export class BoardScene extends Phaser.Scene {
     // Poderes (T-021): adonde recolocar la disparadora senalada, donde lanzar la granada (y su alcance) y el muro de hielo.
     if (cells.relocateTo) spots.relocateTo = this.cellSpot(cells.relocateTo);
     spots.grenadeCell = this.cellSpot(cells.grenadeCell);
-    spots.grenadeBlast = this.blastSpot(cells.grenadeCell, GRENADE.blastRadius);
+    spots.grenadeBlast = this.blastSpot(cells.grenadeCell, grenadeAt(powerLevel(this.match, 'grenade')).radius);
     if (cells.iceWallCell) spots.iceWallCells = this.iceWallSpot(cells.iceWallCell);
     areas.exit = this.boardArea(LOOK.tourSpot.exitFromX, 0, 0, BOARD.lanes);
     const board: TourBoard = { spots, areas };
@@ -2455,16 +2471,20 @@ export class BoardScene extends Phaser.Scene {
     return this.pageSpot(foot.x, foot.y - cellWidth * up, cellWidth * rx, cellWidth * ry);
   }
 
-  /** Las tres casillas del muro de hielo (T-021) que se pone apuntando a `cell`: una elipse alta sobre su columna. */
+  /**
+   * Las casillas del muro de hielo (T-021; tres, o mas con su nivel, T-022) que se pone apuntando a `cell`: una elipse alta
+   * sobre su columna, del primer carril al ultimo.
+   */
   private iceWallSpot(cell: Cell): TourSpot {
-    const cells = iceWallCells(cell);
-    const middle = cells[Math.floor(cells.length / 2)];
-    const center = cellCenter(middle);
+    const cells = iceWallCellsIn(this.match, cell);
+    const first = cells[0].lane;
+    const last = cells[cells.length - 1].lane;
+    const center = { x: cell.col + 0.5, y: (first + last + 1) / 2 };
     const at = perspective.toScreen(center);
-    const top = perspective.toScreen({ x: center.x, y: middle.lane }).y;
-    const bottom = perspective.toScreen({ x: center.x, y: middle.lane + 1 }).y;
+    // La elipse de siempre cubre tres carriles; con mas, crece en proporcion.
+    const lane = (perspective.toScreen({ x: center.x, y: center.y + 0.5 }).y - perspective.toScreen({ x: center.x, y: center.y - 0.5 }).y) * (cells.length / ICE_WALL.span);
     const { rx, ry } = LOOK.tourSpot.iceWall;
-    return this.pageSpot(at.x, at.y, perspective.cellWidthAt(center) * rx, (bottom - top) * ry);
+    return this.pageSpot(at.x, at.y, perspective.cellWidthAt(center) * rx, lane * ry);
   }
 
   /** Hasta donde llega la explosion de una casilla (la de la mina, `MINE.blastRadius`, o la de la granada), aplastado por la camara. */

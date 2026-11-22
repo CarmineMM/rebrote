@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties }
 import type { CardId } from './game/core/match';
 import { FIRST_OUTBREAK, outbreakFromParam, type OutbreakId } from './game/core/outbreaks';
 import { powersFromParam, type PowerId } from './game/core/powers';
+import { carriedLoadout } from './game/core/shop';
 import { isGreenhouseOpen } from './game/core/route';
 import type { GameScreen } from './game/createGame';
 import {
@@ -64,8 +65,8 @@ const CARDS: readonly CardId[] = ['shooter', 'fire', 'ice', 'shield'];
 const DEV_OUTBREAK = import.meta.env.DEV ? outbreakFromParam(new URLSearchParams(window.location.search).get('brote')) : null;
 
 /**
- * Solo en desarrollo (T-021): con `?poderes=granada,muro` en la direccion, las partidas nuevas traen esos poderes (o
- * ninguno, con `?poderes=` vacio) en vez de los de prueba hasta la tienda.
+ * Solo en desarrollo (T-021): con `?poderes=granada,muro:10` en la direccion, las partidas nuevas traen esos poderes, con
+ * ese nivel (T-022; sin el, el 1), o ninguno con `?poderes=` vacio, en vez de los comprados que eligio el jugador.
  */
 const DEV_POWERS = import.meta.env.DEV ? powersFromParam(new URLSearchParams(window.location.search).get('poderes')) : null;
 
@@ -314,8 +315,9 @@ export function App() {
     (request: MatchRequest) => {
       resetHud();
       setScreen('board');
-      // En desarrollo, `?poderes=` elige los de una partida nueva (T-021).
-      EventBus.emit(GameEvents.matchRequested, DEV_POWERS && !request.resume ? { ...request, loadout: DEV_POWERS } : request);
+      // Una partida nueva trae los poderes comprados que el jugador eligio (T-022); en desarrollo, `?poderes=` elige otros.
+      const loadout = request.resume ? undefined : (DEV_POWERS ?? carriedLoadout(playerProgress.read()));
+      EventBus.emit(GameEvents.matchRequested, loadout ? { ...request, loadout } : request);
       if (settings.fullscreen) fullscreen.enter();
     },
     [resetHud, settings.fullscreen, fullscreen],
@@ -323,8 +325,24 @@ export function App() {
 
   const newGame = useCallback(() => startMatch(DEV_OUTBREAK ? { outbreak: DEV_OUTBREAK } : {}), [startMatch]);
 
-  /** Desde el Invernadero o su ruta (T-019): un brote desde la ronda 1. Si habia partida a medias, ya se confirmo pisarla. */
+  /**
+   * Desde el Invernadero o su ruta (T-019): un brote desde la ronda 1. Si habia partida a medias, ya se confirmo pisarla, y
+   * los poderes que se llevan ya se eligieron (T-022).
+   */
   const playOutbreak = useCallback((outbreak: OutbreakId) => startMatch({ outbreak }), [startMatch]);
+
+  /** Tienda (T-022): cada compra lee y escribe el progreso en el acto; lo que no se pudo no cambia nada. */
+  const buyPower = useCallback((id: PowerId) => {
+    const result = playerProgress.buyPower(id);
+    setProgress(result.progress);
+    return result.changed;
+  }, []);
+  const upgradePower = useCallback((id: PowerId) => {
+    const result = playerProgress.upgradePower(id);
+    setProgress(result.progress);
+    return result.changed;
+  }, []);
+  const toggleCarried = useCallback((id: PowerId) => setProgress(playerProgress.toggleCarried(id).progress), []);
 
   const loadGame = useCallback(() => {
     const save = readSave();
@@ -453,6 +471,9 @@ export function App() {
               art={routeArt}
               onResume={loadGame}
               onPlay={playOutbreak}
+              onBuy={buyPower}
+              onUpgrade={upgradePower}
+              onToggleCarried={toggleCarried}
               onReplay={story.replay}
               onBack={() => setPlace('cover')}
               quiet={storyOn}

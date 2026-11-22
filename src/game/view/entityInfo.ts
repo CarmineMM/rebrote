@@ -149,7 +149,7 @@ export function iceInfo(block: IceBlock, cell: Cell): EntityInfoData {
     { label: t.stats.blocks, value: t.stats.blocksValue },
     { label: t.stats.melts, value: t.stats.meltsIn(formatSeconds(Math.ceil(block.ms / 1000) * 1000)) },
   ];
-  const wear = iceWear(block.hp / ICE_WALL.hp);
+  const wear = iceWear(block.hp / block.maxHp);
   const tags: InfoTag[] = [];
   if (block.ms <= ICE_WALL.durationMs * 0.3) tags.push({ text: t.tags.melting, tone: 'ice' });
   if (wear === 2) tags.push({ text: t.tags.crumbling, tone: 'alert' });
@@ -160,7 +160,7 @@ export function iceInfo(block: IceBlock, cell: Cell): EntityInfoData {
     title: t.iceWall.title,
     subtitle: t.iceWall.subtitle,
     level: null,
-    hp: hpOf(block.hp, ICE_WALL.hp),
+    hp: hpOf(block.hp, block.maxHp),
     stats,
     tags,
     about: t.iceWall.about(formatSeconds(ICE_WALL.durationMs)),

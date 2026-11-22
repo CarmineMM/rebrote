@@ -1,4 +1,4 @@
-import { BOARD, COSTS, ICE_WALL, LIVES, MINE, SHIELD } from '../config/balance';
+import { BOARD, COSTS, LIVES, MINE, SHIELD } from '../config/balance';
 import { isOnBoard, type Cell } from './board';
 import type { Bullet, Enemy, Grenade, Spit, Verse } from './combat';
 import {
@@ -18,7 +18,7 @@ import {
   type Shooter,
 } from './plants';
 import { FIRST_OUTBREAK, outbreakScript, type OutbreakId } from './outbreaks';
-import { loadoutSlots, type PowerId, type PowerSlot } from './powers';
+import { loadoutSlots, type CarriedPower, type PowerSlot } from './powers';
 import { createRound, infuseFeature, isUnlocked, levelCap, levelCapRaisedAfter, sowFeature, type RoundState } from './rounds';
 import { newMatchSeeds, type MatchSeeds } from './seeds';
 
@@ -56,13 +56,16 @@ export interface Wall {
 }
 
 /**
- * Bloque del muro de hielo (T-021, O-05): lo pone el poder, tres en una columna (`placeIceWall` en powers.ts). Es un muro
- * (bloquea el paso y, como el escudo, para lo que va hacia lo de detras: `isShield`) con `ICE_WALL.hp` de vida, y se
- * derrite al acabarse `ms` (`stepCombat`). No se siembra, no se arrastra ni se infunde.
+ * Bloque del muro de hielo (T-021, O-05): lo pone el poder, tres en una columna (`placeIceWall` en powers.ts; mas con su
+ * nivel, T-022). Es un muro (bloquea el paso y, como el escudo, para lo que va hacia lo de detras: `isShield`) con la vida
+ * del nivel del poder (`ICE_WALL.hp` en el nivel 1), y se derrite al acabarse `ms` (`stepCombat`). No se siembra, no se
+ * arrastra ni se infunde.
  */
 export interface IceBlock {
   readonly kind: 'ice';
   readonly hp: number;
+  /** Su vida entera, la del nivel del poder que lo puso (T-022). */
+  readonly maxHp: number;
   /** Lo que le queda antes de derretirse. */
   readonly ms: number;
 }
@@ -114,15 +117,15 @@ export interface MatchState {
  * Partida nueva del brote `outbreak`, en la preparacion de la ronda `roundIndex` (desde 0) con el tablero vacio y, si no
  * se dice otro, el saldo inicial del brote (T-018, B-02: no se trae nada de otro brote). El juego siempre empieza en la
  * primera ronda; empezar en otra sirve para probar lo que desbloquean las siguientes. `replay` dice si su jefe ya estaba
- * vencido: entonces las semillas dan menos (T-020, C-03). `loadout`, los poderes que trae (T-021), con sus cargas; sin el,
- * los de prueba hasta la tienda (`POWERS.trialLoadout`, O-08).
+ * vencido: entonces las semillas dan menos (T-020, C-03). `loadout`, los poderes que trae (T-021) con su nivel (T-022),
+ * que salen de la tienda y se eligen antes del brote; sin el, ninguno.
  */
 export function createMatch(
   balance?: number,
   roundIndex = 0,
   outbreak: OutbreakId = FIRST_OUTBREAK,
   replay = false,
-  loadout?: readonly PowerId[],
+  loadout?: readonly CarriedPower[],
 ): MatchState {
   const start = balance ?? outbreakScript(outbreak).startingBalance;
   assertWholeAmount(start);
@@ -201,7 +204,7 @@ export function sownMaxHp(sown: Sown): number {
     case 'wall':
       return SHIELD.wallHp;
     case 'ice':
-      return ICE_WALL.hp;
+      return sown.maxHp;
   }
 }
 

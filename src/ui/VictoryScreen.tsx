@@ -1,9 +1,11 @@
 import { useEffect, useId, useRef } from 'react';
 import type { OutbreakId } from '../game/core/outbreaks';
+import { opensShop } from '../game/core/shop';
 import type { SeedSummary } from '../game/EventBus';
 import { GreenhouseIcon } from './GreenhouseIcon';
 import { outbreakBoss, outbreakTitle } from './outbreakName';
 import { SeedsEarned } from './SeedsEarned';
+import { ShopIcon } from './ShopIcon';
 import { NO_AUTO_FULLSCREEN } from './useFullscreen';
 import { useText } from './useText';
 
@@ -23,13 +25,15 @@ interface VictoryScreenProps {
  * Victoria de un brote (T-008; por brote desde T-018): se superaron sus rondas y se atrapo a su jefe en la ultima. Misma tarjeta que la
  * pausa y la derrota, con una copa que salta y destellos. Lleva al Invernadero (T-019), donde la ruta ya ensena el jefe
  * superado y lo que viene; "Jugar otra vez" empieza el mismo brote desde la ronda 1. Ensena las semillas que se lleva
- * (T-020): de las rondas, del jefe y de las vidas que le quedan, y su saldo nuevo.
+ * (T-020): de las rondas, del jefe y de las vidas que le quedan, y su saldo nuevo. La primera vez que cae Creeper avisa
+ * de que la tienda esta abierta (T-022).
  */
 export function VictoryScreen({ outbreak, rounds, seeds, onRestart, onGreenhouse }: VictoryScreenProps) {
   const titleId = useId();
   const button = useRef<HTMLButtonElement>(null);
   const t = useText();
   const boss = outbreakBoss(outbreak);
+  const shopOpened = seeds !== null && opensShop(outbreak, seeds.payout.replay);
 
   useEffect(() => {
     button.current?.focus();
@@ -65,6 +69,14 @@ export function VictoryScreen({ outbreak, rounds, seeds, onRestart, onGreenhouse
         </h2>
         <p className="victory-text">{t.victory.text(rounds)}</p>
         {seeds && <SeedsEarned seeds={seeds} />}
+        {shopOpened && (
+          <p className="victory-shop" role="status">
+            <ShopIcon />
+            <span>
+              <strong>{t.victory.shopOpened}</strong> <span className="victory-shop-text">{t.victory.shopOpenedText}</span>
+            </span>
+          </p>
+        )}
         <div className="pause-actions">
           <button ref={button} type="button" className="btn btn-primary" onClick={onGreenhouse}>
             <GreenhouseIcon /> {t.victory.greenhouse}
