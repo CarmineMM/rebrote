@@ -299,6 +299,8 @@ export interface EnemyView {
   hit(): void;
   blasted(): void;
   frosted(): void;
+  /** Sale de una casilla del muro de hielo del poder (T-021): se desliza de `fromX` a donde esta ya (casillas). */
+  shoved(fromX: number, toX: number): void;
   die(): void;
   escape(): void;
   cheer(): void;
@@ -379,6 +381,9 @@ export class WormView implements EnemyView {
   private readonly hop: Pulse = { v: 0 };
   /** Tiritona del ralentizado. */
   private readonly shiver: Pulse = { v: 0 };
+  /** Empujon del muro de hielo (T-021): de 1 (donde estaba) a 0 (donde esta), y cuanto se movio en casillas. */
+  private readonly shove: Pulse = { v: 0 };
+  private shoveDx = 0;
   /** Aplastado al aterrizar de un salto (Creeper, T-008). */
   private readonly thud: Pulse = { v: 0 };
   /** Copia recien salida (T-025): nace del tamano de su copion (1) y encoge al suyo (0). */
@@ -521,7 +526,8 @@ export class WormView implements EnemyView {
     // El carril solo cambia al saltar (Creeper): entonces cambian tambien el tamano, la profundidad y el suelo.
     const pose = jumpPose(enemy);
     this.footY = pose.lane + WORM_LOOK.footY;
-    const foot = { x: enemy.x, y: this.footY };
+    // Empujado por el muro de hielo (T-021): se pinta deslizandose desde donde estaba.
+    const foot = { x: enemy.x + this.shoveDx * this.shove.v, y: this.footY };
     const ground = perspective.toScreen(foot);
     this.cellWidth = perspective.cellWidthAt(foot);
     this.scale = (this.cellWidth / WORM_LOOK.unitsPerCell) * this.size;
@@ -752,6 +758,15 @@ export class WormView implements EnemyView {
       x: this.holder.x + (this.head.x + WORM_LOOK.mouth.x) * k,
       y: this.holder.y + (this.head.y + WORM_LOOK.mouth.y) * this.holder.scaleY,
     };
+  }
+
+  /** Sale de una casilla del muro de hielo (T-021): resbala hasta su sitio nuevo, tiritando y con un destello helado. */
+  shoved(fromX: number, toX: number): void {
+    this.shoveDx = fromX - toX;
+    this.scene.tweens.killTweensOf(this.shove);
+    this.shove.v = 1;
+    this.scene.tweens.add({ targets: this.shove, v: 0, duration: 300, ease: 'Cubic.Out' });
+    this.frosted();
   }
 
   /** Alcanzado por una explosion (mina, T-004): golpe fuerte, salto y retroceso. */

@@ -1,4 +1,4 @@
-import { BOARD, CLONE, CREEPER, ELK_CLONER, ENEMIES, ENEMY_LEVELS, ENEMY_POWER, FIRE, ICE, MINE, SHIELD, SHOOTER, VERSE } from '../config/balance';
+import { BOARD, CLONE, CREEPER, ELK_CLONER, ENEMIES, ENEMY_LEVELS, ENEMY_POWER, FIRE, GRENADE, ICE, ICE_WALL, MINE, SHIELD, SHOOTER, VERSE } from '../config/balance';
 import type { BoardPoint, Cell } from './board';
 import type { MatchState, Mine, Sown } from './match';
 import { damageMultiplier, fireRateMultiplier, plantMaxHp, type MineElement, type Shooter } from './plants';
@@ -148,6 +148,19 @@ export interface Verse {
   readonly poem: boolean;
 }
 
+/**
+ * Granada del poder (T-021, O-04): vuela `flightMs` hasta el centro de su casilla y, al caer, cuenta `fuseMs` y explota
+ * (`GRENADE`). No ocupa la casilla ni tiene vida: los enemigos no la atacan.
+ */
+export interface Grenade {
+  readonly id: number;
+  readonly cell: Cell;
+  /** Lo que le queda de vuelo; 0 en cuanto cae. */
+  readonly flightMs: number;
+  /** Lo que le queda para explotar desde que cae. */
+  readonly fuseMs: number;
+}
+
 /** Lo que paso durante un paso. La vista lo anima; la regla ya esta aplicada en el estado. */
 export type CombatEvent =
   /** Una planta de N canones dispara N balas a la vez, un evento por bala. `cannon` es el canon (0 es el de arriba). */
@@ -197,7 +210,13 @@ export type CombatEvent =
   /** Un enemigo entro en el radio de la mina: empieza su conteo. */
   | { readonly type: 'mineArmed'; readonly cell: Cell }
   /** La mina exploto y dejo su casilla. `enemyIds` son los enemigos alcanzados; los que mueren llevan su `enemyKilled`. */
-  | { readonly type: 'mineExploded'; readonly cell: Cell; readonly element: MineElement; readonly enemyIds: readonly number[] };
+  | { readonly type: 'mineExploded'; readonly cell: Cell; readonly element: MineElement; readonly enemyIds: readonly number[] }
+  /** La granada del poder (T-021) acabo su vuelo y cayo en su casilla: empieza a contar. */
+  | { readonly type: 'grenadeLanded'; readonly grenadeId: number; readonly cell: Cell }
+  /** La granada exploto. `enemyIds` son los alcanzados; los que mueren llevan su `enemyKilled`. Las plantas no reciben nada. */
+  | { readonly type: 'grenadeExploded'; readonly grenadeId: number; readonly cell: Cell; readonly enemyIds: readonly number[] }
+  /** Un bloque del muro de hielo (T-021) acabo su tiempo y se derritio: deja la casilla libre. */
+  | { readonly type: 'iceMelted'; readonly cell: Cell };
 
 export interface CombatStep {
   readonly state: MatchState;
@@ -380,9 +399,10 @@ export function poemDamage(): number {
   return ELK_CLONER.poemDamage * enemyPower(1);
 }
 
-/** Vida entera de lo sembrado: la de la disparadora con sus canones y su variante, la de la mina o la del muro. */
+/** Vida entera de lo sembrado: la de la disparadora con sus canones y su variante, la de la mina, el muro o el hielo (T-021). */
 function sownFullHp(sown: Sown): number {
   if (sown.kind === 'shooter') return plantMaxHp(sown.shooter);
+  if (sown.kind === 'ice') return ICE_WALL.hp;
   return sown.kind === 'mine' ? MINE.hp : SHIELD.wallHp;
 }
 
@@ -458,6 +478,14 @@ export function isAirborne(enemy: Enemy): boolean {
   return enemy.jump?.stage === 'air';
 }
 
+/**
+ * ¿Le alcanza la explosion de la granada (T-021)? Si esta vivo, en el suelo (a Creeper en el aire no, como a las minas) y a
+ * `GRENADE.blastRadius` o menos del centro de su casilla, en cualquier carril.
+ */
+export function grenadeReaches(grenade: Pick<Grenade, 'cell'>, enemy: Enemy): boolean {
+  return enemy.hp > 0 && !isAirborne(enemy) && distanceToCell(enemy, grenade.cell) <= GRENADE.blastRadius;
+}
+
 /** Fraccion de su vida llena (la de su tipo y nivel, y si es una copia) que le queda. */
 export function hpFraction(enemy: Enemy): number {
   return enemy.hp / enemyMaxHp(enemy.kind, enemy.level, enemy.clone);
@@ -512,6 +540,8 @@ export function stepCombat(state: MatchState, dtMs: number, random: () => number
  */
 function substep(state: MatchState, dtMs: number, events: CombatEvent[], random: () => number): MatchState {
   const plants = state.plants.map((lane) => [...lane]);
+  // Muro de hielo (T-021): cada bloque se derrite al acabar su tiempo y deja la casilla libre antes de que nadie lo muerda.
+  meltIce(plants, dtMs, events);
   let lives = state.lives;
   let nextId = state.nextId;
   const newId = () => nextId++;
@@ -685,6 +715,27 @@ function substep(state: MatchState, dtMs: number, events: CombatEvent[], random:
     }),
   );
 
+  // Granadas (T-021): vuelan, caen, cuentan y explotan. El tiempo que sobra del vuelo cuenta para la mecha.
+  const grenades: Grenade[] = [];
+  for (const grenade of state.grenades) {
+    let left = dtMs;
+    if (grenade.flightMs > 0) {
+      const flightMs = grenade.flightMs - left;
+      if (flightMs > 0) {
+        grenades.push({ ...grenade, flightMs });
+        continue;
+      }
+      left = -flightMs;
+      events.push({ type: 'grenadeLanded', grenadeId: grenade.id, cell: grenade.cell });
+    }
+    const fuseMs = grenade.fuseMs - left;
+    if (fuseMs > 0) {
+      grenades.push({ ...grenade, flightMs: 0, fuseMs });
+      continue;
+    }
+    blastGrenade(grenade, enemies, events, fall);
+  }
+
   // Balas: dan al primer enemigo que encuentran en su carril o desaparecen al salir del tablero.
   const bullets: Bullet[] = [];
   for (const bullet of state.bullets) {
@@ -754,7 +805,41 @@ function substep(state: MatchState, dtMs: number, events: CombatEvent[], random:
     }),
   );
 
-  return { ...state, lives, plants, enemies: alive, bullets, spits: [...spits, ...launched], verses: flying, nextId };
+  return { ...state, lives, plants, enemies: alive, bullets, spits: [...spits, ...launched], verses: flying, grenades, nextId };
+}
+
+/** Los bloques del muro de hielo (T-021) pierden `dtMs` de su tiempo; el que lo acaba se derrite y deja su casilla. */
+function meltIce(plants: Array<Array<Sown | null>>, dtMs: number, events: CombatEvent[]): void {
+  plants.forEach((lane, laneIndex) =>
+    lane.forEach((sown, col) => {
+      if (sown?.kind !== 'ice') return;
+      const ms = sown.ms - dtMs;
+      if (ms > 0) {
+        lane[col] = { ...sown, ms };
+        return;
+      }
+      lane[col] = null;
+      events.push({ type: 'iceMelted', cell: { lane: laneIndex, col } });
+    }),
+  );
+}
+
+/**
+ * La granada (T-021) explota: alcanza a todos los enemigos vivos de su radio (`grenadeReaches`), en cualquier carril y
+ * tambien a los jefes (O-06), con el dano de la mina de fuego. Las plantas no reciben nada. De los copiones que tumba,
+ * solo los primeros `CLONE.maxPerBlast` dejan copia, como con una mina.
+ */
+function blastGrenade(grenade: Grenade, enemies: Array<Mutable<Enemy>>, events: CombatEvent[], fall: (e: Enemy, mayClone: boolean) => void): void {
+  const hit = enemies.filter((e) => grenadeReaches(grenade, e));
+  events.push({ type: 'grenadeExploded', grenadeId: grenade.id, cell: grenade.cell, enemyIds: hit.map((e) => e.id) });
+  let clones = 0;
+  for (const e of hit) {
+    e.hp -= GRENADE.damage;
+    if (e.hp > 0) continue;
+    const mayClone = leavesClone(e) && clones < CLONE.maxPerBlast;
+    if (mayClone) clones++;
+    fall(e, mayClone);
+  }
 }
 
 /** Distancia del centro del enemigo al centro de la casilla, en casillas. Cuenta tambien en otros carriles. */
@@ -952,7 +1037,8 @@ function rangedColumn(lane: ReadonlyArray<Sown | null>, enemy: Enemy, range: num
  */
 export function isShield(sown: Sown | null | undefined): boolean {
   if (!sown) return false;
-  return sown.kind === 'wall' || (sown.kind === 'shooter' && sown.shooter.element === 'shield');
+  // El muro de hielo del poder (T-021, O-11) es un muro: para lo de detras como el escudo.
+  return sown.kind === 'wall' || sown.kind === 'ice' || (sown.kind === 'shooter' && sown.shooter.element === 'shield');
 }
 
 /**

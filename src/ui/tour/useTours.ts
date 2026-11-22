@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { EventBus, GameEvents, type CoinGone, type DroppedCoin, type PlayerAction, type RoundInfo, type TourArt, type TourBoard } from '../../game/EventBus';
 import { hintDone, hintPending, hintShown, markTourDone, readTourProgress, writeTourProgress } from './tourProgress';
-import { TOURS, cueOf, toursOfRound, type TourCue, type TourId } from './tours';
+import { TOURS, cueOf, toursOfPowers, toursOfRound, type TourCue, type TourId } from './tours';
 
 interface UseToursOptions {
   /** Jugador activo (T-034): cada uno tiene sus tours vistos. Solo cambia en la portada. */
@@ -25,7 +25,8 @@ const CHEER_MS = 900;
  * hay tour, la escena no descuenta la preparacion (`tourHold`). Un paso se completa al hacerlo de verdad (`playerAction`,
  * la ficha o el ataque) o con "Siguiente". El tour cuenta como visto al acabarlo, al saltarlo o si empieza el ataque.
  * Tambien lleva la pista de la moneda en el suelo, que sale en mitad del juego sin parar nada. Los tours vistos son del
- * jugador activo: al cambiar de jugador se leen los suyos.
+ * jugador activo: al cambiar de jugador se leen los suyos. Los de los poderes (T-021) salen en la primera preparacion en
+ * que se llevan y la ronda no trae otro por ver: asi no se juntan con lo basico de la ronda 1.
  */
 export function useTours({ player, onBoard, round, help, covered, over }: UseToursOptions) {
   const [progress, setProgress] = useState(readTourProgress);
@@ -63,6 +64,11 @@ export function useTours({ player, onBoard, round, help, covered, over }: UseTou
   const roundNumber = round?.number ?? null;
   const outbreak = round?.outbreak ?? null;
   const phase = round?.phase ?? null;
+  /** Poderes de la partida (T-021) y tours vistos, leidos al cambiar de ronda. */
+  const powersRef = useRef(round?.powers ?? []);
+  powersRef.current = round?.powers ?? [];
+  const progressRef = useRef(progress);
+  progressRef.current = progress;
 
   // Cada ronda nueva que empieza por su preparacion trae sus tours. Una partida cargada en mitad del ataque, ninguno.
   useEffect(() => {
@@ -74,7 +80,9 @@ export function useTours({ player, onBoard, round, help, covered, over }: UseTou
     const seen = `${outbreak}:${roundNumber}`;
     if (seen === roundSeen.current) return;
     roundSeen.current = seen;
-    setQueue(phase === 'prep' ? toursOfRound(outbreak, roundNumber - 1) : []);
+    const ofRound = phase === 'prep' ? toursOfRound(outbreak, roundNumber - 1) : [];
+    const roundPending = ofRound.some((id) => !progressRef.current.done.includes(id));
+    setQueue(phase !== 'prep' ? [] : roundPending ? ofRound : toursOfPowers(powersRef.current));
     setStepIndex(0);
     setCheer(false);
     // Solo cuenta el cambio de ronda: la fase se lee en ese momento.
@@ -138,7 +146,10 @@ export function useTours({ player, onBoard, round, help, covered, over }: UseTou
       // Las monedas del suelo no sobreviven a la escena.
       setCoins([]);
     };
-    const onAction = (action: PlayerAction) => cue(cueOf(action));
+    const onAction = (action: PlayerAction) => {
+      const done = cueOf(action);
+      if (done) cue(done);
+    };
     const onInfo = () => cue('info');
     const onDropped = (coin: DroppedCoin) => setCoins((list) => [...list.filter((c) => c.id !== coin.id), coin].sort((a, b) => a.id - b.id));
     const onGone = (gone: CoinGone) => setCoins((list) => list.filter((c) => c.id !== gone.id));

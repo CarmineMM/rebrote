@@ -194,6 +194,46 @@ export const MANIFEST: Readonly<Record<SfxId, SoundEntry>> = {
     pick: ui('question_002'),
     alternatives: [ui('error_006'), sfxr('womp')],
   },
+  relocate: {
+    about: 'Recolocar una disparadora (T-021): sale de la tierra con un tirón y se vuelve a plantar con un bloop',
+    pick: [impact('footstep_grass_002', { lengthMs: 240, fadeOutMs: 150, gainDb: -3 }), ui('drop_002', { delayMs: 140 })],
+    alternatives: [[ui('pluck_002', { rate: 1.25 }), ui('drop_003', { delayMs: 110 })], ui('maximize_004')],
+  },
+  grenadeThrow: {
+    about: 'Lanzar la granada (T-021): un zas de alguien que la tira y un silbido que sube',
+    pick: [rpg('cloth3', { rate: 1.15 }), sfxr('jumpUp', { gainDb: -10, delayMs: 60 })],
+    alternatives: [rpg('cloth1'), [rpg('clothBelt'), digital('phaserUp1', { gainDb: -8 })]],
+  },
+  grenadeLand: {
+    about: 'Cae la granada y se enciende la mecha (T-021): golpe blando y siseo',
+    pick: [impact('impactSoft_heavy_001', { gainDb: -2 }), hiss(120, 420, -7)],
+    alternatives: [[impact('footstep_grass_003'), hiss(120, 420, -7)], impact('impactSoft_medium_002')],
+  },
+  grenadeBoom: {
+    about: 'Explota la granada (T-021): más grande que la mina, con un chapoteo de granos',
+    pick: [scifi('explosionCrunch_003'), scifi('lowFrequency_explosion_000', { lengthMs: 1000, fadeOutMs: 420, gainDb: -2 }), scifi('slime_001', { delayMs: 70, gainDb: -9 })],
+    alternatives: [[scifi('explosionCrunch_004'), scifi('lowFrequency_explosion_001', { lengthMs: 900, fadeOutMs: 380, gainDb: -3 })], scifi('lowFrequency_explosion_000')],
+  },
+  iceWallRise: {
+    about: 'Brota el muro de hielo (T-021): cristal que crece y cruje, con nieve',
+    pick: [impact('impactGlass_medium_001', { gainDb: -2 }), ui('glass_003', { delayMs: 90, gainDb: -4 }), impact('footstep_snow_001', { gainDb: -6 })],
+    alternatives: [[scifi('forceField_002', { lengthMs: 600, fadeOutMs: 300 }), impact('footstep_snow_002', { gainDb: -6 })], impact('impactGlass_heavy_001')],
+  },
+  iceHit: {
+    about: 'Un mordisco, un escupitajo o un verso da al muro de hielo (T-021): toc de cristal (tres variantes)',
+    pick: variants(impact, 'impactGlass_light', 3),
+    alternatives: [impact('impactGlass_medium_002'), ui('glass_001')],
+  },
+  iceBreak: {
+    about: 'Se rompe un bloque del muro de hielo (T-021): cristal que estalla',
+    pick: [impact('impactGlass_heavy_003'), impact('impactMining_002', { gainDb: -7 })],
+    alternatives: [impact('impactGlass_heavy_004'), [impact('impactGlass_heavy_000'), ui('glass_005', { delayMs: 60, gainDb: -6 })]],
+  },
+  iceMelt: {
+    about: 'Se derrite un bloque del muro de hielo (T-021): chapoteo suave y nieve',
+    pick: [scifi('slime_000', { rate: 1.3, gainDb: -6 }), impact('footstep_snow_003', { gainDb: -8 })],
+    alternatives: [sfxr('fizz'), impact('footstep_snow_004')],
+  },
   mineTick: {
     about: 'Tic de la cuenta atrás de una mina (uno al armarse y otro por segundo)',
     pick: ui('tick_004'),

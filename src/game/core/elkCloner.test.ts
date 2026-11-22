@@ -317,7 +317,7 @@ describe('al caer', () => {
 
 describe('partida guardada (T-026)', () => {
   it('guarda su recital, el aviso del poema y los versos del poema en vuelo (version 6)', () => {
-    expect(SAVE_VERSION).toBe(6);
+    expect(SAVE_VERSION).toBeGreaterThanOrEqual(6);
     let state = withBoss(2, 7, { recital: { ms: 0, sung: 3, poemMs: 1200 } });
     state = { ...state, verses: [{ id: 60, lane: 0, x: 6, damage: poemDamage(), by: 'elkCloner', poem: true }] };
     expect(decodeSave(encodeSave(state, null, 1))?.match).toEqual(state);

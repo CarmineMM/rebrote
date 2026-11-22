@@ -51,6 +51,7 @@ export class Effects {
   private readonly scrapBurst: Phaser.GameObjects.Particles.ParticleEmitter;
   private readonly barkBurst: Phaser.GameObjects.Particles.ParticleEmitter;
   private readonly noteBurst: Phaser.GameObjects.Particles.ParticleEmitter;
+  private readonly arilBurst: Phaser.GameObjects.Particles.ParticleEmitter;
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -282,6 +283,25 @@ export class Effects {
       },
       DEPTH.foreground - 1,
     );
+    // Granada del poder (T-021): granos rojos que saltan en abanico, caen y botan. Mezcla normal y contorno oscuro.
+    this.arilBurst = burst(
+      TEX.aril,
+      {
+        speed: { min: 120, max: 340 },
+        angle: { min: -170, max: -10 },
+        gravityY: 720,
+        rotate: { min: -180, max: 180 },
+        lifespan: { min: 520, max: 900 },
+        scale: { start: 1.05 * artInv(), end: 0.5 * artInv() },
+        alpha: { start: 1, end: 0, ease: 'Quad.In' },
+      },
+      DEPTH.foreground - 1,
+    );
+  }
+
+  /** Granos de granada que salen despedidos al explotar la del poder (T-021). Mezcla normal y contorno oscuro: se leen sobre el cesped. */
+  arils(x: number, y: number, base: number): void {
+    this.arilBurst.explode(this.count(base), x, y);
   }
 
   /** Particulas de respuesta a una accion: menos en Bajo, pero nunca ninguna (son parte del gesto). */

@@ -106,6 +106,7 @@ export class TitleScene extends Phaser.Scene {
         quality: this.level,
         resume: request.resume,
         outbreak: request.outbreak,
+        loadout: request.loadout,
         pendingUnlock: request.pendingUnlock ?? null,
       };
       this.input.setDefaultCursor('default');

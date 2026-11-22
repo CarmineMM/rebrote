@@ -176,6 +176,10 @@ export class CreeperView implements EnemyView {
     this.worm.frosted();
   }
 
+  shoved(fromX: number, toX: number): void {
+    this.worm.shoved(fromX, toX);
+  }
+
   /** Cruza un umbral de vida (J-01): se agacha (lo hace `sync`), salta tierra y sale un "!" sobre la diana de destino. */
   warn(): void {
     const feet = this.worm.ground();

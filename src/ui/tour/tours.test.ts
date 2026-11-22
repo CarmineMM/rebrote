@@ -18,7 +18,8 @@ import {
   readTourProgress,
   writeTourProgress,
 } from './tourProgress';
-import { TOURS, TOUR_GUIDE, TOUR_OF_FEATURE, cueOf, hudTargetsOf, placeStep, toursOfRound, type Box, type TourId } from './tours';
+import { TOURS, TOUR_GUIDE, TOUR_OF_FEATURE, TOUR_OF_POWER, cueOf, hudTargetsOf, placeStep, toursOfPowers, toursOfRound, type Box, type TourId } from './tours';
+import { POWER_IDS } from '../../game/core/powers';
 
 const box = (left: number, top: number, width: number, height: number): Box => ({ left, top, width, height });
 
@@ -56,6 +57,18 @@ describe('tours de ayuda (T-013)', () => {
     expect(cueOf({ type: 'sow', card: 'shield' })).toBe('sowWall');
     expect(cueOf({ type: 'infuse', element: 'shield', dragged: false })).toBe('infuseShield');
     expect(cueOf({ type: 'infuse', element: 'shield', dragged: true })).toBe('infuseShield');
+  });
+
+  it('cada poder tiene su tour (T-021), y recolocar se completa haciendolo', () => {
+    for (const power of POWER_IDS) expect(TOURS[TOUR_OF_POWER[power]].length, power).toBeGreaterThan(0);
+    expect(toursOfPowers(['iceWall', 'relocate'])).toEqual(['iceWall', 'relocate']);
+    expect(toursOfPowers([])).toEqual([]);
+    expect(cueOf({ type: 'powerPicked', power: 'relocate' })).toBe('pickRelocate');
+    expect(cueOf({ type: 'power', power: 'relocate' })).toBe('relocate');
+    // La granada y el muro solo van en el ataque (O-07): su paso se pasa con "Siguiente".
+    expect(cueOf({ type: 'power', power: 'grenade' })).toBeNull();
+    expect(TOURS.grenade.every((step) => step.doneWhen === null)).toBe(true);
+    expect(TOURS.iceWall.every((step) => step.doneWhen === null)).toBe(true);
   });
 
   it('la ronda 2 del brote 2 trae el tour del escudo (T-024), y la 1 ninguno', () => {
@@ -178,6 +191,10 @@ const LENGTH_BEFORE_T032: Record<Language, Record<TourId, Record<string, number>
     fuse: { drag: 41 },
     // T-024: pasos nuevos, con lo que miden.
     shield: { wall: 33, block: 33, infuse: 38 },
+    // T-021: los poderes, con lo que miden.
+    relocate: { pick: 32, move: 38 },
+    grenade: { throw: 41 },
+    iceWall: { place: 45 },
   },
   en: {
     basics: { sow: 30, lane: 45, coins: 47, lives: 46, info: 38, go: 21 },
@@ -187,6 +204,9 @@ const LENGTH_BEFORE_T032: Record<Language, Record<TourId, Record<string, number>
     infuse: { card: 31, mine: 30 },
     fuse: { drag: 34 },
     shield: { wall: 31, block: 22, infuse: 32 },
+    relocate: { pick: 26, move: 33 },
+    grenade: { throw: 37 },
+    iceWall: { place: 42 },
   },
 };
 

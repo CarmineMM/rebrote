@@ -937,3 +937,50 @@ export const ICE = {
   /** Si el enemigo ralentizado tambien muerde y escupe mas despacio (en la misma proporcion que avanza). */
   slowsAttacks: true,
 } as const;
+
+/**
+ * Poderes (T-021, O-01 a O-11 decididas el 22 nov 2026): habilidades de un uso que se lanzan desde el panel izquierdo. Se
+ * compran una vez en la tienda (T-022) y traen `chargesPerMatch` cargas a cada partida (O-01, b). Se llevan `maxCarried`
+ * (O-02); hasta que exista la tienda, cada partida trae `trialLoadout` (O-08). En la preparacion solo se recoloca (O-07).
+ * Afectan a los jefes igual que a los demas (O-06). PROVISIONAL.
+ */
+export const POWERS = {
+  /** Cargas de cada poder en cada partida (O-01, b). */
+  chargesPerMatch: 1,
+  /** Cuantos se llevan a una partida (O-02): los elige la tienda (T-022). */
+  maxCarried: 2,
+  /** Lo que trae cada partida hasta la tienda (O-08): los tres, para poder probarlos. En orden del panel, de arriba abajo. */
+  trialLoadout: ['relocate', 'grenade', 'iceWall'],
+  /** Si se puede usar en la preparacion (O-07): solo recolocar; la granada y el muro, en el ataque. */
+  usableInPrep: { relocate: true, grenade: false, iceWall: false },
+} as const;
+
+/**
+ * Granada (T-021, O-04): alguien la lanza desde detras de las plantas, vuela en curva `flightMs` hasta el centro de la
+ * casilla elegida, cuenta `fuseMs` y explota. Es invulnerable y no ocupa la casilla: los enemigos no la atacan ni se paran.
+ * Alcanza mas que la mina (`MINE.blastRadius`) y hace el dano de la de fuego; no dana plantas ni le da a Creeper en el aire.
+ */
+export const GRENADE = {
+  /** Del lanzamiento a caer en la casilla. Solo aspecto de la curva, pero cuenta: la explosion llega despues. PROVISIONAL. */
+  flightMs: 900,
+  /** Desde que cae hasta que explota (O-04: "a los 2 s"). */
+  fuseMs: 2000,
+  /** Alcanza a todos los enemigos a esta distancia o menos de su casilla, en cualquier carril: mas que la mina (1,5). PROVISIONAL. */
+  blastRadius: 1.8,
+  /** El de la mina de fuego (O-04). */
+  damage: FIRE.blastDamage,
+} as const;
+
+/**
+ * Muro de hielo (T-021, O-05, O-09 a O-11): tres bloques de hielo en una columna, la casilla elegida y las de arriba y abajo
+ * (`span`; en el carril de arriba o el de abajo se mete dentro del tablero). Cada bloque es un muro (bloquea el paso y para
+ * lo que va hacia lo de detras, como el escudo) con la vida de una disparadora de nivel 1 y se derrite a los `durationMs`.
+ */
+export const ICE_WALL = {
+  /** Carriles que ocupa, en una columna (O-09). */
+  span: 3,
+  /** Vida de cada bloque (O-05, O-10): la de una disparadora de nivel 1. */
+  hp: SHOOTER.hp,
+  /** Lo que dura cada bloque antes de derretirse (O-05: "unos 10 s"). PROVISIONAL. */
+  durationMs: 10_000,
+} as const;

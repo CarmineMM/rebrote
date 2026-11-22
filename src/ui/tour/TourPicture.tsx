@@ -4,6 +4,7 @@ import type { CardId } from '../../game/core/match';
 import type { TourArt, TourArtKey } from '../../game/EventBus';
 import { CardIcon } from '../Card';
 import { HEART_PATH } from '../Lives';
+import { PowerIcon } from '../PowerPanel';
 import type { PictureId } from './tours';
 
 interface TourPictureProps {
@@ -194,6 +195,43 @@ export function TourPicture({ id, art }: TourPictureProps) {
           {plant('pic-center pic-swap-a')}
           {plant('pic-center pic-swap-b', 'shooterShield')}
           <span className="pic-glow is-shield" />
+        </>
+      );
+      break;
+    // Poderes (T-021). Recolocar: la disparadora salta en curva de su monton de tierra a otro y brota alli.
+    case 'relocate':
+      scene = (
+        <>
+          <span className="pic-power">
+            <PowerIcon power="relocate" />
+          </span>
+          <span className="pic-mound is-left" />
+          <span className="pic-mound" />
+          <span className="pic-arc" />
+          {plant('pic-relocating')}
+        </>
+      );
+      break;
+    // Granada: la lanzan desde la izquierda, cae junto al gusano, cuenta 2 y 1 y explota.
+    case 'grenade':
+      scene = (
+        <>
+          {pic('grenade', 'pic-grenade is-mine', <PowerIcon power="grenade" />)}
+          <span className="pic-count is-grenade">2</span>
+          <span className="pic-count is-b is-grenade">1</span>
+          <span className="pic-blast is-grenade" />
+          {worm('pic-right pic-blasted')}
+        </>
+      );
+      break;
+    // Muro de hielo: tres bloques brotan en columna y el gusano que llega se para en seco ante ellos.
+    case 'iceWall':
+      scene = (
+        <>
+          {pic('iceBlock', 'pic-ice is-back', <PowerIcon power="iceWall" />)}
+          {pic('iceBlock', 'pic-ice is-mid', <PowerIcon power="iceWall" />)}
+          {worm('pic-bump')}
+          {pic('iceBlock', 'pic-ice is-front', <PowerIcon power="iceWall" />)}
         </>
       );
       break;

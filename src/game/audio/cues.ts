@@ -4,6 +4,7 @@ import { isBoss, isShield, type BulletEffect, type CombatEvent } from '../core/c
 import type { MatchState } from '../core/match';
 import { isMilestoneLevel, type ElementType } from '../core/plants';
 import type { RoundEvent } from '../core/rounds';
+import type { PowerId } from '../core/powers';
 import type { PlayerAction } from '../EventBus';
 import type { CharacterId } from '../view/characters/design';
 import { panAt } from './voices';
@@ -27,6 +28,8 @@ type SeedSound = 'none' | BulletEffect['element'];
 const SHOT_OF: Record<SeedSound, SfxId> = { none: 'shot', fire: 'shotFire', ice: 'shotIce' };
 const HIT_OF: Record<SeedSound, SfxId> = { none: 'hit', fire: 'hitFire', ice: 'hitIce' };
 const INFUSE_OF: Record<ElementType, SfxId> = { fire: 'infuseFire', ice: 'infuseIce', shield: 'infuseShield' };
+/** Usar cada poder (T-021): recolocar, lanzar la granada y poner el muro de hielo. */
+const POWER_OF: Record<PowerId, SfxId> = { relocate: 'relocate', grenade: 'grenadeThrow', iceWall: 'iceWallRise' };
 
 /**
  * Lo que suena con los eventos de un paso del combate. `before` es el estado de antes del paso: ahi siguen las balas que
@@ -41,15 +44,20 @@ const INFUSE_OF: Record<ElementType, SfxId> = { fire: 'infuseFire', ice: 'infuse
  *   que lo para, a madera. Un copion que deja su copia suena a copiarse. El acorazado copion suena a metal, como el otro.
  * - Elk Cloner (T-026) toma aire y suelta sus versos como el juglar; el aviso del poema entero suena al empezar (una
  *   nota que se hincha) y el poema, al soltarlo (un acorde grande), desde donde esta.
+ * - La granada del poder (T-021) suena al caer y al explotar; los que caen en su explosion no suenan aparte. Lo que da al
+ *   muro de hielo suena a cristal (no a madera, como el escudo), el bloque que se rompe estalla y el que se derrite chapotea.
  */
 export function combatCues(events: readonly CombatEvent[], before: MatchState): SfxCue[] {
   const cues: SfxCue[] = [];
-  const shieldAt = (cell: { lane: number; col: number }) => isShield(before.plants[cell.lane]?.[cell.col]);
+  const sownKind = (cell: { lane: number; col: number }) => before.plants[cell.lane]?.[cell.col]?.kind;
+  /** Lo que suena al dar a lo sembrado: cristal en el hielo (T-021), madera en un escudo (T-024) o lo de siempre. */
+  const hitOn = (cell: { lane: number; col: number }, otherwise: SfxId): SfxId =>
+    sownKind(cell) === 'ice' ? 'iceHit' : isShield(before.plants[cell.lane]?.[cell.col]) ? 'wallHit' : otherwise;
   const bulletElement = new Map<number, BulletEffect['element'] | null>();
   for (const bullet of before.bullets) bulletElement.set(bullet.id, bullet.effect?.element ?? null);
   for (const event of events) if (event.type === 'shot') bulletElement.set(event.bullet.id, event.bullet.effect?.element ?? null);
   const enemies = new Map(before.enemies.map((enemy) => [enemy.id, enemy]));
-  const blasted = new Set(events.flatMap((event) => (event.type === 'mineExploded' ? event.enemyIds : [])));
+  const blasted = new Set(events.flatMap((event) => (event.type === 'mineExploded' || event.type === 'grenadeExploded' ? event.enemyIds : [])));
   const bossDown = events.some((event) => event.type === 'enemyKilled' && isBoss(event.kind));
 
   for (const event of events) {
@@ -65,19 +73,28 @@ export function combatCues(events: readonly CombatEvent[], before: MatchState): 
         break;
       }
       case 'bite':
-        cues.push(at(shieldAt(event.cell) ? 'wallHit' : 'bite', event.cell.col + 0.5));
+        cues.push(at(hitOn(event.cell, 'bite'), event.cell.col + 0.5));
         break;
       case 'spat':
         cues.push(at('spit', event.spit.x));
         break;
       case 'spitHit':
-        cues.push(at(shieldAt(event.cell) ? 'wallHit' : 'spitHit', event.cell.col + 0.5));
+        cues.push(at(hitOn(event.cell, 'spitHit'), event.cell.col + 0.5));
         break;
       case 'plantDestroyed': {
-        const wall = before.plants[event.cell.lane]?.[event.cell.col]?.kind === 'wall';
-        cues.push(at(wall ? 'wallBreak' : 'plantDestroyed', event.cell.col + 0.5));
+        const kind = sownKind(event.cell);
+        cues.push(at(kind === 'wall' ? 'wallBreak' : kind === 'ice' ? 'iceBreak' : 'plantDestroyed', event.cell.col + 0.5));
         break;
       }
+      case 'grenadeLanded':
+        cues.push(at('grenadeLand', event.cell.col + 0.5));
+        break;
+      case 'grenadeExploded':
+        cues.push(at('grenadeBoom', event.cell.col + 0.5));
+        break;
+      case 'iceMelted':
+        cues.push(at('iceMelt', event.cell.col + 0.5));
+        break;
       case 'enemyKilled':
         if (event.kind === 'creeper') cues.push(at('creeperDefeated', event.at.x));
         else if (event.kind === 'elkCloner') cues.push(at('elkClonerDefeated', event.at.x));
@@ -96,7 +113,7 @@ export function combatCues(events: readonly CombatEvent[], before: MatchState): 
         cues.push(at('verse', event.verse.x));
         break;
       case 'verseHit':
-        cues.push(at(event.blocked ? 'wallHit' : 'verseHit', event.cell.col + 0.5));
+        cues.push(at(event.blocked ? hitOn(event.cell, 'wallHit') : 'verseHit', event.cell.col + 0.5));
         break;
       case 'cloned':
         if (!bossDown) cues.push(at('clone', event.clone.x));
@@ -159,7 +176,24 @@ export function mineTicks(before: MatchState, after: MatchState): SfxCue[] {
   return cues;
 }
 
-/** Lo que suena cuando el jugador hace algo en el tablero: sembrar, infundir, fusionar o subir de nivel. */
+/**
+ * Tic de la cuenta atras de la granada del poder (T-021), como el de las minas: uno al caer (cuando sale el "2") y otro cada
+ * vez que baja el numero. Sale del estado: con la pausa no cuenta.
+ */
+export function grenadeTicks(before: MatchState, after: MatchState): SfxCue[] {
+  const was = new Map(before.grenades.map((grenade) => [grenade.id, grenade]));
+  const cues: SfxCue[] = [];
+  for (const grenade of after.grenades) {
+    if (grenade.flightMs > 0) continue;
+    const previous = was.get(grenade.id);
+    const shown = Math.ceil(grenade.fuseMs / 1000);
+    const landed = !previous || previous.flightMs > 0;
+    if (shown > 0 && (landed || Math.ceil(previous.fuseMs / 1000) > shown)) cues.push(at('mineTick', grenade.cell.col + 0.5));
+  }
+  return cues;
+}
+
+/** Lo que suena cuando el jugador hace algo en el tablero: sembrar, infundir, fusionar, subir de nivel o usar un poder. */
 export function actionCue(action: PlayerAction, x: number): SfxCue | null {
   switch (action.type) {
     case 'sow':
@@ -171,7 +205,10 @@ export function actionCue(action: PlayerAction, x: number): SfxCue | null {
     case 'levelUp':
       // Llegar a un nivel con premio (5, 10, 15 y 20) suena a premio: el mismo "¡ya lo tienes!" del aviso de desbloqueo.
       return at(isMilestoneLevel(action.level) ? 'unlock' : 'levelUp', x);
+    case 'power':
+      return at(POWER_OF[action.power], x);
     case 'pick':
+    case 'powerPicked':
       return null;
   }
 }

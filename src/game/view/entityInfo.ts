@@ -1,4 +1,4 @@
-import { BOARD, CLONE, CREEPER, ELK_CLONER, ENEMIES, MINE, SHIELD } from '../config/balance';
+import { BOARD, CLONE, CREEPER, ELK_CLONER, ENEMIES, ICE_WALL, MINE, SHIELD } from '../config/balance';
 import type { Cell } from '../core/board';
 import {
   bulletDamage,
@@ -18,12 +18,13 @@ import {
   verseDamage,
   type Enemy,
 } from '../core/combat';
-import type { Mine, Plant, Wall } from '../core/match';
+import type { IceBlock, Mine, Plant, Wall } from '../core/match';
 import { FIRST_OUTBREAK, outbreakNumber, outbreakOfBoss } from '../core/outbreaks';
 import { plantMaxHp } from '../core/plants';
 import type { EntityInfo, InfoStat, InfoTag } from '../EventBus';
 import { formatNumber, formatPercent, formatSeconds, text } from '../../i18n';
 import { medalTier, showsMedal } from './levelMedal';
+import { iceWear } from './powerArt';
 import { wallWear } from './wallArt';
 
 /**
@@ -133,6 +134,36 @@ export function wallInfo(wall: Wall, cell: Cell): EntityInfoData {
     stats,
     tags,
     about: t.wall.about,
+    lore: null,
+  };
+}
+
+/**
+ * Ficha de un bloque del muro de hielo del poder (T-021): no ataca, para lo de detras (como el escudo, O-11) y cuando se
+ * derrite. Con desgaste, agrietado o a punto de romperse; en sus ultimos segundos, derritiendose.
+ */
+export function iceInfo(block: IceBlock, cell: Cell): EntityInfoData {
+  const t = text().info;
+  const stats: InfoStat[] = [
+    { label: t.stats.attack, value: t.stats.noAttack },
+    { label: t.stats.blocks, value: t.stats.blocksValue },
+    { label: t.stats.melts, value: t.stats.meltsIn(formatSeconds(Math.ceil(block.ms / 1000) * 1000)) },
+  ];
+  const wear = iceWear(block.hp / ICE_WALL.hp);
+  const tags: InfoTag[] = [];
+  if (block.ms <= ICE_WALL.durationMs * 0.3) tags.push({ text: t.tags.melting, tone: 'ice' });
+  if (wear === 2) tags.push({ text: t.tags.crumbling, tone: 'alert' });
+  else if (wear === 1) tags.push({ text: t.tags.cracked, tone: 'calm' });
+  return {
+    id: `hielo:${cell.lane}:${cell.col}`,
+    tone: 'iceWall',
+    title: t.iceWall.title,
+    subtitle: t.iceWall.subtitle,
+    level: null,
+    hp: hpOf(block.hp, ICE_WALL.hp),
+    stats,
+    tags,
+    about: t.iceWall.about(formatSeconds(ICE_WALL.durationMs)),
     lore: null,
   };
 }

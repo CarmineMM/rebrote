@@ -203,6 +203,18 @@ export const en: Dictionary = {
     lives: (lives, max) => `Lives: ${lives} of ${max}`,
     pause: 'Pause',
     pauseTitle: 'Pause (Esc or P)',
+    powers: {
+      label: 'Powers',
+      names: { relocate: 'Replant', grenade: 'Grenade', iceWall: 'Ice wall' },
+      help: {
+        relocate: 'Replant: move a shooter to another tile, just as it is',
+        grenade: (countdown) => `Grenade: throw it at a tile; it explodes after ${countdown} and hurts everything around`,
+        iceWall: (time) => `Ice wall: three blocks that cut off the way for ${time}`,
+      },
+      charges: (count) => (count === 1 ? '1 charge' : `${count} charges`),
+      noCharges: 'Already used this match',
+      attackOnly: 'Used during the attack',
+    },
   },
 
   round: {
@@ -303,6 +315,9 @@ export const en: Dictionary = {
       infuse: 'Infuse',
       fuse: 'Fuse',
       shield: 'Shield',
+      relocate: 'Replant',
+      grenade: 'Grenade',
+      iceWall: 'Ice wall',
     },
     next: 'Next',
     done: 'Got it!',
@@ -341,6 +356,16 @@ export const en: Dictionary = {
         wall: 'Plant the shield alone: a wall!',
         block: 'Shots stop at the wall',
         infuse: 'On a shooter: double the health!',
+      },
+      relocate: {
+        pick: 'Tap “Replant”, on the left',
+        move: 'Then move a shooter to a new tile',
+      },
+      grenade: {
+        throw: (countdown) => `In the attack, throw it: boom in ${countdown}!`,
+      },
+      iceWall: {
+        place: 'In the attack: three blocks that stop them',
       },
     },
     coin: 'Tap it! It is worth more',
@@ -460,6 +485,11 @@ export const en: Dictionary = {
     infuseMinePlus: (extra) => `Infuse: mine + ${extra}`,
     infuseWithWall: 'Infuse with the wall',
     infuseWallPlus: (extra) => `Infuse: wall + ${extra}`,
+    relocated: 'Replanted!',
+    pickShooter: 'Pick a shooter',
+    relocateHere: 'Replant here',
+    occupied: 'Tile taken',
+    iceBlocked: 'Something is in the way',
   },
 
   creeper: {
@@ -541,6 +571,8 @@ export const en: Dictionary = {
       noAttack: 'Does not attack',
       drag: 'Drag it',
       dragValue: 'Infuses a shooter with a shield',
+      melts: 'Melts',
+      meltsIn: (time) => `In ${time}`,
     },
     tags: {
       waiting: 'Waiting for an enemy',
@@ -557,6 +589,7 @@ export const en: Dictionary = {
       hasted: (percent) => `Sped up +${percent}`,
       cracked: 'Cracked',
       crumbling: 'About to break!',
+      melting: 'Melting!',
     },
     shooter: {
       title: { plain: 'Shooter', fire: 'Fire shooter', ice: 'Ice shooter', shield: 'Shield shooter' },
@@ -574,6 +607,11 @@ export const en: Dictionary = {
       title: 'Wall',
       subtitle: 'Shield planted on its own',
       about: 'It neither shoots nor explodes: it takes the bites and the shots aimed at what is behind it. Drag it onto a shooter to infuse it with a shield.',
+    },
+    iceWall: {
+      title: 'Ice wall',
+      subtitle: 'Power: it melts',
+      about: (time) => `It cuts off the way: enemies stop to bite it, and it stops the shots and verses aimed at what is behind. It lasts ${time}.`,
     },
     mine: {
       title: { fire: 'Fire mine', ice: 'Ice mine' },

@@ -131,6 +131,10 @@ export class ElkClonerView implements EnemyView {
     this.worm.frosted();
   }
 
+  shoved(fromX: number, toX: number): void {
+    this.worm.shoved(fromX, toX);
+  }
+
   /**
    * Empieza a anunciar el poema entero (L-03): lo dice en su bocadillo mientras dura el aviso, con notas doradas y un
    * anillo. Se hincha, echa la cabeza atras y le brillan los ojos (lo hace `sync`, del estado), y los pentagramas se llenan.

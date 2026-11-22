@@ -1,6 +1,7 @@
 import type { OutbreakId } from '../../game/core/outbreaks';
 import { newFeaturesAt, type Feature } from '../../game/core/rounds';
 import type { CardId } from '../../game/core/match';
+import type { PowerId } from '../../game/core/powers';
 import type { PagePoint, PlayerAction, TourAreaId, TourBoard, TourSpotId } from '../../game/EventBus';
 import type { CharacterId } from '../../game/view/characters/design';
 
@@ -9,9 +10,9 @@ import type { CharacterId } from '../../game/view/characters/design';
  * `TourOverlay` y lo pone en marcha `useTours`.
  *
  * Regla del proyecto: una mecanica nueva llega con su tour. Cada `Feature` de `rounds.ts` tiene el suyo en
- * `TOUR_OF_FEATURE` (si se anade una sin tour, no compila).
+ * `TOUR_OF_FEATURE` y cada poder (T-021, `PowerId`), en `TOUR_OF_POWER` (si se anade uno sin tour, no compila).
  */
-export type TourId = 'basics' | 'levelUp' | 'fireMine' | 'iceMine' | 'infuse' | 'fuse' | 'shield';
+export type TourId = 'basics' | 'levelUp' | 'fireMine' | 'iceMine' | 'infuse' | 'fuse' | 'shield' | 'relocate' | 'grenade' | 'iceWall';
 
 /**
  * Quien da los tours (T-032): Boxer, en todos. Lo nuevo de los brotes siguientes lo presenta Patty en el aviso (VT-03),
@@ -35,8 +36,30 @@ export const TOUR_OF_FEATURE: Record<Feature, TourId> = {
   shield: 'shield',
 };
 
+/**
+ * Lo que se ensena de cada poder (T-021). Los poderes no los desbloquea una ronda: llegan con la partida (de la tienda,
+ * T-022). Su tour sale en la primera preparacion en que se llevan y no hay otro tour de la ronda por ver (`toursOfPowers`).
+ */
+export const TOUR_OF_POWER: Record<PowerId, TourId> = {
+  relocate: 'relocate',
+  grenade: 'grenade',
+  iceWall: 'iceWall',
+};
+
 /** Piezas del HUD que un tour puede senalar: llevan `data-tour` con este nombre. */
-export type HudTarget = 'card-shooter' | 'card-fire' | 'card-ice' | 'card-shield' | 'balance' | 'lives' | 'round-go' | 'level-up';
+export type HudTarget =
+  | 'card-shooter'
+  | 'card-fire'
+  | 'card-ice'
+  | 'card-shield'
+  | 'balance'
+  | 'lives'
+  | 'round-go'
+  | 'level-up'
+  // Los poderes del panel izquierdo (T-021).
+  | 'power-relocate'
+  | 'power-grenade'
+  | 'power-iceWall';
 
 /** Algo que senalar: una pieza del HUD, una elipse del tablero o un contorno del tablero. */
 export type Target = { hud: HudTarget } | { spot: TourSpotId } | { area: TourAreaId };
@@ -60,7 +83,10 @@ export type TourCue =
   | 'infuseShield'
   | 'fuse'
   | 'info'
-  | 'attack';
+  | 'attack'
+  // T-021: tomar recolocar del panel y recolocar una disparadora.
+  | 'pickRelocate'
+  | 'relocate';
 
 /** Dibujo animado del bocadillo (`TourPicture`). */
 export type PictureId =
@@ -81,7 +107,10 @@ export type PictureId =
   | 'fuse'
   | 'wallSow'
   | 'wallBlock'
-  | 'shieldInfuse';
+  | 'shieldInfuse'
+  | 'relocate'
+  | 'grenade'
+  | 'iceWall';
 
 export interface TourStep {
   /** Clave de su frase en `tour.steps.<tour>` de `src/i18n/`. */
@@ -180,7 +209,42 @@ export const TOURS: Record<TourId, readonly TourStep[]> = {
       picture: 'shieldInfuse',
     },
   ],
+  // T-021: los poderes. Recolocar se puede en la preparacion y se prueba de verdad; la granada y el muro solo van en el
+  // ataque (O-07), asi que su paso se pasa con "Siguiente".
+  relocate: [
+    { id: 'pick', spots: [hud('power-relocate')], gesture: { kind: 'tap', at: hud('power-relocate') }, doneWhen: 'pickRelocate', picture: 'relocate' },
+    {
+      id: 'move',
+      spots: [spot('shooter'), spot('relocateTo')],
+      gesture: { kind: 'drag', from: spot('shooter'), to: spot('relocateTo') },
+      doneWhen: 'relocate',
+      picture: 'relocate',
+    },
+  ],
+  grenade: [
+    {
+      id: 'throw',
+      spots: [hud('power-grenade'), spot('grenadeBlast')],
+      gesture: { kind: 'drag', from: hud('power-grenade'), to: spot('grenadeCell') },
+      doneWhen: null,
+      picture: 'grenade',
+    },
+  ],
+  iceWall: [
+    {
+      id: 'place',
+      spots: [hud('power-iceWall'), spot('iceWallCells')],
+      gesture: { kind: 'drag', from: hud('power-iceWall'), to: spot('iceWallCells') },
+      doneWhen: null,
+      picture: 'iceWall',
+    },
+  ],
 };
+
+/** Tours de los poderes que lleva la partida (T-021), en el orden del panel. */
+export function toursOfPowers(powers: readonly PowerId[]): TourId[] {
+  return [...new Set(powers.map((power) => TOUR_OF_POWER[power]))];
+}
 
 /**
  * Tours de lo que desbloquea por primera vez la ronda `index` (desde 0) del brote, en orden y sin repetir. Lo que llego
@@ -195,8 +259,8 @@ export function toursOfRound(outbreak: OutbreakId, index: number): TourId[] {
   return tours;
 }
 
-/** Lo que el paso da por hecho al ver que hizo el jugador. */
-export function cueOf(action: PlayerAction): TourCue {
+/** Lo que el paso da por hecho al ver que hizo el jugador, o null si no completa ningun paso. */
+export function cueOf(action: PlayerAction): TourCue | null {
   switch (action.type) {
     case 'sow':
       if (action.card === 'shield') return 'sowWall';
@@ -211,6 +275,11 @@ export function cueOf(action: PlayerAction): TourCue {
       return 'levelUp';
     case 'fuse':
       return 'fuse';
+    // T-021: los poderes. Tomar la granada o el muro no completa nada (sus pasos se pasan con "Siguiente").
+    case 'powerPicked':
+      return action.power === 'relocate' ? 'pickRelocate' : null;
+    case 'power':
+      return action.power === 'relocate' ? 'relocate' : null;
   }
 }
 

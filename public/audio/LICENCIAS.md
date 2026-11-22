@@ -58,6 +58,16 @@ Cada efecto va en OGG Vorbis y en MP3, en mono, con el volumen igualado y sin si
 | `poemWarn` | jsfxr: receta `swell` + Kenney Music Jingles: `jingles_SAX07.ogg` (velocidad 0.8, -6 dB) | CC0 1.0 (Kenney, www.kenney.nl) + propio, generado con jsfxr (dominio público) |
 | `poem` | Kenney Music Jingles: `jingles_PIZZI16.ogg` + Kenney Impact Sounds: `impactBell_heavy_000.ogg` (-8 dB) | CC0 1.0 (Kenney, www.kenney.nl) |
 | `elkClonerDefeated` | Kenney Digital Audio: `phaserDown3.ogg` + Kenney RPG Audio: `bookClose.ogg` (-2 dB, +260 ms) | CC0 1.0 (Kenney, www.kenney.nl) |
+| `relocate` | Kenney Impact Sounds: `footstep_grass_002.ogg` (recortado 0-240 ms, -3 dB) + Kenney Interface Sounds: `drop_002.ogg` (+140 ms) | CC0 1.0 (Kenney, www.kenney.nl) |
+| `grenadeThrow` | Kenney RPG Audio: `cloth3.ogg` (velocidad 1.15) + jsfxr: receta `jumpUp` (-10 dB, +60 ms) | CC0 1.0 (Kenney, www.kenney.nl) + propio, generado con jsfxr (dominio público) |
+| `grenadeLand` | Kenney Impact Sounds: `impactSoft_heavy_001.ogg` (-2 dB) + Kenney Sci-Fi Sounds: `thrusterFire_000.ogg` (recortado 120-540 ms, -7 dB) | CC0 1.0 (Kenney, www.kenney.nl) |
+| `grenadeBoom` | Kenney Sci-Fi Sounds: `explosionCrunch_003.ogg` + Kenney Sci-Fi Sounds: `lowFrequency_explosion_000.ogg` (recortado 0-1000 ms, -2 dB) + Kenney Sci-Fi Sounds: `slime_001.ogg` (-9 dB, +70 ms) | CC0 1.0 (Kenney, www.kenney.nl) |
+| `iceWallRise` | Kenney Impact Sounds: `impactGlass_medium_001.ogg` (-2 dB) + Kenney Interface Sounds: `glass_003.ogg` (-4 dB, +90 ms) + Kenney Impact Sounds: `footstep_snow_001.ogg` (-6 dB) | CC0 1.0 (Kenney, www.kenney.nl) |
+| `iceHit-1` | Kenney Impact Sounds: `impactGlass_light_000.ogg` | CC0 1.0 (Kenney, www.kenney.nl) |
+| `iceHit-2` | Kenney Impact Sounds: `impactGlass_light_001.ogg` | CC0 1.0 (Kenney, www.kenney.nl) |
+| `iceHit-3` | Kenney Impact Sounds: `impactGlass_light_002.ogg` | CC0 1.0 (Kenney, www.kenney.nl) |
+| `iceBreak` | Kenney Impact Sounds: `impactGlass_heavy_003.ogg` + Kenney Impact Sounds: `impactMining_002.ogg` (-7 dB) | CC0 1.0 (Kenney, www.kenney.nl) |
+| `iceMelt` | Kenney Sci-Fi Sounds: `slime_000.ogg` (velocidad 1.3, -6 dB) + Kenney Impact Sounds: `footstep_snow_003.ogg` (-8 dB) | CC0 1.0 (Kenney, www.kenney.nl) |
 | `attackStarted` | Kenney Music Jingles: `jingles_NES13.ogg` | CC0 1.0 (Kenney, www.kenney.nl) |
 | `roundCleared` | Kenney Music Jingles: `jingles_PIZZI04.ogg` | CC0 1.0 (Kenney, www.kenney.nl) |
 | `unlock` | Kenney Music Jingles: `jingles_PIZZI02.ogg` | CC0 1.0 (Kenney, www.kenney.nl) |
@@ -81,3 +91,4 @@ El enlace abre la receta en sfxr.me para oírla y afinarla.
 | `inhale` | Soplido que se hincha de grave a agudo: el juglar toma aire antes del verso (T-025) | https://sfxr.me/#7vYG4aBE9jJVf8bGuRqjWiUJXFnu8ntQSt5wCdp9QgJVP7S7D8AJTzSHPs793jbcvzibESRd4zQ513qw7LfPLLpet2ZFFEJQpqhZMbuRPP8LGFVtU1LRTcTxB |
 | `chirp` | Dos pitidos que suben, como el altavoz de un Apple II: Elk Cloner habla (T-026) | https://sfxr.me/#11111FbzaGcjtvgpKmeGg2qsFLLzGyc6nBcKrgsdHW89ANquxnwjcUkDroGS4pi6p2XHkrzrmCWi53PYYN4Dy1VFthGTHJ1EeJ56FNiVV5H5vt2GcjjaDVbm |
 | `swell` | Nota que se hincha despacio con vibrato y sube: Elk Cloner anuncia el poema entero (T-026) | https://sfxr.me/#6mTagprjRb3PkcgV9qv7x6WXMEQ1EhNjkmfKE7Pud4RcnJMPcHWZxYvqLsbhCAPWCdh4srQFCsVjzFtFtYonqqgmjxPao6jsEe6qPjgNZhdrpSMnP6EzckBdh |
+| `jumpUp` | Bwoop que sube: despegue | https://sfxr.me/#1111111UE2QmoXVboXukT1QL2fZNrqfaKQawBFiCtQ3W3sZG2R8nLcHTJ9vEKX7i9L4gjfxDLno2dqetn3vxpwk71NZmtcZQxwpNkpVv1KxP5YbPmoP6MB5 |

@@ -1,0 +1,366 @@
+import { describe, expect, it } from 'vitest';
+import { BOARD, ELK_CLONER, ENEMIES, FIRE, GRENADE, ICE_WALL, MINE, POWERS, SHOOTER } from '../config/balance';
+import { decodeSave, encodeSave, SAVE_VERSION } from '../save';
+import type { Cell } from './board';
+import { enemyHalfLength, enemyMaxHp, isShield, poemHit, spawnEnemy, stepCombat, waveReach, type CombatEvent, type Enemy } from './combat';
+import { createMatch, createMine, createPlant, createWall, iceAt, plantAt, sownAt, sownElement, sownMaxHp, elementDragBlocker, cardPlay, type MatchState, type Sown } from './match';
+import { createShooter } from './plants';
+import {
+  POWER_IDS,
+  createIceBlock,
+  grenadeBlocker,
+  iceWallBlocker,
+  iceWallCells,
+  iceWallPushes,
+  loadoutSlots,
+  placeIceWall,
+  powerBlocker,
+  powerCharges,
+  powersFromParam,
+  relocateBlocker,
+  relocatePlant,
+  relocateSourceBlocker,
+  relocateTargets,
+  throwGrenade,
+} from './powers';
+
+/**
+ * Poderes (T-021; O-01 a O-11 decididas el 22 nov 2026): recolocar una disparadora, la granada y el muro de hielo de tres
+ * casillas. Un uso gasta una carga; afectan a los jefes igual que a los demas.
+ */
+
+function put(state: MatchState, cell: Cell, sown: Sown): MatchState {
+  return { ...state, plants: state.plants.map((lane, l) => lane.map((p, c) => (l === cell.lane && c === cell.col ? sown : p))) };
+}
+
+/** Partida del brote 1 en el ataque de su ronda 5 (ya hay de todo), sin grupos por salir que estorben. */
+const attacking = (state: MatchState = createMatch(0, 4)): MatchState => ({
+  ...state,
+  round: { ...state.round, phase: 'attack', prepMs: 0, elapsedMs: 0, released: 0 },
+});
+
+const ofType = <T extends CombatEvent['type']>(events: readonly CombatEvent[], type: T) =>
+  events.filter((e): e is Extract<CombatEvent, { type: T }> => e.type === type);
+
+const enemyById = (state: MatchState, id: number): Enemy => state.enemies.find((e) => e.id === id) as Enemy;
+const lastEnemy = (state: MatchState): Enemy => state.enemies[state.enemies.length - 1];
+
+describe('cargas y panel', () => {
+  it('hasta la tienda, cada partida trae los tres poderes con una carga (O-01, O-08)', () => {
+    expect(POWERS.chargesPerMatch).toBe(1);
+    expect(createMatch().powers).toEqual(POWER_IDS.map((id) => ({ id, charges: 1 })));
+    expect(createMatch(0, 0, 'elkCloner').powers).toHaveLength(3);
+  });
+
+  it('una partida puede traer otros poderes, en su orden y sin repetir, o ninguno', () => {
+    expect(createMatch(0, 0, 'creeper', false, ['iceWall', 'grenade', 'iceWall']).powers).toEqual([
+      { id: 'iceWall', charges: 1 },
+      { id: 'grenade', charges: 1 },
+    ]);
+    expect(createMatch(0, 0, 'creeper', false, []).powers).toEqual([]);
+    expect(loadoutSlots()).toHaveLength(3);
+  });
+
+  it('en desarrollo se eligen por la direccion; vacio es ninguno y sin el, lo de siempre', () => {
+    expect(powersFromParam('granada,muro')).toEqual(['grenade', 'iceWall']);
+    expect(powersFromParam('Recolocar, hielo, granada')).toEqual(['relocate', 'iceWall', 'grenade']);
+    expect(powersFromParam('granada,granada,nada')).toEqual(['grenade']);
+    expect(powersFromParam('')).toEqual([]);
+    expect(powersFromParam(null)).toBeNull();
+  });
+
+  it('un poder que no se lleva o sin cargas no se puede usar', () => {
+    const state = attacking(createMatch(0, 4, 'creeper', false, ['grenade']));
+    expect(powerBlocker(state, 'iceWall')).toBe('not-carried');
+    expect(powerCharges(state, 'iceWall')).toBe(0);
+    const spent = throwGrenade(state, { lane: 2, col: 5 });
+    expect(powerCharges(spent, 'grenade')).toBe(0);
+    expect(powerBlocker(spent, 'grenade')).toBe('no-charges');
+    expect(() => throwGrenade(spent, { lane: 2, col: 5 })).toThrow();
+  });
+
+  it('en la preparacion solo se recoloca; la granada y el muro, en el ataque (O-07)', () => {
+    const prep = createMatch(0, 4);
+    expect(prep.round.phase).toBe('prep');
+    expect(powerBlocker(prep, 'relocate')).toBeNull();
+    expect(powerBlocker(prep, 'grenade')).toBe('attack-only');
+    expect(powerBlocker(prep, 'iceWall')).toBe('attack-only');
+    const attack = attacking(prep);
+    for (const id of POWER_IDS) expect(powerBlocker(attack, id), id).toBeNull();
+  });
+
+  it('con la partida acabada no se usa ninguno', () => {
+    const lost = { ...attacking(), lives: 0 };
+    const won = { ...attacking(), round: { ...attacking().round, phase: 'won' as const } };
+    for (const id of POWER_IDS) {
+      expect(powerBlocker(lost, id)).toBe('over');
+      expect(powerBlocker(won, id)).toBe('over');
+    }
+  });
+});
+
+describe('recolocar (O-03)', () => {
+  const from = { lane: 1, col: 2 };
+  const to = { lane: 3, col: 6 };
+
+  it('lleva la disparadora tal como estaba a la casilla vacia y gasta una carga', () => {
+    const shooter = { ...createShooter(), cannons: 2 as const, element: 'fire' as const, level: 4 };
+    const plant = { ...createPlant(shooter), hp: 123, reloadMs: 456 };
+    const state = put(createMatch(0, 4), from, plant);
+    const moved = relocatePlant(state, from, to);
+    expect(sownAt(moved, from)).toBeNull();
+    expect(plantAt(moved, to)).toEqual(plant);
+    expect(powerCharges(moved, 'relocate')).toBe(0);
+    // Las demas cargas no cambian.
+    expect(powerCharges(moved, 'grenade')).toBe(1);
+  });
+
+  it('solo mueve disparadoras, a casillas vacias del tablero', () => {
+    let state = put(createMatch(0, 4), from, createPlant());
+    state = put(state, { lane: 0, col: 0 }, createMine('fire'));
+    state = put(state, { lane: 0, col: 1 }, createWall());
+    expect(relocateSourceBlocker(state, from)).toBeNull();
+    expect(relocateSourceBlocker(state, { lane: 0, col: 0 })).toBe('no-plant');
+    expect(relocateSourceBlocker(state, { lane: 0, col: 1 })).toBe('no-plant');
+    expect(relocateSourceBlocker(state, { lane: 4, col: 8 })).toBe('no-plant');
+    expect(relocateBlocker(state, from, { lane: 0, col: 0 })).toBe('occupied');
+    expect(relocateBlocker(state, from, from)).toBe('same-cell');
+    expect(relocateBlocker(state, from, { lane: 5, col: 0 })).toBe('off-board');
+    expect(relocateBlocker(state, from, { lane: 0, col: 9 })).toBe('off-board');
+    expect(relocateTargets(state, from)).toHaveLength(BOARD.lanes * BOARD.columns - 3);
+    expect(() => relocatePlant(state, from, { lane: 0, col: 0 })).toThrow();
+  });
+
+  it('se puede en la preparacion y en el ataque', () => {
+    const state = put(createMatch(0, 4), from, createPlant());
+    expect(relocateBlocker(state, from, to)).toBeNull();
+    expect(relocateBlocker(attacking(state), from, to)).toBeNull();
+  });
+
+  it('el gusano que la mordia sigue avanzando', () => {
+    let state = attacking(put(createMatch(0, 4), from, createPlant()));
+    state = spawnEnemy(state, 'worm', from.lane, from.col + 0.5 + ENEMIES.worm.reach);
+    state = stepCombat(state, 1000).state;
+    expect(lastEnemy(state).attackMs).not.toBeNull();
+    const x = lastEnemy(state).x;
+    state = relocatePlant(state, from, to);
+    state = stepCombat(state, 1000).state;
+    expect(lastEnemy(state).attackMs).toBeNull();
+    expect(lastEnemy(state).x).toBeLessThan(x);
+    expect(plantAt(state, to)?.hp).toBe(SHOOTER.hp - ENEMIES.worm.biteDamage * 1.1);
+  });
+});
+
+describe('granada (O-04)', () => {
+  const cell = { lane: 2, col: 5 };
+  const center = cell.col + 0.5;
+
+  it('alcanza mas que la mina y hace su dano de fuego', () => {
+    expect(GRENADE.blastRadius).toBeGreaterThan(MINE.blastRadius);
+    expect(GRENADE.damage).toBe(FIRE.blastDamage);
+    expect(GRENADE.fuseMs).toBe(2000);
+  });
+
+  it('vuela, cae, cuenta 2 s y explota; la carga se gasta al lanzarla', () => {
+    let state = throwGrenade(attacking(), cell);
+    expect(powerCharges(state, 'grenade')).toBe(0);
+    expect(state.grenades).toHaveLength(1);
+    let step = stepCombat(state, GRENADE.flightMs - 10);
+    expect(ofType(step.events, 'grenadeLanded')).toHaveLength(0);
+    step = stepCombat(step.state, 20);
+    expect(ofType(step.events, 'grenadeLanded')).toEqual([{ type: 'grenadeLanded', grenadeId: state.grenades[0].id, cell }]);
+    step = stepCombat(step.state, GRENADE.fuseMs - 20);
+    expect(ofType(step.events, 'grenadeExploded')).toHaveLength(0);
+    state = step.state;
+    step = stepCombat(state, 20);
+    expect(ofType(step.events, 'grenadeExploded')).toHaveLength(1);
+    expect(step.state.grenades).toEqual([]);
+  });
+
+  it('explota aunque no haya nadie: la carga ya esta gastada', () => {
+    const { state, events } = stepCombat(throwGrenade(attacking(), cell), GRENADE.flightMs + GRENADE.fuseMs);
+    expect(ofType(events, 'grenadeExploded')).toEqual([{ type: 'grenadeExploded', grenadeId: expect.any(Number), cell, enemyIds: [] }]);
+    expect(powerCharges(state, 'grenade')).toBe(0);
+  });
+
+  it('dana a los enemigos de su radio, tambien en otros carriles, y no a los de fuera', () => {
+    let state = attacking();
+    state = spawnEnemy(state, 'armored', 2, center, undefined, 0.0001);
+    const near = lastEnemy(state).id;
+    state = spawnEnemy(state, 'armored', 1, center + 1.4, undefined, 0.0001);
+    const side = lastEnemy(state).id;
+    state = spawnEnemy(state, 'armored', 4, center + 0.6, undefined, 0.0001);
+    const far = lastEnemy(state).id;
+    state = throwGrenade(state, cell);
+    const { state: after, events } = stepCombat(state, GRENADE.flightMs + GRENADE.fuseMs);
+    const blast = ofType(events, 'grenadeExploded')[0];
+    expect([...blast.enemyIds].sort()).toEqual([near, side].sort());
+    const full = enemyMaxHp('armored');
+    expect(enemyById(after, near).hp).toBeCloseTo(full - GRENADE.damage);
+    expect(enemyById(after, side).hp).toBeCloseTo(full - GRENADE.damage);
+    expect(enemyById(after, far).hp).toBeCloseTo(full);
+  });
+
+  it('no dana plantas y puede caer donde hay una', () => {
+    let state = put(attacking(), cell, createPlant());
+    state = put(state, { lane: 1, col: 5 }, createMine('fire'));
+    expect(grenadeBlocker(state, cell)).toBeNull();
+    expect(grenadeBlocker(state, { lane: 2, col: 9 })).toBe('off-board');
+    const after = stepCombat(throwGrenade(state, cell), GRENADE.flightMs + GRENADE.fuseMs).state;
+    expect(plantAt(after, cell)?.hp).toBe(SHOOTER.hp);
+    expect(sownAt(after, { lane: 1, col: 5 })?.hp).toBe(MINE.hp);
+  });
+
+  it('es invulnerable: los enemigos no se paran en ella y no ocupa la casilla', () => {
+    let state = throwGrenade(attacking(), cell);
+    state = spawnEnemy(state, 'worm', cell.lane, center + 0.3);
+    const x = lastEnemy(state).x;
+    state = stepCombat(state, GRENADE.flightMs + 500).state;
+    expect(lastEnemy(state).attackMs).toBeNull();
+    expect(lastEnemy(state).x).toBeLessThan(x);
+    expect(sownAt(state, cell)).toBeNull();
+  });
+
+  it('a los jefes, el dano entero (O-06); a Creeper en el aire, nada', () => {
+    let state = attacking(createMatch(0, 9));
+    state = spawnEnemy(state, 'creeper', cell.lane, center);
+    const creeper = lastEnemy(state);
+    const hit = stepCombat(throwGrenade(state, cell), GRENADE.flightMs + GRENADE.fuseMs).state;
+    expect(enemyById(hit, creeper.id).hp).toBeCloseTo(creeper.hp - GRENADE.damage);
+
+    const flying: Enemy = { ...creeper, jump: { stage: 'air', from: 1, to: cell.lane, ms: 60_000, stageMs: 60_000 } };
+    const inAir = throwGrenade({ ...state, enemies: [flying] }, cell);
+    const missed = stepCombat(inAir, GRENADE.flightMs + GRENADE.fuseMs);
+    expect(ofType(missed.events, 'grenadeExploded')[0].enemyIds).toEqual([]);
+  });
+});
+
+describe('muro de hielo (O-05, O-09 a O-11)', () => {
+  const cell = { lane: 2, col: 5 };
+
+  it('ocupa tres carriles de una columna; en los bordes se mete dentro (O-09)', () => {
+    expect(iceWallCells(cell)).toEqual([
+      { lane: 1, col: 5 },
+      { lane: 2, col: 5 },
+      { lane: 3, col: 5 },
+    ]);
+    expect(iceWallCells({ lane: 0, col: 1 }).map((c) => c.lane)).toEqual([0, 1, 2]);
+    expect(iceWallCells({ lane: 4, col: 1 }).map((c) => c.lane)).toEqual([2, 3, 4]);
+    expect(iceWallCells({ lane: 2, col: 9 })).toEqual([]);
+  });
+
+  it('pone tres bloques con la vida de una disparadora de nivel 1 y gasta una carga (O-10)', () => {
+    const { state, cells } = placeIceWall(attacking(), cell);
+    expect(cells).toHaveLength(3);
+    expect(ICE_WALL.hp).toBe(SHOOTER.hp);
+    for (const c of cells) expect(iceAt(state, c)).toEqual({ kind: 'ice', hp: SHOOTER.hp, ms: ICE_WALL.durationMs });
+    expect(powerCharges(state, 'iceWall')).toBe(0);
+    expect(sownMaxHp(createIceBlock())).toBe(SHOOTER.hp);
+  });
+
+  it('no se puede poner si alguna de sus casillas esta ocupada, ni fuera del tablero', () => {
+    const state = put(attacking(), { lane: 3, col: 5 }, createPlant());
+    expect(iceWallBlocker(state, cell)).toBe('occupied');
+    expect(iceWallBlocker(state, { lane: 4, col: 5 })).toBe('occupied');
+    expect(iceWallBlocker(state, { lane: 0, col: 5 })).toBeNull();
+    expect(iceWallBlocker(state, { lane: 2, col: 10 })).toBe('off-board');
+    expect(() => placeIceWall(state, cell)).toThrow();
+    expect(powerCharges(state, 'iceWall')).toBe(1);
+  });
+
+  it('se derrite a los 10 s y deja las casillas libres', () => {
+    const { state } = placeIceWall(attacking(), cell);
+    const almost = stepCombat(state, ICE_WALL.durationMs - 50);
+    expect(ofType(almost.events, 'iceMelted')).toHaveLength(0);
+    const melted = stepCombat(almost.state, 50);
+    expect(ofType(melted.events, 'iceMelted').map((e) => e.cell)).toEqual(iceWallCells(cell));
+    for (const c of iceWallCells(cell)) expect(sownAt(melted.state, c)).toBeNull();
+  });
+
+  it('bloquea el paso: el gusano se para a morderlo y lo rompe', () => {
+    let { state } = placeIceWall(attacking(), cell);
+    state = spawnEnemy(state, 'worm', cell.lane, cell.col + 0.5 + ENEMIES.worm.reach + 0.05);
+    const bites = stepCombat(state, 8000);
+    expect(ofType(bites.events, 'bite').length).toBeGreaterThan(0);
+    expect(ofType(bites.events, 'plantDestroyed').map((e) => e.cell)).toEqual([cell]);
+    // Los otros dos siguen ahi.
+    expect(iceAt(bites.state, { lane: 1, col: 5 })).not.toBeNull();
+  });
+
+  it('para el escupitajo y los versos como un escudo (O-11)', () => {
+    expect(isShield(createIceBlock())).toBe(true);
+    const lane: Array<Sown | null> = Array.from({ length: BOARD.columns }, () => null);
+    lane[2] = createPlant();
+    lane[5] = createIceBlock();
+    expect(waveReach(lane, 8, 0)).toEqual({ cols: [5], blockedAt: 5 });
+  });
+
+  it('el poema entero no lo rompe si esta entero (como a todo, L-04)', () => {
+    const block = createIceBlock();
+    expect(poemHit(block, 9999)).toBeCloseTo(ICE_WALL.hp * (1 - ELK_CLONER.spareFraction));
+  });
+
+  it('no es un elemento: no se arrastra, no se infunde y la casilla esta ocupada', () => {
+    const { state } = placeIceWall(attacking(), cell);
+    expect(sownElement(createIceBlock())).toBeNull();
+    expect(elementDragBlocker(state, cell)).toBe('no-element');
+    expect(cardPlay({ ...state, balance: 999 }, 'shooter', cell).blocker).toBe('occupied');
+    expect(cardPlay({ ...state, balance: 999 }, 'fire', cell).blocker).toBe('occupied');
+  });
+
+  it('el enemigo que esta dentro sale hacia atras si no paso la mitad, y hacia delante si la paso', () => {
+    let state = attacking();
+    state = spawnEnemy(state, 'worm', 2, cell.col + 0.7);
+    const back = lastEnemy(state).id;
+    state = spawnEnemy(state, 'worm', 1, cell.col + 0.3);
+    const ahead = lastEnemy(state).id;
+    state = spawnEnemy(state, 'worm', 3, cell.col + 1.3);
+    const outside = lastEnemy(state).id;
+    const half = enemyHalfLength({ kind: 'worm', clone: false });
+    // De arriba abajo: el del carril 1 y luego el del 2.
+    expect(iceWallPushes(state, cell)).toEqual([
+      { enemyId: ahead, fromX: cell.col + 0.3, toX: cell.col - half },
+      { enemyId: back, fromX: cell.col + 0.7, toX: cell.col + 1 + half },
+    ]);
+    const placed = placeIceWall(state, cell);
+    expect(enemyById(placed.state, back).x).toBeCloseTo(cell.col + 1 + half);
+    expect(enemyById(placed.state, ahead).x).toBeCloseTo(cell.col - half);
+    expect(enemyById(placed.state, outside).x).toBeCloseTo(cell.col + 1.3);
+    // El de atras se para a morder el hielo; el de delante sigue su camino.
+    const after = stepCombat(placed.state, 3000).state;
+    expect(enemyById(after, back).attackMs).not.toBeNull();
+    expect(enemyById(after, ahead).x).toBeLessThan(cell.col - half);
+  });
+
+  it('a los jefes, igual (O-06); a Creeper en el aire no lo mueve', () => {
+    let state = attacking(createMatch(0, 9));
+    state = spawnEnemy(state, 'creeper', 2, cell.col + 0.6);
+    const creeper = lastEnemy(state);
+    const half = enemyHalfLength(creeper);
+    expect(placeIceWall(state, cell).state.enemies[0].x).toBeCloseTo(cell.col + 1 + half);
+    const flying: Enemy = { ...creeper, jump: { stage: 'air', from: 0, to: 2, ms: 500, stageMs: 500 } };
+    expect(iceWallPushes({ ...state, enemies: [flying] }, cell)).toEqual([]);
+  });
+});
+
+describe('partida guardada', () => {
+  it('guarda las cargas gastadas, las granadas en vuelo y el muro de hielo (version 7)', () => {
+    expect(SAVE_VERSION).toBeGreaterThanOrEqual(7);
+    let state = put(attacking(), { lane: 0, col: 0 }, createPlant());
+    state = relocatePlant(state, { lane: 0, col: 0 }, { lane: 4, col: 4 });
+    state = throwGrenade(state, { lane: 2, col: 6 });
+    state = placeIceWall(state, { lane: 2, col: 3 }).state;
+    state = stepCombat(state, 500).state;
+    const loaded = decodeSave(encodeSave(state, null, 1));
+    expect(loaded?.match).toEqual(state);
+    expect(loaded?.match.powers.every((slot) => slot.charges === 0)).toBe(true);
+  });
+
+  it('no carga una partida con cargas de mas o un poder que no existe', () => {
+    const state = attacking();
+    const tooMany = { ...state, powers: [{ id: 'grenade', charges: 5 }] };
+    const unknown = { ...state, powers: [{ id: 'meteor', charges: 1 }] };
+    expect(decodeSave(JSON.stringify({ version: 7, savedAt: 1, match: tooMany, pendingUnlock: null }))).toBeNull();
+    expect(decodeSave(JSON.stringify({ version: 7, savedAt: 1, match: unknown, pendingUnlock: null }))).toBeNull();
+  });
+});

@@ -246,6 +246,19 @@ export const es = {
     lives: (lives: number, max: number) => `Vidas: ${lives} de ${max}`,
     pause: 'Pausa',
     pauseTitle: 'Pausa (Esc o P)',
+    /** Panel izquierdo de los poderes (T-021). */
+    powers: {
+      label: 'Poderes',
+      names: { relocate: 'Recolocar', grenade: 'Granada', iceWall: 'Muro de hielo' },
+      help: {
+        relocate: 'Recolocar: lleva una disparadora a otra casilla, tal como está',
+        grenade: (countdown: string) => `Granada: lánzala a una casilla; explota a los ${countdown} y daña a todos los de alrededor`,
+        iceWall: (time: string) => `Muro de hielo: tres bloques que cortan el paso durante ${time}`,
+      },
+      charges: (count: number) => (count === 1 ? '1 carga' : `${count} cargas`),
+      noCharges: 'Ya lo usaste en esta partida',
+      attackOnly: 'Se usa en el ataque',
+    },
   },
 
   round: {
@@ -364,6 +377,9 @@ export const es = {
       infuse: 'Infundir',
       fuse: 'Fusionar',
       shield: 'Escudo',
+      relocate: 'Recolocar',
+      grenade: 'Granada',
+      iceWall: 'Muro de hielo',
     },
     next: 'Siguiente',
     done: '¡Entendido!',
@@ -406,6 +422,17 @@ export const es = {
         wall: '¡Siembra el escudo solo: un muro!',
         block: 'Los disparos se quedan en el muro',
         infuse: 'Sobre una disparadora: ¡doble de vida!',
+      },
+      // T-021: los poderes del panel izquierdo.
+      relocate: {
+        pick: 'Toca «Recolocar», a la izquierda',
+        move: 'Y lleva una disparadora a otra casilla',
+      },
+      grenade: {
+        throw: (countdown: string) => `En el ataque, ¡lánzala! Explota a los ${countdown}`,
+      },
+      iceWall: {
+        place: 'En el ataque: tres bloques que cortan el paso',
       },
     },
     /** Pista de la moneda en el suelo (G-08). */
@@ -556,6 +583,12 @@ export const es = {
     /** Con un muro en la mano (T-024). */
     infuseWithWall: 'Infundir con el muro',
     infuseWallPlus: (extra: string) => `Infundir: muro + ${extra}`,
+    /** Poderes (T-021). */
+    relocated: '¡Recolocada!',
+    pickShooter: 'Elige una disparadora',
+    relocateHere: 'Recolocar aquí',
+    occupied: 'Casilla ocupada',
+    iceBlocked: 'Hay algo en medio',
   },
 
   /** Lo que dice Creeper en su bocadillo de terminal. El original de 1971 escribia "I'M THE CREEPER : CATCH ME IF YOU CAN". */
@@ -654,6 +687,9 @@ export const es = {
       noAttack: 'No ataca',
       drag: 'Arrastrarlo',
       dragValue: 'Infunde escudo en una disparadora',
+      /** Muro de hielo del poder (T-021): cuando se derrite. */
+      melts: 'Se derrite',
+      meltsIn: (time: string) => `Dentro de ${time}`,
     },
     tags: {
       waiting: 'Esperando a un enemigo',
@@ -673,6 +709,8 @@ export const es = {
       /** Desgaste del muro (T-024). */
       cracked: 'Agrietado',
       crumbling: '¡A punto de romperse!',
+      /** Muro de hielo del poder (T-021) en sus ultimos segundos. */
+      melting: '¡Derritiéndose!',
     },
     shooter: {
       title: { plain: 'Disparadora', fire: 'Disparadora de fuego', ice: 'Disparadora de hielo', shield: 'Disparadora con escudo' },
@@ -691,6 +729,12 @@ export const es = {
       title: 'Muro',
       subtitle: 'Escudo sembrado solo',
       about: 'No dispara ni explota: aguanta los mordiscos y los disparos que iban a lo de detrás. Arrástralo sobre una disparadora para infundirle escudo.',
+    },
+    /** Bloque del muro de hielo del poder (T-021). */
+    iceWall: {
+      title: 'Muro de hielo',
+      subtitle: 'Poder: se derrite',
+      about: (time: string) => `Corta el paso: los enemigos se paran a morderlo, y para los disparos y los versos que iban a lo de detrás. Dura ${time}.`,
     },
     mine: {
       title: { fire: 'Mina de fuego', ice: 'Mina de hielo' },

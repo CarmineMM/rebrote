@@ -55,6 +55,16 @@ export type SfxId =
   | 'poemWarn'
   | 'poem'
   | 'elkClonerDefeated'
+  // Poderes (T-021): recolocar; la granada que se lanza, cae y explota; el muro de hielo que brota, lo que le da, el bloque
+  // que se rompe y el que se derrite
+  | 'relocate'
+  | 'grenadeThrow'
+  | 'grenadeLand'
+  | 'grenadeBoom'
+  | 'iceWallRise'
+  | 'iceHit'
+  | 'iceBreak'
+  | 'iceMelt'
   // Rondas y partida
   | 'attackStarted'
   | 'roundCleared'
@@ -152,6 +162,14 @@ export const SFX: Readonly<Record<SfxId, SfxSpec>> = {
   poemWarn: world(0.7, 1, 0, 0),
   poem: world(0.85, 1, 0, 0),
   elkClonerDefeated: world(0.9, 1, 0, 0),
+  relocate: world(0.75, 1, 0, 0.5),
+  grenadeThrow: world(0.6, 1, 0, 0.8),
+  grenadeLand: world(0.6, 1, 0, 0.5),
+  grenadeBoom: world(0.95, 1, 0, 0.5),
+  iceWallRise: world(0.75, 1, 0, 0.3),
+  iceHit: world(0.4, 2, 120, 1, 3),
+  iceBreak: world(0.7, 2, 120, 0.8),
+  iceMelt: world(0.45, 2, 120, 1),
   attackStarted: world(0.55, 1, 0, 0),
   roundCleared: world(0.6, 1, 0, 0),
   unlock: ui(0.6),

@@ -3,6 +3,7 @@ import type { BossKind } from './core/combat';
 import type { CardId, MatchState } from './core/match';
 import type { OutbreakId } from './core/outbreaks';
 import type { ElementType } from './core/plants';
+import type { PowerBlocker, PowerId } from './core/powers';
 import type { RoundPhase } from './core/rounds';
 import type { SeedPayout } from './core/seeds';
 
@@ -57,10 +58,22 @@ export const GameEvents = {
   entityInfo: 'entity-info',
   /** React -> Phaser. Payload: carta que el jugador toma del HUD (CardId). */
   cardPicked: 'card-picked',
-  /** React -> Phaser. Payload: posicion del puntero mientras arrastra la carta (PagePoint). */
+  /** React -> Phaser. Payload: posicion del puntero mientras arrastra la carta o el poder (T-021) desde el HUD (PagePoint). */
   cardDragged: 'card-dragged',
-  /** React -> Phaser. Payload: posicion donde suelta la carta (PagePoint). */
+  /** React -> Phaser. Payload: posicion donde suelta la carta o el poder (T-021) (PagePoint). */
   cardDropped: 'card-dropped',
+  /**
+   * Phaser -> React. Payload: PowerInfo[]. Poderes que lleva la partida (T-021), con sus cargas y si ahora se pueden usar,
+   * para el panel izquierdo. Vacio: sin panel. Solo se manda si cambia.
+   */
+  powersChanged: 'powers-changed',
+  /** Phaser -> React. Payload: poder elegido para apuntarlo en el tablero (PowerId | null). */
+  powerSelected: 'power-selected',
+  /**
+   * React -> Phaser. Payload: poder que el jugador toma del panel (PowerId). Tomar el que ya estaba elegido lo suelta sin
+   * gastarlo. Se lanza arrastrandolo al tablero o tocando despues una casilla, como una carta.
+   */
+  powerPicked: 'power-picked',
   /** React -> Phaser. Sin payload: soltar la carta elegida o cerrar el panel de la planta seleccionada (Esc). */
   selectionCancelled: 'selection-cancelled',
   /** React -> Phaser. Sin payload: subir un nivel la disparadora seleccionada (boton del panel). */
@@ -131,6 +144,8 @@ export interface MatchRequest {
   resume?: MatchState;
   /** Brote de la partida nueva (T-018); sin el, el primero. Una guardada ya lleva el suyo. */
   outbreak?: OutbreakId;
+  /** Poderes de la partida nueva (T-021); sin ellos, los de prueba (`POWERS.trialLoadout`). En desarrollo, `?poderes=`. */
+  loadout?: PowerId[];
   pendingUnlock?: UnlockInfo | null;
 }
 
@@ -229,6 +244,8 @@ export interface RoundInfo {
   notice: string;
   /** Semillas que llevan las rondas superadas de la partida, sin cobrar (T-020): el menu de pausa las ensena. */
   seeds: number;
+  /** Poderes que lleva la partida (T-021), con o sin cargas: de ellos salen sus tours. */
+  powers: PowerId[];
 }
 
 /**
@@ -244,6 +261,13 @@ export interface UnlockInfo {
   /** Ronda, desde 1. */
   round: number;
   items: UnlockItem[];
+}
+
+/** Un poder del panel izquierdo (T-021): sus cargas y por que no se puede usar ahora (null si se puede). Sale de `powerBlocker`. */
+export interface PowerInfo {
+  id: PowerId;
+  charges: number;
+  blocker: PowerBlocker | null;
 }
 
 /** Color de la ficha de informacion (T-010): el de la planta, su elemento o el enemigo. */
@@ -262,7 +286,9 @@ export type InfoTone =
   | 'copycatSpitter'
   | 'minstrel'
   // Elk Cloner (T-026): el oro de su cornamenta y su poema.
-  | 'elkCloner';
+  | 'elkCloner'
+  // Muro de hielo del poder (T-021).
+  | 'iceWall';
 
 /** Una fila de datos de la ficha: "Mordisco 57,5 (cada 1 s)". */
 export interface InfoStat {
@@ -326,7 +352,13 @@ export type TourSpotId =
   // Escudo (T-024): donde sembrar el muro, el muro sembrado y la disparadora que se puede infundir con escudo
   | 'wallCell'
   | 'wall'
-  | 'shieldInfusable';
+  | 'shieldInfusable'
+  // Poderes (T-021): adonde llevar la disparadora al recolocarla, donde lanzar la granada (con su alcance) y donde poner el
+  // muro de hielo (sus tres casillas)
+  | 'relocateTo'
+  | 'grenadeCell'
+  | 'grenadeBlast'
+  | 'iceWallCells';
 
 /** Zonas del tablero que un tour ilumina con su contorno (T-013): el carril de una disparadora y el borde por donde se cuelan. */
 export type TourAreaId = 'shooterLane' | 'exit';
@@ -362,7 +394,10 @@ export type TourArtKey =
   | 'iceMineArmed'
   | 'wall'
   | 'spitter'
-  | 'worm';
+  | 'worm'
+  // Poderes (T-021): la granada encendida y un bloque del muro de hielo.
+  | 'grenade'
+  | 'iceBlock';
 export type TourArt = Record<TourArtKey, string>;
 
 /** Jefe de cada brote recortado (data URL), por el nombre del brote (ver `routeArt`). Uno sin jefe aun (T-024) no viene. */
@@ -376,7 +411,11 @@ export type PlayerAction =
   | { type: 'pick' }
   /** `level`: el nivel al que llega (en los que dan premio suena distinto). */
   | { type: 'levelUp'; level: number }
-  | { type: 'fuse' };
+  | { type: 'fuse' }
+  /** Tomo un poder del panel (T-021). */
+  | { type: 'powerPicked'; power: PowerId }
+  /** Uso un poder (T-021): recoloco una disparadora, lanzo la granada o puso el muro de hielo. */
+  | { type: 'power'; power: PowerId };
 
 /** Moneda en el suelo que ya se puede recoger (T-013): donde esta en la pagina y cuanto mide. */
 export interface DroppedCoin {

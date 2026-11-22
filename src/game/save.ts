@@ -1,7 +1,8 @@
-import { BOARD, ENEMIES, LIMITS, LIVES } from './config/balance';
+import { BOARD, ENEMIES, LIMITS, LIVES, POWERS } from './config/balance';
 import type { Burn, Enemy, Jump, Recital, Slow } from './core/combat';
 import type { MatchState, Sown } from './core/match';
 import { isOutbreakId, roundCount, type OutbreakId } from './core/outbreaks';
+import { isPowerId } from './core/powers';
 import type { UnlockInfo } from './EventBus';
 import { profiles } from './profiles';
 import type { SaveStore } from './storage';
@@ -21,9 +22,11 @@ export const SAVE_KEY = 'partida';
  * Sube cuando cambia la forma de `MatchState` o de la guardada: las de otra version se ignoran. La 2 (T-018) anade el
  * brote; la 3 (T-020), las semillas de la partida; la 4 (T-024), el muro y la disparadora con escudo; la 5 (T-025), las
  * copias de los copiones (`Enemy.clone`) y los versos de los juglares en vuelo (`MatchState.verses`); la 6 (T-026), el
- * recital de Elk Cloner (`Enemy.recital`) y quien recita cada verso y si es del poema entero (`Verse.by`, `Verse.poem`).
+ * recital de Elk Cloner (`Enemy.recital`) y quien recita cada verso y si es del poema entero (`Verse.by`, `Verse.poem`); la 7
+ * (T-021), los poderes con sus cargas (`MatchState.powers`), las granadas en vuelo (`MatchState.grenades`) y los bloques
+ * del muro de hielo.
  */
-export const SAVE_VERSION = 6;
+export const SAVE_VERSION = 7;
 
 export interface SavedGame {
   readonly version: number;
@@ -159,6 +162,7 @@ function isSown(value: unknown): value is Sown {
   if (!isRecord(value) || !isNumber(value.hp) || value.hp <= 0) return false;
   if (value.kind === 'mine') return isMineElement(value.element) && isNullOr(value.fuseMs, isNumber);
   if (value.kind === 'wall') return true;
+  if (value.kind === 'ice') return isNumber(value.ms) && value.ms > 0;
   if (value.kind !== 'shooter' || !isNumber(value.reloadMs) || !isRecord(value.shooter)) return false;
   const { shooter } = value;
   return isNullOr(shooter.element, isElement) && isInt(shooter.cannons, 1, LIMITS.maxCannons) && isInt(shooter.level, 1, LIMITS.maxLevel);
@@ -192,6 +196,23 @@ const isBulletEffect = (value: unknown): boolean =>
 const isProjectile = (value: unknown): value is Data =>
   isRecord(value) && isInt(value.id, 0) && isLane(value.lane) && isNumber(value.x) && isNumber(value.damage);
 
+/** Granada del poder (T-021): su casilla, lo que le queda de vuelo y de mecha. */
+const isGrenade = (value: unknown): boolean =>
+  isRecord(value) &&
+  isInt(value.id, 0) &&
+  isRecord(value.cell) &&
+  isLane(value.cell.lane) &&
+  isInt(value.cell.col, 0, BOARD.columns - 1) &&
+  isNumber(value.flightMs) &&
+  value.flightMs >= 0 &&
+  isNumber(value.fuseMs);
+
+/** Poderes de la partida (T-021): cada uno una vez, con sus cargas, nunca mas de las que trae una partida. */
+const isPowers = (value: unknown): boolean =>
+  Array.isArray(value) &&
+  value.every((slot) => isRecord(slot) && isPowerId(slot.id) && isInt(slot.charges, 0, POWERS.chargesPerMatch)) &&
+  new Set(value.map((slot: Data) => slot.id)).size === value.length;
+
 /** Ronda que existe en el guion del brote de la partida (T-018: cada brote tiene sus rondas). */
 function isRound(value: unknown, outbreak: OutbreakId): boolean {
   return (
@@ -206,7 +227,7 @@ function isRound(value: unknown, outbreak: OutbreakId): boolean {
 
 export function isMatchState(value: unknown): value is MatchState {
   if (!isRecord(value)) return false;
-  const { plants, enemies, bullets, spits, verses } = value;
+  const { plants, enemies, bullets, spits, verses, grenades } = value;
   return (
     isOutbreakId(value.outbreak) &&
     isInt(value.balance, 0) &&
@@ -222,6 +243,9 @@ export function isMatchState(value: unknown): value is MatchState {
     spits.every(isProjectile) &&
     Array.isArray(verses) &&
     verses.every((verse) => isProjectile(verse) && typeof verse.by === 'string' && Object.hasOwn(ENEMIES, verse.by) && typeof verse.poem === 'boolean') &&
+    Array.isArray(grenades) &&
+    grenades.every(isGrenade) &&
+    isPowers(value.powers) &&
     isRound(value.round, value.outbreak) &&
     isNumber(value.incomeMs) &&
     isMatchSeeds(value.seeds, value.outbreak) &&

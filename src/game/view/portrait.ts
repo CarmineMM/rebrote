@@ -6,7 +6,25 @@ import type { CannonCount, ElementType, MineElement } from '../core/plants';
 import { GARDEN, gardenSpots, gardenTier } from './gardenArt';
 import { MEDAL, showsMedal } from './levelMedal';
 import { SHOOTER } from './shooterShape';
-import { FLOPPY_SIZE, HAT_SIZE, HASTE_STREAK_SIZE, MINE_SIZE, SHOOTER_SIZE, TEX, WALL_SIZE, WORM_SIZE, levelGardenTexture, medalTexture, mineTexture, shooterTexture, wallTexture } from './textures';
+import {
+  FLOPPY_SIZE,
+  GRENADE_SIZE,
+  HAT_SIZE,
+  HASTE_STREAK_SIZE,
+  ICE_BLOCK_SIZE,
+  MINE_SIZE,
+  SHOOTER_SIZE,
+  TEX,
+  WALL_SIZE,
+  WORM_SIZE,
+  iceBlockTexture,
+  levelGardenTexture,
+  medalTexture,
+  mineTexture,
+  shooterTexture,
+  wallTexture,
+  type IceWear,
+} from './textures';
 import type { WallWear } from './wallArt';
 import { AURA_LOOK, auraTier, veilSize, veilStrength } from './wormAuraArt';
 import { isBoss } from '../core/combat';
@@ -22,6 +40,9 @@ export type PortraitSubject =
   | { readonly kind: 'mine'; readonly element: MineElement; readonly armed: boolean }
   /** Muro (T-024), con su desgaste. */
   | { readonly kind: 'wall'; readonly wear: WallWear }
+  /** Bloque del muro de hielo del poder (T-021), con su desgaste; y la granada encendida, para los dibujos de su tour. */
+  | { readonly kind: 'ice'; readonly wear: IceWear }
+  | { readonly kind: 'grenade' }
   | {
       readonly kind: 'enemy';
       readonly enemy: EnemyKind;
@@ -168,6 +189,8 @@ function paintBackdrop(ctx: CanvasRenderingContext2D, subject: PortraitSubject):
 function haloOf(subject: PortraitSubject): string {
   if (subject.kind === 'enemy') return BACKDROP.halo.enemy;
   if (subject.kind === 'wall') return BACKDROP.halo.shield;
+  if (subject.kind === 'ice') return BACKDROP.halo.ice;
+  if (subject.kind === 'grenade') return BACKDROP.halo.fire;
   const element: ElementType | null = subject.element;
   return element ? BACKDROP.halo[element] : BACKDROP.halo.plant;
 }
@@ -211,6 +234,14 @@ function piecesFor(subject: PortraitSubject): Piece[] {
   if (subject.kind === 'wall') {
     const { width, height, footX, footY } = WALL_SIZE;
     return [{ key: wallTexture(subject.wear), x: 0, y: 0, scale: 1, ox: footX / width, oy: footY / height, width, height }];
+  }
+  if (subject.kind === 'ice') {
+    const { width, height, footX, footY } = ICE_BLOCK_SIZE;
+    return [{ key: iceBlockTexture(subject.wear), x: 0, y: 0, scale: 1, ox: footX / width, oy: footY / height, width, height }];
+  }
+  if (subject.kind === 'grenade') {
+    const { width, height, footX, footY } = GRENADE_SIZE;
+    return [{ key: TEX.grenade.lit, x: 0, y: 0, scale: 1, ox: footX / width, oy: footY / height, width, height }];
   }
   return wormPieces(subject);
 }

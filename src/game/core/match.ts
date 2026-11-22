@@ -1,6 +1,6 @@
-import { BOARD, COSTS, LIVES, MINE, SHIELD } from '../config/balance';
+import { BOARD, COSTS, ICE_WALL, LIVES, MINE, SHIELD } from '../config/balance';
 import { isOnBoard, type Cell } from './board';
-import type { Bullet, Enemy, Spit, Verse } from './combat';
+import type { Bullet, Enemy, Grenade, Spit, Verse } from './combat';
 import {
   canInfuse,
   createShooter,
@@ -18,6 +18,7 @@ import {
   type Shooter,
 } from './plants';
 import { FIRST_OUTBREAK, outbreakScript, type OutbreakId } from './outbreaks';
+import { loadoutSlots, type PowerId, type PowerSlot } from './powers';
 import { createRound, infuseFeature, isUnlocked, levelCap, levelCapRaisedAfter, sowFeature, type RoundState } from './rounds';
 import { newMatchSeeds, type MatchSeeds } from './seeds';
 
@@ -54,8 +55,23 @@ export interface Wall {
   readonly hp: number;
 }
 
-/** Lo que ocupa una casilla: una disparadora, una mina o un muro (T-024). Los enemigos muerden todo. */
-export type Sown = Plant | Mine | Wall;
+/**
+ * Bloque del muro de hielo (T-021, O-05): lo pone el poder, tres en una columna (`placeIceWall` en powers.ts). Es un muro
+ * (bloquea el paso y, como el escudo, para lo que va hacia lo de detras: `isShield`) con `ICE_WALL.hp` de vida, y se
+ * derrite al acabarse `ms` (`stepCombat`). No se siembra, no se arrastra ni se infunde.
+ */
+export interface IceBlock {
+  readonly kind: 'ice';
+  readonly hp: number;
+  /** Lo que le queda antes de derretirse. */
+  readonly ms: number;
+}
+
+/**
+ * Lo que ocupa una casilla: una disparadora, una mina, un muro (T-024) o un bloque de hielo (T-021). Los enemigos muerden
+ * todo.
+ */
+export type Sown = Plant | Mine | Wall | IceBlock;
 
 /**
  * Todo lo que forma una partida, incluido el combate. Al cambiar el nivel grafico el juego se recrea
@@ -74,6 +90,10 @@ export interface MatchState {
   readonly spits: readonly Spit[];
   /** Versos de los juglares en vuelo (T-025): ondas que cruzan el carril hasta el primer escudo. */
   readonly verses: readonly Verse[];
+  /** Granadas lanzadas con el poder (T-021): en vuelo o contando para explotar. */
+  readonly grenades: readonly Grenade[];
+  /** Poderes que lleva la partida, en el orden del panel, con sus cargas (T-021). Vacio: sin panel. */
+  readonly powers: readonly PowerSlot[];
   /** Ronda en curso: preparacion o ataque, y que grupos del guion ya salieron (T-007). */
   readonly round: RoundState;
   /**
@@ -94,9 +114,16 @@ export interface MatchState {
  * Partida nueva del brote `outbreak`, en la preparacion de la ronda `roundIndex` (desde 0) con el tablero vacio y, si no
  * se dice otro, el saldo inicial del brote (T-018, B-02: no se trae nada de otro brote). El juego siempre empieza en la
  * primera ronda; empezar en otra sirve para probar lo que desbloquean las siguientes. `replay` dice si su jefe ya estaba
- * vencido: entonces las semillas dan menos (T-020, C-03).
+ * vencido: entonces las semillas dan menos (T-020, C-03). `loadout`, los poderes que trae (T-021), con sus cargas; sin el,
+ * los de prueba hasta la tienda (`POWERS.trialLoadout`, O-08).
  */
-export function createMatch(balance?: number, roundIndex = 0, outbreak: OutbreakId = FIRST_OUTBREAK, replay = false): MatchState {
+export function createMatch(
+  balance?: number,
+  roundIndex = 0,
+  outbreak: OutbreakId = FIRST_OUTBREAK,
+  replay = false,
+  loadout?: readonly PowerId[],
+): MatchState {
   const start = balance ?? outbreakScript(outbreak).startingBalance;
   assertWholeAmount(start);
   const plants = Array.from({ length: BOARD.lanes }, () => Array.from({ length: BOARD.columns }, (): Sown | null => null));
@@ -109,6 +136,8 @@ export function createMatch(balance?: number, roundIndex = 0, outbreak: Outbreak
     bullets: [],
     spits: [],
     verses: [],
+    grenades: [],
+    powers: loadoutSlots(loadout),
     round: createRound(outbreak, roundIndex),
     incomeMs: 0,
     seeds: newMatchSeeds(replay),
@@ -153,10 +182,27 @@ export function wallAt(state: MatchState, cell: Cell): Wall | null {
   return sown?.kind === 'wall' ? sown : null;
 }
 
-/** Vida maxima de lo sembrado: la de la disparadora segun sus canones y su elemento, la de la mina o la del muro. */
+/** Bloque de hielo de la casilla (T-021), o null si no hay. */
+export function iceAt(state: MatchState, cell: Cell): IceBlock | null {
+  const sown = sownAt(state, cell);
+  return sown?.kind === 'ice' ? sown : null;
+}
+
+/**
+ * Vida maxima de lo sembrado: la de la disparadora segun sus canones y su elemento, la de la mina, la del muro o la de un
+ * bloque de hielo (T-021).
+ */
 export function sownMaxHp(sown: Sown): number {
-  if (sown.kind === 'shooter') return plantMaxHp(sown.shooter);
-  return sown.kind === 'mine' ? MINE.hp : SHIELD.wallHp;
+  switch (sown.kind) {
+    case 'shooter':
+      return plantMaxHp(sown.shooter);
+    case 'mine':
+      return MINE.hp;
+    case 'wall':
+      return SHIELD.wallHp;
+    case 'ice':
+      return ICE_WALL.hp;
+  }
 }
 
 /**
@@ -280,10 +326,10 @@ export interface ElementInfusion {
   readonly blocker: ElementInfusionBlocker | null;
 }
 
-/** Mina o muro de la casilla, con su elemento, o null si no hay ninguno. */
+/** Mina o muro de la casilla, con su elemento, o null si no hay ninguno. Un bloque de hielo (T-021) no es un elemento. */
 function elementAt(state: MatchState, cell: Cell): { readonly sown: Mine | Wall; readonly element: ElementType } | null {
   const sown = sownAt(state, cell);
-  if (!sown || sown.kind === 'shooter') return null;
+  if (!sown || (sown.kind !== 'mine' && sown.kind !== 'wall')) return null;
   return { sown, element: sownElement(sown) as ElementType };
 }
 

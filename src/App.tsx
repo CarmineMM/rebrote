@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import type { CardId } from './game/core/match';
 import { FIRST_OUTBREAK, outbreakFromParam, type OutbreakId } from './game/core/outbreaks';
+import { powersFromParam, type PowerId } from './game/core/powers';
 import { isGreenhouseOpen } from './game/core/route';
 import type { GameScreen } from './game/createGame';
 import {
@@ -13,6 +14,7 @@ import {
   type MatchRequest,
   type MenuPlace,
   type PlantPanel,
+  type PowerInfo,
   type RouteArt,
   type RoundInfo,
   type UnlockInfo,
@@ -31,6 +33,7 @@ import { InfoPanel } from './ui/InfoPanel';
 import { LevelPanel } from './ui/LevelPanel';
 import { Lives } from './ui/Lives';
 import { PauseMenu } from './ui/PauseMenu';
+import { PowerPanel } from './ui/PowerPanel';
 import { describePlayer, playerName } from './ui/playerCards';
 import { RotateNotice } from './ui/RotateNotice';
 import { RoundHud } from './ui/RoundHud';
@@ -59,6 +62,12 @@ const CARDS: readonly CardId[] = ['shooter', 'fire', 'ice', 'shield'];
  * preparacion que la ruta aun no deja elegir (el brote 2 hasta T-026). Con la tecla N se salta a la ronda siguiente.
  */
 const DEV_OUTBREAK = import.meta.env.DEV ? outbreakFromParam(new URLSearchParams(window.location.search).get('brote')) : null;
+
+/**
+ * Solo en desarrollo (T-021): con `?poderes=granada,muro` en la direccion, las partidas nuevas traen esos poderes (o
+ * ninguno, con `?poderes=` vacio) en vez de los de prueba hasta la tienda.
+ */
+const DEV_POWERS = import.meta.env.DEV ? powersFromParam(new URLSearchParams(window.location.search).get('poderes')) : null;
 
 /** Escena que tiene que estar lista para cada pantalla. */
 const SCENE_OF: Record<GameScreen, string> = { title: SCENES.title, board: SCENES.board };
@@ -111,6 +120,9 @@ export function App() {
   const [selected, setSelected] = useState<CardId | null>(null);
   const [preview, setPreview] = useState<CardPreview | null>(null);
   const [plantPanel, setPlantPanel] = useState<PlantPanel | null>(null);
+  /** Poderes de la partida (T-021) para el panel izquierdo, y el elegido. */
+  const [powers, setPowers] = useState<PowerInfo[]>([]);
+  const [selectedPower, setSelectedPower] = useState<PowerId | null>(null);
   const [round, setRound] = useState<RoundInfo | null>(null);
   const [boss, setBoss] = useState<BossInfo | null>(null);
   const [loss, setLoss] = useState<LossInfo | null>(null);
@@ -213,6 +225,8 @@ export function App() {
     EventBus.on(GameEvents.selectionChanged, setSelected);
     EventBus.on(GameEvents.cardPreview, setPreview);
     EventBus.on(GameEvents.plantPanel, setPlantPanel);
+    EventBus.on(GameEvents.powersChanged, setPowers);
+    EventBus.on(GameEvents.powerSelected, setSelectedPower);
     EventBus.on(GameEvents.matchLost, onLost);
     EventBus.on(GameEvents.matchWon, onWon);
     EventBus.on(GameEvents.roundChanged, setRound);
@@ -229,6 +243,8 @@ export function App() {
       EventBus.off(GameEvents.selectionChanged, setSelected);
       EventBus.off(GameEvents.cardPreview, setPreview);
       EventBus.off(GameEvents.plantPanel, setPlantPanel);
+      EventBus.off(GameEvents.powersChanged, setPowers);
+      EventBus.off(GameEvents.powerSelected, setSelectedPower);
       EventBus.off(GameEvents.matchLost, onLost);
       EventBus.off(GameEvents.matchWon, onWon);
       EventBus.off(GameEvents.roundChanged, setRound);
@@ -280,6 +296,8 @@ export function App() {
     setSelected(null);
     setPreview(null);
     setPlantPanel(null);
+    setPowers([]);
+    setSelectedPower(null);
     setRound(null);
     setBoss(null);
     setLoss(null);
@@ -296,7 +314,8 @@ export function App() {
     (request: MatchRequest) => {
       resetHud();
       setScreen('board');
-      EventBus.emit(GameEvents.matchRequested, request);
+      // En desarrollo, `?poderes=` elige los de una partida nueva (T-021).
+      EventBus.emit(GameEvents.matchRequested, DEV_POWERS && !request.resume ? { ...request, loadout: DEV_POWERS } : request);
       if (settings.fullscreen) fullscreen.enter();
     },
     [resetHud, settings.fullscreen, fullscreen],
@@ -388,8 +407,8 @@ export function App() {
       if (event.key === 'Escape') {
         if (fullscreen.exitedJustNow()) return;
         if (paused) resume();
-        // Esc suelta la carta elegida o cierra el panel de nivel antes de abrir la pausa.
-        else if (selected || plantPanel) EventBus.emit(GameEvents.selectionCancelled);
+        // Esc suelta la carta o el poder elegido (T-021) o cierra el panel de nivel antes de abrir la pausa.
+        else if (selected || selectedPower || plantPanel) EventBus.emit(GameEvents.selectionCancelled);
         else setPaused(true);
       } else if (event.key === 'p' || event.key === 'P') {
         if (paused) resume();
@@ -398,7 +417,7 @@ export function App() {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [onBoard, paused, selected, plantPanel, over, resume, fullscreen, unlock, acceptUnlock, info, closeInfo, needsLandscape]);
+  }, [onBoard, paused, selected, selectedPower, plantPanel, over, resume, fullscreen, unlock, acceptUnlock, info, closeInfo, needsLandscape]);
 
   // Si el jugador cambia de pestana, minimiza o cierra, la partida se guarda en ese momento (T-011) y al volver encuentra
   // el juego en pausa.
@@ -478,6 +497,8 @@ export function App() {
             ))}
           </div>
           {round && <RoundHud round={round} boss={boss} />}
+          {/* Poderes (T-021): a la izquierda, a media altura, fuera del cesped. Va en el HUD para que lo esquiven el panel de nivel y los tours. */}
+          <PowerPanel powers={powers} selected={selectedPower} />
           <div className="hud-right">
             <Lives lives={lives} />
             <Balance balance={balance} />

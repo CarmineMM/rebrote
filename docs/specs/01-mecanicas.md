@@ -10,6 +10,8 @@
 | Nivel | Mejora individual de una disparadora (daño y cadencia) |
 | Variante | Normal, de fuego, de hielo o con escudo (T-024) |
 | Muro | El escudo sembrado solo (T-024) |
+| Poder | Habilidad de un uso que se lanza desde el panel izquierdo: recolocar, granada y muro de hielo (T-021) |
+| Carga | Cada uso de un poder en una partida (T-021) |
 
 No se usa la palabra "combinar": se confundía con fusionar.
 
@@ -181,6 +183,23 @@ Decisiones E-01 a E-06 cerradas el 21 nov 2026 (E-01 a E-04 y E-06 con la recome
 - **No hay mezclas:** una disparadora con fuego o hielo no admite escudo, y una con escudo no admite fuego ni hielo ("Ya tiene escudo").
 - **Ficha:** la del muro dice que no ataca, que para lo de detrás, que se puede llevar a una disparadora y si está agrietado o a punto de romperse; la de la disparadora con escudo, que para lo de detrás.
 
+### Poderes (T-021)
+Decisiones O-01 a O-11 cerradas el 22 nov 2026 (O-04 a O-06 cambiadas por Carmine: granada en vez de meteorito, muro de hielo de tres casillas que bloquea el paso, y a los jefes igual que a todos). Cómo se hace: ADR-0020. Los valores están como PROVISIONAL en `POWERS`, `GRENADE` e `ICE_WALL` de `balance.ts`.
+- **Qué son:** habilidades de un uso que se lanzan desde un panel a la izquierda. Se compran una vez en la tienda (T-022) y cada uno trae **1 carga por partida** (O-01, b). Se llevan **2** a una partida (O-02, los elige la tienda). **Hasta la tienda, cada partida trae los tres** (O-08); en desarrollo, `?poderes=` en la dirección elige otros (`?poderes=granada,muro`) o ninguno (`?poderes=`).
+- **Cada uso gasta exactamente una carga**, alcance o no a alguien. Las cargas van con la partida guardada.
+- **Cuándo (O-07):** recolocar, también en la preparación; la granada y el muro, solo en el ataque. En la preparación se ven en espera, con un relojito.
+- **Cómo se lanzan:** como una carta. Se toca el poder y luego el tablero, o se arrastra desde el panel. Volver a tocarlo, Esc, clic derecho o tocar fuera del tablero lo sueltan sin gastarlo. Tomar una carta lo suelta, y con un poder elegido no se arrastra ni se selecciona ninguna planta.
+- **Recolocar (O-03):** lleva una disparadora a una casilla vacía, tal como está: vida, nivel, elemento, cañones y recarga. Se toca la planta (o se arrastra) y luego la casilla vacía; tocar otra vez la planta la deja en su sitio y tocar otra disparadora cambia de planta. Lo que la mordía sigue avanzando. Solo disparadoras: minas, muros y hielo no se mueven.
+- **Granada (O-04):** del tamaño de una mina de fuego, con su mecha. Alguien la lanza desde detrás de las plantas: vuela en curva (0,9 s), cae en el centro de la casilla elegida y explota a los 2 s. Puede caer junto a una planta: no ocupa la casilla. Es invulnerable: los enemigos no la atacan ni se paran. Daña a todos los enemigos a 1,8 casillas o menos (la mina, 1,5), en cualquier carril, con el daño de la mina de fuego (200). No daña plantas. A Creeper en el aire no le alcanza, como a las minas. De los Copycat que tumba, solo dejan copia los dos primeros, como con la mina.
+- **Muro de hielo (O-05, O-09 a O-11):** tres bloques de hielo en una columna: la casilla elegida y las de arriba y abajo; en el carril de arriba o el de abajo se mete dentro del tablero. No se pone si alguna de sus casillas está ocupada (lo dice en rojo: "Hay algo en medio").
+  - **Cada bloque es un muro:** tiene la vida de una disparadora de nivel 1 (300) por su cuenta, los enemigos se paran a morderlo y le escupen, y para lo que va hacia lo de detrás como el escudo: versos, escupitajos y saltos. El poema entero no lo rompe si está entero (L-04).
+  - **Se derrite a los 10 s**, también si llega a la preparación. En sus últimos 3 s gotea, encoge y parpadea.
+  - **Un enemigo dentro de una de sus casillas** (su centro cae en ella) sale con el cuerpo entero por el lado más cercano: hacia atrás si no pasó la mitad (y se para a morder el hielo) o hacia delante si la pasó (y sigue su camino). Uno en el aire (Creeper saltando) no se mueve.
+  - No se arrastra ni se infunde. Tiene ficha: no ataca, para lo de detrás y cuándo se derrite.
+- **Jefes (O-06):** igual que a todos: el muro es solo un muro y la granada, solo una explosión.
+- **Tours:** uno por poder. Salen en la primera preparación en que se lleva el poder y la ronda no trae otro tour por ver: con los poderes de prueba, un jugador nuevo los ve en la ronda 7 del brote 1; en el brote 2, en la 1. Recolocar se prueba de verdad; la granada y el muro se enseñan con su dibujo y "Siguiente", porque en la preparación no se pueden usar.
+- Las rondas se equilibran sin contar con los poderes.
+
 ### Fuego (T-004)
 - **Mina (fuego sembrado solo):** ocupa su casilla y tiene vida propia; los gusanos se paran a morderla como a una planta.
   - Cuando un enemigo entra en su radio de detección, cuenta 2 s y explota. El conteo sigue aunque el enemigo salga del radio o muera.
@@ -276,7 +295,7 @@ Decisiones R-01 a R-04 cerradas el 21 nov 2026 con la recomendación. Cómo se h
 
 ### Progreso permanente (T-017)
 Decisiones K-01 y K-02 cerradas el 21 nov 2026 con la recomendación. Cómo se hace: ADR-0014.
-- **Qué es:** lo que el jugador no pierde al acabar una partida. Es de cada jugador (T-034). Hoy, los jefes vencidos, la historia vista (T-031) y las semillas (T-020); después, las compras (T-022) y las mejoras (T-023).
+- **Qué es:** lo que el jugador no pierde al acabar una partida. Es de cada jugador (T-034). Hoy, los jefes vencidos, la historia vista (T-031) y las semillas (T-020); después, las compras (T-022) y las mejoras (T-023). Las cargas de los poderes (T-021) no: son de cada partida.
 - **Jefe vencido:** al vencer al jefe de un brote queda apuntado para siempre. Volver a vencerlo no cambia nada.
 - **No se pierde** al ganar, al perder ni al empezar una partida nueva. Mientras el juego esté en desarrollo, un progreso guardado con otra versión de su forma se descarta, sin convertirlo (ADR-0014).
 - **Se borra con el jugador:** "Borrar jugador" en la pantalla de jugadores (T-034). Hasta T-034 era "Borrar progreso", en Opciones.
@@ -397,6 +416,8 @@ T-024: el escudo es un elemento más (`ElementType` en `plants.ts`, con `MineEle
 T-025: las tropas del brote 2 son enemigos más de `ENEMIES` (`copycat`, `copycatArmored`, `copycatSpitter` y `minstrel`; los Copycat repiten los números del gusano, el acorazado y el escupidor del brote 1). Todo en `combat.ts`, con tests en `troops.test.ts`: la copia es `Enemy.clone` (`leavesClone`, `cloneOf`, evento `cloned`; su vida, su daño, su cuerpo, su alcance y su moneda en `enemyMaxHp`, `enemyDamage`, `enemyHalfLength`, `enemyReach` y `enemyReward`), con el límite por explosión en `explode`. El Minstrel ataca con `attack: 'verse'`: se para como el escupidor (`rangedColumn`, antes `spitColumn`), avisa (`verseWarned`), recita (`sang`) y sus versos (`Verse`, en `MatchState.verses`) cruzan el carril con `waveReach`, que desde T-025 cuenta lo que cruza en (`to`, `from`] para no dar dos veces a lo mismo (`verseHit`, con `blocked` en el escudo que lo para, y `verseGone`). La partida guardada pasa a la versión 5. Los valores, en `ENEMIES.minstrel`, `CLONE` y `VERSE` de `balance.ts`.
 
 T-026: Elk Cloner es un enemigo más de `ENEMIES` (`elkCloner`, con `attack: 'recite'`) y el jefe del brote 2 (`boss` en `OUTBREAKS`). Los jefes se distinguen con `BossKind`, `BOSS_KINDS` e `isBoss` en `combat.ts`: no tienen nivel, si cruzan se pierde y al caer cae todo, sin copias, y se deshacen los versos en vuelo. Su recital va en `Enemy.recital` (`Recital`: reloj de versos, versos hasta el poema y aviso del poema), lo lleva `recite` en `stepCombat`, con los eventos `poemWarned` y `poemRecited`; el aviso, en `poemWarning`. Sus versos y los del poema son `Verse` con quien los recita (`by`) y si son del poema (`poem`), y lo que quita el poema, `poemDamage` y `poemHit` (L-04); el de sus versos, `verseDamage`. Los refuerzos que dejan de salir al caer el jefe, en `stepRound` (`bossFallen`); lo dura que es una ronda, `roundThreat`. Tests en `elkCloner.test.ts`. La partida guardada pasa a la versión 6. Los valores, en `ENEMIES.elkCloner`, `ELK_CLONER` y `ENEMY_LEVELS.tables.high` de `balance.ts`; la simulación con bots, en `src/game/sim/` (`npm run sim`).
+
+T-021: los poderes están en `src/game/core/powers.ts` (`PowerId`, `PowerSlot`, `loadoutSlots`, `powersFromParam`, `powerCharges`, `powerBlocker`; recolocar: `relocateSourceBlocker`, `relocateBlocker`, `relocateTargets`, `relocatePlant`; granada: `grenadeBlocker`, `throwGrenade`; muro de hielo: `createIceBlock`, `iceWallCells`, `iceWallBlocker`, `icePushOf`, `iceWallPushes`, `placeIceWall`), con tests en `powers.test.ts`. La partida lleva sus cargas (`MatchState.powers`) y sus granadas (`MatchState.grenades`); el bloque de hielo es lo sembrado de `kind: 'ice'` (`IceBlock`, `iceAt` en `match.ts`). En `combat.ts`, la granada (`Grenade`, `grenadeReaches`, eventos `grenadeLanded` y `grenadeExploded`), el hielo que se derrite (evento `iceMelted`) y el hielo como escudo (`isShield`). La partida guardada pasa a la versión 7. Los valores, en `POWERS`, `GRENADE` e `ICE_WALL` de `balance.ts`.
 
 T-034: los jugadores están en `src/game/profiles.ts` (reglas `addProfile`, `selectProfile`, `removeProfile`, `touchProfile`, `freeNumber` y `decodeProfiles`; `ProfileKeeper` y su instancia `profiles`, con el almacén de cada jugador en `store()` y `storeOf()`), con tests en `profiles.test.ts`; el almacén que nunca falla (`SessionStore`), en `src/game/storage.ts`. `save.ts`, `progress.ts` y `tourProgress.ts` escriben por defecto en el almacén del jugador activo. Lo que la pantalla de jugadores cuenta de cada uno (nombre, lo que se pierde al borrarlo) está en `src/ui/playerCards.ts`, con tests en `playerCards.test.ts`.
 

@@ -1,8 +1,8 @@
 import * as Phaser from 'phaser';
-import { actionCue, combatCues, mineTicks, roundCues } from '../audio/cues';
+import { actionCue, combatCues, grenadeTicks, mineTicks, roundCues } from '../audio/cues';
 import { sfx } from '../audio/sfx';
 import { panAt } from '../audio/voices';
-import { BOARD, CREEPER, ECONOMY, ELK_CLONER, ENEMIES, LIMITS, MINE, SHIELD } from '../config/balance';
+import { BOARD, CREEPER, ECONOMY, ELK_CLONER, ENEMIES, GRENADE, ICE_WALL, LIMITS, MINE, SHIELD } from '../config/balance';
 import { cellAt, cellCenter, type BoardPoint, type Cell } from '../core/board';
 import { enemyMaxHp, enemyReward, isBoss, isDefeated, isEnraged, poemWarning, spawnEnemy, stepCombat, type BossKind, type CombatEvent, type Enemy, type EnemyKind } from '../core/combat';
 import { rollKillReward, stepIncome } from '../core/economy';
@@ -16,6 +16,7 @@ import {
   fusedPlant,
   fusionBlocker,
   fusionTargets,
+  iceAt,
   infuseWithElement,
   levelUpOffer,
   levelUpPlant,
@@ -35,6 +36,18 @@ import {
   type Plant,
   type Wall,
 } from '../core/match';
+import {
+  grenadeBlocker,
+  iceWallBlocker,
+  iceWallCells,
+  placeIceWall,
+  powerBlocker,
+  relocateBlocker,
+  relocateSourceBlocker,
+  relocatePlant,
+  throwGrenade,
+  type PowerId,
+} from '../core/powers';
 import { FIRST_OUTBREAK, outbreakScript, roundCount, type OutbreakId } from '../core/outbreaks';
 import { plantMaxHp, type ElementType } from '../core/plants';
 import { settleSeeds, type SeedPayout } from '../core/seeds';
@@ -65,6 +78,7 @@ import {
   type PagePoint,
   type PlantPanel,
   type PlayerAction,
+  type PowerInfo,
   type RoundInfo,
   type SeedSummary,
   type TourArt,
@@ -82,8 +96,11 @@ import { bossLines, createBossOmen, createEnemyView, type BossOmen } from '../vi
 import { CreeperView, OMEN_LEAP_MS, bossLoadProgress } from '../view/creeperView';
 import { ElkClonerView } from '../view/elkClonerView';
 import { Effects } from '../view/effects';
-import { enemyInfo, mineInfo, shooterInfo, wallInfo, type EntityInfoData } from '../view/entityInfo';
+import { enemyInfo, iceInfo, mineInfo, shooterInfo, wallInfo, type EntityInfoData } from '../view/entityInfo';
 import { DRAG_LOOK, FusionDragView, carriedMine, carriedShooter, carriedWall, dragGround } from '../view/fusionDragView';
+import { GrenadeView, grenadeFoot, grenadeScale } from '../view/grenadeView';
+import { ICE_LOOK, IceBlockView, iceBlockScale } from '../view/iceWallView';
+import { iceWear } from '../view/powerArt';
 import { DEPTH, SCENERY, VIEW, entityDepth, perspective } from '../view/layout';
 import { medalTier, showsMedal } from '../view/levelMedal';
 import { MineView, mineAreaColor, mineScale } from '../view/mineView';
@@ -93,7 +110,19 @@ import { portraitUrl, type PortraitSubject } from '../view/portrait';
 import { QUALITY_PROFILES, type QualityLevel, type QualityProfile } from '../view/quality';
 import { SpitView } from '../view/spitView';
 import { VerseView } from '../view/verseView';
-import { MINE_SIZE, SHOOTER_SIZE, TEX, WALL_SIZE, registerTextures, shooterTexture, mineTexture, wallTexture } from '../view/textures';
+import {
+  GRENADE_SIZE,
+  ICE_BLOCK_SIZE,
+  MINE_SIZE,
+  SHOOTER_SIZE,
+  TEX,
+  WALL_SIZE,
+  iceBlockTexture,
+  registerTextures,
+  shooterTexture,
+  mineTexture,
+  wallTexture,
+} from '../view/textures';
 import { wallWear } from '../view/wallArt';
 import { tourCells } from '../view/tourSpots';
 import { WORM_LOOK, WormView, type EnemyView } from '../view/wormView';
@@ -121,8 +150,16 @@ const LOOK = {
   lifeLostText: { color: '#ff8fa3', stroke: '#5a0d1a' },
   /** Tiempo entre perder la ultima vida y la pantalla de derrota: deja ver como se cuela el gusano. */
   defeatDelayMs: 1100,
-  /** Texto que salta sobre la planta al fusionar. */
+  /** Texto que salta sobre la planta al fusionar (y al recolocarla, T-021). */
   fusedText: { color: '#efffdf', stroke: '#24561c' },
+  /**
+   * Poderes (T-021): casilla a la que apunta la granada y su alcance (rojo granada), las del muro de hielo (azul helado) y la
+   * disparadora que se puede recolocar (dorada, como la seleccionada). El muro fantasma, mas transparente que la planta.
+   */
+  powerColors: { grenade: 0xff6a5a, iceWall: 0x9fe0ff, relocate: 0xffe36b },
+  iceGhostAlpha: 0.45,
+  /** La explosion de la granada sacude la camara algo mas que la mina. */
+  grenadeShake: { ms: 240, intensity: 0.0055 },
   /** Casilla de la disparadora seleccionada para subirla de nivel (T-003): dorada, late despacio. */
   pickedColor: 0xffe36b,
   /** Donde se apoya el panel de nivel: sobre la cabeza y bajo los pies de la planta, en anchos de casilla. */
@@ -162,6 +199,8 @@ const LOOK = {
     mine: { up: 0.22, rx: 0.5, ry: 0.44 },
     wall: { up: 0.42, rx: 0.62, ry: 0.62 },
     exitFromX: -0.85,
+    /** Las tres casillas del muro de hielo (T-021): una elipse alta que las cubre. */
+    iceWall: { rx: 0.62, ry: 1.62 },
   },
 } as const;
 
@@ -224,8 +263,29 @@ interface PlantDrag {
   cellWidth: number;
 }
 
-/** Lo que se puede inspeccionar con doble clic (T-010): lo sembrado en una casilla (planta, mina o muro) o un enemigo. */
-type InfoTarget = { kind: 'plant' | 'mine' | 'wall'; cell: Cell } | { kind: 'enemy'; id: number };
+/**
+ * Disparadora en la mano para recolocarla con el poder (T-021). Mientras dura, sigue en su casilla medio transparente. Se
+ * elige con un toque (y espera el toque en su destino) o se arrastra hasta el (`dragging`), como al fusionar.
+ */
+interface Relocation {
+  from: Cell;
+  view: FusionDragView;
+  /** Del punto pulsado a sus pies, en anchos de casilla (ver `dragGround`); 0 tras elegirla con un toque. */
+  grab: { x: number; y: number };
+  cellWidth: number;
+  /** Casilla bajo la planta que se lleva, si cae en el tablero. */
+  over: Cell | null;
+  /** Puntero que la tiene pulsada: si se mueve lo bastante, se arrastra. Null tras soltarla sin moverla. */
+  pointerId: number | null;
+  press: { x: number; y: number };
+  dragging: boolean;
+}
+
+/**
+ * Lo que se puede inspeccionar con doble clic (T-010): lo sembrado en una casilla (planta, mina, muro o, T-021, bloque de
+ * hielo) o un enemigo.
+ */
+type InfoTarget = { kind: 'plant' | 'mine' | 'wall' | 'ice'; cell: Cell } | { kind: 'enemy'; id: number };
 
 const infoKey = (target: InfoTarget) => (target.kind === 'enemy' ? `enemy:${target.id}` : `${target.kind}:${cellKey(target.cell)}`);
 
@@ -240,6 +300,11 @@ export interface BoardSceneData {
   pendingUnlock?: UnlockInfo | null;
   /** Arrancar en pausa (por ejemplo, si se cambia la calidad desde el menu de pausa). */
   paused?: boolean;
+  /**
+   * Poderes de la partida nueva (T-021); sin ellos, los de prueba hasta la tienda (`POWERS.trialLoadout`, O-08). En
+   * desarrollo, `?poderes=` en la direccion. Una partida que se continua ya lleva los suyos.
+   */
+  loadout?: PowerId[];
 }
 
 /**
@@ -277,6 +342,20 @@ export class BoardScene extends Phaser.Scene {
   private spitViews = new Map<number, SpitView>();
   /** Versos de los juglares en vuelo (T-025). */
   private verseViews = new Map<number, VerseView>();
+  /** Granadas del poder en vuelo o contando (T-021), por id. */
+  private grenadeViews = new Map<number, GrenadeView>();
+  /** Bloques del muro de hielo del poder (T-021), por casilla. */
+  private iceViews = new Map<string, IceBlockView>();
+  /** Poder elegido en el panel para apuntarlo en el tablero (T-021), o null. */
+  private power: PowerId | null = null;
+  /** Disparadora en la mano para recolocarla (T-021), o null. */
+  private relocation: Relocation | null = null;
+  /** Bloques fantasma del muro de hielo mientras se apunta (T-021). */
+  private iceGhosts: Phaser.GameObjects.Image[] = [];
+  /** Ultimo panel de poderes enviado al HUD, para avisar solo cuando cambia. */
+  private powersKey = '';
+  /** Poderes de la partida nueva (T-021): se guardan para "Jugar otra vez". */
+  private loadout: PowerId[] | undefined;
   /** Siguiente copion que suelta la tecla K en desarrollo (T-025). */
   private debugCopycat = 0;
   /** Rotulo sobre la disparadora a la que apunta una carta de elemento: lo que costaria infundirla o por que no se puede. */
@@ -330,13 +409,15 @@ export class BoardScene extends Phaser.Scene {
     this.outbreak = data.outbreak ?? FIRST_OUTBREAK;
     this.restoredUnlock = data.pendingUnlock ?? null;
     this.wantPaused = data.paused ?? false;
+    this.loadout = data.loadout;
     this.created = false;
   }
 
   create(): void {
     // B-02 (T-018): una partida nueva empieza con el tablero vacio y el saldo inicial de su brote. Si su jefe ya estaba
     // vencido, sus semillas dan menos (T-020, C-03).
-    this.match = this.resume ?? createMatch(undefined, 0, this.outbreak, isOutbreakDefeated(playerProgress.read(), this.outbreak));
+    this.match =
+      this.resume ?? createMatch(undefined, 0, this.outbreak, isOutbreakDefeated(playerProgress.read(), this.outbreak), this.loadout);
     this.selected = null;
     this.hoverCell = null;
     this.defeated = false;
@@ -356,6 +437,11 @@ export class BoardScene extends Phaser.Scene {
     this.wallViews = new Map();
     this.spitViews = new Map();
     this.verseViews = new Map();
+    this.grenadeViews = new Map();
+    this.iceViews = new Map();
+    this.power = null;
+    this.relocation = null;
+    this.powersKey = '';
     this.previewKey = '';
     this.omen = null;
     this.lostToBoss = false;
@@ -418,8 +504,11 @@ export class BoardScene extends Phaser.Scene {
   private applyPause(paused: boolean): void {
     this.wantPaused = paused;
     if (!this.created) return;
-    // Un arrastre a medias no sobrevive a la pausa: la planta vuelve a su casilla.
-    if (paused) this.cancelDrag();
+    // Un arrastre a medias no sobrevive a la pausa: la planta vuelve a su casilla (tambien la que se recoloca, T-021).
+    if (paused) {
+      this.cancelDrag();
+      this.cancelRelocation();
+    }
     if (paused && this.sys.isActive()) {
       this.sys.pause();
     } else if (!paused && this.sys.isPaused()) {
@@ -446,6 +535,7 @@ export class BoardScene extends Phaser.Scene {
   update(_time: number, delta: number): void {
     this.ambience.update(delta);
     this.drag?.view.update(delta);
+    this.relocation?.view.update(delta);
     if (!this.defeated && !this.won) this.advance(delta);
     // El panel sigue a la planta aunque cambie la ventana (pantalla completa, giro del movil...).
     if (this.picked) this.emitPlantPanel();
@@ -480,8 +570,10 @@ export class BoardScene extends Phaser.Scene {
         if (sown?.kind === 'shooter') this.addPlantView({ lane: laneIndex, col }, sown, false);
         if (sown?.kind === 'mine') this.addMineView({ lane: laneIndex, col }, sown, false);
         if (sown?.kind === 'wall') this.addWallView({ lane: laneIndex, col }, sown, false);
+        if (sown?.kind === 'ice') this.iceViews.set(cellKey({ lane: laneIndex, col }), new IceBlockView(this, this.fx, { lane: laneIndex, col }, sown, false));
       }),
     );
+    this.match.grenades.forEach((grenade) => this.grenadeViews.set(grenade.id, new GrenadeView(this, this.fx, grenade, false)));
     this.match.enemies.forEach((enemy) => this.addWormView(enemy, false));
     this.match.bullets.forEach((bullet) => this.bulletViews.set(bullet.id, new BulletView(this, this.fx, bullet, false)));
     this.match.spits.forEach((spit) => this.spitViews.set(spit.id, new SpitView(this, this.fx, spit, false)));
@@ -501,6 +593,14 @@ export class BoardScene extends Phaser.Scene {
       .setAlpha(0.55)
       .setVisible(false);
     this.tweens.add({ targets: this.ghost, alpha: 0.3, duration: 650, yoyo: true, repeat: -1, ease: 'Sine.InOut' });
+    // Muro de hielo fantasma (T-021): un bloque por casilla.
+    this.iceGhosts = Array.from({ length: ICE_WALL.span }, () =>
+      this.add
+        .image(0, 0, iceBlockTexture(0))
+        .setOrigin(ICE_BLOCK_SIZE.footX / ICE_BLOCK_SIZE.width, ICE_BLOCK_SIZE.footY / ICE_BLOCK_SIZE.height)
+        .setAlpha(LOOK.iceGhostAlpha)
+        .setVisible(false),
+    );
   }
 
   private bindPointer(): void {
@@ -509,6 +609,16 @@ export class BoardScene extends Phaser.Scene {
     this.input.on(Phaser.Input.Events.POINTER_MOVE, (pointer: Phaser.Input.Pointer) => {
       if (this.drag) {
         if (pointer.id === this.drag.pointerId) this.moveDrag(pointer);
+        return;
+      }
+      // Poderes (T-021): la planta que se recoloca sigue al puntero; la granada y el muro apuntan a la casilla del suelo.
+      if (this.relocation) {
+        this.moveRelocation(pointer);
+        return;
+      }
+      if (this.power) {
+        this.hover(this.cellAtScreen(pointer.worldX, pointer.worldY));
+        this.setCursor(this.power === 'relocate' && this.plantCellAtScreen(pointer.worldX, pointer.worldY) ? 'grab' : 'pointer');
         return;
       }
       const press = this.press;
@@ -527,7 +637,7 @@ export class BoardScene extends Phaser.Scene {
       this.setCursor(this.plantCursor(pointer.worldX, pointer.worldY));
     });
     this.input.on(Phaser.Input.Events.GAME_OUT, () => {
-      if (!this.drag) this.hover(null);
+      if (!this.drag && !this.relocation) this.hover(null);
     });
 
     this.input.on(
@@ -535,12 +645,18 @@ export class BoardScene extends Phaser.Scene {
       (pointer: Phaser.Input.Pointer, over: Phaser.GameObjects.GameObject[]) => {
         if (pointer.rightButtonDown()) {
           this.cancelDrag();
+          this.cancelPower();
           this.select(null);
           this.pickPlant(null);
           return;
         }
         // Un clic sobre una moneda la recoge; no debe sembrar en la casilla de debajo.
         if (over.length > 0 || this.drag) return;
+        // Con un poder elegido (T-021), el toque es para el: elegir la planta a recolocar, su destino o donde lanzarlo.
+        if (this.power) {
+          this.powerDown(pointer);
+          return;
+        }
         // Doble clic sobre una planta, una mina o un enemigo: su ficha (T-010). Con una carta elegida el clic la juega.
         if (this.checkDoubleTap(pointer)) return;
         // Sin carta elegida, pulsar una planta la prepara para arrastrarla (T-006) o, si se suelta sin moverla,
@@ -574,6 +690,7 @@ export class BoardScene extends Phaser.Scene {
         }
       }
       if (this.drag?.pointerId === pointer.id) this.dropDrag(pointer);
+      if (this.relocation?.pointerId === pointer.id) this.releaseRelocation(pointer);
     };
     this.input.on(Phaser.Input.Events.POINTER_UP, (pointer: Phaser.Input.Pointer) => onUp(pointer, true));
     this.input.on(Phaser.Input.Events.POINTER_UP_OUTSIDE, (pointer: Phaser.Input.Pointer) => onUp(pointer, false));
@@ -591,8 +708,15 @@ export class BoardScene extends Phaser.Scene {
       this.select(card);
     };
     const onCancelled = () => {
+      this.cancelPower();
       this.select(null);
       this.pickPlant(null);
+    };
+    // Poderes (T-021): tomar uno del panel lo elige; tomar otra vez el elegido lo suelta sin gastarlo.
+    const onPowerPicked = (power: PowerId) => {
+      if (!running()) return;
+      if (this.power === power) this.cancelPower();
+      else this.selectPower(power);
     };
     const onLevelUp = () => running() && this.tryLevelUp();
     const onAttack = () => {
@@ -600,9 +724,18 @@ export class BoardScene extends Phaser.Scene {
       this.match = startAttack(this.match);
       this.emitRound();
     };
-    const onDragged = (point: PagePoint) => running() && this.hover(this.cardCellAtPage(point));
+    const onDragged = (point: PagePoint) => {
+      if (!running()) return;
+      // Un poder arrastrado desde el panel (T-021) apunta a la casilla del suelo, como al moverlo sobre el tablero.
+      if (this.power) this.hover(this.cellAtPage(point));
+      else this.hover(this.cardCellAtPage(point));
+    };
     const onDropped = (point: PagePoint) => {
       if (!running()) return;
+      if (this.power) {
+        this.powerDropped(point);
+        return;
+      }
       const cell = this.cardCellAtPage(point);
       // Soltar fuera del tablero (o un simple clic en la carta) no cobra ni siembra: la carta sigue elegida.
       if (cell) this.tryPlay(cell);
@@ -614,7 +747,7 @@ export class BoardScene extends Phaser.Scene {
     const onPause = (paused: boolean) => this.applyPause(paused);
     const onTourHold = (hold: boolean) => this.setTourHold(hold);
     // Partida nueva desde cero, del mismo brote: no continua la anterior (sin `resume`) y arranca sin pausa.
-    const onRestart = () => this.scene.restart({ quality: this.level, outbreak: this.match.outbreak } satisfies BoardSceneData);
+    const onRestart = () => this.scene.restart({ quality: this.level, outbreak: this.match.outbreak, loadout: this.loadout } satisfies BoardSceneData);
     // T-011: se guarda al ocultar o cerrar la pestana, y al salir al menu de inicio, que pasa a la portada.
     const onSave = () => this.saveGame();
     // T-019: la escena de portada arranca ya en el sitio al que se vuelve (la portada o, desde la victoria, el Invernadero).
@@ -624,6 +757,7 @@ export class BoardScene extends Phaser.Scene {
     };
 
     EventBus.on(GameEvents.cardPicked, onPicked);
+    EventBus.on(GameEvents.powerPicked, onPowerPicked);
     EventBus.on(GameEvents.selectionCancelled, onCancelled);
     EventBus.on(GameEvents.levelUpRequested, onLevelUp);
     EventBus.on(GameEvents.attackRequested, onAttack);
@@ -639,6 +773,7 @@ export class BoardScene extends Phaser.Scene {
 
     const unbind = () => {
       EventBus.off(GameEvents.cardPicked, onPicked);
+      EventBus.off(GameEvents.powerPicked, onPowerPicked);
       EventBus.off(GameEvents.selectionCancelled, onCancelled);
       EventBus.off(GameEvents.levelUpRequested, onLevelUp);
       EventBus.off(GameEvents.attackRequested, onAttack);
@@ -742,6 +877,7 @@ export class BoardScene extends Phaser.Scene {
     // Lo que suena (T-014) lo deciden las reglas de `cues.ts`: un disparo por planta, sin repetir lo que ya suena.
     sfx.playCues(combatCues(events, before));
     sfx.playCues(mineTicks(before, this.match));
+    sfx.playCues(grenadeTicks(before, this.match));
 
     for (const enemy of this.match.enemies) this.wormViews.get(enemy.id)?.sync(enemy);
     for (const bullet of this.match.bullets) this.bulletViews.get(bullet.id)?.sync(bullet);
@@ -755,6 +891,15 @@ export class BoardScene extends Phaser.Scene {
       const wall = wallAt(this.match, keyCell(key));
       if (wall) view.sync(wall);
     });
+    // Poderes (T-021): las granadas en vuelo o contando y los bloques del muro de hielo que se gastan y se derriten.
+    for (const grenade of this.match.grenades) this.grenadeViews.get(grenade.id)?.sync(grenade);
+    this.iceViews.forEach((view, key) => {
+      const block = iceAt(this.match, keyCell(key));
+      if (block) view.sync(block);
+    });
+    // El poder elegido puede dejar de poderse usar (acaba el ataque: la granada y el muro, solo en el, O-07).
+    if (this.power && powerBlocker(this.match, this.power)) this.cancelPower();
+    this.emitPowers();
     if (this.match.lives !== livesBefore) this.emitLives();
     this.syncOmen(true);
     this.emitRound();
@@ -839,8 +984,9 @@ export class BoardScene extends Phaser.Scene {
       if (!items.some((item) => item.id === id)) items.push({ id });
     }
     if (items.length === 0) return;
-    // Un arrastre o una carta a medias no sobreviven al aviso, que pausa el juego.
+    // Un arrastre, una carta o un poder a medias no sobreviven al aviso, que pausa el juego.
     this.cancelDrag();
+    this.cancelPower();
     this.select(null);
     this.pickPlant(null);
     this.pendingUnlock = { round: index + 1, items };
@@ -943,9 +1089,17 @@ export class BoardScene extends Phaser.Scene {
         this.mineViews.delete(key);
         this.wallViews.get(key)?.die();
         this.wallViews.delete(key);
+        // Un bloque del muro de hielo (T-021) roto a mordiscos o a disparos.
+        this.iceViews.get(key)?.die();
+        this.iceViews.delete(key);
         // La casilla vuelve a estar libre: si hay una carta elegida, el resaltado cambia.
         this.refreshHighlight();
         this.plantLostDuringDrag(event.cell);
+        // La disparadora que se recolocaba ya no esta (T-021): la de la mano se deshace en hojas; el poder sigue elegido.
+        if (this.relocation && sameCell(this.relocation.from, event.cell)) {
+          this.relocation.view.poof();
+          this.relocation = null;
+        }
         // Si era la seleccionada, su panel se cierra.
         if (sameCell(this.picked, event.cell)) this.pickPlant(null);
         break;
@@ -1007,6 +1161,24 @@ export class BoardScene extends Phaser.Scene {
         event.verses.forEach((verse) => this.verseViews.set(verse.id, new VerseView(this, this.fx, verse, true)));
         this.cameras.main.shake(260, 0.006);
         break;
+      // Poderes (T-021): la granada cae y explota (sacude a los alcanzados), y un bloque de hielo se derrite.
+      case 'grenadeLanded':
+        this.grenadeViews.get(event.grenadeId)?.land();
+        break;
+      case 'grenadeExploded':
+        this.grenadeViews.get(event.grenadeId)?.explode();
+        this.grenadeViews.delete(event.grenadeId);
+        event.enemyIds.forEach((id) => this.wormViews.get(id)?.blasted());
+        this.cameras.main.shake(LOOK.grenadeShake.ms, LOOK.grenadeShake.intensity);
+        break;
+      case 'iceMelted': {
+        const key = cellKey(event.cell);
+        this.iceViews.get(key)?.melt();
+        this.iceViews.delete(key);
+        this.refreshHighlight();
+        this.refreshDragTargets();
+        break;
+      }
     }
   }
 
@@ -1072,6 +1244,7 @@ export class BoardScene extends Phaser.Scene {
     this.plantViews.get(cellKey(cell))?.bitten(sown ? sown.hp / sownMaxHp(sown) : 0);
     this.mineViews.get(cellKey(cell))?.bitten();
     this.wallViews.get(cellKey(cell))?.bitten();
+    this.iceViews.get(cellKey(cell))?.bitten();
   }
 
   private addWormView(enemy: Enemy, emerge: boolean, emergeDelayMs = 0): void {
@@ -1106,6 +1279,7 @@ export class BoardScene extends Phaser.Scene {
     if (this.defeated) return;
     this.defeated = true;
     this.cancelDrag();
+    this.cancelPower();
     this.press = null;
     this.setCursor('default');
     this.select(null);
@@ -1131,6 +1305,7 @@ export class BoardScene extends Phaser.Scene {
     // El jefe del brote queda vencido para siempre (T-017) y se cobran las semillas (T-020); despues se borra la guardada.
     const seeds = this.settle();
     this.cancelDrag();
+    this.cancelPower();
     this.press = null;
     this.setCursor('default');
     this.select(null);
@@ -1170,8 +1345,10 @@ export class BoardScene extends Phaser.Scene {
     return { payout, balance: progress.seeds };
   }
 
-  /** Balas, escupitajos y versos en vuelo se apagan (la partida acabo y ya no se mueven). */
+  /** Balas, escupitajos, versos y granadas (T-021) en vuelo se apagan (la partida acabo y ya no se mueven). */
   private clearProjectiles(): void {
+    this.grenadeViews.forEach((grenade) => grenade.vanish());
+    this.grenadeViews.clear();
     this.bulletViews.forEach((bullet) => bullet.vanish());
     this.bulletViews.clear();
     this.spitViews.forEach((spit) => spit.vanish());
@@ -1208,6 +1385,8 @@ export class BoardScene extends Phaser.Scene {
   }
 
   private select(card: CardId | null): void {
+    // Tomar una carta suelta el poder elegido (T-021): los dos gestos no se mezclan.
+    if (card) this.cancelPower();
     this.selected = card;
     // Tomar una carta cierra el panel de nivel: o se juega la carta o se sube la planta.
     if (card) this.pickPlant(null);
@@ -1231,6 +1410,11 @@ export class BoardScene extends Phaser.Scene {
     const card = this.selected;
     const cell = this.hoverCell;
     this.highlight.clear();
+    for (const ghost of this.iceGhosts) ghost.setVisible(false);
+    if (this.power) {
+      this.refreshPowerHighlight();
+      return;
+    }
     if (!card || !cell) {
       this.highlight.setVisible(false);
       this.ghost.setVisible(false);
@@ -1336,9 +1520,9 @@ export class BoardScene extends Phaser.Scene {
   // Fusionar por arrastre (T-006). Las reglas son de core (fusionBlocker, fusionTargets, fusePlants);
   // aqui se lleva el puntero y se anima.
 
-  /** Las plantas se tocan (para arrastrarlas o seleccionarlas) sin carta elegida y con la partida en juego. */
+  /** Las plantas se tocan (para arrastrarlas o seleccionarlas) sin carta ni poder elegido y con la partida en juego. */
   private canTouchPlants(): boolean {
-    return !this.selected && !this.defeated && !this.won && this.sys.isActive();
+    return !this.selected && !this.power && !this.defeated && !this.won && this.sys.isActive();
   }
 
   /** Arrastrar para fusionar, desde la ronda que lo desbloquea (T-007). */
@@ -1658,6 +1842,309 @@ export class BoardScene extends Phaser.Scene {
   }
 
   // -------------------------------------------------------------------------
+  // Poderes (T-021, ADR-0020). Las reglas son de core (`powers.ts`); aqui se elige el poder, se apunta, se aplica en el
+  // acto y se anima. Se toma del panel izquierdo (React) y se lanza tocando el tablero o arrastrandolo, como una carta.
+
+  /** Elige el poder `id` para apuntarlo: suelta la carta, el arrastre y el panel de nivel. Uno que no se puede usar, no. */
+  private selectPower(id: PowerId): void {
+    if (this.defeated || this.won || powerBlocker(this.match, id)) return;
+    this.cancelDrag();
+    this.press = null;
+    if (this.selected) this.select(null);
+    this.pickPlant(null);
+    this.cancelRelocation();
+    this.power = id;
+    this.refreshHighlight();
+    EventBus.emit(GameEvents.powerSelected, id);
+    this.emitAction({ type: 'powerPicked', power: id });
+  }
+
+  /** Suelta el poder elegido sin gastarlo (Esc, clic derecho, tocar fuera del tablero o volver a tocarlo en el panel). */
+  private cancelPower(): void {
+    this.cancelRelocation();
+    if (!this.power) return;
+    this.power = null;
+    this.setCursor('default');
+    this.refreshHighlight();
+    EventBus.emit(GameEvents.powerSelected, null);
+  }
+
+  /** Coordenadas del mundo de un punto de la pagina (ver `cardCellAtPage`). */
+  private pageToWorld(point: PagePoint): { x: number; y: number } {
+    this.scale.updateBounds();
+    const world = this.cameras.main.getWorldPoint(this.scale.transformX(point.pageX), this.scale.transformY(point.pageY));
+    return { x: world.x, y: world.y };
+  }
+
+  /** Casilla del suelo bajo un punto de la pagina, para el poder que se arrastra desde el panel. */
+  private cellAtPage(point: PagePoint): Cell | null {
+    const world = this.pageToWorld(point);
+    return this.cellAtScreen(world.x, world.y);
+  }
+
+  /**
+   * Toque en el tablero con un poder elegido. Fuera del tablero, lo suelta sin gastarlo. La granada y el muro se lanzan
+   * en la casilla tocada si se puede. Recolocar: el primer toque elige la disparadora (o empieza a arrastrarla); con una
+   * en la mano, el siguiente toque la lleva a la casilla vacia tocada, la deja en su sitio (si se toca ella) o cambia a otra.
+   */
+  private powerDown(pointer: Phaser.Input.Pointer): void {
+    const x = pointer.worldX;
+    const y = pointer.worldY;
+    const cell = this.cellAtScreen(x, y);
+    if (this.power === 'grenade' || this.power === 'iceWall') {
+      if (!cell) this.cancelPower();
+      else if (this.power === 'grenade') this.tryGrenade(cell);
+      else this.tryIceWall(cell);
+      return;
+    }
+    const plantCell = this.plantCellAtScreen(x, y);
+    const carried = this.relocation;
+    if (carried) {
+      if (carried.pointerId !== null) return;
+      if (plantCell && sameCell(plantCell, carried.from)) {
+        this.cancelRelocation();
+        return;
+      }
+      if (plantCell && relocateSourceBlocker(this.match, plantCell) === null) {
+        this.cancelRelocation();
+        this.startRelocation(plantCell, { x, y }, pointer.id);
+        return;
+      }
+      if (!cell) this.cancelPower();
+      else if (relocateBlocker(this.match, carried.from, cell) === null) this.finishRelocation(cell);
+      return;
+    }
+    if (plantCell && relocateSourceBlocker(this.match, plantCell) === null) this.startRelocation(plantCell, { x, y }, pointer.id);
+    else if (!cell) this.cancelPower();
+  }
+
+  /**
+   * El poder se solto sobre el tablero arrastrandolo desde el panel: la granada y el muro se lanzan ahi; recolocar coge la
+   * disparadora de ahi, que espera el toque en su destino. Soltarlo fuera (o un simple toque en el panel) no lo gasta y lo
+   * deja elegido.
+   */
+  private powerDropped(point: PagePoint): void {
+    const world = this.pageToWorld(point);
+    const cell = this.cellAtScreen(world.x, world.y);
+    if (!cell) return;
+    if (this.power === 'grenade') this.tryGrenade(cell);
+    else if (this.power === 'iceWall') this.tryIceWall(cell);
+    else if (this.power === 'relocate' && !this.relocation) {
+      const plantCell = this.plantCellAtScreen(world.x, world.y);
+      if (plantCell && relocateSourceBlocker(this.match, plantCell) === null) this.startRelocation(plantCell, world, null);
+    }
+  }
+
+  /**
+   * Con un poder elegido, lo que pasara al tocar la casilla bajo el puntero:
+   * - Granada: la casilla y su alcance en el suelo (mayor que el de la mina) y la granada fantasma. Puede caer junto a una planta.
+   * - Muro de hielo: sus tres casillas en azul helado con los bloques fantasma; las ocupadas, en rojo, y "Hay algo en medio".
+   * - Recolocar: la disparadora bajo el puntero en dorado (con una en la mano, lo marca su vista).
+   */
+  private refreshPowerHighlight(): void {
+    const cell = this.hoverCell;
+    this.ghost.setVisible(false);
+    this.cardLabel.hide();
+    this.emitPreview(null);
+    if (!cell || !this.power || this.relocation) {
+      this.highlight.setVisible(false);
+      return;
+    }
+    if (this.power === 'grenade') {
+      const blocked = grenadeBlocker(this.match, cell) !== null;
+      drawCell(this.highlight, cell, blocked ? LOOK.highlightBlocked : LOOK.powerColors.grenade, 0.25, 4);
+      if (!blocked) {
+        drawArea(this.highlight, cellCenter(cell), GRENADE.blastRadius, LOOK.powerColors.grenade, 0.1, 2);
+        const foot = grenadeFoot(cell);
+        const at = perspective.toScreen(foot);
+        this.ghost
+          .setTexture(TEX.grenade.idle)
+          .setOrigin(0.5, GRENADE_SIZE.footY / GRENADE_SIZE.height)
+          .setScale(grenadeScale(perspective.cellWidthAt(foot)))
+          .setPosition(at.x, at.y)
+          .setDepth(entityDepth(at.y) + 1)
+          .setVisible(true);
+      }
+    } else if (this.power === 'iceWall') {
+      const cells = iceWallCells(cell);
+      const blocker = iceWallBlocker(this.match, cell);
+      cells.forEach((c, i) => {
+        drawCell(this.highlight, c, sownAt(this.match, c) ? LOOK.highlightBlocked : LOOK.powerColors.iceWall, 0.25, 4);
+        const ghost = this.iceGhosts[i];
+        if (blocker !== null || !ghost) return;
+        const { screen, cellWidth } = plantPlacement(c);
+        ghost.setPosition(screen.x, screen.y).setScale(iceBlockScale(cellWidth)).setDepth(entityDepth(screen.y)).setVisible(true);
+      });
+      const taken = blocker === 'occupied' ? cells.find((c) => sownAt(this.match, c)) : undefined;
+      if (taken) {
+        const { screen, cellWidth } = plantPlacement(taken);
+        this.cardLabel.show(`ice:${cellKey(taken)}`, [{ text: text().board.iceBlocked, tone: 'blocked' }], screen.x, screen.y - cellWidth * 1.12, cellWidth);
+      }
+    } else {
+      if (!plantAt(this.match, cell) || relocateSourceBlocker(this.match, cell) !== null) {
+        this.highlight.setVisible(false);
+        return;
+      }
+      drawCell(this.highlight, cell, LOOK.powerColors.relocate, 0.22, 4);
+    }
+    this.highlight.setVisible(true);
+  }
+
+  /** Lanza la granada a `cell` si se puede: sale volando desde detras de las plantas y el poder queda gastado. */
+  private tryGrenade(cell: Cell): void {
+    if (this.defeated || this.won || grenadeBlocker(this.match, cell)) return;
+    this.match = throwGrenade(this.match, cell);
+    const grenade = this.match.grenades[this.match.grenades.length - 1];
+    this.grenadeViews.set(grenade.id, new GrenadeView(this, this.fx, grenade, true));
+    this.cancelPower();
+    this.emitPowers();
+    // Suena desde donde la lanzan: a la izquierda, detras de las plantas.
+    this.emitAction({ type: 'power', power: 'grenade' }, { lane: cell.lane, col: 0 });
+  }
+
+  /** Pone el muro de hielo apuntando a `cell` si se puede: brotan los tres bloques y salen de sus casillas los que estaban. */
+  private tryIceWall(cell: Cell): void {
+    if (this.defeated || this.won || iceWallBlocker(this.match, cell)) return;
+    const placed = placeIceWall(this.match, cell);
+    this.match = placed.state;
+    placed.cells.forEach((c, i) => {
+      const block = iceAt(this.match, c);
+      if (block) this.iceViews.set(cellKey(c), new IceBlockView(this, this.fx, c, block, true, i * ICE_LOOK.staggerMs));
+    });
+    for (const push of placed.pushed) this.wormViews.get(push.enemyId)?.shoved(push.fromX, push.toX);
+    this.cancelPower();
+    this.emitPowers();
+    this.emitAction({ type: 'power', power: 'iceWall' }, cell);
+  }
+
+  /**
+   * Coge la disparadora de `cell` para recolocarla: sale a la mano (como al fusionar) y la de la casilla se queda medio
+   * transparente. Con `pointerId`, se agarra por donde se pulso y puede arrastrarse; sin el (soltada desde el panel), espera
+   * el toque en su destino.
+   */
+  private startRelocation(cell: Cell, at: { x: number; y: number }, pointerId: number | null): void {
+    const plant = plantAt(this.match, cell);
+    const view = this.plantViews.get(cellKey(cell));
+    if (!plant || !view || relocateSourceBlocker(this.match, cell) !== null) return;
+    const { cellWidth } = plantPlacement(cell);
+    const foot = view.foot();
+    const grab = pointerId === null ? { x: 0, y: 0 } : { x: (foot.x - at.x) / cellWidth, y: (foot.y - at.y) / cellWidth };
+    const carried = new FusionDragView(this, this.fx, carriedShooter(plant.shooter), foot, cellWidth);
+    view.setLifted(true);
+    this.relocation = { from: cell, view: carried, grab, cellWidth, over: null, pointerId, press: { ...at }, dragging: false };
+    this.highlight.setVisible(false);
+    this.setCursor('grabbing');
+  }
+
+  /** El puntero se movio con una disparadora en la mano: la sigue y marca si se puede soltar en la casilla de debajo. */
+  private moveRelocation(pointer: Phaser.Input.Pointer): void {
+    const r = this.relocation;
+    if (!r) return;
+    const pressed = r.pointerId === pointer.id && pointer.isDown;
+    if (pressed && !r.dragging && Phaser.Math.Distance.Between(r.press.x, r.press.y, pointer.worldX, pointer.worldY) >= DRAG_LOOK.startDistance) {
+      r.dragging = true;
+    }
+    // Recien pulsada y sin moverla aun: se queda donde esta.
+    if (pressed && !r.dragging) return;
+    const ground = dragGround({ x: pointer.worldX, y: pointer.worldY }, r.grab, r.cellWidth);
+    r.cellWidth = ground.cellWidth;
+    r.view.moveTo(ground);
+    const over = ground.board ? cellAt(ground.board) : null;
+    if (!sameCell(over, r.over)) {
+      r.over = over;
+      this.refreshRelocationHover();
+    }
+  }
+
+  /**
+   * Se suelta el boton con una disparadora en la mano. Si se arrastro, se lleva a la casilla de debajo si esta vacia (si
+   * no, vuelve a la suya y el poder sigue elegido). Si fue un toque, se queda en la mano esperando el toque en su destino.
+   */
+  private releaseRelocation(pointer: Phaser.Input.Pointer): void {
+    const r = this.relocation;
+    if (!r || r.pointerId !== pointer.id) return;
+    r.pointerId = null;
+    if (!r.dragging) {
+      r.grab = { x: 0, y: 0 };
+      return;
+    }
+    this.moveRelocation(pointer);
+    const to = r.over;
+    if (to && relocateBlocker(this.match, r.from, to) === null) this.finishRelocation(to);
+    else this.cancelRelocation();
+  }
+
+  /** Casilla bajo la disparadora que se recoloca: verde y "Recolocar aqui" si esta vacia; roja y "Casilla ocupada" si no. */
+  private refreshRelocationHover(): void {
+    const r = this.relocation;
+    if (!r) return;
+    const to = r.over;
+    if (!to || sameCell(to, r.from)) {
+      r.view.hover(null, null);
+      return;
+    }
+    const blocker = relocateBlocker(this.match, r.from, to);
+    const foot = plantPlacement(to).screen;
+    const labels = text().board;
+    if (blocker === null) r.view.hover(to, 'ok', [{ text: labels.relocateHere, tone: 'ok' }], foot);
+    else if (blocker === 'occupied') r.view.hover(to, 'blocked', [{ text: labels.occupied, tone: 'blocked' }], foot);
+    else r.view.hover(null, null);
+  }
+
+  /**
+   * Lleva la disparadora de la mano a `to`: la regla se aplica en el acto (gasta la carga). La de su casilla se arranca
+   * dejando tierra, la de la mano se mete en la casilla nueva y alli brota tal como estaba, con un anillo dorado.
+   */
+  private finishRelocation(to: Cell): void {
+    const r = this.relocation;
+    if (!r || relocateBlocker(this.match, r.from, to) !== null) return;
+    this.relocation = null;
+    this.match = relocatePlant(this.match, r.from, to);
+    const fromKey = cellKey(r.from);
+    const fromView = this.plantViews.get(fromKey);
+    this.plantViews.delete(fromKey);
+    fromView?.uproot();
+    const plant = plantAt(this.match, to) as Plant;
+    const { screen, cellWidth } = plantPlacement(to);
+    r.view.dropInto(screen, cellWidth);
+    this.addPlantView(to, plant, true);
+    this.fx.groundRing(screen.x, screen.y, cellWidth, cellWidth * 0.32, LOOK.powerColors.relocate, entityDepth(screen.y) - 0.4, 380, 0.85);
+    this.fx.leaves(screen.x, screen.y - cellWidth * 0.4, 6);
+    this.fx.floatText(text().board.relocated, screen.x, screen.y - cellWidth * 1.05, LOOK.fusedText);
+    this.cancelPower();
+    this.emitPowers();
+    this.refreshHighlight();
+    this.emitAction({ type: 'power', power: 'relocate' }, to);
+  }
+
+  /** Suelta la disparadora de la mano sin recolocarla: vuelve volando a su casilla. El poder sigue elegido. */
+  private cancelRelocation(): void {
+    const r = this.relocation;
+    if (!r) return;
+    this.relocation = null;
+    this.setCursor('default');
+    const key = cellKey(r.from);
+    const view = this.plantViews.get(key);
+    if (!view) {
+      r.view.poof();
+      return;
+    }
+    r.view.returnTo(view.foot(), plantPlacement(r.from).cellWidth, () => {
+      // Si mientras volvia se murio o se volvio a coger, no hay nada que devolver.
+      if (this.plantViews.get(key) === view && !sameCell(this.relocation?.from ?? null, r.from)) view.setLifted(false);
+    });
+  }
+
+  /** Avisa al panel de poderes de sus cargas y de si se pueden usar ahora, solo si cambia. */
+  private emitPowers(): void {
+    const info: PowerInfo[] = this.match.powers.map((slot) => ({ id: slot.id, charges: slot.charges, blocker: powerBlocker(this.match, slot.id) }));
+    const key = JSON.stringify(info);
+    if (key === this.powersKey) return;
+    this.powersKey = key;
+    EventBus.emit(GameEvents.powersChanged, info);
+  }
+
+  // -------------------------------------------------------------------------
   // Ficha de informacion (T-010). Los datos salen de las reglas (`view/entityInfo.ts`) y la foto, de las texturas
   // (`view/portrait.ts`); la pinta React, que deja el juego en pausa mientras se ve.
 
@@ -1666,7 +2153,7 @@ export class BoardScene extends Phaser.Scene {
    * la partida en juego. El primer toque hace lo de siempre (seleccionar una planta, por ejemplo).
    */
   private checkDoubleTap(pointer: Phaser.Input.Pointer): boolean {
-    if (this.selected || this.defeated || this.won) {
+    if (this.selected || this.power || this.defeated || this.won) {
       this.lastTap = null;
       return false;
     }
@@ -1712,6 +2199,13 @@ export class BoardScene extends Phaser.Scene {
         bestFootY = footY;
       }
     }
+    for (const [key, view] of this.iceViews) {
+      const footY = view.foot().y;
+      if (footY > bestFootY && view.contains(x, y)) {
+        best = { kind: 'ice', cell: keyCell(key) };
+        bestFootY = footY;
+      }
+    }
     for (const [id, view] of this.wormViews) {
       const footY = view.ground().y;
       if (footY > bestFootY && view.contains(x, y)) {
@@ -1745,6 +2239,11 @@ export class BoardScene extends Phaser.Scene {
       if (!wall) return;
       data = wallInfo(wall, target.cell);
       subject = { kind: 'wall', wear: wallWear(wall.hp / SHIELD.wallHp) };
+    } else if (target.kind === 'ice') {
+      const block = iceAt(this.match, target.cell);
+      if (!block) return;
+      data = iceInfo(block, target.cell);
+      subject = { kind: 'ice', wear: iceWear(block.hp / ICE_WALL.hp) };
     } else {
       const mine = mineAt(this.match, target.cell);
       if (!mine) return;
@@ -1862,6 +2361,8 @@ export class BoardScene extends Phaser.Scene {
       iceMine: mine('ice', false),
       iceMineArmed: mine('ice', true),
       wall: cutout({ kind: 'wall', wear: 0 }),
+      grenade: cutout({ kind: 'grenade' }),
+      iceBlock: cutout({ kind: 'ice', wear: 0 }),
       spitter: cutout({ kind: 'enemy', enemy: 'spitter', level: 1, enraged: false, hasted: false }),
       worm: cutout({ kind: 'enemy', enemy: 'worm', level: 1, enraged: false, hasted: false }),
     };
@@ -1901,6 +2402,11 @@ export class BoardScene extends Phaser.Scene {
       spots.iceMine = this.mineSpot(ice);
       spots.iceBlast = this.blastSpot(ice);
     }
+    // Poderes (T-021): adonde recolocar la disparadora senalada, donde lanzar la granada (y su alcance) y el muro de hielo.
+    if (cells.relocateTo) spots.relocateTo = this.cellSpot(cells.relocateTo);
+    spots.grenadeCell = this.cellSpot(cells.grenadeCell);
+    spots.grenadeBlast = this.blastSpot(cells.grenadeCell, GRENADE.blastRadius);
+    if (cells.iceWallCell) spots.iceWallCells = this.iceWallSpot(cells.iceWallCell);
     areas.exit = this.boardArea(LOOK.tourSpot.exitFromX, 0, 0, BOARD.lanes);
     const board: TourBoard = { spots, areas };
     const key = JSON.stringify(board);
@@ -1949,11 +2455,22 @@ export class BoardScene extends Phaser.Scene {
     return this.pageSpot(foot.x, foot.y - cellWidth * up, cellWidth * rx, cellWidth * ry);
   }
 
-  /** Hasta donde llega la explosion de la mina de una casilla (`MINE.blastRadius`, en casillas), aplastado por la camara. */
-  private blastSpot(cell: Cell): TourSpot {
+  /** Las tres casillas del muro de hielo (T-021) que se pone apuntando a `cell`: una elipse alta sobre su columna. */
+  private iceWallSpot(cell: Cell): TourSpot {
+    const cells = iceWallCells(cell);
+    const middle = cells[Math.floor(cells.length / 2)];
+    const center = cellCenter(middle);
+    const at = perspective.toScreen(center);
+    const top = perspective.toScreen({ x: center.x, y: middle.lane }).y;
+    const bottom = perspective.toScreen({ x: center.x, y: middle.lane + 1 }).y;
+    const { rx, ry } = LOOK.tourSpot.iceWall;
+    return this.pageSpot(at.x, at.y, perspective.cellWidthAt(center) * rx, (bottom - top) * ry);
+  }
+
+  /** Hasta donde llega la explosion de una casilla (la de la mina, `MINE.blastRadius`, o la de la granada), aplastado por la camara. */
+  private blastSpot(cell: Cell, radius: number = MINE.blastRadius): TourSpot {
     const center = cellCenter(cell);
     const at = perspective.toScreen(center);
-    const radius = MINE.blastRadius;
     const top = perspective.toScreen({ x: center.x, y: center.y - radius }).y;
     const bottom = perspective.toScreen({ x: center.x, y: center.y + radius }).y;
     return this.pageSpot(at.x, at.y, perspective.cellWidthAt(center) * radius, (bottom - top) / 2);
@@ -2168,6 +2685,7 @@ export class BoardScene extends Phaser.Scene {
       infusable: infusableElements(this.match),
       notice: text().round.notices[outbreak]?.[round.index] ?? '',
       seeds: this.match.seeds.earned,
+      powers: this.match.powers.map((slot) => slot.id),
     };
     const key = JSON.stringify(info);
     if (key === this.roundKey) return;
@@ -2217,6 +2735,10 @@ export class BoardScene extends Phaser.Scene {
     EventBus.emit(GameEvents.cardPreview, null);
     this.panelKey = 'stale';
     this.emitPlantPanel();
+    // El panel de poderes (T-021) y el que estaba elegido.
+    this.powersKey = '';
+    this.emitPowers();
+    EventBus.emit(GameEvents.powerSelected, this.power);
     if (this.pendingUnlock) EventBus.emit(GameEvents.unlocked, this.pendingUnlock);
   }
 }

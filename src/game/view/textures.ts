@@ -12,6 +12,7 @@ import { type Ctx, circle, ellipse, leafShape, smallFlower } from './canvasKit';
 import { SHOOTER, type ShooterCannons, type ShooterDesign, type ShooterVariant } from './shooterShape';
 import { SHOOTER_CANNONS, SHOOTER_VARIANTS } from './shooters/design';
 import { WALL_SIZE, WALL_WEARS, paintWall, type WallWear } from './wallArt';
+import { ARIL_SIZE, GRENADE_SIZE, ICE_BLOCK_SIZE, ICE_WEARS, paintAril, paintGrenade, paintIceBlock, type IceWear } from './powerArt';
 import { FLOPPY_SIZE, HAT_SIZE, NOTE_SIZE, VERSE_SIZE, paintFloppy, paintMinstrelHat, paintNote, paintVerse } from './troopArt';
 import {
   FEET_SIZE,
@@ -75,6 +76,12 @@ export const TEX = {
   wall: 'unit-wall',
   /** Astilla de corteza: salta del muro al morderlo, al perder placas y al romperse (T-024). */
   barkChip: 'fx-bark-chip',
+  /** Granada del poder (T-021): en vuelo (o de fantasma) y encendida, contando para explotar (`powerArt.ts`). */
+  grenade: { idle: 'unit-grenade', lit: 'unit-grenade-lit' },
+  /** Grano de granada: sale despedido en la explosion (T-021). */
+  aril: 'fx-aril',
+  /** Bloque del muro de hielo (T-021), entero, mordido y casi roto (usar `iceBlockTexture`, `powerArt.ts`). */
+  iceBlock: 'unit-ice-block',
   /** Mina de cada elemento, dormida y en cuenta atras (usar `mineTexture`). */
   mine: {
     fire: { idle: 'unit-mine-fire', armed: 'unit-mine-fire-armed' },
@@ -199,6 +206,11 @@ export const seedTexture = (element: ElementType | null): string =>
 export const wallTexture = (wear: WallWear): string => `${TEX.wall}-${wear}`;
 
 export { WALL_SIZE, type WallWear } from './wallArt';
+
+/** Textura del bloque de hielo (T-021) con el desgaste `wear` (`iceWear` de su vida). */
+export const iceBlockTexture = (wear: IceWear): string => `${TEX.iceBlock}-${wear}`;
+
+export { GRENADE_SIZE, ICE_BLOCK_SIZE, type IceWear } from './powerArt';
 
 /**
  * Mina (T-004), en pixeles de su textura (diseno, 160 px por casilla): pies, centro del bulbo y punta de la mecha,
@@ -362,6 +374,11 @@ export function registerTextures(scene: Phaser.Scene, scale = 1): void {
   registerShooterTextures(scene, SHOOTER);
   for (const wear of WALL_WEARS) paint(wallTexture(wear), WALL_SIZE.width, WALL_SIZE.height, (ctx) => paintWall(ctx, wear));
   paint(TEX.barkChip, 20, 16, paintBarkChip);
+  // Poderes (T-021): la granada y los bloques del muro de hielo.
+  paint(TEX.grenade.idle, GRENADE_SIZE.width, GRENADE_SIZE.height, (ctx) => paintGrenade(ctx, false));
+  paint(TEX.grenade.lit, GRENADE_SIZE.width, GRENADE_SIZE.height, (ctx) => paintGrenade(ctx, true));
+  paint(TEX.aril, ARIL_SIZE.width, ARIL_SIZE.height, paintAril);
+  for (const wear of ICE_WEARS) paint(iceBlockTexture(wear), ICE_BLOCK_SIZE.width, ICE_BLOCK_SIZE.height, (ctx) => paintIceBlock(ctx, wear));
   for (const element of Object.keys(TEX.mine) as MineElement[]) {
     paint(TEX.mine[element].idle, MINE_SIZE.width, MINE_SIZE.height, (ctx) => paintMine(ctx, false, MINE_PALETTES[element]));
     paint(TEX.mine[element].armed, MINE_SIZE.width, MINE_SIZE.height, (ctx) => paintMine(ctx, true, MINE_PALETTES[element]));

@@ -103,4 +103,26 @@ describe('lo que senala un tour de ayuda (T-013)', () => {
       expect(tourCells(state).mineInfusion).toBeNull();
     });
   });
+
+  describe('poderes (T-021)', () => {
+    it('recolocar lleva la disparadora senalada a la casilla libre mas cercana', () => {
+      const state = sow(matchAt(0), 'shooter', { lane: 2, col: 0 });
+      expect(tourCells(state).shooter).toEqual({ lane: 2, col: 0 });
+      // Empatadas a una casilla, la primera que encuentra: la de arriba.
+      expect(tourCells(state).relocateTo).toEqual({ lane: 1, col: 0 });
+      expect(tourCells(matchAt(0)).relocateTo).toBeNull();
+    });
+
+    it('sin cargas de recolocar no hay adonde llevarla', () => {
+      const state = sow({ ...matchAt(0), powers: [] }, 'shooter', { lane: 2, col: 0 });
+      expect(tourCells(state).relocateTo).toBeNull();
+    });
+
+    it('la granada y el muro de hielo, algo adelantados en el carril del centro, con las tres casillas libres', () => {
+      expect(tourCells(matchAt(0)).grenadeCell).toEqual({ lane: 2, col: 6 });
+      expect(tourCells(matchAt(0)).iceWallCell).toEqual({ lane: 2, col: 6 });
+      const state = sow(matchAt(0), 'shooter', { lane: 3, col: 6 });
+      expect(tourCells(state).iceWallCell).toEqual({ lane: 2, col: 5 });
+    });
+  });
 });
