@@ -98,6 +98,7 @@ export function combatCues(events: readonly CombatEvent[], before: MatchState): 
       case 'enemyKilled':
         if (event.kind === 'creeper') cues.push(at('creeperDefeated', event.at.x));
         else if (event.kind === 'elkCloner') cues.push(at('elkClonerDefeated', event.at.x));
+        else if (event.kind === 'brain') cues.push(at('brainDefeated', event.at.x));
         else if (!bossDown && !blasted.has(event.enemyId)) cues.push(at('enemyKilled', event.at.x));
         break;
       case 'enemyEscaped':
@@ -134,13 +135,16 @@ export function combatCues(events: readonly CombatEvent[], before: MatchState): 
         cues.push(at('creeperLand', event.cell ? event.cell.col + 0.5 : (enemies.get(event.enemyId)?.x ?? BOARD.columns / 2)));
         break;
       // Tropas del brote 3 (T-038): el Skipper suena al saltar y un Lurker al descubrirse. Caer y volver a ocultarse, no.
+      // Brain (T-039) salta con su muelle grave y suena tambien al caer; se descubre como ellos.
       case 'hopped':
-        cues.push(at('hop', event.from));
+        cues.push(at(enemies.get(event.enemyId)?.kind === 'brain' ? 'brainHop' : 'hop', event.from));
         break;
       case 'revealed':
         cues.push(at('reveal', enemies.get(event.enemyId)?.x ?? BOARD.columns / 2));
         break;
       case 'hopLanded':
+        if (enemies.get(event.enemyId)?.kind === 'brain') cues.push(at('brainLand', event.x));
+        break;
       case 'concealed':
         break;
       // La mina armada suena con su cuenta atras (`mineTicks`); lo que se apaga o sale del tablero, no suena.

@@ -332,6 +332,26 @@ export const MANIFEST: Readonly<Record<SfxId, SoundEntry>> = {
     pick: [digital('phaserDown3'), rpg('bookClose', { delayMs: 260, gainDb: -2 })],
     alternatives: [[digital('lowDown'), rpg('bookClose', { delayMs: 200 })], jingle('jingles_NES09')],
   },
+  brainTalk: {
+    about: 'Brain suelta una frase en su bocadillo de contestador (T-039): el pitido de un contestador automatico',
+    pick: digital('twoTone2', { lengthMs: 420, fadeOutMs: 140, gainDb: -2 }),
+    alternatives: [digital('tone1', { lengthMs: 360, fadeOutMs: 120 }), sfxr('chirp')],
+  },
+  brainHop: {
+    about: 'Brain salta (T-039): un boing de muelle grave, mas grande que el del Skipper',
+    pick: [sfxr('boing', { rate: 0.7 }), impact('footstep_concrete_000', { lengthMs: 200, fadeOutMs: 120, gainDb: -6 })],
+    alternatives: [digital('phaseJump3', { rate: 0.8, lengthMs: 360, fadeOutMs: 140 }), sfxr('boing', { rate: 0.55 })],
+  },
+  brainLand: {
+    about: 'Brain cae de un salto (T-039): un golpe de metal con un rebote de muelle',
+    pick: [impact('impactMetal_light_002', { gainDb: -4 }), sfxr('boing', { rate: 1.2, gainDb: -10, delayMs: 60 })],
+    alternatives: [impact('impactGeneric_light_001'), impact('impactMetal_heavy_000', { gainDb: -8 })],
+  },
+  brainDefeated: {
+    about: 'Cae Brain (T-039): un disquete que se formatea, un apagón que baja y un chasquido de cristal',
+    pick: [digital('phaserDown3'), digital('spaceTrash3', { delayMs: 180, gainDb: -4 }), impact('impactGlass_light_001', { delayMs: 320, gainDb: -6 })],
+    alternatives: [[digital('lowDown'), digital('spaceTrash1', { delayMs: 150 })], sfxr('powerDown')],
+  },
   attackStarted: {
     about: 'Empieza el ataque ("¡Ahí vienen!"): trino de 8 bits',
     pick: jingle('jingles_NES13'),

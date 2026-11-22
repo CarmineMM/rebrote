@@ -1,4 +1,4 @@
-import { BOARD, CLONE, CREEPER, ELK_CLONER, ENEMIES, HOP, ICE_WALL, MINE, SHIELD, STEALTH } from '../config/balance';
+import { BOARD, BRAIN, CLONE, CREEPER, ELK_CLONER, ENEMIES, HOP, ICE_WALL, MINE, SHIELD, STEALTH } from '../config/balance';
 import type { Cell } from '../core/board';
 import {
   bulletDamage,
@@ -7,6 +7,7 @@ import {
   enemyMaxHp,
   enemyReward,
   fireIntervalMs,
+  hopGait,
   isBoss,
   isEnraged,
   isHidden,
@@ -183,6 +184,7 @@ function enemyAbout(enemy: Enemy): string {
   if (kind === 'lurker' || kind === 'lurkerArmored') return about[kind](seen);
   if (kind === 'lurkerSpitter') return about.lurkerSpitter(seen, formatNumber(ENEMIES.lurkerSpitter.range));
   if (kind === 'skipper') return about.skipper(formatNumber(HOP.length));
+  if (kind === 'brain') return about.brain(formatNumber(BRAIN.hopLength));
   return about[kind];
 }
 
@@ -193,11 +195,12 @@ function enemyName(enemy: Enemy): string {
   return (cloneNames as Partial<Record<Enemy['kind'], string>>)[enemy.kind] ?? names[enemy.kind];
 }
 
-/** "Jefe del brote 1" (T-018: el brote del que es jefe), y su fase; el de Elk Cloner (T-026), con su apodo. */
+/** "Jefe del brote 1" (T-018: el brote del que es jefe), y su fase; los de Elk Cloner (T-026) y Brain (T-039), con su apodo. */
 function bossSubtitle(enemy: Enemy): string {
   const { subtitle } = text().info.enemy;
   const number = outbreakNumber(outbreakOfBoss(enemy.kind) ?? FIRST_OUTBREAK);
   if (enemy.kind === 'elkCloner') return subtitle.poet(number);
+  if (enemy.kind === 'brain') return isEnraged(enemy) ? subtitle.mastermindEnraged(number) : subtitle.mastermind(number);
   return isEnraged(enemy) ? subtitle.bossEnraged(number) : subtitle.boss(number);
 }
 
@@ -224,12 +227,14 @@ export function enemyInfo(enemy: Enemy): EntityInfoData {
     rows.push({ label: t.stats.poem, value: formatNumber(poemDamage()), note: t.stats.poemNote(ELK_CLONER.poemEvery, formatSeconds(ELK_CLONER.poemWarnMs)) });
   }
   if (enemy.kind === 'creeper') rows.push({ label: t.stats.slam, value: formatNumber(slamDamage()), note: t.stats.slamNote });
-  // Skipper (T-038): cuanto salta y cuanto descansa; su velocidad es la media de los dos.
-  if (enemy.hop) rows.push({ label: t.stats.hop, value: t.stats.hopValue(formatNumber(HOP.length)), note: t.stats.hopNote(formatSeconds(HOP.restMs)) });
+  // Skipper (T-038) y Brain (T-039): cuanto salta y cuanto descansa (Brain, el de su fase); su velocidad es la media de los dos.
+  const gait = hopGait(enemy);
+  if (enemy.hop) rows.push({ label: t.stats.hop, value: t.stats.hopValue(formatNumber(gait.length)), note: t.stats.hopNote(formatSeconds(gait.restMs)) });
   const speed = stats.speed * enemy.haste;
   rows.push({ label: t.stats.speed, value: t.stats.speedValue(formatNumber(speed, 2)), note: t.stats.crosses(Math.round(BOARD.columns / speed)) });
-  // Lurker (T-038): a que distancia lo ven las plantas.
-  if (enemy.revealMs !== null) rows.push({ label: t.stats.seen, value: t.stats.seenValue(formatNumber(STEALTH.revealRadius)), note: t.stats.seenNote });
+  // Lurker (T-038): a que distancia lo ven las plantas. A Brain (T-039), solo lo descubren el escudo, las minas y la granada.
+  if (enemy.kind === 'brain') rows.push({ label: t.stats.revealedBy, value: t.stats.revealedByValue, note: t.stats.revealedByNote });
+  else if (enemy.revealMs !== null) rows.push({ label: t.stats.seen, value: t.stats.seenValue(formatNumber(STEALTH.revealRadius)), note: t.stats.seenNote });
   if (enemy.kind === 'creeper') {
     const next = CREEPER.jumpAt[enemy.jumpsUsed];
     rows.push({ label: t.stats.nextJump, value: next === undefined ? t.stats.noMoreJumps : t.stats.jumpAt(formatPercent(next)) });
@@ -249,7 +254,7 @@ export function enemyInfo(enemy: Enemy): EntityInfoData {
   // Tropas del brote 3 (T-038): si esta oculta, y el Skipper, si esta en el aire o a punto de saltar.
   if (enemy.revealMs !== null) tags.push(isHidden(enemy) ? { text: t.tags.hidden, tone: 'calm' } : { text: t.tags.revealed, tone: 'alert' });
   if (enemy.hop?.stage === 'air') tags.push({ text: t.tags.airborne, tone: 'alert' });
-  else if (enemy.hop && enemy.attackMs === null && enemy.hop.ms <= HOP.crouchMs) tags.push({ text: t.tags.crouching, tone: 'alert' });
+  else if (enemy.hop && enemy.attackMs === null && enemy.hop.ms <= gait.crouchMs) tags.push({ text: t.tags.crouching, tone: 'alert' });
   if (boss && isEnraged(enemy)) tags.push({ text: t.tags.enraged, tone: 'alert' });
   if (enemy.jump) tags.push({ text: t.tags.jumping, tone: 'alert' });
   else if (poemWarning(enemy) !== null) tags.push({ text: t.tags.poem, tone: 'alert' });

@@ -234,6 +234,8 @@ export interface BossInfo {
    * anunciando. Null si el jefe no recita.
    */
   poem: { sung: number; every: number; warning: boolean } | null;
+  /** Brain (T-039): si esta oculto (las plantas no le apuntan) o descubierto. Null si el jefe no se oculta. */
+  hidden: boolean | null;
 }
 
 /** Ronda en curso (T-007). Sale de `round` en el estado y de `rounds.ts` en core. */
@@ -307,6 +309,8 @@ export type InfoTone =
   | 'lurkerSpitter'
   | 'lurkerArmored'
   | 'skipper'
+  // Brain, jefe del brote 3 (T-039).
+  | 'brain'
   // Muro de hielo del poder (T-021).
   | 'iceWall';
 

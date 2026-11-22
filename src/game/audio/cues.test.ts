@@ -426,3 +426,40 @@ describe('tropas del brote 3 (T-038)', () => {
     expect(heard.filter((id) => id === 'reveal')).toHaveLength(1);
   });
 });
+
+describe('Brain (T-039)', () => {
+  it('salta con su muelle grave, desde donde despega, y suena al caer, donde cae', () => {
+    const state = spawnEnemy(createMatch(), 'brain', 2, 7);
+    const id = state.enemies[0].id;
+    const cues = combatCues(
+      [
+        { type: 'hopped', enemyId: id, from: 7, to: 5 },
+        { type: 'hopLanded', enemyId: id, x: 5 },
+      ],
+      state,
+    );
+    expect(cues).toEqual([
+      { id: 'brainHop', pan: panAt(7, BOARD.columns) },
+      { id: 'brainLand', pan: panAt(5, BOARD.columns) },
+    ]);
+  });
+
+  it('se descubre como sus tropas; volver a ocultarse no suena', () => {
+    const state = spawnEnemy(createMatch(), 'brain', 2, 6);
+    const id = state.enemies[0].id;
+    expect(combatCues([{ type: 'revealed', enemyId: id, cause: 'shield' }, { type: 'concealed', enemyId: id }], state)).toEqual([
+      { id: 'reveal', pan: panAt(6, BOARD.columns) },
+    ]);
+  });
+
+  it('si cae, suena su derrota y no la de los que caen con el', () => {
+    let state = spawnEnemy(createMatch(), 'brain', 2, 6);
+    state = spawnEnemy(state, 'lurker', 0, 6);
+    const [brain, lurker] = state.enemies;
+    const events: CombatEvent[] = [
+      { type: 'enemyKilled', enemyId: brain.id, kind: 'brain', clone: false, at: { x: brain.x, y: 2.5 } },
+      { type: 'enemyKilled', enemyId: lurker.id, kind: 'lurker', clone: false, at: { x: 6, y: 0.5 } },
+    ];
+    expect(ids(combatCues(events, state))).toEqual(['brainDefeated']);
+  });
+});

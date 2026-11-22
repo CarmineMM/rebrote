@@ -66,6 +66,21 @@ import {
   type ElkHub,
   type ElkMood,
 } from './elkClonerArt';
+import {
+  BRAIN_DESIGN,
+  BRAIN_MOODS,
+  BRAIN_SIZE,
+  SECTOR_MAP,
+  brainLimbSize,
+  paintBadSector,
+  paintBrainBody,
+  paintBrainFace,
+  paintBrainGlass,
+  paintBrainLimb,
+  paintSectorMap,
+  type BrainDesign,
+  type BrainMood,
+} from './brainArt';
 
 /**
  * Arte hecho por codigo (ADR-0004): todo se pinta con Canvas 2D una sola vez al arrancar
@@ -288,6 +303,34 @@ export function registerBugTextures(
     paint(BUG_TEX.skipperLeg(design), leg.width, leg.height, (ctx) => paintSkipperFrontLeg(ctx, design));
     for (const mood of SKIPPER_MOODS) paint(BUG_TEX.skipperHead(design, mood), head.width, head.height, (ctx) => paintSkipperHead(ctx, design, mood));
   }
+}
+
+/** Texturas de Brain (T-039, `brainArt.ts`) en la propuesta `design`, y las de cuando se prepara (el mapa de sectores). */
+export const BRAIN_TEX = {
+  body: (design: BrainDesign) => `brain-${design}-body`,
+  glass: (design: BrainDesign) => `brain-${design}-glass`,
+  limb: (design: BrainDesign) => `brain-${design}-limb`,
+  face: (design: BrainDesign, mood: BrainMood) => `brain-${design}-face-${mood}`,
+  sectorMap: 'brain-sector-map',
+  badSector: 'brain-bad-sector',
+} as const;
+
+/**
+ * Pinta a Brain (T-039) en las propuestas `designs`: `registerTextures` pinta la del juego (`BRAIN_DESIGN`); la galeria
+ * `/jefes.html`, todas. Llamar despues de `registerTextures`.
+ */
+export function registerBrainTextures(scene: Phaser.Scene, designs: readonly BrainDesign[] = [BRAIN_DESIGN]): void {
+  const paint = (key: string, width: number, height: number, painter: Painter) => paintTexture(scene, artScale, key, width, height, painter);
+  const { body, face } = BRAIN_SIZE;
+  for (const design of designs) {
+    paint(BRAIN_TEX.body(design), body.width, body.height, (ctx) => paintBrainBody(ctx, design));
+    if (design === 'dome') paint(BRAIN_TEX.glass(design), body.width, body.height, paintBrainGlass);
+    const limb = brainLimbSize(design);
+    paint(BRAIN_TEX.limb(design), limb.width, limb.height, (ctx) => paintBrainLimb(ctx, design));
+    for (const mood of BRAIN_MOODS) paint(BRAIN_TEX.face(design, mood), face.width, face.height, (ctx) => paintBrainFace(ctx, design, mood));
+  }
+  paint(BRAIN_TEX.sectorMap, SECTOR_MAP.width, SECTOR_MAP.height, paintSectorMap);
+  paint(BRAIN_TEX.badSector, SECTOR_MAP.cell, SECTOR_MAP.cell, paintBadSector);
 }
 
 /** Textura de la semilla que dispara una planta con `element`. La de escudo dispara como una normal (T-024). */
@@ -558,8 +601,9 @@ export function registerTextures(scene: Phaser.Scene, scale = 1): void {
   paint(TEX.elkScroll, SCROLL_SIZE.width, SCROLL_SIZE.height, paintElkScroll);
   paint(TEX.elkQuill, QUILL_SIZE.width, QUILL_SIZE.height, paintElkQuill);
   paint(TEX.hasteStreak, HASTE_STREAK_SIZE.width, HASTE_STREAK_SIZE.height, paintHasteStreak);
-  // Tropas del brote 3 (T-038), con las propuestas que usa el juego.
+  // Tropas del brote 3 (T-038), con las propuestas que usa el juego, y su jefe (T-039).
   registerBugTextures(scene);
+  registerBrainTextures(scene);
 }
 
 // ---------------------------------------------------------------------------

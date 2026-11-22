@@ -1,4 +1,4 @@
-import { BOARD, CLONE, CREEPER, ELK_CLONER, ENEMIES, ENEMY_LEVELS, ENEMY_POWER, FIRE, HOP, ICE, MINE, SHIELD, SHOOTER, STEALTH, VERSE } from '../config/balance';
+import { BOARD, BRAIN, CLONE, CREEPER, ELK_CLONER, ENEMIES, ENEMY_LEVELS, ENEMY_POWER, FIRE, HOP, ICE, MINE, SHIELD, SHOOTER, STEALTH, VERSE } from '../config/balance';
 import type { BoardPoint, Cell } from './board';
 import type { MatchState, Mine, Sown } from './match';
 import { damageMultiplier, fireRateMultiplier, plantMaxHp, type MineElement, type Shooter } from './plants';
@@ -12,12 +12,12 @@ import { compoundGrowth } from './levels';
 export type EnemyKind = keyof typeof ENEMIES;
 
 /**
- * Jefes (T-008 y T-026): el de cada brote (`boss` en `OUTBREAKS`). No tienen nivel, si cruzan el jardin se pierde la
+ * Jefes (T-008, T-026 y T-039): el de cada brote (`boss` en `OUTBREAKS`). No tienen nivel, si cruzan el jardin se pierde la
  * partida y, al caer, caen con ellos todos los demas, sin copias, y sus versos en vuelo se deshacen.
  */
-export type BossKind = 'creeper' | 'elkCloner';
+export type BossKind = 'creeper' | 'elkCloner' | 'brain';
 
-export const BOSS_KINDS: readonly BossKind[] = ['creeper', 'elkCloner'];
+export const BOSS_KINDS: readonly BossKind[] = ['creeper', 'elkCloner', 'brain'];
 
 /** ¿Es el jefe de un brote? */
 export function isBoss(kind: EnemyKind): kind is BossKind {
@@ -54,13 +54,14 @@ export interface Jump {
 }
 
 /**
- * Salto del Skipper (T-038): en tierra descansa (`rest`) y luego vuela (`air`) de `from` hacia `to`, por encima de lo
- * sembrado. `to` ya cuenta el escudo que lo para (`hopLanding`). En el aire no le dan las balas ni las minas.
+ * Salto del Skipper (T-038) y de Brain (T-039): en tierra descansa (`rest`) y luego vuela (`air`) de `from` hacia `to`, por
+ * encima de lo sembrado. `to` ya cuenta el escudo que lo para (`hopLanding`). En el aire no le dan las balas ni las minas.
+ * Lo que salta, descansa y vuela cada uno es su paso (`hopGait`).
  */
 export interface Hop {
   readonly stage: 'rest' | 'air';
   /**
-   * En tierra, lo que le queda de descanso (`HOP.restMs`; corre mas despacio si va frenado, y no corre mientras muerde un
+   * En tierra, lo que le queda de descanso (`hopGait`; corre mas despacio si va frenado, y no corre mientras muerde un
    * escudo). En el aire no cuenta: avanza hasta `to`.
    */
   readonly ms: number;
@@ -249,10 +250,16 @@ export type CombatEvent =
   | { readonly type: 'hopped'; readonly enemyId: number; readonly from: number; readonly to: number }
   /** El Skipper cae en `x`. Si cayo delante de un escudo, empieza a morderlo. */
   | { readonly type: 'hopLanded'; readonly enemyId: number; readonly x: number }
-  /** Una tropa oculta (T-038) se descubre: desde ahora las plantas le apuntan. */
-  | { readonly type: 'revealed'; readonly enemyId: number }
+  /**
+   * Una tropa oculta (T-038) se descubre: desde ahora las plantas le apuntan. De Brain (T-039), `cause` dice que lo descubrio:
+   * el escudo que lo para o la explosion de una mina o de la granada.
+   */
+  | { readonly type: 'revealed'; readonly enemyId: number; readonly cause?: RevealCause }
   /** Una tropa descubierta vuelve a ocultarse (LK-03): lejos de lo sembrado y sin dano, hielo ni fuego desde `STEALTH.holdMs`. */
   | { readonly type: 'concealed'; readonly enemyId: number };
+
+/** Lo que descubre a Brain (T-039): chocar con un escudo o la explosion de una mina o de la granada (`blast`). */
+export type RevealCause = 'shield' | 'blast';
 
 export interface CombatStep {
   readonly state: MatchState;
@@ -460,21 +467,40 @@ export function rollEnemyLevel(table: Readonly<Record<number, number>> | undefin
 
 /**
  * Enemigo recien salido: avanza, sin efectos ni salto. Elk Cloner (T-026) trae su recital, con el primer verso por llegar;
- * el Skipper (T-038), su descanso antes del primer salto; y las tropas del brote 3, su sigilo: salen ocultas.
+ * el Skipper (T-038) y Brain (T-039), su descanso antes del primer salto; y las tropas del brote 3, su sigilo: salen
+ * ocultas.
  */
 function newEnemy(id: number, kind: EnemyKind, lane: number, x: number, hp: number, haste: number, level: number, clone = false): Enemy {
   const recital = kind === 'elkCloner' ? { ms: ENEMIES.elkCloner.firstVerseMs, sung: 0, poemMs: null } : null;
-  const hop: Hop | null = hops(kind) ? { stage: 'rest', ms: HOP.restMs, from: x, to: x } : null;
+  const hop: Hop | null = hops(kind) ? { stage: 'rest', ms: hopGait({ kind, hp, level, clone }).restMs, from: x, to: x } : null;
   const revealMs = sneaks(kind) ? 0 : null;
   return { id, kind, lane, x, hp, attackMs: null, burn: null, slow: null, haste, level, jump: null, jumpsUsed: 0, clone, recital, hop, revealMs };
 }
 
-/** ¿Avanza a saltos (T-038, `HOP.kinds`)? El Skipper. */
+/** ¿Avanza a saltos (T-038, `HOP.kinds`)? El Skipper y Brain (T-039). */
 export function hops(kind: EnemyKind): boolean {
   return (HOP.kinds as readonly EnemyKind[]).includes(kind);
 }
 
-/** ¿Llega oculto (T-038, `STEALTH.kinds`)? Las tropas del brote 3, menos el Skipper. */
+/** Paso de quien avanza a saltos: casillas por salto, descanso en tierra, vuelo y el final del descanso en que se agacha. */
+export interface HopGait {
+  readonly length: number;
+  readonly restMs: number;
+  readonly airMs: number;
+  readonly crouchMs: number;
+}
+
+/**
+ * Paso de quien salta: el del Skipper (`HOP`, T-038) o el de Brain (`BRAIN`, T-039), que salta igual de lejos pero descansa
+ * mucho mas, y en su fase 2 (BR-06) algo menos.
+ */
+export function hopGait(enemy: Pick<Enemy, 'kind' | 'hp' | 'level' | 'clone'>): HopGait {
+  if (enemy.kind !== 'brain') return HOP;
+  const phase = isEnraged(enemy) ? BRAIN.enraged : BRAIN.calm;
+  return { length: BRAIN.hopLength, airMs: BRAIN.airMs, restMs: phase.restMs, crouchMs: phase.crouchMs };
+}
+
+/** ¿Llega oculto (T-038, `STEALTH.kinds`)? Las tropas del brote 3, menos el Skipper, y su jefe, Brain (T-039). */
 export function sneaks(kind: EnemyKind): boolean {
   return (STEALTH.kinds as readonly EnemyKind[]).includes(kind);
 }
@@ -535,13 +561,18 @@ export function grenadeReaches(grenade: Pick<Grenade, 'cell' | 'radius'>, enemy:
 }
 
 /** Fraccion de su vida llena (la de su tipo y nivel, y si es una copia) que le queda. */
-export function hpFraction(enemy: Enemy): number {
+export function hpFraction(enemy: Pick<Enemy, 'kind' | 'hp' | 'level' | 'clone'>): number {
   return enemy.hp / enemyMaxHp(enemy.kind, enemy.level, enemy.clone);
 }
 
-/** Fase 2 del Creeper (T-008): con la mitad de la vida o menos salta mas a menudo, avisa menos y deja mas copias. */
-export function isEnraged(enemy: Enemy): boolean {
-  return enemy.kind === 'creeper' && hpFraction(enemy) <= CREEPER.enragedBelow;
+/**
+ * Fase 2 de un jefe. Creeper (T-008): con la mitad de la vida o menos salta mas a menudo, avisa menos y deja mas copias.
+ * Brain (T-039, BR-06): con la mitad o menos descansa menos entre saltos.
+ */
+export function isEnraged(enemy: Pick<Enemy, 'kind' | 'hp' | 'level' | 'clone'>): boolean {
+  if (enemy.kind === 'creeper') return hpFraction(enemy) <= CREEPER.enragedBelow;
+  if (enemy.kind === 'brain') return hpFraction(enemy) <= BRAIN.enragedBelow;
+  return false;
 }
 
 /** Umbrales de salto (`CREEPER.jumpAt`) que ya cruzo con la vida que le queda. */
@@ -598,6 +629,8 @@ function substep(state: MatchState, dtMs: number, events: CombatEvent[], random:
   let bossDown = false;
   /** Copiones que cayeron en este paso (T-025): dejan su copia al final, si el jefe no cayo con ellos. */
   const fallen: Enemy[] = [];
+  /** A quien alcanzo la explosion de una mina o de la granada, y lo que lo descubre (Brain, T-039, BR-04). */
+  const blasted = new Map<number, number>();
   /** Un enemigo se queda sin vida. `mayClone`: si es un copion, deja su copia (en una explosion, solo los primeros). */
   const fall = (e: Enemy, mayClone = true) => {
     events.push(killed(e));
@@ -770,7 +803,7 @@ function substep(state: MatchState, dtMs: number, events: CombatEvent[], random:
         return;
       }
       lane[col] = null;
-      explode(sown, cell, enemies, events, fall);
+      explode(sown, cell, enemies, events, fall, blasted);
     }),
   );
 
@@ -792,7 +825,7 @@ function substep(state: MatchState, dtMs: number, events: CombatEvent[], random:
       grenades.push({ ...grenade, flightMs: 0, fuseMs });
       continue;
     }
-    blastGrenade(grenade, enemies, events, fall);
+    blastGrenade(grenade, enemies, events, fall, blasted);
   }
 
   // Balas: dan al primer enemigo que encuentran en su carril o desaparecen al salir del tablero.
@@ -831,9 +864,12 @@ function substep(state: MatchState, dtMs: number, events: CombatEvent[], random:
   }
   const alive: Enemy[] = enemies.filter((e) => e.hp > 0);
   // Sigilo (T-038): se descubren cerca de lo sembrado, al recibir dano o con hielo o fuego, y se vuelven a ocultar despues.
+  // Brain (T-039), solo con un escudo delante o la explosion de una mina o de la granada.
   const hpBefore = new Map(state.enemies.map((e) => [e.id, e.hp]));
   for (const e of alive as Array<Mutable<Enemy>>) {
-    if (e.revealMs !== null) stepStealth(e, plants[e.lane], dtMs, e.hp < (hpBefore.get(e.id) ?? e.hp), events);
+    if (e.revealMs === null) continue;
+    if (e.kind === 'brain') stepBrainStealth(e, plants[e.lane], dtMs, blasted.get(e.id) ?? 0, events);
+    else stepStealth(e, plants[e.lane], dtMs, e.hp < (hpBefore.get(e.id) ?? e.hp), events);
   }
   // Los copiones caidos dejan su copia donde estaban (T-025, F-01).
   if (!bossDown) {
@@ -889,15 +925,35 @@ function meltIce(plants: Array<Array<Sown | null>>, dtMs: number, events: Combat
 }
 
 /**
+ * Lo que una explosion descubre a Brain (T-039, BR-04): una mina de fuego o la granada (`null`), `BRAIN.revealMinMs`; la de
+ * hielo, lo que lo frena (`ICE.blastSlowMs`), y nunca menos.
+ */
+export function blastRevealMs(element: MineElement | null): number {
+  return element === 'ice' ? Math.max(BRAIN.revealMinMs, ICE.blastSlowMs) : BRAIN.revealMinMs;
+}
+
+/** Apunta que la explosion alcanzo a `e` y lo que lo descubre (`blastRevealMs`), quedandose con lo mas largo del paso. */
+function markBlasted(blasted: Map<number, number>, e: Enemy, ms: number): void {
+  blasted.set(e.id, Math.max(blasted.get(e.id) ?? 0, ms));
+}
+
+/**
  * La granada (T-021) explota: alcanza a todos los enemigos vivos de su radio (`grenadeReaches`), en cualquier carril y
  * tambien a los jefes (O-06), con el dano de su nivel (en el 1, el de la mina de fuego). Las plantas no reciben nada. De los copiones que tumba,
- * solo los primeros `CLONE.maxPerBlast` dejan copia, como con una mina.
+ * solo los primeros `CLONE.maxPerBlast` dejan copia, como con una mina. A Brain oculto lo descubre (T-039).
  */
-function blastGrenade(grenade: Grenade, enemies: Array<Mutable<Enemy>>, events: CombatEvent[], fall: (e: Enemy, mayClone: boolean) => void): void {
+function blastGrenade(
+  grenade: Grenade,
+  enemies: Array<Mutable<Enemy>>,
+  events: CombatEvent[],
+  fall: (e: Enemy, mayClone: boolean) => void,
+  blasted: Map<number, number>,
+): void {
   const hit = enemies.filter((e) => grenadeReaches(grenade, e));
   events.push({ type: 'grenadeExploded', grenadeId: grenade.id, cell: grenade.cell, enemyIds: hit.map((e) => e.id) });
   let clones = 0;
   for (const e of hit) {
+    markBlasted(blasted, e, blastRevealMs(null));
     e.hp -= grenade.damage;
     if (e.hp > 0) continue;
     const mayClone = leavesClone(e) && clones < CLONE.maxPerBlast;
@@ -914,14 +970,22 @@ export function distanceToCell(enemy: Enemy, cell: Cell): number {
 /**
  * La mina explota: alcanza a todos los enemigos vivos de su radio, en cualquier carril, con lo que hace la de su
  * elemento (`mineBlast`): la de fuego dana y la de hielo frena. De los copiones que tumba, solo los primeros
- * `CLONE.maxPerBlast` dejan copia (T-025): una mina no llena el carril de copias.
+ * `CLONE.maxPerBlast` dejan copia (T-025): una mina no llena el carril de copias. A Brain oculto lo descubre (T-039).
  */
-function explode(mine: Mine, cell: Cell, enemies: Array<Mutable<Enemy>>, events: CombatEvent[], fall: (e: Enemy, mayClone: boolean) => void): void {
+function explode(
+  mine: Mine,
+  cell: Cell,
+  enemies: Array<Mutable<Enemy>>,
+  events: CombatEvent[],
+  fall: (e: Enemy, mayClone: boolean) => void,
+  blasted: Map<number, number>,
+): void {
   const hit = enemies.filter((e) => e.hp > 0 && !isAirborne(e) && distanceToCell(e, cell) <= MINE.blastRadius);
   const { damage, slow } = mineBlast(mine.element);
   events.push({ type: 'mineExploded', cell, element: mine.element, enemyIds: hit.map((e) => e.id) });
   let clones = 0;
   for (const e of hit) {
+    markBlasted(blasted, e, blastRevealMs(mine.element));
     e.hp -= damage;
     if (slow) e.slow = refreshSlow(e.slow, slow);
     if (e.hp > 0) continue;
@@ -1094,12 +1158,12 @@ function rangedColumn(lane: ReadonlyArray<Sown | null>, enemy: Enemy, range: num
 }
 
 /**
- * Un paso del Skipper (T-038). En el aire avanza hacia donde cae (`hop.to`, que se recalcula por si se sembro un escudo
- * mientras volaba) y, al llegar, aterriza. En tierra, si tiene un escudo a su alcance lo muerde, y su descanso no corre:
- * si el escudo cae, descansa antes de seguir saltando (LK-07). Si no, descansa (mas despacio si va frenado: el hielo le
- * alarga la pausa) y despega hacia `HOP.length` casillas mas alla, o hasta delante del primer escudo (`hopLanding`).
- * Devuelve si se queda donde esta este paso (mordiendo, descansando o despegando); si no, avanzo por el aire y puede
- * haber cruzado el borde.
+ * Un paso del Skipper (T-038) o de Brain (T-039), cada uno con su paso (`hopGait`). En el aire avanza hacia donde cae
+ * (`hop.to`, que se recalcula por si se sembro un escudo mientras volaba) y, al llegar, aterriza. En tierra, si tiene un
+ * escudo a su alcance lo muerde, y su descanso no corre: si el escudo cae, descansa antes de seguir saltando (LK-07). Si
+ * no, descansa (mas despacio si va frenado: el hielo le alarga la pausa) y despega hacia las casillas de su salto, o hasta
+ * delante del primer escudo (`hopLanding`). Devuelve si se queda donde esta este paso (mordiendo, descansando o
+ * despegando); si no, avanzo por el aire y puede haber cruzado el borde.
  */
 function stepHop(
   e: Mutable<Enemy>,
@@ -1112,9 +1176,10 @@ function stepHop(
 ): boolean {
   const hop = e.hop as Hop;
   const reach = enemyReach(e);
+  const gait = hopGait(e);
   if (hop.stage === 'air') {
     const to = hopStop(lane, e.x, hop.to, reach);
-    const next = e.x - (HOP.length / HOP.airMs) * dtMs * e.haste;
+    const next = e.x - (gait.length / gait.airMs) * dtMs * e.haste;
     if (next > to) {
       e.x = next;
       e.hop = to === hop.to ? hop : { ...hop, to };
@@ -1122,7 +1187,7 @@ function stepHop(
     }
     e.x = to;
     if (to < 0) return false;
-    e.hop = { stage: 'rest', ms: HOP.restMs, from: hop.from, to };
+    e.hop = { stage: 'rest', ms: gait.restMs, from: hop.from, to };
     events.push({ type: 'hopLanded', enemyId: e.id, x: to });
     return true;
   }
@@ -1144,7 +1209,7 @@ function stepHop(
     e.hop = { ...hop, ms };
     return true;
   }
-  const to = hopStop(lane, e.x, e.x - HOP.length, reach);
+  const to = hopStop(lane, e.x, e.x - gait.length, reach);
   if (to >= e.x) {
     e.hop = { ...hop, ms: 0 };
     return true;
@@ -1194,6 +1259,22 @@ function stepStealth(e: Mutable<Enemy>, lane: ReadonlyArray<Sown | null>, dtMs: 
   const exposed = damaged || e.burn !== null || e.slow !== null || nearSown(lane, e.x);
   e.revealMs = exposed ? STEALTH.holdMs : Math.max(0, before - dtMs);
   if (before <= 0 && e.revealMs > 0) events.push({ type: 'revealed', enemyId: e.id });
+  else if (before > 0 && e.revealMs <= 0) events.push({ type: 'concealed', enemyId: e.id });
+}
+
+/**
+ * Sigilo de Brain (T-039). Solo lo descubren chocar con un escudo (lo tiene delante, a su alcance, y esta en tierra) y la
+ * explosion de una mina o de la granada que lo alcanzo este paso (`blastMs`, lo que lo descubre: `blastRevealMs`). Ni la
+ * cercania de lo sembrado ni el dano de las balas. Con el escudo delante sigue descubierto, y `BRAIN.shieldRevealMs` despues
+ * de que caiga (BR-03); tras una explosion, lo que dure lo suyo (BR-04). Lo que descubre a la vez se queda con lo mas largo.
+ * Cuenta los cambios con `revealed` (con lo que lo descubrio) y `concealed`.
+ */
+function stepBrainStealth(e: Mutable<Enemy>, lane: ReadonlyArray<Sown | null>, dtMs: number, blastMs: number, events: CombatEvent[]): void {
+  const before = e.revealMs as number;
+  const shielded = !isAirborne(e) && shieldColumn(lane, e.x, enemyReach(e)) !== null;
+  const exposure = Math.max(shielded ? BRAIN.shieldRevealMs : 0, blastMs);
+  e.revealMs = Math.max(before - dtMs, exposure, 0);
+  if (before <= 0 && e.revealMs > 0) events.push({ type: 'revealed', enemyId: e.id, cause: shielded ? 'shield' : 'blast' });
   else if (before > 0 && e.revealMs <= 0) events.push({ type: 'concealed', enemyId: e.id });
 }
 

@@ -60,6 +60,10 @@ Cada efecto va en OGG Vorbis y en MP3, en mono, con el volumen igualado y sin si
 | `poemWarn` | jsfxr: receta `swell` + Kenney Music Jingles: `jingles_SAX07.ogg` (velocidad 0.8, -6 dB) | CC0 1.0 (Kenney, www.kenney.nl) + propio, generado con jsfxr (dominio público) |
 | `poem` | Kenney Music Jingles: `jingles_PIZZI16.ogg` + Kenney Impact Sounds: `impactBell_heavy_000.ogg` (-8 dB) | CC0 1.0 (Kenney, www.kenney.nl) |
 | `elkClonerDefeated` | Kenney Digital Audio: `phaserDown3.ogg` + Kenney RPG Audio: `bookClose.ogg` (-2 dB, +260 ms) | CC0 1.0 (Kenney, www.kenney.nl) |
+| `brainTalk` | Kenney Digital Audio: `twoTone2.ogg` (recortado 0-420 ms, -2 dB) | CC0 1.0 (Kenney, www.kenney.nl) |
+| `brainHop` | jsfxr: receta `boing` (velocidad 0.7) + Kenney Impact Sounds: `footstep_concrete_000.ogg` (recortado 0-200 ms, -6 dB) | CC0 1.0 (Kenney, www.kenney.nl) + propio, generado con jsfxr (dominio público) |
+| `brainLand` | Kenney Impact Sounds: `impactMetal_light_002.ogg` (-4 dB) + jsfxr: receta `boing` (velocidad 1.2, -10 dB, +60 ms) | CC0 1.0 (Kenney, www.kenney.nl) + propio, generado con jsfxr (dominio público) |
+| `brainDefeated` | Kenney Digital Audio: `phaserDown3.ogg` + Kenney Digital Audio: `spaceTrash3.ogg` (-4 dB, +180 ms) + Kenney Impact Sounds: `impactGlass_light_001.ogg` (-6 dB, +320 ms) | CC0 1.0 (Kenney, www.kenney.nl) |
 | `relocate` | Kenney Impact Sounds: `footstep_grass_002.ogg` (recortado 0-240 ms, -3 dB) + Kenney Interface Sounds: `drop_002.ogg` (+140 ms) | CC0 1.0 (Kenney, www.kenney.nl) |
 | `grenadeThrow` | Kenney RPG Audio: `cloth3.ogg` (velocidad 1.15) + jsfxr: receta `jumpUp` (-10 dB, +60 ms) | CC0 1.0 (Kenney, www.kenney.nl) + propio, generado con jsfxr (dominio público) |
 | `grenadeLand` | Kenney Impact Sounds: `impactSoft_heavy_001.ogg` (-2 dB) + Kenney Sci-Fi Sounds: `thrusterFire_000.ogg` (recortado 120-540 ms, -7 dB) | CC0 1.0 (Kenney, www.kenney.nl) |
