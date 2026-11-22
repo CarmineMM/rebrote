@@ -58,6 +58,7 @@ import { settleSeeds, type SeedPayout } from '../core/seeds';
 import {
   availableCards,
   bossRoundIndex,
+  carriedFeatures,
   createRound,
   infusableElements,
   infuseFeature,
@@ -426,10 +427,16 @@ export class BoardScene extends Phaser.Scene {
 
   create(): void {
     // B-02 (T-018): una partida nueva empieza con el tablero vacio y el saldo inicial de su brote. Si su jefe ya estaba
-    // vencido, sus semillas dan menos (T-020, C-03). Sus disparadoras nacen en el nivel base (T-023).
-    this.match =
-      this.resume ??
-      createMatch(undefined, 0, this.outbreak, isOutbreakDefeated(playerProgress.read(), this.outbreak), this.loadout, this.baseLevel);
+    // vencido, sus semillas dan menos (T-020, C-03). Sus disparadoras nacen en el nivel base (T-023). Trae lo desbloqueado
+    // en brotes posteriores ya vencidos (T-037, norma ES-03).
+    if (this.resume) {
+      this.match = this.resume;
+    } else {
+      const progress = playerProgress.read();
+      const replay = isOutbreakDefeated(progress, this.outbreak);
+      const carried = carriedFeatures(this.outbreak, progress.defeated);
+      this.match = createMatch(undefined, 0, this.outbreak, replay, this.loadout, this.baseLevel, carried);
+    }
     this.selected = null;
     this.hoverCell = null;
     this.defeated = false;
@@ -1465,7 +1472,7 @@ export class BoardScene extends Phaser.Scene {
     const labels = text().board;
     const lines: LabelLine[] =
       play.blocker === 'locked'
-        ? [{ text: unlocksAt === null ? labels.cannotInfuse : labels.infuseFrom(unlocksAt + 1), tone: 'blocked' }]
+        ? [{ text: unlocksAt === null ? labels.infuseLater : labels.infuseFrom(unlocksAt + 1), tone: 'blocked' }]
         : play.blocker === 'has-element'
           ? [{ text: labels.hasElement[plant.shooter.element ?? 'fire'], tone: 'blocked' }]
           : play.blocker === 'insufficient-funds'
@@ -1720,6 +1727,12 @@ export class BoardScene extends Phaser.Scene {
       play.cost > 0 ? (wall ? labels.infuseWallPlus(extra) : labels.infuseMinePlus(extra)) : wall ? labels.infuseWithWall : labels.infuseWithMine;
     if (play.blocker === null) {
       drag.view.hover(to, 'ok', [{ text: pay, tone: 'ok' }], labelAt);
+    } else if (play.blocker === 'locked') {
+      // T-037 (ES-02): un muro antes de poder infundir el escudo. Desde que ronda, o "aun no" si no es en este brote.
+      const element = sownAt(this.match, drag.from);
+      const unlocksAt = element ? unlockRound(this.match.outbreak, infuseFeature(sownElement(element) ?? 'shield')) : null;
+      const reason = unlocksAt === null ? labels.infuseLater : labels.infuseFrom(unlocksAt + 1);
+      drag.view.hover(to, 'blocked', [{ text: reason, tone: 'blocked' }], labelAt);
     } else if (play.blocker === 'has-element') {
       drag.view.hover(to, 'blocked', [{ text: labels.hasElement[plant?.shooter.element ?? 'fire'], tone: 'blocked' }], labelAt);
     } else if (play.blocker === 'insufficient-funds') {
@@ -2260,7 +2273,7 @@ export class BoardScene extends Phaser.Scene {
     } else if (target.kind === 'wall') {
       const wall = wallAt(this.match, target.cell);
       if (!wall) return;
-      data = wallInfo(wall, target.cell);
+      data = wallInfo(wall, target.cell, isUnlocked(this.match, infuseFeature('shield')));
       subject = { kind: 'wall', wear: wallWear(wall.hp / SHIELD.wallHp) };
     } else if (target.kind === 'ice') {
       const block = iceAt(this.match, target.cell);
@@ -2408,6 +2421,11 @@ export class BoardScene extends Phaser.Scene {
     if (cells.wallCell) spots.wallCell = this.cellSpot(cells.wallCell);
     if (cells.wall) spots.wall = this.wallSpot(cells.wall);
     if (cells.shieldInfusable) spots.shieldInfusable = this.plantSpot(cells.shieldInfusable);
+    // T-037: el muro que se puede llevar a una disparadora y esa disparadora.
+    if (cells.wallInfusion) {
+      spots.wallSource = this.wallSpot(cells.wallInfusion.wall);
+      spots.wallTarget = this.plantSpot(cells.wallInfusion.target);
+    }
     if (cells.mineInfusion) {
       spots.mine = this.mineSpot(cells.mineInfusion.mine);
       spots.mineTarget = this.plantSpot(cells.mineInfusion.target);

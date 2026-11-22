@@ -12,7 +12,18 @@ import type { CharacterId } from '../../game/view/characters/design';
  * Regla del proyecto: una mecanica nueva llega con su tour. Cada `Feature` de `rounds.ts` tiene el suyo en
  * `TOUR_OF_FEATURE` y cada poder (T-021, `PowerId`), en `TOUR_OF_POWER` (si se anade uno sin tour, no compila).
  */
-export type TourId = 'basics' | 'levelUp' | 'fireMine' | 'iceMine' | 'infuse' | 'fuse' | 'shield' | 'relocate' | 'grenade' | 'iceWall';
+export type TourId =
+  | 'basics'
+  | 'levelUp'
+  | 'fireMine'
+  | 'iceMine'
+  | 'infuse'
+  | 'fuse'
+  | 'shield'
+  | 'shieldInfuse'
+  | 'relocate'
+  | 'grenade'
+  | 'iceWall';
 
 /**
  * Quien da los tours (T-032): Boxer, en todos. Lo nuevo de los brotes siguientes lo presenta Patty en el aviso (VT-03),
@@ -32,8 +43,9 @@ export const TOUR_OF_FEATURE: Record<Feature, TourId> = {
   fireInfuse: 'infuse',
   iceInfuse: 'infuse',
   fuse: 'fuse',
-  // T-024: el muro y la infusion llegan juntos y van en un tour.
+  // T-037: el muro en el brote 2 y la infusion en el brote 3, cada uno con su tour.
   shield: 'shield',
+  shieldInfuse: 'shieldInfuse',
 };
 
 /**
@@ -108,6 +120,7 @@ export type PictureId =
   | 'wallSow'
   | 'wallBlock'
   | 'shieldInfuse'
+  | 'wallInfuse'
   | 'relocate'
   | 'grenade'
   | 'iceWall';
@@ -191,7 +204,7 @@ export const TOURS: Record<TourId, readonly TourStep[]> = {
       picture: 'fuse',
     },
   ],
-  // T-024: el muro, lo que para y la infusion (con la carta; arrastrar el muro tambien cuenta).
+  // T-024: el muro y lo que para. Desde T-037 la infusion va en su propio tour, en el brote 3.
   shield: [
     {
       id: 'wall',
@@ -201,12 +214,23 @@ export const TOURS: Record<TourId, readonly TourStep[]> = {
       picture: 'wallSow',
     },
     { id: 'block', spots: [spot('wall')], gesture: null, doneWhen: null, picture: 'wallBlock' },
+  ],
+  // T-037: infundir el escudo, con la carta (arrastrar un muro tambien cuenta) y despues arrastrando un muro, que se ensena
+  // sin exigirlo: no siempre hay un muro y moneda para otra.
+  shieldInfuse: [
     {
-      id: 'infuse',
+      id: 'card',
       spots: [hud('card-shield'), spot('shieldInfusable')],
       gesture: { kind: 'drag', from: hud('card-shield'), to: spot('shieldInfusable'), carry: 'shield' },
       doneWhen: 'infuseShield',
       picture: 'shieldInfuse',
+    },
+    {
+      id: 'wall',
+      spots: [spot('wallSource'), spot('wallTarget')],
+      gesture: { kind: 'drag', from: spot('wallSource'), to: spot('wallTarget') },
+      doneWhen: null,
+      picture: 'wallInfuse',
     },
   ],
   // T-021: los poderes. Recolocar se puede en la preparacion y se prueba de verdad; la granada y el muro solo van en el

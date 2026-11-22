@@ -14,6 +14,7 @@
 3. `specs/02-brote-1-creeper.md`
 4. `specs/03-ruta-de-brotes.md`
 5. `specs/04-historia.md`
-6. `tasks/README.md`
-7. `guias/graficos.md` (antes de pintar, animar o hacer sonar cualquier cosa)
-8. `guias/idiomas.md` (antes de escribir un texto que vea el jugador)
+6. `specs/05-brote-2-elk-cloner.md` y `specs/06-brote-3-brain.md` (solo si la task toca ese brote)
+7. `tasks/README.md`
+8. `guias/graficos.md` (antes de pintar, animar o hacer sonar cualquier cosa)
+9. `guias/idiomas.md` (antes de escribir un texto que vea el jugador)

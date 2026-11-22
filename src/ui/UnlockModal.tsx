@@ -100,6 +100,20 @@ function describe(t: Dictionary['unlock'], items: readonly UnlockItem[]): Shown[
       case 'shield':
         shown.push({ key: item.id, icon: <CardIcon card="shield" />, title: t.shield.title, text: t.shield.text });
         break;
+      // T-037: infundir el escudo, en el brote 3. La carta sobre la disparadora.
+      case 'shieldInfuse':
+        shown.push({
+          key: item.id,
+          icon: (
+            <span className="unlock-pair">
+              <CardIcon card="shield" />
+              <CardIcon card="shooter" />
+            </span>
+          ),
+          title: t.shieldInfuse.title,
+          text: t.shieldInfuse.text,
+        });
+        break;
     }
   }
   return shown;

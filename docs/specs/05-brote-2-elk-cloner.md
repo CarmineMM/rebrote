@@ -25,7 +25,7 @@ Decisiones L-01, L-07 y L-08 cerradas el 22 nov 2026 con la recomendación. Un c
 | Ronda | Concepto nuevo | Qué aprende el jugador |
 |---|---|---|
 | 1 | Los Copycat (hasta T-035, también el tope de nivel a 10, que contaba Boxer) | Que lo aprendido sigue y que cada Copycat deja una copia |
-| 2 | Escudo: muro e infusión (lo presenta Patty y lo enseña Boxer) | Parar escupitajos antes de que lleguen a las disparadoras |
+| 2 | Escudo, como muro (lo presenta Patty y lo enseña Boxer). Desde T-037 la infusión llega en el brote 3 | Parar escupitajos antes de que lleguen a las disparadoras |
 | 3 | Llega el Minstrel | Sus versos cruzan el carril: solo los para un escudo |
 | 4 | Mezcla: acorazados, Minstrel y escupidores | Minas para unos, escudos para otros |
 | 5 | Dos oleadas por los cinco carriles | Cubrir los cinco carriles |
@@ -105,3 +105,7 @@ T-035 cambió el crecimiento por nivel (compuesto, `01-mecanicas.md`), dejó el 
 - **Sin comprar nada, el brote 2 pide escudos y fusionar a 3 cañones.** Con 2 cañones el combate final se pierde; con algo de nivel base ya se gana.
 - **Con el nivel base 5 comprado, los escudos dejan de ser obligatorios.** Es el premio de haberlo comprado todo; si se quiere que el escudo siga haciendo falta, la palanca es el poema.
 - **El brote 1 queda como estaba:** 9 de 10 sin mejoras, con las rondas unos segundos más largas (la 9, de 113 a 121 s).
+
+### Tras el escudo en dos pasos de T-037 (22 nov 2026)
+
+Desde T-037 el escudo solo se siembra como muro en el brote 2; la infusión llega en el brote 3. Con `npm run sim`, la tabla del brote 2 (y la del brote 1) sale **idéntica** a la de T-035, partida a partida: el bot con escudos ya solo sembraba muros y nunca infundía escudo. No hace falta tocar valores. Las victorias del bot con escudos no cambian: 10 de 10 con 3 cañones, 0 de 10 con 2 sin mejoras y 8 de 10 con 2 y el nivel base 3.

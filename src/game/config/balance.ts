@@ -837,6 +837,58 @@ const ELK_CLONER_ROUNDS: readonly RoundScript[] = [
 ];
 
 /**
+ * Brote 3, de Brain (T-037; diseno en docs/specs/06-brote-3-brain.md): EN PREPARACION. Guion provisional de 3 rondas para
+ * estrenar infundir el escudo (`shieldInfuse`) en su ronda 2, que lo anuncia Patty (ES-01) y lo ensena Boxer. Sus tropas
+ * (Lurker y Skipper) llegan con T-038, y su jefe y sus 8 rondas de verdad, con T-039: hasta entonces salen las del brote 2,
+ * sin el Minstrel (que es solo del brote 2), en la misma banda de niveles (ninguna pasa del 9). PROVISIONAL.
+ */
+const BRAIN_ROUNDS: readonly RoundScript[] = [
+  {
+    unlocks: [],
+    levels: ENEMY_LEVELS.tables.mid,
+    groups: [
+      { atMs: 3_000, kind: 'copycat', lanes: [2] },
+      { atMs: 10_000, kind: 'copycat', lanes: [1, 3] },
+      { atMs: 17_000, kind: 'copycatSpitter', lanes: [2] },
+      { atMs: 24_000, kind: 'copycat', lanes: [0, 4] },
+      { atMs: 31_000, kind: 'copycatArmored', lanes: [1, 3] },
+      { atMs: 38_000, kind: 'copycatSpitter', lanes: [0, 2, 4] },
+      { atMs: 46_000, kind: 'copycat', lanes: ALL },
+      { atMs: 54_000, kind: 'copycatArmored', lanes: [2] },
+    ],
+  },
+  {
+    // T-037: infundir el escudo. Muchos escupidores: una disparadora con escudo les para los escupitajos.
+    unlocks: ['shieldInfuse'],
+    levels: ENEMY_LEVELS.tables.mid,
+    groups: [
+      { atMs: 3_000, kind: 'copycatSpitter', lanes: [2] },
+      { atMs: 9_000, kind: 'copycatSpitter', lanes: [1, 3] },
+      { atMs: 16_000, kind: 'copycat', lanes: [0, 2, 4] },
+      { atMs: 23_000, kind: 'copycatSpitter', lanes: [0, 4] },
+      { atMs: 30_000, kind: 'copycatArmored', lanes: [1, 3] },
+      { atMs: 37_000, kind: 'copycatSpitter', lanes: [0, 2, 4] },
+      { atMs: 45_000, kind: 'copycat', lanes: ALL },
+      { atMs: 53_000, kind: 'copycatSpitter', lanes: [1, 2, 3] },
+      { atMs: 61_000, kind: 'copycatArmored', lanes: [0, 4] },
+    ],
+  },
+  {
+    unlocks: [],
+    levels: ENEMY_LEVELS.tables.late,
+    groups: [
+      { atMs: 3_000, kind: 'copycatArmored', lanes: [0, 4] },
+      { atMs: 10_000, kind: 'copycatSpitter', lanes: [1, 2, 3] },
+      { atMs: 18_000, kind: 'copycat', lanes: ALL },
+      { atMs: 26_000, kind: 'copycatArmored', lanes: [1, 3] },
+      { atMs: 34_000, kind: 'copycatSpitter', lanes: ALL },
+      { atMs: 44_000, kind: 'copycat', lanes: ALL },
+      { atMs: 54_000, kind: 'copycatArmored', lanes: [0, 2, 4] },
+    ],
+  },
+];
+
+/**
  * Brotes (T-018, ADR-0015), en orden: cada uno es una campana que acaba en su jefe ("Brote 1: Creeper"), con su guion de
  * rondas (`rounds`, como el de arriba) y el saldo con el que se empieza (`startingBalance`). Lo que desbloquearon los
  * brotes anteriores llega desbloqueado desde la ronda 1 (B-01), asi que las rondas de un brote nuevo solo desbloquean lo
@@ -861,6 +913,16 @@ export const OUTBREAKS: readonly OutbreakScript[] = [
     startingBalance: 300, // PROVISIONAL
     rounds: ELK_CLONER_ROUNDS,
     // Lo nuevo desde el brote 2 lo crea Patty (T-032, VT-03).
+    presenter: 'patty',
+  },
+  {
+    id: 'brain',
+    // T-037: en preparacion (sin jefe) hasta que T-039 traiga a Brain, el Cerebro. Se juega en desarrollo con `?brote=3`.
+    boss: null,
+    // ES-04: como el brote 2.
+    startingBalance: 300, // PROVISIONAL
+    rounds: BRAIN_ROUNDS,
+    // Patty no crea nada nuevo: avisa de que el escudo ya se puede infundir (ES-01, `unlock.featureLines` de src/i18n/).
     presenter: 'patty',
   },
 ];

@@ -49,7 +49,7 @@ De menos a más daño, mezclando dos cosas: lo que le hizo a los equipos y lo qu
 |---|---|---|---|
 | 1 | Creeper, el Escurridizo | Hecho | Disparadora, fuego, hielo, infundir, fusionar y subir de nivel |
 | 2 | Elk Cloner, el Poeta | Hecho (T-024 a T-026; `05-brote-2-elk-cloner.md`) | Escudo. Sus versos son ondas que cruzan el carril y solo un escudo las para; cada pocos versos, el poema entero por los cinco carriles |
-| 3 | Brain, el Cerebro | Sin diseñar | Idea suelta: el Brain real se escondía de quien lo buscaba. Enemigos que no se ven hasta que están cerca |
+| 3 | Brain, el Cerebro | Planificado (T-037 a T-039; `06-brote-3-brain.md`) | Infundir el escudo, que en el brote 2 solo se siembra como muro. Tropas ocultas, el Skipper que salta y un jefe que avanza oculto y a saltos: solo lo para un escudo |
 | 4 | Morris, el Imparable | Sin diseñar | Idea suelta: el Morris real se copiaba tantas veces que tumbaba las máquinas. Enemigos en masa |
 
 Después de estos cuatro brotes, la historia pasa de la defensa al ataque y cambia el escenario (decidido el 21 nov 2026, ver `04-historia.md`). Por eso los cuatro tienen que dejar al jugador con todas las piezas básicas en la mano.
@@ -59,6 +59,20 @@ Los cuatro comparten la música de ronda y la del jefe (T-015, `MUSIC_STAGES`). 
 **Nivel de las plantas (T-035, decidido por Carmine el 22 nov 2026).** Durante los cuatro brotes de la defensa el tope de nivel de las disparadoras se queda en 5. En el brote 5, el primero del ataque, Patty le cuenta al jugador que sus plantas ya pueden llegar al nivel 10: su ronda 1 pone `levelCap: 10` y el aviso de desbloqueo lo presenta ella (`presenter: 'patty'`). El nivel de los enemigos de los brotes 3 en adelante se pregunta a Carmine antes de escribir sus tablas (en los brotes 1 y 2, como mucho el 9, y el 10 solo los aliados de los jefes).
 
 Las ideas de los brotes 3 y 4 no están decididas: son un punto de partida para cuando les toque.
+
+## Lo desbloqueado vale hacia atrás (norma, decidida el 22 nov 2026)
+
+Lo que el jugador desbloqueó en un brote vencido lo puede usar al rejugar los brotes anteriores, desde su ronda 1 (ES-03, T-037). Así, al rejugar el brote 1 con el brote 2 vencido hay escudo, y al rejugar el brote 2 con el brote 3 vencido se puede infundir el escudo. Cada brote nuevo se diseña sabiendo que sus piezas llegarán también a los de antes: sus jefes y sus tropas tienen que portarse bien con ellas. Detalle en "Brotes (T-018)" de `01-mecanicas.md`.
+
+## Reutilizar tropas (decidido el 22 nov 2026)
+
+- **Brotes 1 a 4:** cada brote trae tropas propias, para que el jugador siempre note algo nuevo. Siguen el mismo guion: una base, una de distancia, un tanque y una especial.
+- **Desde el brote 5:** se reutilizan tropas de brotes anteriores, con más nivel y un cambio de color. Conservan su nombre, para que la ficha no confunda.
+- **Hacia el brote 10:** vuelven a entrar tropas nuevas.
+- **El Minstrel** queda exclusivo del brote 2 por ahora y se guarda para otro jefe.
+- **Si el virus no es un gusano, sus tropas tampoco lo son.** Brain y Elk Cloner son virus de sector de arranque: bichos propios.
+
+Recomendación para los brotes que reutilicen: que cada uno junte tropas que nunca coincidieron (por ejemplo, Copycat con Skipper). Así el problema es nuevo aunque las piezas no lo sean.
 
 ## Lo que se guarda para Blaster (brote 11)
 

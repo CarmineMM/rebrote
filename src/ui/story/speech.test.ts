@@ -19,6 +19,17 @@ describe('quien presenta lo nuevo y que dice (T-032)', () => {
     expect(speeches.map((speech) => speech.text)).toEqual([lines[0], lines[1], lines[2], lines[0], lines[1]]);
   });
 
+  it('en el brote 3, Patty no dice que ha creado algo: ha reforzado el escudo (T-037, ES-01)', () => {
+    expect(unlockSpeech(text('es'), 'brain', 1)).toEqual({
+      speaker: 'patty',
+      expression: 'happy',
+      text: 'He reforzado el escudo: ahora aguanta sobre una disparadora.',
+    });
+    expect(unlockSpeech(text('en'), 'brain', 1).text).toBe('I reinforced the shield: now it holds on a shooter.');
+    // El muro del brote 2 sigue siendo algo nuevo.
+    expect(unlockSpeech(text('es'), 'elkCloner', 1).text).toBe('¡He creado algo nuevo!');
+  });
+
   it.each(LANGUAGES)('%s: Boxer y Patty tienen sus frases, y la primera de Patty es "He creado algo nuevo" (VT-03)', (language) => {
     const { presenters } = text(language).unlock;
     for (const lines of Object.values(presenters)) {

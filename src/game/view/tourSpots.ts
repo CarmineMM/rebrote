@@ -32,6 +32,8 @@ export interface TourCells {
   wall: Cell | null;
   /** Disparadora que se puede infundir con la carta de escudo (T-024). */
   shieldInfusable: Cell | null;
+  /** Muro sembrado y disparadora a la que se puede llevar para infundirle escudo (T-037). */
+  wallInfusion: { wall: Cell; target: Cell } | null;
   /** Casilla libre a la que llevar la disparadora de `shooter` con el poder de recolocar (T-021): la mas cercana. */
   relocateTo: Cell | null;
   /** Donde lanzar la granada (T-021): algo adelantada, por donde llegan los enemigos, en el carril del centro. */
@@ -72,15 +74,19 @@ export function tourCells(state: MatchState): TourCells {
     return play.action === 'infuse' && play.blocker === null;
   };
 
-  let mineInfusion: TourCells['mineInfusion'] = null;
-  for (const mine of cellsInOrder(LEFT_TO_RIGHT)) {
-    if (!mineAt(state, mine) || elementDragBlocker(state, mine) !== null) continue;
-    const target = nearest(mine, elementInfusionTargets(state, mine));
-    if (target) {
-      mineInfusion = { mine, target };
-      break;
+  /** Lo sembrado solo (`isElement`) que ya se puede llevar a una disparadora, con la mas cercana a la que infundir. */
+  const infusionFrom = (isElement: (cell: Cell) => boolean): { from: Cell; target: Cell } | null => {
+    for (const from of cellsInOrder(LEFT_TO_RIGHT)) {
+      if (!isElement(from) || elementDragBlocker(state, from) !== null) continue;
+      const target = nearest(from, elementInfusionTargets(state, from));
+      if (target) return { from, target };
     }
-  }
+    return null;
+  };
+  const fromMine = infusionFrom((cell) => mineAt(state, cell) !== null);
+  const mineInfusion: TourCells['mineInfusion'] = fromMine && { mine: fromMine.from, target: fromMine.target };
+  const fromWall = infusionFrom((cell) => wallAt(state, cell) !== null);
+  const wallInfusion: TourCells['wallInfusion'] = fromWall && { wall: fromWall.from, target: fromWall.target };
 
   let fusion: TourCells['fusion'] = null;
   for (const from of cellsInOrder(LEFT_TO_RIGHT)) {
@@ -119,6 +125,7 @@ export function tourCells(state: MatchState): TourCells {
     wallCell: wallCell ?? mineCell,
     wall: firstCell(LEFT_TO_RIGHT, (cell) => wallAt(state, cell) !== null),
     shieldInfusable: firstCell(LEFT_TO_RIGHT, infusableWith('shield')),
+    wallInfusion,
     relocateTo: firstShooter ? nearest(firstShooter, relocateTargets(state, firstShooter)) : null,
     grenadeCell: firstCell(POWER_COLUMNS, () => true) as Cell,
     iceWallCell: firstCell(POWER_COLUMNS, (cell) => iceWallCellsIn(state, cell).every(free)),

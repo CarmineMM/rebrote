@@ -4,6 +4,7 @@ import type { MatchState, Sown } from './core/match';
 import { isOutbreakId, roundCount, type OutbreakId } from './core/outbreaks';
 import { isBaseLevel } from './core/baseLevel';
 import { chargesAt, isPowerId, isPowerLevel } from './core/powers';
+import { isFeature } from './core/rounds';
 import type { UnlockInfo } from './EventBus';
 import { profiles } from './profiles';
 import type { SaveStore } from './storage';
@@ -26,9 +27,11 @@ export const SAVE_KEY = 'partida';
  * recital de Elk Cloner (`Enemy.recital`) y quien recita cada verso y si es del poema entero (`Verse.by`, `Verse.poem`); la 7
  * (T-021), los poderes con sus cargas (`MatchState.powers`), las granadas en vuelo (`MatchState.grenades`) y los bloques
  * del muro de hielo; la 8 (T-022), el nivel de cada poder (`PowerSlot.level`), el dano y el alcance de cada granada y la
- * vida entera de cada bloque de hielo (`IceBlock.maxHp`); la 9 (T-023), el nivel base de la partida (`MatchState.baseLevel`).
+ * vida entera de cada bloque de hielo (`IceBlock.maxHp`); la 9 (T-023), el nivel base de la partida (`MatchState.baseLevel`); la 10
+ * (T-037), lo que la partida trae de brotes posteriores vencidos (`MatchState.carried`). Con ella se descartan tambien las
+ * del brote 2 con una disparadora con escudo, que desde T-037 no se infunde ahi (sin migracion, ADR-0014).
  */
-export const SAVE_VERSION = 9;
+export const SAVE_VERSION = 10;
 
 export interface SavedGame {
   readonly version: number;
@@ -256,6 +259,8 @@ export function isMatchState(value: unknown): value is MatchState {
     grenades.every(isGrenade) &&
     isPowers(value.powers) &&
     isBaseLevel(value.baseLevel) &&
+    Array.isArray(value.carried) &&
+    value.carried.every(isFeature) &&
     isRound(value.round, value.outbreak) &&
     isNumber(value.incomeMs) &&
     isMatchSeeds(value.seeds, value.outbreak) &&

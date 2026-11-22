@@ -79,11 +79,14 @@ export function Card({ card, label, balance, selected, preview = null, canInfuse
   );
 }
 
-/** Lo que hace la carta. Antes de poder infundir (T-007), el elemento solo se siembra como mina. El escudo llega entero (T-024). */
+/**
+ * Lo que hace la carta. Antes de poder infundir (T-007), el elemento solo se siembra como mina, y el escudo (T-037), solo
+ * como muro.
+ */
 function cardTitle(t: Dictionary, card: CardId, canInfuse: boolean): string {
   const help = t.hud.cardHelp;
   if (card === 'shooter') return help.shooter;
-  if (card === 'shield') return help.shield;
+  if (card === 'shield') return canInfuse ? help.shieldInfuse : help.shield;
   if (card === 'fire') return canInfuse ? help.fireInfuse : help.fire;
   return canInfuse ? help.iceInfuse : help.ice;
 }
