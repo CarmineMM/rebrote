@@ -77,6 +77,8 @@ export type SfxId =
   // Viñetas de la historia (T-031)
   | 'voiceBoxer'
   | 'voicePatty'
+  // Tours (T-013): el teclado que suena mientras sale la frase del bocadillo
+  | 'keystroke'
   // Menus
   | 'button';
 
@@ -118,6 +120,12 @@ const ui = (volume: number, maxVoices = 1, minGapMs = 0): SfxSpec => ({ bus: 'ui
  * de una en una y con algo de variacion de tono para que parezca que habla.
  */
 const voice = (volume: number): SfxSpec => ({ bus: 'ui', volume, maxVoices: 1, minGapMs: 70, burst: 0, pitchJitter: 1.5, variants: 1 });
+
+/**
+ * Tecla del teclado mientras sale la frase de un tour: muy baja, como de fondo, y con un poco de variacion de tono para que
+ * no suene a metralleta. Va por el canal de los menus (el tour para el juego) y de una en una.
+ */
+const keys = (volume: number): SfxSpec => ({ bus: 'ui', volume, maxVoices: 2, minGapMs: 55, burst: 0, pitchJitter: 1, variants: 3 });
 
 /**
  * Lo que mas se repite (disparos e impactos) va bajo, corto y con pocas voces; lo que pasa de vez en cuando (explosiones,
@@ -180,6 +188,7 @@ export const SFX: Readonly<Record<SfxId, SfxSpec>> = {
   victory: ui(0.7),
   voiceBoxer: voice(0.4),
   voicePatty: voice(0.36),
+  keystroke: keys(0.16),
   button: ui(0.45, 2, 40),
   purchase: ui(0.65, 1, 120),
   powerUpgrade: ui(0.6, 1, 120),

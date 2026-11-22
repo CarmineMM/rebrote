@@ -2013,6 +2013,56 @@
       ]
     },
     {
+      "id": "keystroke",
+      "about": "Una tecla mientras sale la frase de un tour (tres variantes): la pulsación de un interruptor, sin la suelta",
+      "spec": {
+        "bus": "ui",
+        "volume": 0.16,
+        "maxVoices": 2,
+        "minGapMs": 55,
+        "burst": 0,
+        "pitchJitter": 1,
+        "variants": 3
+      },
+      "pick": [
+        {
+          "url": "audio/keystroke-1",
+          "source": "Kenney Interface Sounds: `switch_002.ogg` (recortado 0-60 ms, sin agudos por encima de 5000 Hz)",
+          "seconds": 0.029
+        },
+        {
+          "url": "audio/keystroke-2",
+          "source": "Kenney Interface Sounds: `switch_005.ogg` (recortado 0-60 ms, sin agudos por encima de 5000 Hz)",
+          "seconds": 0.041
+        },
+        {
+          "url": "audio/keystroke-3",
+          "source": "Kenney Interface Sounds: `switch_007.ogg` (recortado 0-60 ms, sin agudos por encima de 5000 Hz)",
+          "seconds": 0.03
+        }
+      ],
+      "alternatives": [
+        {
+          "url": "audio-lab/candidatos/keystroke/1",
+          "source": "Kenney Interface Sounds: `switch_004.ogg` (recortado 0-60 ms)",
+          "seconds": 0.043,
+          "recipes": []
+        },
+        {
+          "url": "audio-lab/candidatos/keystroke/2",
+          "source": "Kenney Interface Sounds: `switch_002.ogg`",
+          "seconds": 0.138,
+          "recipes": []
+        },
+        {
+          "url": "audio-lab/candidatos/keystroke/3",
+          "source": "Kenney Interface Sounds: `click_002.ogg` (sin agudos por encima de 5000 Hz)",
+          "seconds": 0.012,
+          "recipes": []
+        }
+      ]
+    },
+    {
       "id": "button",
       "about": "Botón de un menú",
       "spec": {

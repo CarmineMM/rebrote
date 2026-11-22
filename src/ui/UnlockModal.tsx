@@ -126,7 +126,7 @@ export function UnlockModal({ unlock, outbreak, onAccept }: UnlockModalProps) {
   const t = useText();
   const shown = describe(t.unlock, unlock.items);
   const speech = unlockSpeech(t, outbreak, unlock.round - 1);
-  const saying = useSpeech({ speaker: speech.speaker, text: speech.text, delayMs: SPEAK_DELAY_MS, voice: true, replay: unlock.round });
+  const saying = useSpeech({ speaker: speech.speaker, text: speech.text, delayMs: SPEAK_DELAY_MS, sound: 'voice', replay: unlock.round });
 
   return (
     <div className="pause-overlay is-unlock" role="dialog" aria-modal="true" aria-labelledby={titleId} {...{ [NO_AUTO_FULLSCREEN]: '' }}>

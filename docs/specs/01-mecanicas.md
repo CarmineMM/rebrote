@@ -388,7 +388,7 @@ Decisiones G-01 a G-10 cerradas el 20 nov 2026. Cómo se hace: ADR-0012.
 - **Pista de la moneda:** la primera moneda que cae al suelo lleva una mano que la toca y "¡Tócala! Vale más", sin parar el juego. Deja de salir al recoger una así, o tras salir tres veces.
 - **Ayuda:** opción en Opciones y en Ajustes, encendida por defecto. Apagada, no sale ningún tour ni la pista. Apagarla a mitad de un tour lo cierra sin darlo por visto.
 - **Una mecánica nueva llega con su tour** (regla 9 de `CLAUDE.md`).
-- **Los da Boxer (T-032, VT-01):** su retrato y su nombre asoman por la esquina del bocadillo y dice la frase de cada paso con su voz, letra a letra; al hacer el gesto, sonríe. Las frases van con su voz y nunca son más largas que las de T-013. La pista de la moneda no lleva retrato.
+- **Los da Boxer (T-032, VT-01):** su retrato y su nombre asoman por la esquina del bocadillo y dice la frase de cada paso letra a letra, y mientras sale suena un teclado bajito (no su voz de las viñetas); al hacer el gesto, sonríe. Las frases van con su voz y nunca son más largas que las de T-013. La pista de la moneda no lleva retrato.
 
 ### Historia y viñetas (T-031)
 Decisiones Y-01 a Y-07 cerradas el 21 nov 2026: Boxer, un informático moderno (mezcla de dos propuestas de la galería); Patty, la de la bata con una flor en el pelo; lo demás, con la recomendación. Cómo se hace: ADR-0019. La historia está en `04-historia.md`.

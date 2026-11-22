@@ -253,3 +253,22 @@ export function voiceCue(speaker: CharacterId, text: string, from: number, to: n
   }
   return null;
 }
+
+/** Cada cuantas letras suena una tecla mientras sale la frase de un tour. */
+export const KEY_EVERY = 2;
+
+/**
+ * Lo que suena mientras sale la frase de un tour: una tecla de teclado en vez de la voz de quien habla. Al aparecer las
+ * letras de `from` a `to` (sin incluir `to`), suena si entre ellas hay una que toca: una de cada `KEY_EVERY`, contando
+ * todo lo que se teclea menos los espacios en blanco. Como mucho una por llamada, como la voz.
+ */
+export function keystrokeCue(text: string, from: number, to: number): SfxCue | null {
+  let keys = 0;
+  const chars = Array.from(text);
+  for (let i = 0; i < Math.min(to, chars.length); i++) {
+    if (/\s/u.test(chars[i])) continue;
+    if (i >= from && keys % KEY_EVERY === 0) return centered('keystroke');
+    keys++;
+  }
+  return null;
+}

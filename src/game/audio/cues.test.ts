@@ -5,7 +5,7 @@ import { spawnEnemy, stepCombat, type Bullet, type CombatEvent, type Enemy } fro
 import { createMatch, createMine, createPlant, createWall, type MatchState, type Mine } from '../core/match';
 import { createShooter, type ElementType, type MineElement } from '../core/plants';
 import { FIRST_OUTBREAK, roundCount } from '../core/outbreaks';
-import { VOICE_EVERY, actionCue, combatCues, mineTicks, roundCues, shopCue, voiceCue } from './cues';
+import { KEY_EVERY, VOICE_EVERY, actionCue, combatCues, keystrokeCue, mineTicks, roundCues, shopCue, voiceCue } from './cues';
 
 const ids = (cues: ReadonlyArray<{ id: string }>) => cues.map((cue) => cue.id);
 
@@ -357,5 +357,24 @@ describe('voz de las viñetas (T-031)', () => {
     expect(voiceCue('patty', 'Soy Patty. Las plantas son cosa mía.', 0, 30)).toEqual({ id: 'voicePatty', pan: 0 });
     expect(voiceCue('patty', 'Hola', 4, 4)).toBeNull();
     expect(voiceCue('patty', 'Hola', 4, 9)).toBeNull();
+  });
+});
+
+describe('teclado de los tours', () => {
+  it('suena una tecla de cada dos, desde el centro, y los espacios no cuentan', () => {
+    const text = '¡No hay tiempo!';
+    const typed: number[] = [];
+    for (let i = 0; i < Array.from(text).length; i++) if (keystrokeCue(text, i, i + 1)) typed.push(i);
+    // Teclas: ¡ N o h a y t i e m p o !; suenan la 1.a (¡), la 3.a (o), la 5.a (a)...
+    expect(typed).toEqual([0, 2, 5, 8, 10, 12, 14]);
+    expect(KEY_EVERY).toBe(2);
+    expect(keystrokeCue(text, 0, 1)).toEqual({ id: 'keystroke', pan: 0 });
+    expect(keystrokeCue(text, 3, 4)).toBeNull();
+  });
+
+  it('un salto grande suena una sola vez, y sin letras nuevas no suena', () => {
+    expect(keystrokeCue('Arrastra una planta.', 0, 15)).toEqual({ id: 'keystroke', pan: 0 });
+    expect(keystrokeCue('Hola', 4, 4)).toBeNull();
+    expect(keystrokeCue('Hola', 4, 9)).toBeNull();
   });
 });

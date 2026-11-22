@@ -105,7 +105,7 @@ export function TourOverlay({ tour, step, index, count, board, art, cheer, hideH
   const [place, setPlace] = useState<BubblePlace | null>(null);
   const last = index === count - 1;
   const line = stepText(t, tour, step);
-  const speech = useSpeech({ speaker: TOUR_GUIDE, text: line, delayMs: SPEAK_DELAY_MS, voice: true, replay: `${tour}:${index}` });
+  const speech = useSpeech({ speaker: TOUR_GUIDE, text: line, delayMs: SPEAK_DELAY_MS, sound: 'keys', replay: `${tour}:${index}` });
 
   // El HUD se mueve (cartas que llegan, panel de nivel que se abre, ventana que cambia): se mide en cada fotograma y
   // solo se vuelve a pintar si algo cambio.

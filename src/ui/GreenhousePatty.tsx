@@ -29,7 +29,7 @@ export function GreenhousePatty({ hidden, name }: GreenhousePattyProps) {
   /** Al entrar decide si saluda; una viñeta (o la ruta) antes de que lo haga se lo quita. */
   const greeting = useRef(pattyGreets(Math.random));
   const text = talk ? pattyLine(t, talk.line, name) : '';
-  const speech = useSpeech({ speaker: 'patty', text, voice: true, paused: hidden, replay: talk?.count });
+  const speech = useSpeech({ speaker: 'patty', text, sound: 'voice', paused: hidden, replay: talk?.count });
 
   const say = useCallback(() => {
     const line = nextPattyLine(t.greenhouse.patty.length, lastLine, Math.random);

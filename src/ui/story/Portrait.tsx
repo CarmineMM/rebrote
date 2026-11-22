@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
-import { voiceCue } from '../../game/audio/cues';
+import { keystrokeCue, voiceCue } from '../../game/audio/cues';
 import { sfx } from '../../game/audio/sfx';
 import { CAST } from '../../game/view/characters/cast';
 import type { CharacterDesign, CharacterId, Expression } from '../../game/view/characters/design';
@@ -82,8 +82,11 @@ interface SpeechOptions {
   text: string;
   /** Lo que espera antes de empezar a hablar, en ms: deja entrar antes al bocadillo. */
   delayMs?: number;
-  /** Suena su voz mientras habla (`voiceCue`, una de cada tres letras), como en las viñetas. */
-  voice?: boolean;
+  /**
+   * Lo que suena mientras sale la frase: su voz (`voiceCue`, una de cada tres letras), como en las viñetas, o un teclado
+   * bajito (`keystrokeCue`), como en los tours. Sin el, callado.
+   */
+  sound?: 'voice' | 'keys';
   /** Tapado (la pausa, el aviso de girar): ni habla ni parpadea, y sigue donde iba al destaparse. */
   paused?: boolean;
   /** Cambia para que vuelva a decir el mismo texto. */
@@ -92,10 +95,10 @@ interface SpeechOptions {
 
 /**
  * Un personaje diciendo una frase fuera de las viñetas (T-032): la frase sale al ritmo de las viñetas (`typewriter.ts`),
- * con la boca moviendose y, si se pide, su voz; parpadea cada pocos segundos. Devuelve cuantas letras se ven, si ya la
+ * con la boca moviendose y, si se pide, su voz o un teclado; parpadea cada pocos segundos. Devuelve cuantas letras se ven, si ya la
  * dijo entera y la cara del momento. Con movimiento reducido, la frase sale entera.
  */
-export function useSpeech({ speaker, text, delayMs = 0, voice = false, paused = false, replay }: SpeechOptions) {
+export function useSpeech({ speaker, text, delayMs = 0, sound, paused = false, replay }: SpeechOptions) {
   const total = glyphs(text).length;
   /** Frase en curso: las letras de otra no cuentan (asi no asoma entera un fotograma al cambiar). */
   const key = `${replay ?? ''}:${text}`;
@@ -131,8 +134,8 @@ export function useSpeech({ speaker, text, delayMs = 0, voice = false, paused = 
       c.step += dt;
       const shown = c.step < 0 ? c.typed : Math.max(c.typed, typedLength(text, c.step));
       if (shown !== c.typed) {
-        if (voice) {
-          const cue = voiceCue(speaker, text, c.typed, shown);
+        if (sound) {
+          const cue = sound === 'voice' ? voiceCue(speaker, text, c.typed, shown) : keystrokeCue(text, c.typed, shown);
           if (cue) sfx.play(cue.id, cue.pan);
         }
         c.typed = shown;
@@ -148,7 +151,7 @@ export function useSpeech({ speaker, text, delayMs = 0, voice = false, paused = 
       cancelAnimationFrame(frame);
       clock.current.last = null;
     };
-  }, [paused, text, total, speaker, voice]);
+  }, [paused, text, total, speaker, sound]);
 
   /** La dice entera de golpe, sin voz. */
   const finish = useCallback(() => {

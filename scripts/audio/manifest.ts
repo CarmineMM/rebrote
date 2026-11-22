@@ -356,6 +356,13 @@ export const MANIFEST: Readonly<Record<SfxId, SoundEntry>> = {
     pick: ui('pluck_001', { rate: 1.22, fadeOutMs: 30 }),
     alternatives: [sfxr('voiceHigh'), ui('pluck_002', { rate: 1.3, lengthMs: 110, fadeOutMs: 50 })],
   },
+  keystroke: {
+    about: 'Una tecla mientras sale la frase de un tour (tres variantes): la pulsación de un interruptor, sin la suelta',
+    // Cada interruptor de Kenney trae la pulsación (0-40 ms) y la suelta (a los 100 ms): con la pulsación sola suena a
+    // tecla. Sin los agudos de arriba, para que quede de fondo.
+    pick: ['switch_002', 'switch_005', 'switch_007'].map((file) => ui(file, { lengthMs: 60, fadeOutMs: 30, lowpassHz: 5000 })),
+    alternatives: [ui('switch_004', { lengthMs: 60, fadeOutMs: 30 }), ui('switch_002'), ui('click_002', { lowpassHz: 5000 })],
+  },
   button: {
     about: 'Botón de un menú',
     pick: ui('select_001'),
