@@ -17,6 +17,10 @@ El prototipo no tiene backend. El progreso, si hace falta guardarlo, va en `loca
 - En contra: no hay cuentas, ni progreso entre dispositivos, ni ranking.
 - Riesgo: si algún día hay ranking o compras, el cliente no es fuente de confianza y habrá que validar en servidor.
 
+## Nota del 22 nov 2026 (T-029)
+
+El juego se puede instalar como aplicación y jugar sin conexión (ADR-0021). Sigue sin backend: el manifiesto y el service worker son archivos estáticos del mismo sitio, y lo guardado sigue en el navegador.
+
 ## Cuándo se revisa
 
 Cuando haga falta alguna de estas: cuentas, progreso en la nube, ranking o pagos. En ese momento Laravel entra como API y se documenta en un ADR nuevo.

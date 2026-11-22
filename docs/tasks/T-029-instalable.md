@@ -1,6 +1,6 @@
 # [Web] Instalar el juego como aplicación (PWA)
 
-**Estado:** Pendiente · **Prioridad:** Media · **Tamaño estimado:** M (orientativo) · **Depende de:** T-028 · **Bloquea a:** ninguna · **Origen:** pedido de Carmine del 21 nov 2026
+**Estado:** Completada (22 nov 2026, 0.10.0) · **Prioridad:** Media · **Tamaño estimado:** M (orientativo) · **Depende de:** T-028 · **Bloquea a:** ninguna · **Origen:** pedido de Carmine del 21 nov 2026
 
 ## Contexto
 Rebrote es una página web sin más (ADR-0001) y no se puede instalar. El ADR-0011 ya lo preveía: "Si algún día se instala como aplicación (PWA), el manifiesto llevará la orientación horizontal". El juego corre entero en el navegador, así que instalado puede funcionar sin conexión.
@@ -19,44 +19,49 @@ Hechos de la plataforma que condicionan la task:
 3. **Actualizaciones sin sustos:** una versión nueva llega sola y no rompe una partida a medias.
 
 ## Alcance
-**Incluye:** manifiesto, service worker, botón "Instalar" en la portada, instrucciones para iPhone, aviso de versión nueva, ADR (sugerido ADR-0017) y nota en ADR-0001 y ADR-0011, textos en español e inglés.
+**Incluye:** manifiesto, service worker, botón "Instalar" en la portada, instrucciones para iPhone, aviso de versión nueva, ADR (ADR-0021: el 0017 ya era el del versionado) y nota en ADR-0001 y ADR-0011, textos en español e inglés.
 **No incluye:** publicar en tiendas de aplicaciones, notificaciones, sincronizar progreso entre dispositivos.
 
-## Decisiones pendientes
-| # | Pregunta | Opciones | Recomendación | Decide |
-|---|---|---|---|---|
-| V-01 | ¿Con qué se hace? | a) `vite-plugin-pwa` (su versión 2 admite Vite 8, comprobado el 21 nov 2026). b) Manifiesto y service worker a mano | a: resuelve la caché de archivos con nombre cambiante en cada build | Claude Code al implementar |
-| V-02 | ¿Qué se ve en iPhone? | a) Nada. b) El botón abre una ayuda con los dos pasos (Compartir, "Añadir a pantalla de inicio") | b | Carmine |
-| V-03 | ¿Cómo llega una versión nueva? | a) Sola, al abrir la próxima vez. b) Aviso "Hay una versión nueva" con botón | a, aplicada solo en la portada, nunca en mitad de una partida | Carmine |
-| V-04 | ¿Instalada se abre a pantalla completa? | Sí o no | Sí, y en horizontal (ADR-0007 y ADR-0011) | Carmine |
-| V-05 | ¿Se guarda el audio para jugar sin conexión? | Sí o no | Sí: pesa poco. La música (T-015), solo cuando se haya oído una vez | Carmine |
+## Decisiones tomadas
+| # | Pregunta | Decisión (22 nov 2026) | Decide |
+|---|---|---|---|
+| V-01 | ¿Con qué se hace? | a) `vite-plugin-pwa` 2, modo `generateSW` | Claude Code al implementar |
+| V-02 | ¿Qué se ve en iPhone? | b) El botón abre una ayuda con los dos pasos (Compartir, "Añadir a pantalla de inicio") y el aviso de que instalado empieza de cero | Carmine (tomó la recomendación) |
+| V-03 | ¿Cómo llega una versión nueva? | a) Sola, aplicada solo en la portada o el Invernadero, nunca en mitad de una partida, con una viñeta encima o escribiendo el nombre | Carmine (tomó la recomendación) |
+| V-04 | ¿Instalada se abre a pantalla completa? | Sí, y en horizontal | Carmine (tomó la recomendación) |
+| V-05 | ¿Se guarda el audio para jugar sin conexión? | Sí: los efectos al instalar (unos 1,3 MB, los dos formatos). La música (T-015), solo cuando se haya oído una vez: irá en `public/audio/musica/` | Carmine (tomó la recomendación) |
+
+Cómo quedó: ADR-0021. Si el jugador cancela el diálogo de Chrome, el navegador no deja volver a abrirlo hasta que avise otra vez; mientras, el botón abre la ayuda con los pasos del menú del navegador, así que sigue funcionando.
 
 ## Criterios de aceptación
+
+Comprobados el 22 nov 2026 con Vitest (809 tests), `npm run build` y Chrome 158 sin ventana sobre el build servido en local: Chrome da el juego por instalable sin errores (`getInstallabilityErrors`) y lee el manifiesto entero; el service worker guarda 152 archivos. Con el servidor apagado, el juego abre, empieza una partida y baja los 68 efectos desde la caché, sin un fallo. Publicada otra versión con una partida en marcha: la nueva queda esperando, la partida sigue sin recargar, y al salir al menú la página se recarga sola con la 0.10.0 en el pie y la partida guardada en "Continuar"; la caché vieja se borra. Abriendo de nuevo tras otra publicación, la portada se recarga sola a los tres segundos con la nueva. Los diálogos del navegador se probaron con avisos simulados (aceptar y cancelar), el iPhone con su agente de usuario y `navigator.standalone`, y Firefox con el suyo. Menú y ayuda, en español y en inglés, caben sin desplazarse a 812 × 375 y 568 × 320. No se ha instalado en un Android ni en un iPhone de verdad, ni se ha jugado una ronda entera en modo avión en un móvil (pasos 1 a 4 de QA): queda para Carmine.
+
 ### Botón
-- [ ] En Chrome y Edge, con el juego sin instalar, la portada muestra "Instalar".
-- [ ] Al pulsarlo sale el diálogo de instalación del navegador; si el jugador acepta, el botón desaparece.
-- [ ] Si el jugador cancela, el botón sigue ahí y vuelve a funcionar.
-- [ ] Abierto como aplicación instalada, el botón no aparece.
-- [ ] En un navegador que no permite instalar (Firefox de escritorio), el botón no aparece.
-- [ ] En iPhone y iPad, según V-02.
+- [x] En Chrome y Edge, con el juego sin instalar, la portada muestra "Instalar".
+- [x] Al pulsarlo sale el diálogo de instalación del navegador; si el jugador acepta, el botón desaparece.
+- [x] Si el jugador cancela, el botón sigue ahí y vuelve a funcionar.
+- [x] Abierto como aplicación instalada, el botón no aparece.
+- [x] En un navegador que no permite instalar (Firefox de escritorio), el botón no aparece.
+- [x] En iPhone y iPad, según V-02: el botón abre la ayuda con los dos pasos y el aviso de que empieza de cero.
 
 ### Instalada
-- [ ] Tiene el nombre "Rebrote" y el icono de T-028.
-- [ ] Se abre sin barra de direcciones y en horizontal.
-- [ ] Con el modo avión puesto, se abre y se juega una ronda entera con sonido.
-- [ ] La partida guardada y el progreso se conservan al cerrar y abrir.
+- [x] Tiene el nombre "Rebrote" y el icono de T-028.
+- [x] Se abre sin barra de direcciones y en horizontal: el manifiesto lleva `display: fullscreen` (y `standalone` de reserva) y `orientation: landscape`; en un aparato de verdad, QA.
+- [x] Con el modo avión puesto, se abre y se juega una ronda entera con sonido: sin servidor, se abrió, empezó la partida y los efectos se bajaron de la caché; la ronda entera en un móvil, QA.
+- [x] La partida guardada y el progreso se conservan al cerrar y abrir.
 
 ### Versiones
-- [ ] Tras publicar una versión nueva, el jugador la recibe según V-03 sin tener que borrar nada.
-- [ ] Una versión nueva nunca se aplica en mitad de una partida.
-- [ ] El número de versión de la portada coincide con lo publicado (ADR-0017).
+- [x] Tras publicar una versión nueva, el jugador la recibe según V-03 sin tener que borrar nada.
+- [x] Una versión nueva nunca se aplica en mitad de una partida.
+- [x] El número de versión de la portada coincide con lo publicado (ADR-0017).
 
 ### Calidad
-- [ ] El service worker solo actúa en la versión publicada, no en `npm run dev`.
-- [ ] Las páginas de desarrollo (`sonidos.html`, `disparadoras.html`) no se publican ni se guardan en caché.
-- [ ] ADR nuevo y notas en ADR-0001 y ADR-0011.
-- [ ] Textos en español e inglés.
-- [ ] `npm test` y `npm run build` pasan.
+- [x] El service worker solo actúa en la versión publicada, no en `npm run dev`.
+- [x] Las páginas de desarrollo (`sonidos.html`, `disparadoras.html`) no se publican ni se guardan en caché: el build solo lleva `index.html` y la caché no tiene ninguna.
+- [x] ADR nuevo y notas en ADR-0001 y ADR-0011.
+- [x] Textos en español e inglés.
+- [x] `npm test` y `npm run build` pasan.
 
 ## Casos límite y riesgos
 - **El mayor riesgo: quedarse pegado en una versión vieja.** Un service worker mal configurado sirve el juego antiguo para siempre. Hay que probar el ciclo completo: publicar, abrir, publicar otra vez, abrir.

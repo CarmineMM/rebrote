@@ -10,6 +10,10 @@
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <!-- Barra del navegador en movil: el azul de arriba del cielo de la portada (`THEME_COLOR`). -->
     <meta name="theme-color" content="#2a80d2" />
+    <!-- Instalado (T-029): el manifiesto lo enlaza el build (`src/pwa/manifest.ts`). En iPhone, sin barra y con su nombre. -->
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Rebrote" />
   </head>
   <body>
     <div id="root"></div>

@@ -72,6 +72,21 @@ export const es = {
   },
 
   /**
+   * Instalar el juego como aplicacion (T-029): el boton de la portada y la ayuda que abre donde el navegador no tiene
+   * dialogo (iPhone y iPad, V-02) o el jugador ya lo cancelo. Lo que se cita entre comillas es lo que pone el navegador.
+   */
+  install: {
+    button: 'Instalar',
+    title: 'Instalar Rebrote',
+    intro: 'Instalado, se abre desde su icono, a pantalla completa y sin conexión.',
+    iosShare: 'Toca Compartir, el cuadrado con la flecha hacia arriba.',
+    iosAdd: 'Elige «Añadir a pantalla de inicio».',
+    iosNote: 'Instalado empieza de cero: lo jugado en Safari se queda en Safari.',
+    menuOpen: 'Abre el menú del navegador.',
+    menuPick: 'Elige «Instalar Rebrote» o «Añadir a pantalla de inicio».',
+  },
+
+  /**
    * Jugadores (T-034): varios perfiles en el mismo aparato, cada uno con su progreso, su partida y sus tours vistos. Se
    * cambia, se crea y se borra desde la portada.
    */

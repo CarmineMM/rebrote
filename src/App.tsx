@@ -42,6 +42,7 @@ import { UnlockModal } from './ui/UnlockModal';
 import { NO_AUTO_FULLSCREEN, useFullscreen } from './ui/useFullscreen';
 import { useKeyboardArea } from './ui/useKeyboardArea';
 import { useNeedsLandscape } from './ui/useLandscapeOnly';
+import { useUpdateWhenIdle } from './ui/usePwa';
 import { sfx } from './game/audio/sfx';
 import { useButtonSounds } from './ui/useButtonSounds';
 import { useSettings } from './ui/useSettings';
@@ -190,6 +191,9 @@ export function App() {
   const needsLandscape = useNeedsLandscape();
   // Tours de ayuda (T-013): esperan debajo de cualquier cosa que tape el juego.
   const tours = useTours({ player: playerList.active, onBoard, round, help: settings.help, covered: halted || needsLandscape, over });
+
+  // Version nueva del juego instalado (T-029, V-03): sola y en la portada, nunca en mitad de una partida ni de una viñeta.
+  useUpdateWhenIdle(screen === 'title', storyOn);
 
   // Al ponerse en vertical, la partida se pausa: al girar de nuevo el jugador la encuentra en el menu de pausa.
   useEffect(() => {

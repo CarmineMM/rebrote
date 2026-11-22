@@ -55,6 +55,17 @@ export const en: Dictionary = {
     version: (version) => `Version ${version}`,
   },
 
+  install: {
+    button: 'Install',
+    title: 'Install Rebrote',
+    intro: 'Once installed, it opens from its icon, full screen and offline.',
+    iosShare: 'Tap Share, the square with the arrow pointing up.',
+    iosAdd: 'Choose "Add to Home Screen".',
+    iosNote: 'The installed game starts fresh: what you played in Safari stays in Safari.',
+    menuOpen: 'Open the browser menu.',
+    menuPick: 'Choose "Install Rebrote" or "Add to Home screen".',
+  },
+
   players: {
     title: 'Players',
     defaultName: (number) => `Player ${number}`,

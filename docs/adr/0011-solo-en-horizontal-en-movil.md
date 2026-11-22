@@ -36,3 +36,7 @@ Aviso de girar la pantalla, y bloqueo en horizontal donde el navegador lo permit
 - Nada del juego (HUD, menús, fichas, portada) tiene que diseñarse para un móvil en vertical. Lo pequeño que hay que probar es el móvil en horizontal: 812 × 375 y 568 × 320.
 - Cualquier superposición nueva va por debajo del aviso (`z-index` menor que 10).
 - Si algún día se instala como aplicación (PWA), el manifiesto llevará `"orientation": "landscape"` y el aviso seguirá para el navegador.
+
+## Nota del 22 nov 2026 (T-029)
+
+El juego ya se instala (ADR-0021). El manifiesto (`src/pwa/manifest.ts`) lleva `"orientation": "landscape"` y `"display": "fullscreen"`: instalado en Android se abre en horizontal y a pantalla completa sin hacer nada. El aviso de girar la pantalla sigue igual para el navegador y para el iPhone, que no respeta la orientación del manifiesto.

@@ -5,12 +5,16 @@ import type { Progress } from '../game/progress';
 import { summarizeSave, type SavedGame } from '../game/save';
 import type { QualityLevel } from '../game/view/quality';
 import { formatSavedAt, type Dictionary } from '../i18n';
+import { pwaInstall } from '../pwa/install';
+import type { InstallOffer } from '../pwa/policy';
 import { Credits } from './Credits';
+import { InstallHelp } from './InstallHelp';
 import { outbreakTitle } from './outbreakName';
 import { PlayerChip, PlayerNameSetting, PlayersPanel, RemovePlayer } from './Players';
 import { playerName, type PlayerCard } from './playerCards';
 import { LanguagePicker, SettingsPanel } from './SettingsPanel';
 import { NO_AUTO_FULLSCREEN } from './useFullscreen';
+import { useInstallOffer } from './usePwa';
 import type { Settings } from './useSettings';
 import { useLanguage, useText } from './useText';
 
@@ -40,7 +44,7 @@ interface TitleMenuProps {
   onRenamePlayer: (name: string) => void;
 }
 
-type View = 'main' | 'options' | 'credits' | 'confirm' | 'players' | 'remove';
+type View = 'main' | 'options' | 'credits' | 'confirm' | 'players' | 'remove' | 'install';
 
 /** Brote que sale de la "O" del titulo: tallo y dos hojas con el contorno oscuro de las plantas del juego. */
 function Sprout() {
@@ -100,7 +104,9 @@ export function TitleScreen({ greenhouse = false, player, inert = false, childre
  * pantalla de jugadores: elegir, crear y borrar (con confirmacion). Solo aqui se cambia de jugador, nunca en mitad de una
  * partida. Las opciones, los creditos, los jugadores y las confirmaciones (partida nueva y borrar un jugador) salen en el
  * mismo panel. Esc vuelve atras: al menu, o a los jugadores desde la confirmacion de borrar. Con nombre (T-033),
- * "Continuar" lo lleva al lado ("Continuar · Carmine") y Opciones empieza por el campo para cambiarlo.
+ * "Continuar" lo lleva al lado ("Continuar · Carmine") y Opciones empieza por el campo para cambiarlo. Donde el navegador
+ * deja instalar y el juego no esta instalado (T-029), "Instalar" va al final: abre el dialogo del navegador o, en iPhone
+ * y iPad o tras cancelarlo, la ayuda con los pasos.
  */
 export function TitleMenu({
   saved,
@@ -125,6 +131,9 @@ export function TitleMenu({
   const [removing, setRemoving] = useState<string | null>(null);
   /** Nombre del jugador que se acaba de borrar: la lista lo avisa hasta que se sale de ella. */
   const [removed, setRemoved] = useState<string | null>(null);
+  const install = useInstallOffer();
+  /** La ayuda que abrio "Instalar" (se queda aunque cambie lo que ofrece el boton mientras se lee). */
+  const [installHelp, setInstallHelp] = useState<'ios' | 'menu'>('ios');
   const titleId = useId();
   const firstButton = useRef<HTMLButtonElement>(null);
   const playerButton = useRef<HTMLButtonElement>(null);
@@ -156,6 +165,19 @@ export function TitleMenu({
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [view]);
+
+  const startInstall = async () => {
+    if (install === 'ios' || install === 'menu') {
+      setInstallHelp(install);
+      setView('install');
+      return;
+    }
+    // Si el navegador ya no tiene el dialogo, la ayuda del menu. Cancelar deja el boton como estaba.
+    if ((await pwaInstall.prompt()) === 'unavailable') {
+      setInstallHelp('menu');
+      setView('install');
+    }
+  };
 
   const startNew = () => (summary ? setView('confirm') : onNewGame());
 
@@ -201,7 +223,7 @@ export function TitleMenu({
                 <small className="btn-detail">{t.title.toGreenhouse}</small>
                 {summary && <small className="btn-detail is-soft">{t.title.waiting(outbreakTitle(t, summary.outbreak), summary.round)}</small>}
               </button>
-              <MenuTail t={t} onOptions={() => setView('options')} onCredits={() => setView('credits')} />
+              <MenuTail t={t} install={install} onOptions={() => setView('options')} onCredits={() => setView('credits')} onInstall={startInstall} />
             </div>
           ) : (
             <>
@@ -221,7 +243,7 @@ export function TitleMenu({
                   </small>
                   {summary && <small className="btn-detail is-soft">{t.title.savedAt(formatSavedAt(summary.savedAt, Date.now(), language))}</small>}
                 </button>
-                <MenuTail t={t} onOptions={() => setView('options')} onCredits={() => setView('credits')} />
+                <MenuTail t={t} install={install} onOptions={() => setView('options')} onCredits={() => setView('credits')} onInstall={startInstall} />
               </div>
             </>
           )}
@@ -247,6 +269,8 @@ export function TitleMenu({
           {current && <PlayerNameSetting key={current.profile.id} profile={current.profile} onRename={onRenamePlayer} />}
         </SettingsPanel>
       )}
+
+      {view === 'install' && <InstallHelp titleId={titleId} firstButton={firstButton} variant={installHelp} onBack={() => setView('main')} />}
 
       {view === 'credits' && <Credits titleId={titleId} firstButton={firstButton} onBack={() => setView('main')} />}
 
@@ -289,16 +313,30 @@ export function TitleMenu({
   );
 }
 
-/** Opciones y creditos, al final del menu de la portada en los dos casos. */
-function MenuTail({ t, onOptions, onCredits }: { t: Dictionary; onOptions: () => void; onCredits: () => void }) {
+interface MenuTailProps {
+  t: Dictionary;
+  install: InstallOffer;
+  onOptions: () => void;
+  onCredits: () => void;
+  onInstall: () => void;
+}
+
+/** Opciones, creditos y, si se puede, instalar (T-029): al final del menu de la portada en los dos casos. */
+function MenuTail({ t, install, onOptions, onCredits, onInstall }: MenuTailProps) {
   return (
-    <>
+    // En pantallas bajas, opciones y creditos van en fila para que quepa "Instalar" (568 x 320).
+    <div className="title-tail">
       <button type="button" className="btn" onClick={onOptions}>
         <span aria-hidden="true">⚙</span> {t.title.options}
       </button>
       <button type="button" className="btn" onClick={onCredits}>
         <span aria-hidden="true">★</span> {t.title.credits}
       </button>
-    </>
+      {install !== 'none' && (
+        <button type="button" className="btn btn-install" onClick={onInstall}>
+          <span aria-hidden="true">⤓</span> {t.install.button}
+        </button>
+      )}
+    </div>
   );
 }

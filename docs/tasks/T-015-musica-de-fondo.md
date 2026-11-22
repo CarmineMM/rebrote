@@ -21,6 +21,8 @@ La música no se genera con Phaser: es un archivo de audio que alguien compuso y
 | U-02 | ¿Qué pistas? | Las elige Carmine de oído | Tono: marimba, madera o ukelele para menú y ronda; algo más tenso y digital para el jefe | Carmine |
 | U-03 | ¿Qué hace la música en pausa? | a) Se calla. b) Baja de volumen | b: se nota que el juego sigue ahí | Carmine |
 
+Instalado (T-029, ADR-0021, V-05), el juego guarda la música solo cuando se ha oído una vez: las pistas van en `public/audio/musica/`, que es lo que guarda esa regla (`MUSIC_CACHE`); en `public/audio/` se guardarían todas al instalar.
+
 Esta task no se puede ejecutar hasta que Carmine entregue los tres archivos o sus enlaces (U-01 y U-02).
 
 ## Criterios de aceptación
