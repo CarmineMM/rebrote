@@ -2,7 +2,7 @@ import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 import pkg from './package.json' with { type: 'json' };
-import { MANIFEST, MUSIC_CACHE, PRECACHE_GLOBS, PRECACHE_MAX_BYTES } from './src/pwa/manifest.ts';
+import { MANIFEST, MUSIC_CACHE, MUSIC_URL_PATTERN, PRECACHE_GLOBS, PRECACHE_MAX_BYTES } from './src/pwa/manifest.ts';
 
 export default defineConfig({
   plugins: [
@@ -20,11 +20,12 @@ export default defineConfig({
         globPatterns: PRECACHE_GLOBS,
         maximumFileSizeToCacheInBytes: PRECACHE_MAX_BYTES,
         cleanupOutdatedCaches: true,
-        // La musica (T-015), cuando llegue, se guarda al oirla y se renueva por detras.
+        // La musica (T-015, U-05): la baja el juego despues de la portada y la guarda en `MUSIC_CACHE`; si llega antes al
+        // service worker, este la guarda igual. Cada archivo lleva su huella (`?v=`), asi que lo guardado no caduca.
         runtimeCaching: [
           {
-            urlPattern: /\/audio\/musica\/.+\.(?:ogg|mp3)$/,
-            handler: 'StaleWhileRevalidate',
+            urlPattern: MUSIC_URL_PATTERN,
+            handler: 'CacheFirst',
             options: { cacheName: MUSIC_CACHE, cacheableResponse: { statuses: [200] } },
           },
         ],

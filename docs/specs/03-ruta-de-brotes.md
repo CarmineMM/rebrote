@@ -54,6 +54,8 @@ De menos a más daño, mezclando dos cosas: lo que le hizo a los equipos y lo qu
 
 Después de estos cuatro brotes, la historia pasa de la defensa al ataque y cambia el escenario (decidido el 21 nov 2026, ver `04-historia.md`). Por eso los cuatro tienen que dejar al jugador con todas las piezas básicas en la mano.
 
+Los cuatro comparten la música de ronda y la del jefe (T-015, `MUSIC_STAGES`). El tramo del ataque traerá la suya.
+
 Las ideas de los brotes 3 y 4 no están decididas: son un punto de partida para cuando les toque.
 
 ## Lo que se guarda para Blaster (brote 11)

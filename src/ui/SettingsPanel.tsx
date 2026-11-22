@@ -26,9 +26,9 @@ interface SettingsPanelProps {
 }
 
 /**
- * Ajustes del jugador (ADR-0006, ADR-0007, T-011, T-013 y T-014): idioma, volumen de los efectos, pantalla completa,
- * calidad grafica, tours de ayuda y FPS. Los mismos en el menu de inicio ("Opciones") y en el de pausa ("Ajustes"). En
- * Opciones van primero los del jugador (su nombre, T-033), que no son del aparato.
+ * Ajustes del jugador (ADR-0006, ADR-0007, T-011, T-013, T-014 y T-015): idioma, volumen de efectos y de musica,
+ * pantalla completa, calidad grafica, tours de ayuda y FPS. Los mismos en el menu de inicio ("Opciones") y en el de pausa
+ * ("Ajustes"). En Opciones van primero los del jugador (su nombre, T-033), que no son del aparato.
  */
 export function SettingsPanel({ titleId, firstButton, title, backLabel, settings, autoLevel, fullscreenSupported, onChange, onBack, footer, children }: SettingsPanelProps) {
   const t = useText();
@@ -60,6 +60,13 @@ export function SettingsPanel({ titleId, firstButton, title, backLabel, settings
       <section className="settings-section">
         <h3>{t.settings.sound}</h3>
         <VolumeSlider label={t.settings.sfxVolume} help={t.settings.sfxVolumeHelp} value={settings.sfxVolume} onChange={(sfxVolume) => onChange({ sfxVolume })} />
+        <VolumeSlider
+          label={t.settings.musicVolume}
+          help={t.settings.musicVolumeHelp}
+          value={settings.musicVolume}
+          onChange={(musicVolume) => onChange({ musicVolume })}
+          silent
+        />
       </section>
 
       <section className="settings-section">
@@ -137,15 +144,17 @@ interface VolumeSliderProps {
   /** De 0 a 100. */
   value: number;
   onChange: (value: number) => void;
+  /** Sin muestra al soltarlo: la musica (T-015) ya suena de fondo y se oye cambiar. */
+  silent?: boolean;
 }
 
 /**
  * Volumen de 0 a 100 (T-014). Al soltarlo suena una muestra con el volumen nuevo, por el canal de los menus: se oye
- * tambien con el juego en pausa.
+ * tambien con el juego en pausa. El de la musica no la lleva: se oye la propia musica.
  */
-function VolumeSlider({ label, help, value, onChange }: VolumeSliderProps) {
+function VolumeSlider({ label, help, value, onChange, silent = false }: VolumeSliderProps) {
   const shown = formatPercent(value / 100);
-  const preview = () => sfx.preview('coin');
+  const preview = silent ? undefined : () => sfx.preview('coin');
   return (
     <label className="volume">
       <span className="volume-text">

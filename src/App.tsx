@@ -48,6 +48,7 @@ import { useNeedsLandscape } from './ui/useLandscapeOnly';
 import { useUpdateWhenIdle } from './ui/usePwa';
 import { sfx } from './game/audio/sfx';
 import { useButtonSounds } from './ui/useButtonSounds';
+import { useMusic } from './ui/useMusic';
 import { useSettings } from './ui/useSettings';
 import { useText } from './ui/useText';
 import { VictoryScreen } from './ui/VictoryScreen';
@@ -194,6 +195,8 @@ export function App() {
   // Efectos de sonido (T-014): el volumen del jugador y el sonido de los botones de los menus.
   useEffect(() => sfx.setVolume(settings.sfxVolume), [settings.sfxVolume]);
   useButtonSounds();
+  // Musica de fondo (T-015): la del menu, la de ronda o la del jefe; baja en pausa, con una viñeta y al acabar.
+  useMusic({ screen, round, halted: halted || storyOn, over: onBoard && over, volume: settings.musicVolume });
   const pause = useCallback(() => {
     if (pausable.current) setPaused(true);
   }, []);

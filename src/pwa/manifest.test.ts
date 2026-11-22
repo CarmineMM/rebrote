@@ -42,7 +42,7 @@ describe('manifiesto del juego instalable (T-029)', () => {
     expect(icons.some((icon) => icon.purpose === 'any' && icon.sizes === '512x512')).toBe(true);
   });
 
-  it('se guardan los efectos de sonido para jugar sin conexion (V-05), pero no las subcarpetas (la musica, al oirla)', () => {
+  it('se guardan los efectos de sonido al instalar (V-05), pero no las subcarpetas (la musica la baja el juego, U-05)', () => {
     expect(PRECACHE_GLOBS).toContain('audio/*.{ogg,mp3}');
     expect(PRECACHE_GLOBS.some((glob) => glob.startsWith('audio/**'))).toBe(false);
   });

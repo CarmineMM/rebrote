@@ -57,8 +57,12 @@ Cómo se pinta y se anima Rebrote, para que todo lo nuevo (enemigos, mundos, efe
 | `src/game/audio/cues.ts` | Qué suena con cada evento del combate y de las rondas, con el tic de las minas y con lo que hace el jugador, sin Phaser y con test (`combatCues`, `roundCues`, `mineTicks`, `actionCue`) |
 | `src/game/audio/voices.ts` | Cuánto suena, sin Phaser y con test: voces a la vez, separación, ráfagas, variación de tono y volumen, paneo (`VoiceGate`, `panAt`) |
 | `src/game/config/audio.ts` | Cada efecto (`SfxId`) con su volumen, voces, separación, ráfaga, variación de tono y variantes (`SFX`), y la mezcla general (`AUDIO`) |
-| `scripts/audio/` | De dónde sale cada sonido (`manifest.ts`), recetas de jsfxr (`sfxr.ts`) y quien fabrica los archivos (`build.ts`, `npm run audio`) |
-| `public/audio/` | Los archivos que carga el juego (OGG y MP3) y `LICENCIAS.md` con el origen y la licencia de cada uno |
+| `src/game/audio/music.ts` | Música de fondo (T-015, ADR-0022): el único que la reproduce. Usa el contexto de los efectos (`sfx.whenReady`), descarga y prepara la pista que toca y la siguiente, la deja en bucle y funde una con otra |
+| `src/game/audio/musicUrls.ts` | Dirección de cada pista con su huella (`musicFileKey`) y lo guardado que sobra, sin navegador y con test: con ellas se guarda la música para jugar sin conexión |
+| `src/game/audio/musicCues.ts` | Qué música suena en cada momento, sin Web Audio y con test (`musicFor`): la del menú, la de ronda o la del jefe de su tramo (`musicStage`), y cuánto baja en pausa o al acabar |
+| `src/game/config/music.ts` | Las pistas elegidas con su crédito y la duración del bucle (`MUSIC_TRACKS`), los tramos de la historia (`MUSIC_STAGES`) y la mezcla (`MUSIC`) |
+| `scripts/audio/` | De dónde sale cada sonido y cada pista (`manifest.ts`, con `MUSIC_MANIFEST`), recetas de jsfxr (`sfxr.ts`) y quien fabrica los archivos (`build.ts` y `music.ts`, `npm run audio`) |
+| `public/audio/` | Los archivos que carga el juego (OGG y MP3) y `LICENCIAS.md` con el origen y la licencia de cada uno. La música, en `musica/` |
 | `sonidos.html`, `src/dev/` | Página de prueba de los sonidos, solo con `npm run dev` |
 | `src/icons/` | Icono del juego (T-028), sin Phaser y con test: el dibujo maestro de cada propuesta y forma (`iconArt.ts`, la elegida en `ICON`) y el contexto de Canvas que escribe SVG (`svgCanvas.ts`), para sacar la disparadora de su propio pintor |
 | `scripts/icons/` | Quien fabrica los iconos (`build.ts`, `npm run icons`) y el PNG con paleta para los que pesan mucho (`png.ts`) |
@@ -457,6 +461,16 @@ Detalle y porqué en el ADR-0013. El arte se pinta con código; el sonido sale d
 - **Archivos.** Mono, OGG Vorbis con respaldo en MP3, con el volumen igualado (`build.ts`). La mezcla entre efectos se ajusta con el `volume` de cada uno en `SFX`, no editando archivos.
 - **Elegir de oído.** `npm run dev` y abrir `/sonidos.html`: cada efecto con el elegido y sus alternativas, y pruebas de carga con el combate de verdad. Para cambiar uno, se mueve la alternativa a `pick` en `scripts/audio/manifest.ts` y se pasa `npm run audio`.
 
+### Música de fondo (T-015, ADR-0022)
+
+- **Tres ambientes.** En la portada, el Invernadero, la ruta y la tienda suena la del menú; en el tablero, la de ronda; desde la ronda del jefe (también su preparación), la del jefe. Lo decide `musicFor` y React se lo pasa al motor (`useMusic`).
+- **Por tramos.** Los cuatro brotes de la defensa del refugio comparten la de ronda y la del jefe (`MUSIC_STAGES`). El tramo siguiente, tras el giro al ataque, traerá las suyas.
+- **Bucle sin salto y fundidos.** Cada pista suena decodificada y en bucle; al cambiar, una baja mientras la otra sube. Volver al menú a mitad de un fundido deja una sola.
+- **Pausa y final.** Con la pausa, un aviso, una ficha o una viñeta baja al 40 %; con la derrota o la victoria, al 30 %. La pestaña oculta y el aviso de girar la callan, como a los efectos.
+- **Peso.** La portada no la espera: se descarga después, y con el volumen de música a 0 no se descarga nada. Se preparan (decodificadas) solo la que suena y la siguiente.
+- **Sin conexión (U-05).** En la versión publicada, tras la portada se bajan todas en el formato del navegador y se guardan en `MUSIC_CACHE`: suenan sin red. Cada archivo lleva su huella (`?v=`, `musicUrls.ts`).
+- **Elegir de oído.** `npm run dev` y abrir `/musica.html`: cada ambiente con la elegida y sus alternativas, en bucle o justo en el empalme. Para cambiar una, se mueve la alternativa a `pick` en `MUSIC_MANIFEST`, se copian su crédito y su `loopSeconds` a `MUSIC_TRACKS` y se pasa `npm run audio` (y su original deja de estar ignorado en `.gitignore`).
+
 | Momento | Efecto |
 |---|---|
 | Sembrar, infundir fuego o hielo, fusionar, subir de nivel | `sow`, `infuseFire`, `infuseIce`, `fuse`, `levelUp`; subir a un nivel con premio (5, 10, 15 y 20, T-027), `unlock` |
@@ -552,6 +566,7 @@ Ejemplos: el acorazado y el escupidor de T-007, en `wormView.ts` (`KIND_LOOK`).
 - [ ] No cambia el tamaño de las demás ni deja huecos: la bandeja solo pinta las cartas que hay.
 
 ### Mundo o escenario nuevo
+- [ ] Si empieza un tramo nuevo de la historia (el giro al ataque, tras el cuarto brote), su música: su tramo en `MUSIC_STAGES` con sus pistas de ronda y jefe (lista "Música nueva").
 - [ ] Pintores propios de cielo y terreno (o variantes), respetando `SKY_HEIGHT` y `LAND_TOP`, y cubriendo `WORLD` entero.
 - [ ] Probado en 16:9, en una pantalla ancha (21:9) y en una alta (4:3): sin bordes rectos ni zonas vacías.
 - [ ] Animación ambiental propia en un módulo como `ambience.ts`, con todos sus efectos enganchados al perfil de calidad.
@@ -591,6 +606,14 @@ Ejemplos: el acorazado y el escupidor de T-007, en `wormView.ts` (`KIND_LOOK`).
 - [ ] Lo pide una regla de `cues.ts` con su test (o, si sale del estado y no de un evento, la vista con `sfx.play`). Nunca Phaser ni Web Audio directamente.
 - [ ] Suena desde su columna (`panAt`) si pasa en el tablero.
 - [ ] Con el menú de pausa abierto no suena; en la portada, solo si lo provoca un clic.
+
+### Música nueva (T-015, ADR-0022)
+- [ ] Candidatas con licencia CC0 o CC BY (sin "compartir igual" ni "no comercial"), bajadas a `audio-lab/musica/` y anotadas en `MUSIC_MANIFEST` con su página, su autor y su licencia.
+- [ ] Su bucle en compases enteros: `loopEnd` sale del tempo. Si el original trae algo detrás del bucle (una cola, el relleno de un MP3), `fold`; si no es un bucle, dos compases que suenen parecido y `seamMs`.
+- [ ] `npm run audio` y, en `/musica.html`, oída entera y en el empalme. La elige Carmine de oído.
+- [ ] La elegida, en `MUSIC_TRACKS` (crédito y `loopSeconds`) y en su tramo de `MUSIC_STAGES`; su original, fuera de `.gitignore`. Pesa menos de 2,5 MB (un test lo comprueba).
+- [ ] Créditos: sale con su título, autor y licencia, y su ambiente en `credits.musicFor` de `src/i18n/`.
+- [ ] Si solo cambia cómo se fabrican los archivos (no la obra ni el bucle), se sube `MUSIC.fileVersion`: así quien la tiene guardada sin conexión la vuelve a bajar.
 
 ### HUD o menú nuevo (React)
 - [ ] Probado en un móvil en horizontal (812 × 375 y 568 × 320): no se sale de la pantalla y no tapa lo que se juega.
