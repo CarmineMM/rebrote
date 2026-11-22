@@ -1,5 +1,5 @@
-import { CLONE, ENEMIES, LIMITS, OUTBREAKS, ROUND_PREP } from '../config/balance';
-import { enemyPower, isDefeated, rollEnemyLevel, spawnEnemy, type Enemy, type EnemyKind } from './combat';
+import { CLONE, ENEMIES, LIMITS, OUTBREAKS, ROUND_PREP, STEALTH } from '../config/balance';
+import { enemyPower, isDefeated, rollEnemyLevel, sneaks, spawnEnemy, type Enemy, type EnemyKind } from './combat';
 import type { CardId, MatchState } from './match';
 import { outbreakIndex, outbreakScript, outbreaksBefore, roundCount, type OutbreakId } from './outbreaks';
 import type { ElementType } from './plants';
@@ -366,8 +366,9 @@ function expectedPower(table: LevelTable | undefined): number {
 /**
  * Lo dura que es la ronda `index` del brote, para comparar rondas y brotes (T-026: la dificultad sube de ronda en ronda y
  * el final del brote 2 es mas duro que el del brote 1): la vida que saca su guion por segundo de ataque, con la fuerza
- * media de sus niveles (o el nivel fijo de su grupo), las copias que dejan los Copycat y lo que la acelera. Sin el jefe,
- * que no tiene par. Es una medida de diseno: el juego no la usa.
+ * media de sus niveles (o el nivel fijo de su grupo), las copias que dejan los Copycat, lo que vale el sigilo de las tropas
+ * ocultas (`STEALTH.threat`, T-039) y lo que la acelera. Sin el jefe, que no tiene par. Es una medida de diseno: el juego no
+ * la usa.
  */
 export function roundThreat(outbreak: OutbreakId, index: number): number {
   const { groups, levels, haste } = roundScript(outbreak, index);
@@ -377,7 +378,8 @@ export function roundThreat(outbreak: OutbreakId, index: number): number {
     if (group.kind === boss) continue;
     const power = group.level === undefined ? expectedPower(levels) : enemyPower(group.level);
     const copies = (CLONE.kinds as readonly EnemyKind[]).includes(group.kind) ? 1 + CLONE.hp : 1;
-    hp += ENEMIES[group.kind].hp * power * copies * group.lanes.length * (group.haste ?? haste ?? 1);
+    const hidden = sneaks(group.kind) ? STEALTH.threat : 1;
+    hp += ENEMIES[group.kind].hp * power * copies * hidden * group.lanes.length * (group.haste ?? haste ?? 1);
   }
   const lastAt = Math.max(...groups.map((group) => group.atMs));
   return hp / (lastAt / 1000);

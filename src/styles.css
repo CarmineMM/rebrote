@@ -443,6 +443,36 @@ body {
 .boss-verse.is-poem { width: 30px; border-radius: 6px; margin-left: 2px; }
 .boss-verse.is-poem.is-sung { animation: boss-poem-pip 0.45s ease-in-out infinite alternate; }
 @keyframes boss-poem-pip { to { transform: scale(1.12); box-shadow: 0 0 12px rgba(255, 95, 210, 0.85); } }
+/* ---------- Brain (T-039): un cerebro rosa bajo su cupula; oculto, la silueta morada con los ojos en verde ---------- */
+.round-info.is-boss-brain .round-seed.is-boss {
+  border-radius: 50% 50% 40% 40%; background: radial-gradient(circle at 35% 30%, #ffe0ec, #ff97c4 55%, #c94a86); border-color: #6e1a44;
+  box-shadow: inset 0 -3px 0 -1px #4d5a74;
+}
+.round-info.is-boss-brain .round-seed.is-boss.is-current { background: radial-gradient(circle at 50% 50%, #f4fff8, #39ff88 40%, #2b2034); border-color: #6e1a44; }
+.round-info.is-boss-brain .round-seed.is-boss.is-done { background: radial-gradient(circle at 35% 30%, #fff6c0, #ffd23f 55%, #d1920f); border-color: #6b4505; box-shadow: none; }
+.boss-bar.is-brain {
+  --boss-edge: #ff97c4; --boss-light: #ffe0ec; --boss-mid: #ff97c4; --boss-dark: #c94a86;
+  background: linear-gradient(180deg, rgba(58, 24, 56, 0.95), rgba(30, 11, 30, 0.95));
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+.boss-bar.is-brain.is-enraged { --boss-edge: #ff3f6a; --boss-mid: #ff5a8a; --boss-dark: #b3173e; }
+.boss-bar.is-brain.is-hidden { --boss-edge: #b48cff; border-style: dashed; }
+.boss-bar.is-brain.is-hidden .boss-phase { color: #39ff88; text-shadow: 0 0 6px rgba(57, 255, 136, 0.6); }
+.boss-bar.is-brain .boss-label strong { color: #ffe0ec; text-shadow: 0 2px 0 #1e0b1e; }
+.boss-bar.is-brain .boss-phase { font-family: 'Trebuchet MS', 'Segoe UI', Verdana, sans-serif; font-size: 0.82rem; }
+/* Cerebro en miniatura: una cupula de cristal sobre un platillo, con el cerebro y dos ojos que parpadean dentro. */
+.boss-bar.is-brain .boss-face {
+  width: 32px; height: 30px; border-radius: 50% 50% 22% 22%; border-color: #8fd8ff;
+  background: radial-gradient(ellipse at 50% 62%, #ff97c4 0 46%, transparent 48%), linear-gradient(180deg, rgba(200, 240, 255, 0.35), rgba(200, 240, 255, 0.1));
+  box-shadow: inset 0 -5px 0 #4d5a74, inset 4px 4px 0 -2px rgba(255, 255, 255, 0.7);
+}
+.boss-bar.is-brain .boss-face::before { display: none; }
+.boss-bar.is-brain .boss-face::after {
+  top: 11px; left: 10px; width: 4px; height: 5px; background: #1d1030; box-shadow: 8px -1px 0 #1d1030;
+  animation: boss-blink 3.2s steps(1) infinite;
+}
+.boss-bar.is-brain.is-hidden .boss-face { background: radial-gradient(ellipse at 50% 62%, #2b2034 0 46%, transparent 48%), linear-gradient(180deg, rgba(180, 140, 255, 0.25), rgba(43, 32, 52, 0.4)); border-color: #b48cff; }
+.boss-bar.is-brain.is-hidden .boss-face::after { background: #39ff88; box-shadow: 8px -1px 0 #39ff88, 0 0 6px #39ff88; }
 /* En un movil en horizontal la barra ya tapa parte del tablero: sin la fila de notas (el rotulo dice cuantos versos faltan). */
 @media (max-height: 560px) { .boss-verses { display: none; } }
 
@@ -962,6 +992,8 @@ body {
 .info-card.tone-lurkerSpitter { --tone: #3fd2c4; --tone-light: #dcfffa; --tone-bg: #10433f; --tone-bg-dark: #082624; --tone-glow: rgba(63, 210, 196, 0.32); }
 .info-card.tone-lurkerArmored { --tone: #9fb0c8; --tone-light: #e6edf6; --tone-bg: #2f3a4c; --tone-bg-dark: #171d28; --tone-glow: rgba(159, 176, 200, 0.3); }
 .info-card.tone-skipper { --tone: #ff8cc8; --tone-light: #ffe6f3; --tone-bg: #5c2244; --tone-bg-dark: #351126; --tone-glow: rgba(255, 140, 200, 0.32); }
+/* Brain (T-039): el rosa de su cerebro sobre el morado de la corrupcion. */
+.info-card.tone-brain { --tone: #ff97c4; --tone-light: #ffe0ec; --tone-bg: #3a1838; --tone-bg-dark: #1e0b1e; --tone-glow: rgba(255, 151, 196, 0.34); }
 
 /* La foto: una polaroid algo torcida con un trozo de cinta, que cae en su sitio. */
 .info-photo {

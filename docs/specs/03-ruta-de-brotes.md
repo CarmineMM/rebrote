@@ -49,7 +49,7 @@ De menos a más daño, mezclando dos cosas: lo que le hizo a los equipos y lo qu
 |---|---|---|---|
 | 1 | Creeper, el Escurridizo | Hecho | Disparadora, fuego, hielo, infundir, fusionar y subir de nivel |
 | 2 | Elk Cloner, el Poeta | Hecho (T-024 a T-026; `05-brote-2-elk-cloner.md`) | Escudo. Sus versos son ondas que cruzan el carril y solo un escudo las para; cada pocos versos, el poema entero por los cinco carriles |
-| 3 | Brain, el Cerebro | Planificado (T-037 a T-039; `06-brote-3-brain.md`) | Infundir el escudo, que en el brote 2 solo se siembra como muro. Tropas ocultas, el Skipper que salta y un jefe que avanza oculto y a saltos: solo lo para un escudo |
+| 3 | Brain, el Cerebro | Hecho (T-037 a T-039; `06-brote-3-brain.md`) | Infundir el escudo, que en el brote 2 solo se siembra como muro. Tropas ocultas, el Skipper que salta y un jefe que avanza oculto y a saltos: solo lo para un escudo |
 | 4 | Morris, el Imparable | Sin diseñar | Idea suelta: el Morris real se copiaba tantas veces que tumbaba las máquinas. Enemigos en masa |
 
 Después de estos cuatro brotes, la historia pasa de la defensa al ataque y cambia el escenario (decidido el 21 nov 2026, ver `04-historia.md`). Por eso los cuatro tienen que dejar al jugador con todas las piezas básicas en la mano.

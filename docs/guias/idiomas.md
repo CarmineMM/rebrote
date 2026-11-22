@@ -52,6 +52,8 @@ Cómo se escriben los textos de Rebrote para que salgan en español y en inglés
   | Copia (de un Copycat) | Copy |
   | Minstrel, verso (T-025) | Minstrel, verse |
   | Elk Cloner, el Poeta; poema entero (T-026) | Elk Cloner, the Poet; whole poem |
+  | Lurker, Skipper (T-038); oculto, descubierto | Lurker, Skipper; hidden, spotted |
+  | Brain, el Cerebro (T-039); formateado | Brain, the Mastermind; formatted |
   | Moneda | Coin |
   | Semillas (T-020) | Seeds |
   | Vidas | Lives |
@@ -64,8 +66,9 @@ Cómo se escriben los textos de Rebrote para que salgan en español y en inglés
 
 - Creeper habla en mayúsculas, como en su terminal. En inglés su frase de entrada es la del original de 1971: "I'M THE CREEPER: CATCH ME IF YOU CAN!".
 - Elk Cloner (T-026) habla siempre rimando, en español y en inglés: cada frase rima en su idioma (no se traduce palabra por palabra). Sus versos se inventan para el juego: no se reproduce el poema del virus de verdad.
+- Brain (T-039) habla como un contestador automático y se burla de que no lo ven: el Brain real dejó su teléfono en el código y enseñaba una copia limpia del disco a quien lo miraba. Su frase de entrada es "¿Me buscabas? Deja tu mensaje." (BR-09). Al caer, "¡Formateado!": un disquete se formatea para quitarle el virus.
 - **Nombres que se conocen en inglés (22 nov 2026, Carmine):** si el nombre de un enemigo, un personaje o una pieza es más conocido en todo el mundo en inglés, se queda en inglés también en español, como un nombre propio y con mayúscula: Creeper, Copycat, Minstrel. Lo que lo describe sí se traduce ("Copycat acorazado" / "Armored Copycat"), y en plural no cambia ("los Copycat"). Si hay duda, se pregunta a Carmine.
-- No se traducen: "Rebrote", Creeper, Elk Cloner (T-026), Copycat y Minstrel (T-025), Boxer, Patty, los nombres de tecnologías, el nombre de cada idioma en el selector y el apodo que pone Boxer, "Rookie" (T-033, NJ-03), que vive en `src/game/playerName.ts` porque se guarda en el perfil como un nombre más.
+- No se traducen: "Rebrote", Creeper, Elk Cloner (T-026), Copycat y Minstrel (T-025), Lurker y Skipper (T-038), Brain (T-039), Boxer, Patty, los nombres de tecnologías, el nombre de cada idioma en el selector y el apodo que pone Boxer, "Rookie" (T-033, NJ-03), que vive en `src/game/playerName.ts` porque se guarda en el perfil como un nombre más.
 - El nombre del jugador (T-033) es un dato: nunca se traduce y siempre va como argumento dentro de la frase (`story.lines`, `greenhouse.hello`, `name.saved`).
 - La IA de la historia es "ella" en español y "she" en inglés (T-031).
 - **Quién habla (T-032).** Las frases de los tours las dice Boxer: de tú, con prisa y algo de gracia, pero cortas e igual de claras. Lo que presenta un desbloqueo lo dice Boxer en el brote 1 y Patty desde el brote 2 (`unlock.presenters`: Patty siempre empieza por "¡He creado algo nuevo!"). Patty en el Invernadero (`greenhouse.patty`): frases cortas que puedan salir en cualquier momento, sin contar nada del juego.

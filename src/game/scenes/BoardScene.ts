@@ -2,9 +2,9 @@ import * as Phaser from 'phaser';
 import { actionCue, combatCues, grenadeTicks, mineTicks, roundCues } from '../audio/cues';
 import { sfx } from '../audio/sfx';
 import { panAt } from '../audio/voices';
-import { BOARD, CREEPER, ECONOMY, ELK_CLONER, ENEMIES, ICE_WALL, LIMITS, MINE, SHIELD } from '../config/balance';
+import { BOARD, BRAIN, CREEPER, ECONOMY, ELK_CLONER, ENEMIES, ICE_WALL, LIMITS, MINE, SHIELD } from '../config/balance';
 import { cellAt, cellCenter, type BoardPoint, type Cell } from '../core/board';
-import { enemyMaxHp, enemyReward, isBoss, isDefeated, isEnraged, poemWarning, spawnEnemy, stepCombat, type BossKind, type CombatEvent, type Enemy, type EnemyKind } from '../core/combat';
+import { enemyMaxHp, enemyReward, isBoss, isDefeated, isEnraged, isHidden, poemWarning, spawnEnemy, stepCombat, type BossKind, type CombatEvent, type Enemy, type EnemyKind } from '../core/combat';
 import { rollKillReward, stepIncome } from '../core/economy';
 import {
   cardCost,
@@ -97,7 +97,8 @@ import type { TitleSceneData } from './TitleScene';
 import { createAmbience, type Ambience } from '../view/ambience';
 import { BoardLabel, drawArea, drawCell, type LabelLine } from '../view/boardMarks';
 import { BulletView } from '../view/bulletView';
-import { bossLines, createBossOmen, createEnemyView, type BossOmen } from '../view/bossView';
+import { bossShouts, createBossOmen, createEnemyView, type BossOmen } from '../view/bossView';
+import { BrainView } from '../view/brainView';
 import { BugView } from '../view/bugView';
 import { CreeperView, OMEN_LEAP_MS, bossLoadProgress } from '../view/creeperView';
 import { ElkClonerView } from '../view/elkClonerView';
@@ -994,7 +995,7 @@ export class BoardScene extends Phaser.Scene {
         break;
       case 'shout':
         // El jefe manda a su escolta (T-009): lo grita desde donde se prepara (Creeper, ademas, la acelera).
-        this.omen?.command(bossLines(this.bossKind()).shouts[event.shout]);
+        this.omen?.command(bossShouts(this.bossKind())[event.shout]);
         break;
     }
   }
@@ -1160,7 +1161,7 @@ export class BoardScene extends Phaser.Scene {
         const view = this.wormViews.get(event.enemyId);
         view?.die();
         this.wormViews.delete(event.enemyId);
-        if (view instanceof CreeperView || view instanceof ElkClonerView) this.cameras.main.shake(380, 0.008);
+        if (view instanceof CreeperView || view instanceof ElkClonerView || view instanceof BrainView) this.cameras.main.shake(380, 0.008);
         this.rewardKill(event.at, event);
         break;
       }
@@ -1211,16 +1212,26 @@ export class BoardScene extends Phaser.Scene {
         break;
       }
       // Tropas del brote 3 (T-038): el Skipper despega levantando tierra. Agacharse, el vuelo, caer y lo oculto salen del
-      // estado en `BugView.sync`; aqui solo suenan (`combatCues`).
+      // estado en `BugView.sync`; aqui solo suenan (`combatCues`). Brain (T-039), ademas, hace temblar el suelo al caer y dice
+      // algo al descubrirlo una mina y al volver a ocultarse.
       case 'hopped': {
         const view = this.wormViews.get(event.enemyId);
-        if (view instanceof BugView) view.hopped();
+        if (view instanceof BugView || view instanceof BrainView) view.hopped();
         break;
       }
       case 'hopLanded':
-      case 'revealed':
-      case 'concealed':
+        if (this.wormViews.get(event.enemyId) instanceof BrainView) this.cameras.main.shake(140, 0.003);
         break;
+      case 'revealed': {
+        const view = this.wormViews.get(event.enemyId);
+        if (view instanceof BrainView) view.revealed(event.cause);
+        break;
+      }
+      case 'concealed': {
+        const view = this.wormViews.get(event.enemyId);
+        if (view instanceof BrainView) view.concealed();
+        break;
+      }
     }
   }
 
@@ -2763,7 +2774,8 @@ export class BoardScene extends Phaser.Scene {
 
   /**
    * Avisa al HUD de la vida del jefe, solo si cambia: de Creeper (T-008), su fase y sus umbrales de salto; de Elk Cloner
-   * (T-026), los versos que lleva hacia el poema entero y si lo esta anunciando. Derrotado, la barra se queda a 0 hasta la
+   * (T-026), los versos que lleva hacia el poema entero y si lo esta anunciando; de Brain (T-039), si esta oculto y donde
+   * entra en su fase 2. Derrotado, la barra se queda a 0 hasta la
    * victoria; si se escapo, se queda como estaba.
    */
   private emitBoss(): void {
@@ -2777,8 +2789,10 @@ export class BoardScene extends Phaser.Scene {
         hp: Math.max(0, Math.ceil(boss.hp)),
         maxHp: enemyMaxHp(kind),
         enraged: isEnraged(boss),
-        jumpAt: kind === 'creeper' ? [...CREEPER.jumpAt] : [],
+        // Creeper marca donde salta; Brain (T-039), donde entra en su fase 2.
+        jumpAt: kind === 'creeper' ? [...CREEPER.jumpAt] : kind === 'brain' ? [BRAIN.enragedBelow] : [],
         poem: boss.recital ? { sung: Math.min(boss.recital.sung, ELK_CLONER.poemEvery), every: ELK_CLONER.poemEvery, warning: poemWarning(boss) !== null } : null,
+        hidden: boss.revealMs === null ? null : isHidden(boss),
       };
     } else if (this.lastBoss && !this.lostToBoss) {
       info = { ...this.lastBoss, hp: 0 };

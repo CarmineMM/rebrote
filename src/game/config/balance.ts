@@ -175,8 +175,8 @@ const SPITTER = {
  * alarga el descanso, no el vuelo. Con `restMs` y `airMs` va a unas 1,3 casillas por segundo de media. PROVISIONAL.
  */
 export const HOP = {
-  /** Los que avanzan a saltos. */
-  kinds: ['skipper'],
+  /** Los que avanzan a saltos. Brain (T-039) salta con su propio paso (`BRAIN`); estos numeros son los del Skipper. */
+  kinds: ['skipper', 'brain'],
   /** Casillas por salto (LK-05). */
   length: 2,
   /** En tierra entre un salto y el siguiente (LK-05). Al salir del agujero tambien descansa esto. */
@@ -198,12 +198,55 @@ const LURKER_HP = 0.75;
  * descubrio, si siguen lejos. El jugador siempre las ve: oculto se pinta como una silueta que tiembla (LK-02). PROVISIONAL.
  */
 export const STEALTH = {
-  /** Las que llegan ocultas. */
-  kinds: ['lurker', 'lurkerSpitter', 'lurkerArmored'],
+  /**
+   * Las que llegan ocultas. Brain (T-039) tambien, con su propia regla (`BRAIN`): a el no lo descubren la cercania ni el
+   * dano, y estos numeros no le tocan.
+   */
+  kinds: ['lurker', 'lurkerSpitter', 'lurkerArmored', 'brain'],
   /** Decidido el 22 nov 2026: a 4 casillas de lo primero sembrado en su carril. */
   revealRadius: 4,
   /** LK-03: "unos segundos". */
   holdMs: 3000,
+  /**
+   * Lo que vale la vida de una tropa oculta al medir lo dura que es una ronda (`roundThreat`, T-039; el juego no lo usa). Con
+   * las disparadoras atras, solo se le dispara desde `revealRadius` casillas de la primera: unas 3,4 de las 8,65 que anda
+   * desde el agujero hasta morderla, el 40 %. Asi que su vida vale 1 / 0,4 = 2,5 veces la de una que se ve. Con un muro
+   * delante vale menos, pero la ronda 1 se juega sin muros (docs/specs/06-brote-3-brain.md).
+   */
+  threat: 2.5,
+} as const;
+
+/**
+ * Lo propio de Brain, el Cerebro (T-039; BR-02 a BR-09 cerradas por Carmine el 22 nov 2026 con la recomendacion), jefe del
+ * brote 3. Avanza oculto y a saltos por su carril, por encima de las plantas y las minas, como el Skipper (`HOP.kinds`), y
+ * solo lo para un escudo: cae delante (`hopLanding`) y lo muerde. Oculto, las plantas no le apuntan.
+ * - Solo lo descubren chocar con un escudo, la explosion de una mina que lo alcanza y la granada. Ni la cercania de lo
+ *   sembrado ni las balas, tampoco las de hielo o fuego (a los Lurker si: `STEALTH`): una bala perdida, disparada a su
+ *   escolta, lo dejaria al descubierto todo el carril.
+ * - Mientras muerde un escudo sigue descubierto, y `shieldRevealMs` despues de que caiga (BR-03: la ventana para
+ *   castigarle). Una mina de fuego o la granada lo descubren `revealMinMs`; la de hielo, lo que lo frena, y nunca menos
+ *   (BR-04).
+ * - Fase 2 (BR-06): con `enragedBelow` de su vida o menos descansa menos entre saltos.
+ * PROVISIONAL: se ajusta con `npm run sim` (docs/specs/06-brote-3-brain.md).
+ */
+export const BRAIN = {
+  /** Casillas por salto (BR-02). */
+  hopLength: 2,
+  /** Lo que dura cada salto en el aire (BR-02). En el aire no le dan las balas ni las minas (BR-08). */
+  airMs: 800,
+  /**
+   * En tierra entre un salto y el siguiente, y el final de ese descanso en que se agacha (el aviso de que salta). BR-02: 3 s y
+   * 1 s. En la fase 2 (BR-06) descansa menos, pero mas que la cuenta de una mina (`MINE.countdownMs`): asi la mina que arma
+   * al caer aun le alcanza antes de que salte.
+   */
+  calm: { restMs: 3000, crouchMs: 1000 },
+  enraged: { restMs: 2400, crouchMs: 600 },
+  /** Fase 2: con esta fraccion de vida o menos. */
+  enragedBelow: 0.5,
+  /** BR-03: lo que sigue descubierto tras caer el escudo que lo paraba. */
+  shieldRevealMs: 2000,
+  /** BR-04: lo que lo descubre, como poco, una mina o la granada. La de hielo, lo que lo frena, si es mas. */
+  revealMinMs: 3000,
 } as const;
 
 /**
@@ -329,6 +372,30 @@ export const ENEMIES = {
     firstBiteMs: 450,
     reach: 0.6,
     halfLength: 0.36,
+  },
+  /**
+   * Brain, el Cerebro (T-039), jefe del brote 3 y lo grande de su ultima ronda. Avanza oculto y a saltos (`BRAIN`) y solo
+   * muerde el escudo que lo para. No tiene nivel: de `ENEMY_POWER` solo le toca la fuerza de todos. Si cruza el jardin, se
+   * pierde la partida; al caer se gana: no da moneda. `speed` es su media con salto y descanso (fase 1), para la ficha y
+   * quien cuente lo que tarda en cruzar: no anda.
+   */
+  brain: {
+    reward: 0,
+    /** PROVISIONAL (docs/specs/06-brote-3-brain.md): solo se le dispara mientras esta descubierto. */
+    hp: 4500,
+    /** Casillas por segundo, de media en la fase 1: `BRAIN.hopLength` cada descanso y vuelo. */
+    speed: BRAIN.hopLength / ((BRAIN.calm.restMs + BRAIN.airMs) / 1000),
+    attack: 'bite',
+    /** Al escudo que lo para. PROVISIONAL. */
+    biteDamage: 80,
+    biteIntervalMs: 1200, // PROVISIONAL
+    firstBiteMs: 600,
+    /**
+     * Grande y con la boca pegada al escudo: su hocico queda por delante del de cualquier tropa que muerda el mismo escudo
+     * (`reach` - `halfLength`, 0,15; el acorazado, 0,18), asi que descubierto se lleva el los disparos y no su escolta.
+     */
+    reach: 0.75,
+    halfLength: 0.6,
   },
 } as const;
 
@@ -904,59 +971,199 @@ const ELK_CLONER_ROUNDS: readonly RoundScript[] = [
 ];
 
 /**
- * Brote 3, de Brain (T-037; diseno en docs/specs/06-brote-3-brain.md): EN PREPARACION. Guion provisional de 3 rondas para
- * estrenar infundir el escudo (`shieldInfuse`) en su ronda 2, que lo anuncia Patty (ES-01) y lo ensena Boxer. Desde T-038
- * salen sus tropas: los Lurker, ocultos, desde la ronda 1, y el Skipper de uno en uno en la 3, como dice el diseno. Su jefe y
- * sus 8 rondas de verdad llegan con T-039. Misma banda de niveles que el brote 2 (ninguna pasa del 9). PROVISIONAL.
+ * Las rondas del brote 3, el de Brain (T-039; diseno en docs/specs/06-brote-3-brain.md): 8, como el brote 2, con un concepto
+ * por ronda. En la 1, los Lurker ocultos (niveles `early`, como la 1 del brote 2: T-038); en la 2, infundir el escudo (T-037,
+ * lo anuncia Patty, ES-01), con muchos escupidores; en la 3, el Skipper, de uno en uno; en la 4, mezcla de acorazados
+ * ocultos y Skipper; en la 5, dos oleadas por los cinco carriles; en la 6 y la 7 Brain se prepara a la derecha y acelera a
+ * sus tropas, como Elk Cloner; y la 8 es el combate: su escolta (BR-07, un Lurker acorazado oculto de nivel 10 por carril y
+ * dos Skipper de nivel 10), el por el centro y, mientras vive, refuerzos. Misma banda de niveles que el brote 2: ninguna
+ * tropa pasa del 9, solo la escolta lleva el 10. La simulacion que lo ajusta esta en `src/game/sim/` (`npm run sim`).
+ * PROVISIONAL: se ajusta jugando.
  */
 const BRAIN_ROUNDS: readonly RoundScript[] = [
   {
-    // Los Lurker, ocultos: las plantas tardan en verlos; las minas y el hielo los descubren. T-038: niveles `early`, como la
-    // ronda 1 del brote 2 (con `mid`, `npm run sim` no la pasaba).
+    // Los Lurker, ocultos: las plantas tardan en verlos; las minas y el hielo los descubren. La de T-038, que `npm run sim`
+    // pasaba siempre: con los grupos del brote 2, mas largos y con mas acorazados, el bot perdia aqui (solo se les dispara
+    // en las ultimas casillas).
     unlocks: [],
     levels: ENEMY_LEVELS.tables.early,
     groups: [
       { atMs: 3_000, kind: 'lurker', lanes: [2] },
-      { atMs: 10_000, kind: 'lurker', lanes: [1, 3] },
-      { atMs: 17_000, kind: 'lurkerSpitter', lanes: [2] },
-      { atMs: 24_000, kind: 'lurker', lanes: [0, 4] },
-      { atMs: 31_000, kind: 'lurkerArmored', lanes: [1, 3] },
-      { atMs: 38_000, kind: 'lurkerSpitter', lanes: [0, 2, 4] },
-      { atMs: 46_000, kind: 'lurker', lanes: ALL },
-      { atMs: 54_000, kind: 'lurkerArmored', lanes: [2] },
+      { atMs: 10_000, kind: 'lurker', lanes: [1] },
+      { atMs: 16_000, kind: 'lurker', lanes: [3] },
+      { atMs: 22_000, kind: 'lurkerSpitter', lanes: [2] },
+      { atMs: 28_000, kind: 'lurker', lanes: [0, 4] },
+      { atMs: 34_000, kind: 'lurker', lanes: [1, 3] },
+      { atMs: 40_000, kind: 'lurkerSpitter', lanes: [0, 4] },
+      { atMs: 46_000, kind: 'lurker', lanes: [2] },
+      { atMs: 52_000, kind: 'lurker', lanes: ALL },
+      { atMs: 60_000, kind: 'lurker', lanes: [1, 2, 3] },
+      { atMs: 66_000, kind: 'lurkerSpitter', lanes: [1, 3] },
     ],
   },
   {
     // T-037: infundir el escudo. Muchos escupidores: una disparadora con escudo les para los escupitajos.
     unlocks: ['shieldInfuse'],
-    levels: ENEMY_LEVELS.tables.mid,
+    levels: ENEMY_LEVELS.tables.early,
     groups: [
       { atMs: 3_000, kind: 'lurkerSpitter', lanes: [2] },
-      { atMs: 9_000, kind: 'lurkerSpitter', lanes: [1, 3] },
-      { atMs: 16_000, kind: 'lurker', lanes: [0, 2, 4] },
-      { atMs: 23_000, kind: 'lurkerSpitter', lanes: [0, 4] },
-      { atMs: 30_000, kind: 'lurkerArmored', lanes: [1, 3] },
-      { atMs: 37_000, kind: 'lurkerSpitter', lanes: [0, 2, 4] },
-      { atMs: 45_000, kind: 'lurker', lanes: ALL },
-      { atMs: 53_000, kind: 'lurkerSpitter', lanes: [1, 2, 3] },
-      { atMs: 61_000, kind: 'lurkerArmored', lanes: [0, 4] },
+      { atMs: 9_000, kind: 'lurker', lanes: [1, 3] },
+      { atMs: 15_000, kind: 'lurkerSpitter', lanes: [0, 4] },
+      { atMs: 22_000, kind: 'lurkerArmored', lanes: [2] },
+      { atMs: 28_000, kind: 'lurkerSpitter', lanes: [1, 3] },
+      { atMs: 35_000, kind: 'lurker', lanes: [0, 2, 4] },
+      { atMs: 42_000, kind: 'lurkerSpitter', lanes: [0, 2, 4] },
+      { atMs: 50_000, kind: 'lurkerArmored', lanes: [1, 3] },
+      { atMs: 57_000, kind: 'lurkerSpitter', lanes: [1, 2, 3] },
+      { atMs: 64_000, kind: 'lurker', lanes: ALL },
+      { atMs: 72_000, kind: 'lurkerArmored', lanes: [0, 4] },
+      { atMs: 76_000, kind: 'lurkerSpitter', lanes: [2] },
     ],
   },
   {
-    // T-038: llega el Skipper, de uno en uno: solo lo para un escudo.
+    // Llega el Skipper, de uno en uno: solo lo para un escudo, y en tierra es fragil.
+    unlocks: [],
+    levels: ENEMY_LEVELS.tables.mid,
+    groups: [
+      { atMs: 3_000, kind: 'lurkerArmored', lanes: [0, 4] },
+      { atMs: 6_000, kind: 'skipper', lanes: [2] },
+      { atMs: 12_000, kind: 'lurker', lanes: ALL },
+      { atMs: 20_000, kind: 'skipper', lanes: [1] },
+      { atMs: 26_000, kind: 'lurkerArmored', lanes: [1, 2, 3] },
+      { atMs: 30_000, kind: 'skipper', lanes: [3] },
+      { atMs: 34_000, kind: 'lurkerSpitter', lanes: [0, 4] },
+      { atMs: 40_000, kind: 'lurker', lanes: ALL },
+      { atMs: 46_000, kind: 'skipper', lanes: [0] },
+      { atMs: 52_000, kind: 'skipper', lanes: [4] },
+      { atMs: 56_000, kind: 'lurkerArmored', lanes: [0, 2, 4] },
+      { atMs: 64_000, kind: 'lurker', lanes: ALL },
+      { atMs: 70_000, kind: 'skipper', lanes: [1, 3] },
+      { atMs: 74_000, kind: 'lurkerSpitter', lanes: [0, 1, 3, 4] },
+      { atMs: 80_000, kind: 'lurker', lanes: [1, 2, 3] },
+    ],
+  },
+  {
+    // Mezcla: acorazados ocultos que piden minas y Skipper que piden escudos.
+    unlocks: [],
+    levels: ENEMY_LEVELS.tables.mid,
+    groups: [
+      { atMs: 3_000, kind: 'lurker', lanes: [0, 2, 4] },
+      { atMs: 8_000, kind: 'lurkerArmored', lanes: [1, 3] },
+      { atMs: 14_000, kind: 'skipper', lanes: [0, 4] },
+      { atMs: 20_000, kind: 'lurkerSpitter', lanes: [2] },
+      { atMs: 24_000, kind: 'lurker', lanes: ALL },
+      { atMs: 32_000, kind: 'lurkerArmored', lanes: [0, 2, 4] },
+      { atMs: 38_000, kind: 'skipper', lanes: [1, 3] },
+      { atMs: 44_000, kind: 'lurkerSpitter', lanes: [0, 4] },
+      { atMs: 50_000, kind: 'lurker', lanes: [1, 2, 3] },
+      { atMs: 52_000, kind: 'lurker', lanes: [1, 2, 3] },
+      { atMs: 60_000, kind: 'lurkerArmored', lanes: [1, 3] },
+      { atMs: 64_000, kind: 'skipper', lanes: [0, 2, 4] },
+      { atMs: 72_000, kind: 'lurkerSpitter', lanes: [1, 3] },
+      { atMs: 78_000, kind: 'lurker', lanes: ALL },
+      { atMs: 84_000, kind: 'lurkerArmored', lanes: [0, 2, 4] },
+    ],
+  },
+  {
+    // Dos oleadas por los cinco carriles, con Skipper detras de cada una: una puerta en cada carril.
     unlocks: [],
     levels: ENEMY_LEVELS.tables.late,
     groups: [
-      { atMs: 3_000, kind: 'skipper', lanes: [2] },
-      { atMs: 9_000, kind: 'lurkerArmored', lanes: [0, 4] },
-      { atMs: 16_000, kind: 'lurkerSpitter', lanes: [1, 2, 3] },
-      { atMs: 22_000, kind: 'skipper', lanes: [0] },
-      { atMs: 28_000, kind: 'lurker', lanes: ALL },
+      { atMs: 3_000, kind: 'lurker', lanes: ALL },
+      { atMs: 8_000, kind: 'skipper', lanes: [1, 3] },
+      { atMs: 12_000, kind: 'lurkerArmored', lanes: [0, 2, 4] },
+      { atMs: 18_000, kind: 'lurkerSpitter', lanes: [1, 3] },
+      { atMs: 24_000, kind: 'lurker', lanes: ALL },
+      { atMs: 27_000, kind: 'lurker', lanes: ALL },
+      { atMs: 34_000, kind: 'skipper', lanes: [0, 2, 4] },
+      { atMs: 40_000, kind: 'lurkerArmored', lanes: [1, 3] },
+      { atMs: 46_000, kind: 'lurkerSpitter', lanes: [0, 2, 4] },
+      { atMs: 54_000, kind: 'lurker', lanes: ALL },
+      { atMs: 58_000, kind: 'lurkerArmored', lanes: ALL },
+      { atMs: 66_000, kind: 'skipper', lanes: [1, 2, 3] },
+      { atMs: 72_000, kind: 'lurkerSpitter', lanes: [0, 4] },
+      { atMs: 78_000, kind: 'lurker', lanes: ALL },
+      { atMs: 81_000, kind: 'lurker', lanes: ALL },
+      { atMs: 88_000, kind: 'lurkerArmored', lanes: [1, 2, 3] },
+    ],
+  },
+  {
+    // Brain se prepara: todo un 15 % mas rapido. Boxer cuenta quien fue Brain.
+    unlocks: [],
+    haste: 1.15,
+    bossPreparing: true,
+    levels: ENEMY_LEVELS.tables.late,
+    groups: [
+      { atMs: 3_000, kind: 'lurker', lanes: ALL },
+      { atMs: 6_000, kind: 'lurkerArmored', lanes: [2] },
+      { atMs: 9_000, kind: 'skipper', lanes: [0, 4] },
+      { atMs: 13_000, kind: 'lurkerSpitter', lanes: [1, 3] },
+      { atMs: 18_000, kind: 'lurker', lanes: ALL },
+      { atMs: 22_000, kind: 'lurkerArmored', lanes: [0, 4] },
+      { atMs: 26_000, kind: 'skipper', lanes: [1, 2, 3] },
+      { atMs: 32_000, kind: 'lurker', lanes: ALL },
+      { atMs: 35_000, kind: 'lurkerSpitter', lanes: [0, 2, 4] },
+      { atMs: 40_000, kind: 'lurkerArmored', lanes: [1, 3] },
+      { atMs: 46_000, kind: 'skipper', lanes: [0, 4] },
+      { atMs: 50_000, kind: 'lurker', lanes: ALL },
+      { atMs: 53_000, kind: 'lurker', lanes: [1, 2, 3] },
+      { atMs: 58_000, kind: 'lurkerArmored', lanes: ALL },
+      { atMs: 64_000, kind: 'lurkerSpitter', lanes: [1, 3] },
+      { atMs: 68_000, kind: 'skipper', lanes: [0, 2, 4] },
+      { atMs: 74_000, kind: 'lurker', lanes: ALL },
+      { atMs: 77_000, kind: 'lurker', lanes: ALL },
+      { atMs: 84_000, kind: 'lurkerArmored', lanes: [0, 2, 4] },
+      { atMs: 90_000, kind: 'lurkerSpitter', lanes: ALL },
+    ],
+  },
+  {
+    // Mas tropas y mas rapidas (+25 %), con Skipper por los cinco carriles: hay que llegar con los cinco cerrados.
+    unlocks: [],
+    haste: 1.25,
+    bossPreparing: true,
+    levels: ENEMY_LEVELS.tables.high,
+    groups: [
+      { atMs: 3_000, kind: 'lurker', lanes: ALL },
+      { atMs: 5_000, kind: 'lurkerArmored', lanes: [1, 3] },
+      { atMs: 8_000, kind: 'skipper', lanes: [0, 2, 4] },
+      { atMs: 12_000, kind: 'lurkerSpitter', lanes: [1, 3] },
+      { atMs: 16_000, kind: 'lurker', lanes: ALL },
+      { atMs: 19_000, kind: 'lurkerArmored', lanes: [0, 2, 4] },
+      { atMs: 23_000, kind: 'skipper', lanes: [1, 3] },
+      { atMs: 27_000, kind: 'lurker', lanes: ALL },
+      { atMs: 30_000, kind: 'lurkerSpitter', lanes: [0, 2, 4] },
+      { atMs: 34_000, kind: 'lurkerArmored', lanes: ALL },
+      { atMs: 40_000, kind: 'skipper', lanes: [0, 2, 4] },
+      { atMs: 44_000, kind: 'lurker', lanes: ALL },
+      { atMs: 46_000, kind: 'lurker', lanes: ALL },
+      { atMs: 52_000, kind: 'lurkerSpitter', lanes: [1, 3] },
+      { atMs: 55_000, kind: 'lurkerArmored', lanes: [1, 2, 3] },
+      { atMs: 60_000, kind: 'skipper', lanes: ALL },
+      { atMs: 66_000, kind: 'lurker', lanes: ALL },
+      { atMs: 69_000, kind: 'lurkerArmored', lanes: [0, 4] },
+      { atMs: 74_000, kind: 'lurkerSpitter', lanes: ALL },
+      { atMs: 80_000, kind: 'lurker', lanes: ALL },
+      { atMs: 83_000, kind: 'lurker', lanes: ALL },
+      { atMs: 88_000, kind: 'lurkerArmored', lanes: ALL },
+      { atMs: 94_000, kind: 'skipper', lanes: [1, 3] },
+    ],
+  },
+  {
+    unlocks: [],
+    levels: ENEMY_LEVELS.tables.high,
+    groups: [
+      // BR-07: su escolta, un Lurker acorazado oculto de nivel 10 por carril y dos Skipper de nivel 10, con su grito.
+      { atMs: 2_000, kind: 'lurkerArmored', lanes: ALL, level: 10, shout: 'escort' },
+      { atMs: 4_000, kind: 'skipper', lanes: [1, 3], level: 10 },
+      { atMs: 6_000, kind: 'brain', lanes: [2] },
+      // Refuerzos mientras vive: dejan de salir en cuanto cae.
+      { atMs: 24_000, kind: 'skipper', lanes: [0, 4] },
       { atMs: 36_000, kind: 'lurkerArmored', lanes: [1, 3] },
-      { atMs: 42_000, kind: 'skipper', lanes: [4] },
-      { atMs: 48_000, kind: 'lurkerSpitter', lanes: ALL },
-      { atMs: 56_000, kind: 'lurker', lanes: ALL },
-      { atMs: 62_000, kind: 'lurkerArmored', lanes: [0, 2, 4] },
+      { atMs: 48_000, kind: 'skipper', lanes: [0, 2, 4] },
+      { atMs: 62_000, kind: 'lurker', lanes: ALL },
+      { atMs: 76_000, kind: 'skipper', lanes: [1, 3] },
+      { atMs: 90_000, kind: 'lurkerArmored', lanes: [0, 2, 4] },
+      { atMs: 104_000, kind: 'skipper', lanes: ALL },
     ],
   },
 ];
@@ -990,8 +1197,8 @@ export const OUTBREAKS: readonly OutbreakScript[] = [
   },
   {
     id: 'brain',
-    // T-037: en preparacion (sin jefe) hasta que T-039 traiga a Brain, el Cerebro. Se juega en desarrollo con `?brote=3`.
-    boss: null,
+    // T-039: Brain, el Cerebro. Desde T-037 el brote estaba en preparacion (`boss: null`).
+    boss: 'brain',
     // ES-04: como el brote 2.
     startingBalance: 300, // PROVISIONAL
     rounds: BRAIN_ROUNDS,

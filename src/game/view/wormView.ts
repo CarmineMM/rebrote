@@ -8,8 +8,8 @@ import { WormAura, type AuraHost } from './wormAura';
 import { auraTier } from './wormAuraArt';
 import type { BugKind } from './bugView';
 
-/** Los enemigos que son gusanos (o van de pie como Elk Cloner): todos menos los bichos del brote 3 (T-038, `BugView`). */
-export type WormKind = Exclude<EnemyKind, BugKind>;
+/** Los que se pintan como gusanos: todos menos los bichos del brote 3 (T-038) y su jefe, Brain (T-039, `BrainView`). */
+export type WormKind = Exclude<EnemyKind, BugKind | 'brain'>;
 
 /**
  * Aspecto del gusano. Las medidas locales son pixeles de diseno con 160 por casilla, como la disparadora.

@@ -102,17 +102,18 @@ describe('brote 2 abierto (T-026: ya tiene a su jefe)', () => {
     expect(currentOutbreak(['creeper'])).toBe(BROTE2);
   });
 
-  it('la ruta lo da por el que toca al vencer a Creeper y por superado al vencerlo, y luego "Proximamente"', () => {
+  it('la ruta lo da por el que toca al vencer a Creeper y por superado al vencerlo; desde T-039, luego viene el brote 3', () => {
     expect(routeStops(['creeper'])).toEqual([
       { kind: 'outbreak', id: 'creeper', standing: 'defeated', current: false },
       { kind: 'outbreak', id: BROTE2, standing: 'open', current: true },
-      { kind: 'soon', number: 3 },
+      { kind: 'outbreak', id: BROTE3, standing: 'locked', current: false },
       { kind: 'final' },
     ]);
     expect(routeStops(['creeper', BROTE2])).toEqual([
       { kind: 'outbreak', id: 'creeper', standing: 'defeated', current: false },
       { kind: 'outbreak', id: BROTE2, standing: 'defeated', current: false },
-      { kind: 'soon', number: 3 },
+      { kind: 'outbreak', id: BROTE3, standing: 'open', current: true },
+      { kind: 'soon', number: 4 },
       { kind: 'final' },
     ]);
   });
@@ -138,12 +139,12 @@ describe('escudo en dos pasos (T-037)', () => {
   const cell = { lane: 2, col: 3 };
   const wall = { lane: 2, col: 6 };
 
-  it('el brote 3 esta en preparacion: sin jefe, cerrado al jugador y en la ruta como "Proximamente"', () => {
-    expect(outbreakScript(BROTE3)).toMatchObject({ boss: null, startingBalance: 300, presenter: 'patty' });
-    expect(isOutbreakReady(BROTE3)).toBe(false);
-    expect(isOutbreakOpen(BROTE3, ['creeper', BROTE2])).toBe(false);
-    expect(currentOutbreak(['creeper', BROTE2])).toBeNull();
-    expect(routeStops(['creeper', BROTE2]).at(-2)).toEqual({ kind: 'soon', number: 3 });
+  it('el brote 3 tiene su jefe desde T-039 (Brain), su saldo y quien presenta; se abre al vencer a Elk Cloner', () => {
+    expect(outbreakScript(BROTE3)).toMatchObject({ boss: 'brain', startingBalance: 300, presenter: 'patty' });
+    expect(isOutbreakReady(BROTE3)).toBe(true);
+    expect(isOutbreakOpen(BROTE3, ['creeper'])).toBe(false);
+    expect(isOutbreakOpen(BROTE3, ['creeper', BROTE2])).toBe(true);
+    expect(currentOutbreak(['creeper', BROTE2])).toBe(BROTE3);
   });
 
   it('el brote 3 trae el muro desde la ronda 1 y la infusion desde la 2, con su aviso, que presenta Patty', () => {

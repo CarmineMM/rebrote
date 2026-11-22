@@ -58,6 +58,11 @@ export type SfxId =
   | 'poemWarn'
   | 'poem'
   | 'elkClonerDefeated'
+  // Brain (T-039): su voz en el bocadillo, su salto de muelle, su aterrizaje y su derrota
+  | 'brainTalk'
+  | 'brainHop'
+  | 'brainLand'
+  | 'brainDefeated'
   // Poderes (T-021): recolocar; la granada que se lanza, cae y explota; el muro de hielo que brota, lo que le da, el bloque
   // que se rompe y el que se derrite
   | 'relocate'
@@ -179,6 +184,11 @@ export const SFX: Readonly<Record<SfxId, SfxSpec>> = {
   poemWarn: world(0.7, 1, 0, 0),
   poem: world(0.85, 1, 0, 0),
   elkClonerDefeated: world(0.9, 1, 0, 0),
+  brainTalk: world(0.45, 1, 300, 0.5, 1, 0),
+  // Brain salta cada pocos segundos: algo mas fuerte que el Skipper, con poca variacion para que suene a el.
+  brainHop: world(0.5, 1, 0, 0.6),
+  brainLand: world(0.55, 1, 0, 0.5),
+  brainDefeated: world(0.9, 1, 0, 0),
   relocate: world(0.75, 1, 0, 0.5),
   grenadeThrow: world(0.6, 1, 0, 0.8),
   grenadeLand: world(0.6, 1, 0, 0.5),

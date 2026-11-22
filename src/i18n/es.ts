@@ -42,7 +42,8 @@ export const es = {
      * esta en `info.enemy.names`). Cuando lo sea, sale de alli y se quita de aqui. Elk Cloner, el del brote 2, llego con
      * T-026; Brain, el del brote 3, llega con T-039.
      */
-    comingBoss: { brain: 'Brain' },
+    /** T-024: el jefe de un brote en preparacion, por su `id`, mientras no es un enemigo del juego. Hoy, ninguno (Brain llego con T-039). */
+    comingBoss: {},
   },
 
   /** Menu de inicio (T-011). */
@@ -319,24 +320,32 @@ export const es = {
         'Elk Cloner casi ha terminado su poema: aún más tropas y más rápidas',
         '¡Llega Elk Cloner! Cada pocos versos recita el poema entero por los cinco carriles: pon un escudo en cada uno',
       ],
-      // T-037: guion provisional del brote 3, en preparacion. T-038 trae sus tropas; T-039, su jefe y sus 8 rondas.
+      // T-039: el guion del brote 3, con las tropas de T-038.
       brain: [
         'Ojo: los Lurker llegan ocultos y tus plantas no los ven de lejos. Las minas y el hielo los descubren',
         'Suelta el escudo sobre una disparadora: aguanta el doble y para lo que va a las de detrás',
         '¡Llega el Skipper! Salta por encima de todo: solo lo para un escudo',
+        'Acorazados ocultos y Skipper juntos: minas para unos, escudos para otros',
+        'Dos oleadas por los cinco carriles: pon una puerta en cada uno',
+        '¡Brain se prepara! Marca sectores para esconderse y sus tropas llegan más rápido',
+        'Brain casi está listo: aún más tropas y más rápidas. Cierra los cinco carriles',
+        '¡Llega Brain! Salta oculto por encima de todo: solo lo para un escudo, y las minas lo descubren',
       ],
     },
   },
 
   boss: {
     /** Derrotado, en su barra: cada jefe a su manera. */
-    caught: { creeper: '¡Atrapado!', elkCloner: '¡Silenciado!' },
+    caught: { creeper: '¡Atrapado!', elkCloner: '¡Silenciado!', brain: '¡Formateado!' },
     phase1: 'Fase 1',
     phase2: 'Fase 2: ¡enfadado!',
     health: (name: string) => `Vida de ${name}`,
     /** Elk Cloner (T-026): cuantos versos le faltan para el poema entero, y mientras lo anuncia. */
     poemIn: (verses: number) => (verses <= 1 ? 'Poema al próximo verso' : `Poema en ${verses} versos`),
     poemNow: '¡Poema entero!',
+    /** Brain (T-039): oculto o descubierto, y en su fase 2. */
+    hidden: (enraged: boolean): string => (enraged ? 'Oculto · fase 2' : 'Oculto'),
+    revealed: (enraged: boolean): string => (enraged ? '¡Descubierto! · fase 2' : '¡Descubierto!'),
   },
 
   level: {
@@ -551,18 +560,20 @@ export const es = {
   defeat: {
     title: '¡Se colaron!',
     /** Cuando el jefe cruza el jardin (T-008): cada uno con lo suyo. */
-    bossTitle: { creeper: '¡Creeper se escapó!', elkCloner: '¡Elk Cloner cruzó el jardín!' },
+    bossTitle: { creeper: '¡Creeper se escapó!', elkCloner: '¡Elk Cloner cruzó el jardín!', brain: '¡Brain cruzó el jardín!' },
     /** `outbreak`: en el brote 3 (T-038) no son gusanos, sino bichos. */
     text: (crossed: number, round: number | null, total: number, outbreak: string) =>
       `${crossed === 1 ? `1 ${outbreak === 'brain' ? 'bicho' : 'gusano'} cruzó` : `${crossed} ${outbreak === 'brain' ? 'bichos' : 'gusanos'} cruzaron`} el jardín${round === null ? '' : ` en la ronda ${round} de ${total}`}.`,
     bossText: {
       creeper: 'Saltó de carril y cruzó el jardín en el combate final.',
       elkCloner: 'Recitó hasta el final y cruzó el jardín en el combate final.',
+      brain: 'Saltó oculto por encima de todo y cruzó el jardín en el combate final.',
     },
     hint: 'Cada disparadora solo defiende su carril: cubre los cinco.',
     bossHint: {
       creeper: 'Creeper salta de carril: reparte tus defensas por los cinco.',
       elkCloner: 'Sus versos y su poema solo los para un escudo: pon uno delante de tus disparadoras en cada carril.',
+      brain: 'Solo lo para un escudo: pon uno en su carril y repónlo cuando caiga. Una mina a su lado también lo descubre.',
     },
     again: 'Jugar otra vez',
     menu: 'Menú principal',
@@ -570,11 +581,12 @@ export const es = {
 
   victory: {
     /** Cada jefe con lo suyo (T-026). */
-    title: { creeper: '¡Atrapaste a Creeper!', elkCloner: '¡Silenciaste a Elk Cloner!' },
+    title: { creeper: '¡Atrapaste a Creeper!', elkCloner: '¡Silenciaste a Elk Cloner!', brain: '¡Formateaste a Brain!' },
     text: (rounds: number) => `Superaste las ${rounds} rondas y el jardín está a salvo.`,
     hint: {
       creeper: 'Creeper (1971) fue el primer gusano informático: saltaba de máquina en máquina.',
       elkCloner: 'Elk Cloner (1982) viajaba en los disquetes de los Apple II y enseñaba un poema cada 50 arranques.',
+      brain: 'Brain (1986) fue el primer virus para PC: se escondía en el sector de arranque de los disquetes.',
     },
     again: 'Jugar otra vez',
     /** Tras vencer a un jefe se va al Invernadero (T-019). */
@@ -674,7 +686,7 @@ export const es = {
     roundCleared: (round: number) => `¡Ronda ${round} superada!`,
     /** Bajo "¡Ronda N superada!": lo que sumo a la partida (T-020). */
     seedsEarned: (amount: string, count: number) => `+${count === 1 ? '1 semilla' : `${amount} semillas`}`,
-    bossDown: { creeper: '¡Creeper atrapado!', elkCloner: '¡Elk Cloner, silenciado!' },
+    bossDown: { creeper: '¡Creeper atrapado!', elkCloner: '¡Elk Cloner, silenciado!', brain: '¡Brain, formateado!' },
     /** Elk Cloner anuncia el poema entero (T-026, L-03). */
     poem: '¡Poema entero!',
     gardenSafe: '¡Jardín a salvo!',
@@ -741,6 +753,26 @@ export const es = {
     shouts: { escort: '¡Copycat, en formación: que empiece la función!' },
   },
 
+  /**
+   * Lo que dice Brain, el Cerebro (T-039, BR-09), en su bocadillo de contestador: se burla con el telefono que el Brain de
+   * verdad dejo en su codigo y con la copia limpia que ensenaba a quien miraba el disco.
+   */
+  brain: {
+    entrance: '¿Me buscabas? Deja tu mensaje.',
+    /** Al volver a ocultarse, por turnos. */
+    concealed: ['¡Ya no me ves!', 'El número que buscas no está disponible.', 'Aquí solo hay un disco limpio…', '¿Hola? ¿Hay alguien?'],
+    /** Cuando lo descubre una mina o la granada, por turnos. */
+    blasted: ['¡Eh, que me has visto!', '¡Ay! ¿Quién llama?', '¡Sector descubierto!'],
+    /** Una de cada pocas veces que muerde el escudo que lo para. */
+    bite: ['Ring, ring… ¡ábreme!', 'Toc, toc: ¡soy Brain!', '¡Este escudo está en mi lista!'],
+    /** Al entrar en su fase 2 (BR-06). */
+    enraged: '¡Se acabaron las bromas! ¡Reiniciando!',
+    escape: 'Llámame cuando quieras: ya tienes mi número.',
+    cheer: '¡Gracias por llamar a Brain! ¡Ja, ja!',
+    preparing: 'Marcando sectores defectuosos… Aquí no hay nadie, ¿eh?',
+    shouts: { escort: '¡Lurkers, a esconderse! ¡Skippers, a saltar!' },
+  },
+
   /** Ficha de informacion (T-010). */
   info: {
     close: 'Cerrar la ficha',
@@ -786,6 +818,10 @@ export const es = {
       hop: 'Salto',
       hopValue: (cells: string) => `${cells} casillas`,
       hopNote: (time: string) => `y ${time} en tierra`,
+      /** Brain (T-039): que lo descubre. */
+      revealedBy: 'Lo descubren',
+      revealedByValue: 'Un escudo, una mina o la granada',
+      revealedByNote: 'ni la cercanía ni las balas',
       /** Lurker (T-038): a que distancia de lo sembrado lo ven las plantas. */
       seen: 'Lo ven',
       seenValue: (cells: string) => `A ${cells} casillas`,
@@ -898,6 +934,8 @@ export const es = {
         lurkerSpitter: 'Lurker escupidor',
         lurkerArmored: 'Lurker acorazado',
         skipper: 'Skipper',
+        /** Jefe del brote 3 (T-039). */
+        brain: 'Brain',
       },
       /** La copia que deja cada Copycat al caer (T-025, F-01). */
       cloneNames: { copycat: 'Copia de Copycat', copycatArmored: 'Copia acorazada', copycatSpitter: 'Copia escupidora' },
@@ -918,6 +956,9 @@ export const es = {
         bossEnraged: (outbreak: number) => `Jefe del brote ${outbreak} · fase 2`,
         /** Elk Cloner, el Poeta (T-026). */
         poet: (outbreak: number) => `El Poeta · jefe del brote ${outbreak}`,
+        /** Brain, el Cerebro (T-039), y en su fase 2 (BR-06). */
+        mastermind: (outbreak: number) => `El Cerebro · jefe del brote ${outbreak}`,
+        mastermindEnraged: (outbreak: number) => `El Cerebro · jefe del brote ${outbreak} · fase 2`,
       },
       about: {
         worm: 'Avanza por su carril y muerde lo primero que encuentra hasta destruirlo.',
@@ -940,6 +981,8 @@ export const es = {
           `Llega oculto como el Lurker y las plantas lo ven a ${cells} casillas. Tiene cuatro veces su vida y va más lento. Se le caen las placas al perder vida.`,
         skipper: (cells: string) =>
           `Avanza a saltos de ${cells} casillas por encima de plantas y minas y solo lo para un escudo, al que muerde. En el aire no le dan las balas: hay que pillarlo en tierra.`,
+        brain: (cells: string) =>
+          `Avanza oculto, a saltos de ${cells} casillas por encima de plantas y minas, y las plantas no le apuntan. Solo lo para un escudo: cae delante, se descubre y lo muerde. Una mina o la granada que estalla a su lado también lo descubre un rato. Si cruza el jardín, se pierde la partida.`,
       },
     },
   },

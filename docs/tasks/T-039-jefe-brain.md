@@ -1,6 +1,6 @@
 # [Jefe] Brain y rondas del brote 3
 
-**Estado:** Pendiente · **Prioridad:** Media · **Tamaño estimado:** L (orientativo) · **Depende de:** T-037, T-038 · **Bloquea a:** ninguna · **Origen:** conversación de diseño del 22 nov 2026
+**Estado:** Completada (23 nov 2026, 0.15.0) · **Prioridad:** Media · **Tamaño estimado:** L (orientativo) · **Depende de:** T-037, T-038 · **Bloquea a:** ninguna · **Origen:** conversación de diseño del 22 nov 2026
 
 ## Contexto
 El diseño está en `docs/specs/06-brote-3-brain.md`. Carmine eligió la opción A: Brain avanza oculto y a saltos, y solo lo para un escudo. Son 8 rondas, como el brote 2.
@@ -27,45 +27,49 @@ Tras T-037 el brote 3 existe en preparación con un guion provisional, y tras T-
 - 8 rondas. Mismo escenario y misma música que los brotes 1 y 2.
 - Tropas hasta el nivel 9; la escolta, nivel 10.
 
+### Al empezar la task (Carmine, 22 nov 2026, con la recomendación)
+- **BR-02:** saltos de 2 casillas, 3 s en tierra (se agacha el último segundo: el aviso) y 0,8 s en el aire. Unas 0,5 casillas/s: sin escudo cruza el jardín en unos 17 s. Se afina con `npm run sim`.
+- **Qué lo descubre (nueva, al ver el código):** chocar con un escudo, la explosión de una mina (de fuego o de hielo) que lo alcanza y la granada (el caso límite: sí). No lo descubren la cercanía de lo sembrado ni las balas, tampoco las de hielo o fuego: a un Lurker sí, pero a Brain una bala perdida disparada a su escolta lo dejaría al descubierto todo el carril.
+- **BR-03:** cuando cae el escudo que lo paraba, a los 2 s vuelve a ocultarse.
+- **BR-04:** una mina de fuego o la granada lo descubren 3 s; la mina de hielo, lo que lo frena (4 s). Como mínimo, 3 s.
+- **BR-05:** b. Se le puede ganar sin escudos, con minas y hielo, pero cuesta.
+- **BR-06:** sí. Con la mitad de la vida o menos descansa 2 s en vez de 3 y se agacha menos rato.
+- **BR-07:** un Lurker acorazado de nivel 10 por carril, ocultos, y dos Skipper de nivel 10. Luego, refuerzos mientras vive.
+- **BR-08:** no, como al Skipper: en el aire no le dan las balas ni las minas.
+- **BR-09:** al llegar, "¿Me buscabas? Deja tu mensaje". Las demás frases (al ocultarse, al descubrirlo una mina, al morder un escudo, al escapar y al ganar) las escribe Claude con el teléfono y el disquete del Brain real, y Carmine las revisa antes de cerrar la task.
+- **BR-01 (Carmine, 23 nov 2026, en la galería):** la cúpula. Un cerebro rosa bajo una cúpula de cristal, sobre un platillo con luces y cuatro patas de muelle. Las otras dos propuestas de `/jefes.html` (un cerebro con parches de sectores tachados sobre un saltador de muelle y uno que salta como un pulpo sobre cables con clavijas) se quedan como referencia. Oculto, se pinta como la silueta morada que tiembla de los Lurker.
+
 ## Decisiones pendientes
-| # | Pregunta | Opciones | Recomendación | Decide |
-|---|---|---|---|---|
-| BR-01 | ¿Qué aspecto tiene? | Propuestas en `/jefes.html` | Que no se confunda con Creeper (tumbado, con monitor) ni con Elk Cloner (de pie, con disquete). Idea: un cerebro bajo una cúpula de cristal, sobre patas | Carmine |
-| BR-02 | ¿Cuánto salta y cuánto descansa? | Libre | Saltos de 2 casillas y una pausa más larga que la del Skipper: da tiempo a reaccionar | Carmine |
-| BR-03 | Descubierto frente a un escudo, ¿cuánto tarda en volver a ocultarse cuando el escudo cae? | Libre | 2 s: es la ventana para castigarle | Carmine |
-| BR-04 | ¿Cuánto dura descubierto por una mina o por el hielo? | Libre | Lo que dure el efecto, y como mínimo 3 s | Carmine |
-| BR-05 | ¿Se puede ganar sin escudos? | a) No. b) Sí, difícil, con minas y hielo | b: evita que el escudo sea obligatorio dos jefes seguidos | Carmine |
-| BR-06 | ¿Tiene una segunda fase? | Sí o no | Sí, sencilla: con la mitad de la vida salta más seguido | Carmine |
-| BR-07 | ¿Qué escolta trae? | Libre | Un acorazado oculto de nivel 10 por carril y dos Skipper de nivel 10 | Carmine |
-| BR-08 | ¿En el aire le dan las balas? | Sí o no | No, como al Skipper | Carmine |
-| BR-09 | ¿Qué dice? | Libre | Se burla con el teléfono que el Brain real dejó en su código: "¿Me buscabas? Deja tu mensaje" | Carmine |
+Ninguna (BR-01 a BR-09 cerradas).
+
+Las frases de Brain (BR-09), escritas por Claude, las dio por buenas Carmine el 23 nov 2026.
 
 ## Criterios de aceptación
 ### Rondas
-- [ ] El brote 3 tiene sus 8 rondas, editables como datos, con los conceptos de la spec: Lurker en la 1, infusión del escudo en la 2, Skipper en la 3, mezcla en la 4, cinco carriles en la 5, jefe preparándose en la 6 y la 7, y combate en la 8.
-- [ ] Los primeros Skipper salen de uno en uno.
-- [ ] La dificultad medida sube de ronda en ronda, y la ronda 1 es más dura que la 1 del brote 2.
-- [ ] Ninguna tropa del guion pasa del nivel 9, salvo la escolta.
+- [x] El brote 3 tiene sus 8 rondas, editables como datos, con los conceptos de la spec: Lurker en la 1, infusión del escudo en la 2, Skipper en la 3, mezcla en la 4, cinco carriles en la 5, jefe preparándose en la 6 y la 7, y combate en la 8.
+- [x] Los primeros Skipper salen de uno en uno.
+- [x] La dificultad medida sube de ronda en ronda, y la ronda 1 es más dura que la 1 del brote 2.
+- [x] Ninguna tropa del guion pasa del nivel 9, salvo la escolta.
 
 ### Combate
-- [ ] Brain se ve preparándose a la derecha en las rondas 6 y 7, y en la 6 Boxer cuenta qué fue el virus de verdad.
-- [ ] Avanza oculto y a saltos por su carril, por encima de las plantas normales.
-- [ ] Oculto, las disparadoras no le apuntan.
-- [ ] Al encontrar un escudo cae delante, se descubre y lo muerde. Cuando el escudo cae, vuelve a ocultarse según BR-03.
-- [ ] Una mina que estalla a su lado y el hielo lo descubren según BR-04.
-- [ ] El jugador lo ve siempre, oculto o no, y distingue los dos estados.
-- [ ] Tiene barra de vida de jefe.
-- [ ] Si cruza el jardín, se pierde la partida.
-- [ ] Al derrotarlo se gana el brote, queda vencido para ese jugador, se entregan las semillas y la ruta lo muestra superado.
+- [x] Brain se ve preparándose a la derecha en las rondas 6 y 7, y en la 6 Boxer cuenta qué fue el virus de verdad.
+- [x] Avanza oculto y a saltos por su carril, por encima de las plantas normales.
+- [x] Oculto, las disparadoras no le apuntan.
+- [x] Al encontrar un escudo cae delante, se descubre y lo muerde. Cuando el escudo cae, vuelve a ocultarse según BR-03.
+- [x] Una mina que estalla a su lado y el hielo lo descubren según BR-04.
+- [x] El jugador lo ve siempre, oculto o no, y distingue los dos estados.
+- [x] Tiene barra de vida de jefe.
+- [x] Si cruza el jardín, se pierde la partida.
+- [x] Al derrotarlo se gana el brote, queda vencido para ese jugador, se entregan las semillas y la ruta lo muestra superado.
 
 ### Calidad
-- [ ] Reglas en `core` con tests propios; valores en `balance.ts`.
-- [ ] Simulación con bots anotada en la spec: sin escudos ni minas, pierde casi siempre; con escudos, gana la mayoría; solo con minas y hielo, según BR-05.
-- [ ] La simulación mide también el brote con nivel base 1, 3 y 5 del Vivero, como se hizo en el brote 2.
-- [ ] Propuestas de aspecto en `/jefes.html` antes de pintar el definitivo.
-- [ ] `docs/specs/06-brote-3-brain.md`, `03-ruta-de-brotes.md` y `01-mecanicas.md`, al día.
-- [ ] Textos en español e inglés. Al jugador no se le dice "poder", "tienda" ni "comprar".
-- [ ] `npm test` y `npm run build` pasan.
+- [x] Reglas en `core` con tests propios; valores en `balance.ts`.
+- [x] Simulación con bots anotada en la spec: sin escudos ni minas, pierde casi siempre; con escudos, gana la mayoría; solo con minas y hielo, según BR-05.
+- [x] La simulación mide también el brote con nivel base 1, 3 y 5 del Vivero, como se hizo en el brote 2.
+- [x] Propuestas de aspecto en `/jefes.html` antes de pintar el definitivo.
+- [x] `docs/specs/06-brote-3-brain.md`, `03-ruta-de-brotes.md` y `01-mecanicas.md`, al día.
+- [x] Textos en español e inglés. Al jugador no se le dice "poder", "tienda" ni "comprar".
+- [x] `npm test` y `npm run build` pasan.
 
 ## Casos límite y riesgos
 - Brain en el aire cuando cae el escudo en el que iba a aterrizar: aterriza donde tocaba y sigue.

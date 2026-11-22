@@ -1,11 +1,12 @@
 import { BOARD, LIMITS } from '../config/balance';
 import type { Cell } from '../core/board';
-import { enemyReward, isDefeated, isShield, onLawn, poemWarning, stepCombat, type Enemy } from '../core/combat';
+import { enemyReach, enemyReward, hops, isAirborne, isDefeated, isHidden, isShield, onLawn, poemWarning, stepCombat, type Enemy } from '../core/combat';
+import { MINE } from '../config/balance';
 import { stepIncome } from '../core/economy';
 import { cardPlay, earn, fusionBlocker, fusePlants, levelUpOffer, levelUpPlant, playCard, plantAt, sownAt, type CardId, type MatchState } from '../core/match';
-import { roundCount, type OutbreakId } from '../core/outbreaks';
+import { outbreakScript, roundCount, type OutbreakId } from '../core/outbreaks';
 import { createMatch } from '../core/match';
-import { isBossRound, isUnlocked, isWon, stepRound } from '../core/rounds';
+import { isBossRound, isUnlocked, isWon, roundScript, stepRound } from '../core/rounds';
 
 /**
  * Bots para simular un brote entero (T-026) sin pantalla: juegan con las reglas de `core` como lo haria un jugador que
@@ -19,6 +20,14 @@ import { isBossRound, isUnlocked, isWon, stepRound } from '../core/rounds';
  * delante de sus disparadoras en cuanto un carril tiene algo que ataca de lejos (escupidor, Minstrel o el jefe), lo
  * repone si se rompe, cubre todos los carriles en cuanto tiene la primera columna montada y, si el jefe anuncia el poema
  * entero, siembra muros donde falten.
+ *
+ * Brote 3 (T-039): contra lo que salta (el Skipper y Brain), el que usa escudos pone la puerta antes que nada: si uno pisa el
+ * cesped en un carril sin escudo por delante de el, ahorra hasta poder ponerla. La puerta es un muro o, con `door:
+ * 'shooter'` y la infusion desbloqueada, el escudo infundido en la disparadora mas adelantada. Contra lo que llega oculto (los
+ * Lurker), en cuanto tiene una disparadora en cada carril, ahorra para un muro delante de las suyas: se descubren 4 casillas
+ * antes y se paran a morderlo, a tiro. Con `mines` llega al combate final sin ningun escudo en el carril de Brain (los que
+ * habia se quitan al empezar la ronda) y no pone ninguno ahi: le siembra una mina de hielo donde va a caer (o, si aun le
+ * queda descanso, debajo) para descubrirlo (BR-05).
  */
 export interface BotStyle {
   readonly name: string;
@@ -31,6 +40,28 @@ export interface BotStyle {
   readonly columns: number;
   /** Canones de cada una. */
   readonly cannons: number;
+  /**
+   * Brote 3 (T-039): la puerta contra lo que salta, un muro (`wall`, sin decirlo) o la disparadora mas adelantada con el
+   * escudo infundido (`shooter`), cuando ya se puede infundir.
+   */
+  readonly door?: 'wall' | 'shooter';
+  /**
+   * Brote 3 (T-039, BR-05): en el combate final, ningun escudo en el carril de Brain y minas de hielo (o de fuego, si no
+   * llega) donde va a caer, para descubrirlo.
+   */
+  readonly mines?: boolean;
+}
+
+/** Carril por el que sale el jefe del brote en su ronda (Brain, por el centro). Null si la ronda no es la del jefe. */
+export function bossLane(state: MatchState): number | null {
+  if (!isBossRound(state.outbreak, state.round.index)) return null;
+  const { boss } = outbreakScript(state.outbreak);
+  return roundScript(state.outbreak, state.round.index).groups.find((group) => group.kind === boss)?.lanes[0] ?? null;
+}
+
+/** ¿Puede poner un escudo en este carril? Todos, salvo el de Brain en el combate final si juega con minas (BR-05). */
+function shieldAllowed(state: MatchState, style: BotStyle, lane: number): boolean {
+  return !(style.mines && bossLane(state) === lane);
 }
 
 /**
@@ -41,6 +72,84 @@ export interface BotStyle {
 const RANGED = new Set<Enemy['kind']>(['spitter', 'copycatSpitter', 'minstrel', 'elkCloner', 'lurker', 'lurkerSpitter', 'lurkerArmored', 'skipper']);
 
 const cell = (lane: number, col: number): Cell => ({ lane, col });
+
+/** ¿Tiene un escudo por delante en su carril, antes de llegar a el? Entonces lo que salta se para ahi. */
+function doorAhead(state: MatchState, e: Enemy): boolean {
+  return state.plants[e.lane].some((sown, col) => isShield(sown) && col + 0.5 + enemyReach(e) <= e.x + 1e-6);
+}
+
+/** ¿Usa como puerta la disparadora con escudo (T-039)? Con `door: 'shooter'`, en cuanto se puede infundir el escudo. */
+function shooterDoors(state: MatchState, style: BotStyle): boolean {
+  return style.door === 'shooter' && isUnlocked(state, 'shieldInfuse');
+}
+
+/** ¿Le falta la puerta al carril? Con muros, el de la columna de los muros; con disparadoras con escudo, cualquier escudo. */
+function doorMissing(state: MatchState, style: BotStyle, lane: number): boolean {
+  if (shooterDoors(state, style)) return !state.plants[lane].some(isShield);
+  return !isShield(sownAt(state, cell(lane, style.columns + 1)));
+}
+
+/**
+ * Pone la puerta del carril `lane` por delante de `x` (el que salta, o `Infinity` si es de antemano): con `door: 'shooter'`,
+ * el escudo infundido en la disparadora sin elemento mas adelantada que ya tiene sus canones; si no, o si es urgente y no le
+ * llega para infundirla, un muro en la columna de los muros o, si es urgente y ya la paso, en la primera libre por delante.
+ * Devuelve el estado nuevo, `'wait'` si no le llega la moneda o null si no hay donde.
+ */
+function placeDoor(state: MatchState, style: BotStyle, lane: number, x: number, reach: number, urgent: boolean): MatchState | 'wait' | null {
+  const ahead = (col: number) => col + 0.5 + reach <= x + 1e-6;
+  if (shooterDoors(state, style)) {
+    for (let col = BOARD.columns - 1; col >= 0; col--) {
+      const plant = plantAt(state, cell(lane, col));
+      if (!plant || plant.shooter.element || plant.shooter.cannons < style.cannons || !ahead(col)) continue;
+      if (canPlay(state, 'shield', cell(lane, col))) return playCard(state, 'shield', cell(lane, col));
+      if (!urgent) return 'wait';
+      break;
+    }
+  }
+  const wallCol = style.columns + 1;
+  const cols = urgent ? [wallCol, ...Array.from({ length: BOARD.columns }, (_, i) => BOARD.columns - 1 - i)] : [wallCol];
+  const col = cols.find((c) => ahead(c) && !sownAt(state, cell(lane, c)));
+  if (col === undefined) return null;
+  return canPlay(state, 'shield', cell(lane, col)) ? playCard(state, 'shield', cell(lane, col)) : 'wait';
+}
+
+/**
+ * La puerta contra lo que salta (T-039): para cada Skipper o Brain que pisa el cesped sin escudo por delante, la pone ya
+ * (`placeDoor`, urgente). Si no le llega la moneda, ahorra (`'wait'`).
+ */
+function doorMove(style: BotStyle): Move {
+  return (state) => {
+    if (style.shields !== 'always') return null;
+    for (const e of state.enemies) {
+      if (!hops(e.kind) || !onLawn(e) || doorAhead(state, e) || !shieldAllowed(state, style, e.lane)) continue;
+      const next = placeDoor(state, style, e.lane, e.x, enemyReach(e), true);
+      if (next) return next;
+    }
+    return null;
+  };
+}
+
+/**
+ * Minas contra Brain (T-039, BR-05): oculto, en el aire, una de hielo en la casilla donde va a caer; en tierra, si le queda
+ * mas descanso que la cuenta de la mina y no tiene ninguna cerca, debajo de el. De fuego si no llega para la de hielo.
+ */
+function brainMines(style: BotStyle): Move {
+  return (state) => {
+    if (!style.mines) return null;
+    const brain = state.enemies.find((e) => e.kind === 'brain');
+    if (!brain || !onLawn(brain) || !brain.hop || !isHidden(brain)) return null;
+    const x = isAirborne(brain) ? brain.hop.to : brain.x;
+    if (!isAirborne(brain) && brain.hop.ms < MINE.countdownMs + 200) return null;
+    const col = Math.floor(x);
+    if (col < 0 || col >= BOARD.columns) return null;
+    const near = state.plants[brain.lane].some((sown, c) => sown?.kind === 'mine' && Math.abs(c + 0.5 - x) <= MINE.detectRadius);
+    if (near || sownAt(state, cell(brain.lane, col))) return null;
+    for (const card of ['ice', 'fire'] as const) {
+      if (canPlay(state, card, cell(brain.lane, col))) return playCard(state, card, cell(brain.lane, col));
+    }
+    return 'wait';
+  };
+}
 
 function canPlay(state: MatchState, card: CardId, at: Cell): boolean {
   return cardPlay(state, card, at).blocker === null;
@@ -60,9 +169,12 @@ type Move = (state: MatchState) => MatchState | 'wait' | null;
 
 function wallMoves(style: BotStyle): Move[] {
   if (style.shields === 'never') return [];
-  const wallCol = style.columns + 1;
-  const missing = (state: MatchState, lane: number) => !isShield(sownAt(state, cell(lane, wallCol)));
-  const sowWall = (state: MatchState, lane: number) => (missing(state, lane) && canPlay(state, 'shield', cell(lane, wallCol)) ? playCard(state, 'shield', cell(lane, wallCol)) : null);
+  /** La puerta de antemano, si falta y le llega: si no, sigue con lo demas (no ahorra para ella). */
+  const sowWall = (state: MatchState, lane: number) => {
+    if (!shieldAllowed(state, style, lane) || !doorMissing(state, style, lane)) return null;
+    const next = placeDoor(state, style, lane, Infinity, 0, false);
+    return next === 'wait' ? null : next;
+  };
   return [
     // El jefe anuncia el poema entero: muro donde falte.
     (state) => {
@@ -86,16 +198,37 @@ function wallMoves(style: BotStyle): Move[] {
   ];
 }
 
-/** Muro en todos los carriles en cuanto la primera columna esta montada. */
+/** Puerta (muro o disparadora con escudo) en todos los carriles en cuanto la primera columna esta montada. */
 function allWalls(style: BotStyle): Move {
+  return (state) => {
+    if (style.shields !== 'always') return null;
+    const ready = Array.from({ length: BOARD.lanes }, (_, lane) => (plantAt(state, cell(lane, 0))?.shooter.cannons ?? 0) >= style.cannons);
+    if (!ready.every(Boolean) && !isBossRound(state.outbreak, state.round.index)) return null;
+    for (let lane = 0; lane < BOARD.lanes; lane++) {
+      if (!doorMissing(state, style, lane) || !shieldAllowed(state, style, lane)) continue;
+      const next = placeDoor(state, style, lane, Infinity, 0, false);
+      if (next && next !== 'wait') return next;
+    }
+    return null;
+  };
+}
+
+/**
+ * Muro contra lo que llega oculto (T-039): con la primera columna montada (antes no hay moneda para muros), si una tropa
+ * oculta pisa el cesped en un carril sin escudo, un muro en la columna de los muros; si no llega, ahorra (`'wait'`).
+ */
+function hiddenDoor(style: BotStyle): Move {
   return (state) => {
     if (style.shields !== 'always') return null;
     const wallCol = style.columns + 1;
     const ready = Array.from({ length: BOARD.lanes }, (_, lane) => (plantAt(state, cell(lane, 0))?.shooter.cannons ?? 0) >= style.cannons);
-    if (!ready.every(Boolean) && !isBossRound(state.outbreak, state.round.index)) return null;
-    for (let lane = 0; lane < BOARD.lanes; lane++) {
-      if (isShield(sownAt(state, cell(lane, wallCol)))) continue;
-      if (canPlay(state, 'shield', cell(lane, wallCol))) return playCard(state, 'shield', cell(lane, wallCol));
+    if (!ready.every(Boolean)) return null;
+    for (const lane of lanesByThreat(state)) {
+      if (!shieldAllowed(state, style, lane)) continue;
+      const hidden = state.enemies.some((e) => e.lane === lane && isHidden(e) && !hops(e.kind) && onLawn(e) && e.x > wallCol + 1.5);
+      if (!hidden || state.plants[lane].some(isShield)) continue;
+      const next = placeDoor(state, style, lane, Infinity, 0, false);
+      if (next) return next;
     }
     return null;
   };
@@ -186,8 +319,19 @@ export function botAct(state: MatchState, style: BotStyle): MatchState {
   // El que reacciona tarde guarda en el combate final para los muros que sembrara al oir el poema: tiene la moneda, pero
   // ningun escudo puesto.
   const saving = style.shields === 'poem' && shieldsReady && isBossRound(state.outbreak, state.round.index) ? 5 * 150 : 0;
-  const reserve = style.shields === 'always' && shieldsReady ? 150 : saving;
-  const moves: Move[] = [...(shieldsReady ? wallMoves(style) : []), cover, build(style), infuseFront(style), ...(shieldsReady ? [allWalls(style)] : []), levelLowest(reserve)];
+  // El de las minas guarda en el combate contra Brain para unas cuantas (T-039).
+  const mining = style.mines && isBossRound(state.outbreak, state.round.index) ? 4 * 75 : 0;
+  const reserve = style.shields === 'always' && shieldsReady ? 150 : saving + mining;
+  const moves: Move[] = [
+    ...(shieldsReady ? [doorMove(style), ...wallMoves(style)] : []),
+    brainMines(style),
+    cover,
+    ...(shieldsReady ? [hiddenDoor(style)] : []),
+    build(style),
+    infuseFront(style),
+    ...(shieldsReady ? [allWalls(style)] : []),
+    levelLowest(reserve),
+  ];
   let current = state;
   for (let actions = 0; actions < 6; actions++) {
     let next: MatchState | 'wait' | null = null;
@@ -199,6 +343,12 @@ export function botAct(state: MatchState, style: BotStyle): MatchState {
     current = next;
   }
   return current;
+}
+
+/** Quita los escudos (muros y bloques de hielo) del carril `lane`. */
+export function clearShields(state: MatchState, lane: number | null): MatchState {
+  if (lane === null) return state;
+  return { ...state, plants: state.plants.map((row, l) => (l === lane ? row.map((sown) => (sown && sown.kind !== 'shooter' && isShield(sown) ? null : sown)) : row)) };
 }
 
 /** Lo que paso en una partida simulada. */
@@ -253,6 +403,8 @@ export function simulate(outbreak: OutbreakId, style: BotStyle, seed: number, ba
     }
     const round = stepRound(state, STEP_MS, HOLE_X, random);
     state = round.state;
+    // BR-05: el de las minas llega al combate final sin escudos en el carril de Brain.
+    if (style.mines && round.events.some((event) => event.type === 'roundStarted' && event.index === bossRound)) state = clearShields(state, bossLane(state));
     for (const event of round.events) {
       if (event.type === 'attackStarted') attackStart = time;
       if (event.type === 'roundCleared') attackMs.push(time - attackStart);

@@ -101,17 +101,57 @@ describe('brote 1 con nivel base (T-023)', () => {
 });
 
 /**
- * Brote 3 en preparacion (T-038): sus 3 rondas provisionales con las tropas nuevas (Lurker ocultos y, en la 3, el Skipper).
- * Sin jefe, ganar es acabar las tres. Se anota en `docs/specs/06-brote-3-brain.md` para que T-039 ajuste vida y cantidades
- * con su guion de verdad. Ojo: aqui el bot con escudos juega como el que no los usa, porque gasta cada 100 monedas en
- * disparadoras antes de juntar las 150 de un muro. Solo se exige que el brote se pueda ganar.
+ * Brote 3: Brain (T-039). Lo que pide la task: sin escudos ni minas se pierde casi siempre; con escudos se gana la mayoria;
+ * solo con minas y hielo contra Brain (sin escudo en su carril), se puede, pero cuesta (BR-05). Desde T-039 el bot sabe
+ * jugar contra lo que salta y lo que llega oculto (`door`, `mines` y los muros de `bot.ts`). Lo que da esta en
+ * `docs/specs/06-brote-3-brain.md`.
  */
-describe('brote 3: Brain, en preparacion (T-038)', () => {
-  for (const style of [SHIELDLESS, SHIELDED, SHIELDED_STRONG]) {
-    it(`bot ${style.name} (se anota)`, () => {
+const DOORS_STRONG: BotStyle = { name: 'con disparadoras con escudo y 3 canones', shields: 'always', columns: 3, cannons: 3, door: 'shooter' };
+const MINES_STRONG: BotStyle = { name: 'solo minas contra Brain y 3 canones', shields: 'always', columns: 3, cannons: 3, mines: true };
+
+describe('brote 3: Brain (T-039)', () => {
+  it('sin escudos ni minas se pierde casi siempre, tambien con 3 canones', () => {
+    for (const style of [SHIELDLESS, SHIELDLESS_STRONG]) {
       const results = play('brain', style);
       report('brain', style, results);
-      if (style === SHIELDED) expect(results.some((r) => r.outcome === 'won')).toBe(true);
+      expect(results.filter((r) => r.outcome === 'won').length).toBeLessThanOrEqual(RUNS * 0.2);
+    }
+  });
+
+  it('con muros bien puestos y disparadoras de 3 canones se gana la mayoria', () => {
+    const results = play('brain', SHIELDED_STRONG);
+    report('brain', SHIELDED_STRONG, results);
+    expect(results.filter((r) => r.outcome === 'won').length).toBeGreaterThan(RUNS / 2);
+  });
+
+  it('con disparadoras con escudo como puerta, tambien', () => {
+    const results = play('brain', DOORS_STRONG);
+    report('brain', DOORS_STRONG, results);
+    expect(results.filter((r) => r.outcome === 'won').length).toBeGreaterThan(RUNS / 2);
+  });
+
+  it('con escudos y 2 canones hace falta nivel base: sin el se pierde, con el 3 se gana la mayoria', () => {
+    const bare = play('brain', SHIELDED);
+    report('brain', SHIELDED, bare);
+    expect(bare.filter((r) => r.outcome === 'won').length).toBeLessThanOrEqual(RUNS * 0.2);
+    const bought = play('brain', SHIELDED, 3);
+    report('brain', SHIELDED, bought, 3);
+    expect(bought.filter((r) => r.outcome === 'won').length).toBeGreaterThan(RUNS / 2);
+  });
+
+  it('sin escudo en su carril, solo con minas (BR-05): sin mejoras no basta; con nivel base 3, si', () => {
+    const bare = play('brain', MINES_STRONG);
+    report('brain', MINES_STRONG, bare);
+    const bought = play('brain', MINES_STRONG, 3);
+    report('brain', MINES_STRONG, bought, 3);
+    expect(bought.filter((r) => r.outcome === 'won').length).toBeGreaterThan(0);
+  });
+
+  for (const baseLevel of [1, 3, 5]) {
+    it(`con muros y 3 canones, nivel base ${baseLevel} (se anota)`, () => {
+      const results = play('brain', SHIELDED_STRONG, baseLevel);
+      report('brain', SHIELDED_STRONG, results, baseLevel);
+      expect(results.filter((r) => r.outcome === 'won').length).toBeGreaterThan(RUNS / 2);
     });
   }
 });

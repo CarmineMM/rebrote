@@ -14,6 +14,7 @@ import {
   ICE_BLOCK_SIZE,
   MINE_SIZE,
   SHOOTER_SIZE,
+  BRAIN_TEX,
   BUG_TEX,
   TEX,
   WALL_SIZE,
@@ -32,6 +33,7 @@ import { isBoss } from '../core/combat';
 import { KIND_LOOK, WORM_LOOK, poseOf, type WormKind } from './wormView';
 import { BUG_SIZE, LURKER_RIGS, SKIPPER_RIGS, hopLegAngles, type LegMount, type SkipperRig } from './bugArt';
 import { BUG_LOOK, GAME_BUGS, LURKER_VARIANT, isBugKind, type BugKind } from './bugView';
+import { BRAIN_DESIGN, BRAIN_RIGS, BRAIN_SIZE, brainLimbSize } from './brainArt';
 
 /**
  * Foto de la ficha de informacion (T-010): la planta, la mina o el enemigo en reposo sobre un fondo de jardin, como
@@ -269,7 +271,38 @@ function piecesFor(subject: PortraitSubject): Piece[] {
     const { width, height, footX, footY } = GRENADE_SIZE;
     return [{ key: TEX.grenade.lit, x: 0, y: 0, scale: 1, ox: footX / width, oy: footY / height, width, height }];
   }
+  if (subject.enemy === 'brain') return brainPieces();
   return isBugKind(subject.enemy) ? bugPieces(subject, subject.enemy) : wormPieces(subject, subject.enemy);
+}
+
+/**
+ * Brain (T-039) en reposo, con la propuesta del juego (`BRAIN_DESIGN`): patas de atras, cuerpo, cara, cupula (si la lleva) y
+ * patas de delante, como en el tablero. No tiene nivel ni aura.
+ */
+function brainPieces(): Piece[] {
+  const rig = BRAIN_RIGS[BRAIN_DESIGN];
+  const { body, face } = BRAIN_SIZE;
+  const limb = brainLimbSize(BRAIN_DESIGN);
+  const limbPiece = (mount: (typeof rig.legs)[number]): Piece => ({
+    key: BRAIN_TEX.limb(BRAIN_DESIGN),
+    x: rig.body.x + mount.x,
+    y: rig.body.y + mount.y,
+    scale: 1,
+    ox: limb.hipX / limb.width,
+    oy: limb.hipY / limb.height,
+    width: limb.width,
+    height: limb.height,
+    angle: mount.angle,
+    alpha: mount.far ? 0.8 : 1,
+  });
+  const bodyPiece = { x: rig.body.x, y: rig.body.y, scale: 1, ox: body.cx / body.width, oy: body.cy / body.height, width: body.width, height: body.height };
+  return [
+    ...rig.legs.filter((m) => m.far).map(limbPiece),
+    { key: BRAIN_TEX.body(BRAIN_DESIGN), ...bodyPiece },
+    { key: BRAIN_TEX.face(BRAIN_DESIGN, 'smug'), x: rig.body.x + rig.face.x, y: rig.body.y + rig.face.y, scale: 1, ox: face.cx / face.width, oy: face.cy / face.height, width: face.width, height: face.height },
+    ...(BRAIN_DESIGN === 'dome' ? [{ key: BRAIN_TEX.glass(BRAIN_DESIGN), ...bodyPiece }] : []),
+    ...rig.legs.filter((m) => !m.far).map(limbPiece),
+  ];
 }
 
 /** Aura de los tramos de nivel (T-030, Z-03) y rayas de velocidad: un velo quieto detras del cuerpo, como en el tablero. */

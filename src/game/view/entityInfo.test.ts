@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { CLONE, CREEPER, ELK_CLONER, ENEMIES, MINE, SHIELD, SHOOTER } from '../config/balance';
+import { BRAIN, CLONE, CREEPER, ELK_CLONER, ENEMIES, MINE, SHIELD, SHOOTER } from '../config/balance';
 import { enemyMaxHp, spawnEnemy, type Enemy } from '../core/combat';
 import { createMatch, createMine, createPlant } from '../core/match';
 import { createShooter, type Shooter } from '../core/plants';
@@ -206,6 +206,27 @@ describe('ficha de Elk Cloner (T-026)', () => {
     expect(warning.tags[0]).toEqual({ text: '¡Anuncia el poema entero!', tone: 'alert' });
     expect(stat(warning, 'Próximo poema')?.value).toBe('¡Ya lo está recitando!');
     expect(stat(enemyInfo({ ...boss, recital: { ms: 3000, sung: ELK_CLONER.poemEvery - 1, poemMs: null } }), 'Próximo poema')?.value).toBe('Tras el próximo verso');
+  });
+});
+
+describe('ficha de Brain (T-039)', () => {
+  it('su apodo, su salto con el descanso de su fase y lo que lo descubre; oculto, lo dice', () => {
+    const boss = enemy('brain');
+    const info = enemyInfo(boss);
+    expect(info).toMatchObject({ tone: 'brain', title: 'Brain', subtitle: 'El Cerebro · jefe del brote 3', level: null });
+    expect(info.hp.max).toBe(Math.round(enemyMaxHp('brain')));
+    expect(stat(info, 'Salto')).toEqual({ label: 'Salto', value: `${BRAIN.hopLength} casillas`, note: 'y 3 s en tierra' });
+    expect(stat(info, 'Lo descubren')?.value).toBe('Un escudo, una mina o la granada');
+    expect(stat(info, 'Lo ven')).toBeUndefined();
+    expect(info.tags.map((tag) => tag.text)).toContain('Oculto: las plantas no lo ven');
+    expect(info.about).toContain('Solo lo para un escudo');
+  });
+
+  it('en su fase 2 lo dice y descansa menos', () => {
+    const boss = { ...enemy('brain'), hp: enemyMaxHp('brain') * 0.3 };
+    const info = enemyInfo(boss);
+    expect(info.subtitle).toBe('El Cerebro · jefe del brote 3 · fase 2');
+    expect(stat(info, 'Salto')?.note).toBe('y 2,4 s en tierra');
   });
 });
 

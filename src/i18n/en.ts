@@ -30,7 +30,7 @@ export const en: Dictionary = {
   outbreak: {
     title: (number, boss) => `Outbreak ${number}: ${boss}`,
     number: (number) => `Outbreak ${number}`,
-    comingBoss: { brain: 'Brain' },
+    comingBoss: {},
   },
 
   title: {
@@ -268,17 +268,25 @@ export const en: Dictionary = {
         "Watch out: Lurkers arrive hidden and your plants can't see them from afar. Mines and ice give them away",
         'Drop the shield on a shooter: it lasts twice as long and stops what heads for the ones behind',
         'Here comes the Skipper! It hops over everything: only a shield stops it',
+        'Hidden armored bugs and Skippers together: mines for some, shields for others',
+        'Two waves across all five lanes: put a gate in each one',
+        'Brain is getting ready! It marks sectors to hide in, and its troops come faster',
+        'Brain is almost ready: even more troops, and even faster. Close all five lanes',
+        'Brain is here! It hops over everything, hidden: only a shield stops it, and mines give it away',
       ],
     },
   },
 
   boss: {
-    caught: { creeper: 'Caught!', elkCloner: 'Silenced!' },
+    caught: { creeper: 'Caught!', elkCloner: 'Silenced!', brain: 'Formatted!' },
     phase1: 'Phase 1',
     phase2: 'Phase 2: angry!',
     health: (name) => `${name}'s health`,
     poemIn: (verses) => (verses <= 1 ? 'Poem on the next verse' : `Poem in ${verses} verses`),
     poemNow: 'The whole poem!',
+
+    hidden: (enraged) => (enraged ? 'Hidden · phase 2' : 'Hidden'),
+    revealed: (enraged) => (enraged ? 'Spotted! · phase 2' : 'Spotted!'),
   },
 
   level: {
@@ -452,28 +460,31 @@ export const en: Dictionary = {
 
   defeat: {
     title: 'They got through!',
-    bossTitle: { creeper: 'Creeper got away!', elkCloner: 'Elk Cloner crossed the garden!' },
+    bossTitle: { creeper: 'Creeper got away!', elkCloner: 'Elk Cloner crossed the garden!', brain: 'Brain crossed the garden!' },
     text: (crossed, round, total, outbreak) =>
       `${crossed === 1 ? `1 ${outbreak === 'brain' ? 'bug' : 'worm'}` : `${crossed} ${outbreak === 'brain' ? 'bugs' : 'worms'}`} crossed the garden${round === null ? '' : ` in round ${round} of ${total}`}.`,
     bossText: {
       creeper: 'It jumped lanes and crossed the garden in the final battle.',
       elkCloner: 'It recited to the very end and crossed the garden in the final battle.',
+      brain: 'It hopped over everything, hidden, and crossed the garden in the final battle.',
     },
     hint: 'Each shooter only guards its own lane: cover all five.',
     bossHint: {
       creeper: 'Creeper jumps lanes: spread your defenses across all five.',
       elkCloner: 'Only a shield stops its verses and its poem: put one in front of your shooters in every lane.',
+      brain: 'Only a shield stops it: put one in its lane and replace it when it falls. A mine next to it gives it away too.',
     },
     again: 'Play again',
     menu: 'Main menu',
   },
 
   victory: {
-    title: { creeper: 'You caught Creeper!', elkCloner: 'You silenced Elk Cloner!' },
+    title: { creeper: 'You caught Creeper!', elkCloner: 'You silenced Elk Cloner!', brain: 'You formatted Brain!' },
     text: (rounds) => `You beat all ${rounds} rounds and the garden is safe.`,
     hint: {
       creeper: 'Creeper (1971) was the first computer worm: it hopped from machine to machine.',
       elkCloner: 'Elk Cloner (1982) traveled on Apple II floppy disks and showed a poem every 50th boot.',
+      brain: 'Brain (1986) was the first PC virus: it hid in the boot sector of floppy disks.',
     },
     again: 'Play again',
     greenhouse: 'To the greenhouse',
@@ -547,7 +558,7 @@ export const en: Dictionary = {
     attack: 'Here they come!',
     roundCleared: (round) => `Round ${round} cleared!`,
     seedsEarned: (amount, count) => `+${count === 1 ? '1 seed' : `${amount} seeds`}`,
-    bossDown: { creeper: 'Creeper caught!', elkCloner: 'Elk Cloner silenced!' },
+    bossDown: { creeper: 'Creeper caught!', elkCloner: 'Elk Cloner silenced!', brain: 'Brain formatted!' },
     poem: 'The whole poem!',
     gardenSafe: 'Garden saved!',
     bossEscaped: 'It got away!',
@@ -597,6 +608,18 @@ export const en: Dictionary = {
     shouts: { escort: 'Copycats, form a line: let the show start on time!' },
   },
 
+  brain: {
+    entrance: 'Looking for me? Leave a message.',
+    concealed: ["Now you don't see me!", 'The number you are looking for is not available.', 'Nothing here but a clean disk…', 'Hello? Anybody there?'],
+    blasted: ['Hey, you spotted me!', 'Ouch! Who is calling?', 'Sector exposed!'],
+    bite: ['Ring, ring… let me in!', "Knock, knock: it's Brain!", 'This shield is on my list!'],
+    enraged: 'No more jokes! Rebooting!',
+    escape: "Call me anytime: you've got my number.",
+    cheer: 'Thank you for calling Brain! Ha, ha!',
+    preparing: 'Marking bad sectors… Nobody home, right?',
+    shouts: { escort: 'Lurkers, hide! Skippers, hop!' },
+  },
+
   info: {
     close: 'Close the info card',
     closeTitle: 'Close (Esc)',
@@ -637,6 +660,9 @@ export const en: Dictionary = {
       hop: 'Hop',
       hopValue: (cells) => `${cells} tiles`,
       hopNote: (time) => `and ${time} on the ground`,
+      revealedBy: 'Spotted by',
+      revealedByValue: 'A shield, a mine or the grenade',
+      revealedByNote: 'not by getting close, not by shots',
       seen: 'Spotted',
       seenValue: (cells) => `At ${cells} tiles`,
       seenNote: 'from the first thing planted in its lane',
@@ -732,6 +758,7 @@ export const en: Dictionary = {
         lurkerSpitter: 'Spitter Lurker',
         lurkerArmored: 'Armored Lurker',
         skipper: 'Skipper',
+        brain: 'Brain',
       },
       cloneNames: { copycat: 'Copycat copy', copycatArmored: 'Armored copy', copycatSpitter: 'Spitter copy' },
       subtitle: {
@@ -750,6 +777,8 @@ export const en: Dictionary = {
         boss: (outbreak) => `Outbreak ${outbreak} boss`,
         bossEnraged: (outbreak) => `Outbreak ${outbreak} boss · phase 2`,
         poet: (outbreak) => `The Poet · outbreak ${outbreak} boss`,
+        mastermind: (outbreak) => `The Mastermind · outbreak ${outbreak} boss`,
+        mastermindEnraged: (outbreak) => `The Mastermind · outbreak ${outbreak} boss · phase 2`,
       },
       about: {
         worm: 'Crawls along its lane and bites the first thing it finds until it is destroyed.',
@@ -772,6 +801,8 @@ export const en: Dictionary = {
           `Arrives hidden like the Lurker, and plants spot it at ${cells} tiles. It has four times its health and is slower. Its plates fall off as it loses health.`,
         skipper: (cells) =>
           `Hops ${cells} tiles at a time over plants and mines, and only a shield stops it, which it then bites. Shots miss it in the air: catch it on the ground.`,
+        brain: (cells) =>
+          `Moves hidden, hopping ${cells} tiles at a time over plants and mines, and plants don't aim at it. Only a shield stops it: it lands in front, shows itself and bites it. A mine or the grenade going off next to it also gives it away for a while. If it crosses the garden, you lose the game.`,
       },
     },
   },

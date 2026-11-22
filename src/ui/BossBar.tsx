@@ -10,15 +10,18 @@ interface BossBarProps {
  * Barra del jefe (T-008): nombre, estado y vida, con su cara. La de Creeper, un monitor, con su fase y una marca en cada
  * umbral en el que salta de carril (las que ya gasto, apagadas); en la fase 2 se pone roja y late. La de Elk Cloner (T-026),
  * un disquete, con una nota por verso hasta el poema entero (L-03), que se encienden segun recita; mientras anuncia el
- * poema se pone dorada y late. Lo que pierde se ve primero en claro y luego se va; derrotado, lo dice cada uno a su
- * manera. React solo pinta: la vida vive en core y llega por EventBus.
+ * poema se pone dorada y late. La de Brain (T-039), un cerebro bajo su cupula, dice si esta oculto o descubierto (oculta, se
+ * apaga en el morado de la silueta, con los ojos en verde) y marca donde entra en su fase 2. Lo que pierde se ve primero
+ * en claro y luego se va; derrotado, lo dice cada uno a su manera. React solo pinta: la vida vive en core y llega por
+ * EventBus.
  */
 export function BossBar({ boss }: BossBarProps) {
-  const { kind, name, hp, maxHp, enraged, jumpAt, poem } = boss;
+  const { kind, name, hp, maxHp, enraged, jumpAt, poem, hidden } = boss;
   const fraction = Math.max(0, Math.min(1, hp / maxHp));
   const down = hp <= 0;
   const reciting = poem?.warning ?? false;
-  const state = down ? ' is-down' : enraged ? ' is-enraged' : reciting ? ' is-reciting' : '';
+  const veiled = !down && hidden === true;
+  const state = (down ? ' is-down' : enraged ? ' is-enraged' : reciting ? ' is-reciting' : '') + (veiled ? ' is-hidden' : '');
   const t = useText();
   const status = down
     ? t.boss.caught[kind]
@@ -26,9 +29,13 @@ export function BossBar({ boss }: BossBarProps) {
       ? poem.warning
         ? t.boss.poemNow
         : t.boss.poemIn(poem.every - poem.sung)
-      : enraged
-        ? t.boss.phase2
-        : t.boss.phase1;
+      : hidden !== null
+        ? hidden
+          ? t.boss.hidden(enraged)
+          : t.boss.revealed(enraged)
+        : enraged
+          ? t.boss.phase2
+          : t.boss.phase1;
   const width = { '--boss-hp': `${fraction * 100}%` } as CSSProperties;
 
   return (

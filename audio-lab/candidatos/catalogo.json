@@ -1541,6 +1541,157 @@
       ]
     },
     {
+      "id": "brainTalk",
+      "about": "Brain suelta una frase en su bocadillo de contestador (T-039): el pitido de un contestador automatico",
+      "spec": {
+        "bus": "world",
+        "volume": 0.45,
+        "maxVoices": 1,
+        "minGapMs": 300,
+        "burst": 0,
+        "pitchJitter": 0.5,
+        "variants": 1
+      },
+      "pick": [
+        {
+          "url": "audio/brainTalk",
+          "source": "Kenney Digital Audio: `twoTone2.ogg` (recortado 0-420 ms, -2 dB)",
+          "seconds": 0.155
+        }
+      ],
+      "alternatives": [
+        {
+          "url": "audio-lab/candidatos/brainTalk/1",
+          "source": "Kenney Digital Audio: `tone1.ogg` (recortado 0-360 ms)",
+          "seconds": 0.139,
+          "recipes": []
+        },
+        {
+          "url": "audio-lab/candidatos/brainTalk/2",
+          "source": "jsfxr: receta `chirp`",
+          "seconds": 0.268,
+          "recipes": [
+            {
+              "name": "chirp",
+              "code": "11111FbzaGcjtvgpKmeGg2qsFLLzGyc6nBcKrgsdHW89ANquxnwjcUkDroGS4pi6p2XHkrzrmCWi53PYYN4Dy1VFthGTHJ1EeJ56FNiVV5H5vt2GcjjaDVbm"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "brainHop",
+      "about": "Brain salta (T-039): un boing de muelle grave, mas grande que el del Skipper",
+      "spec": {
+        "bus": "world",
+        "volume": 0.5,
+        "maxVoices": 1,
+        "minGapMs": 0,
+        "burst": 2,
+        "pitchJitter": 0.6,
+        "variants": 1
+      },
+      "pick": [
+        {
+          "url": "audio/brainHop",
+          "source": "jsfxr: receta `boing` (velocidad 0.7) + Kenney Impact Sounds: `footstep_concrete_000.ogg` (recortado 0-200 ms, -6 dB)",
+          "seconds": 0.137
+        }
+      ],
+      "alternatives": [
+        {
+          "url": "audio-lab/candidatos/brainHop/1",
+          "source": "Kenney Digital Audio: `phaseJump3.ogg` (recortado 0-360 ms, velocidad 0.8)",
+          "seconds": 0.446,
+          "recipes": []
+        },
+        {
+          "url": "audio-lab/candidatos/brainHop/2",
+          "source": "jsfxr: receta `boing` (velocidad 0.55)",
+          "seconds": 0.174,
+          "recipes": [
+            {
+              "name": "boing",
+              "code": "57uBnWgpsMuHdwQQgKWeB2kU48CzjvzZudqJpztTqimnhTjGiQK1fpLdp687MqDzGSJHZLYh34aTaxuqeso8mSNEd9poaY5qcFmnNUjzYLcjrHXKGwp2j34B1"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "brainLand",
+      "about": "Brain cae de un salto (T-039): un golpe de metal con un rebote de muelle",
+      "spec": {
+        "bus": "world",
+        "volume": 0.55,
+        "maxVoices": 1,
+        "minGapMs": 0,
+        "burst": 2,
+        "pitchJitter": 0.5,
+        "variants": 1
+      },
+      "pick": [
+        {
+          "url": "audio/brainLand",
+          "source": "Kenney Impact Sounds: `impactMetal_light_002.ogg` (-4 dB) + jsfxr: receta `boing` (velocidad 1.2, -10 dB, +60 ms)",
+          "seconds": 0.233
+        }
+      ],
+      "alternatives": [
+        {
+          "url": "audio-lab/candidatos/brainLand/1",
+          "source": "Kenney Impact Sounds: `impactGeneric_light_001.ogg`",
+          "seconds": 0.115,
+          "recipes": []
+        },
+        {
+          "url": "audio-lab/candidatos/brainLand/2",
+          "source": "Kenney Impact Sounds: `impactMetal_heavy_000.ogg` (-8 dB)",
+          "seconds": 0.165,
+          "recipes": []
+        }
+      ]
+    },
+    {
+      "id": "brainDefeated",
+      "about": "Cae Brain (T-039): un disquete que se formatea, un apagón que baja y un chasquido de cristal",
+      "spec": {
+        "bus": "world",
+        "volume": 0.9,
+        "maxVoices": 1,
+        "minGapMs": 0,
+        "burst": 2,
+        "pitchJitter": 0,
+        "variants": 1
+      },
+      "pick": [
+        {
+          "url": "audio/brainDefeated",
+          "source": "Kenney Digital Audio: `phaserDown3.ogg` + Kenney Digital Audio: `spaceTrash3.ogg` (-4 dB, +180 ms) + Kenney Impact Sounds: `impactGlass_light_001.ogg` (-6 dB, +320 ms)",
+          "seconds": 1.378
+        }
+      ],
+      "alternatives": [
+        {
+          "url": "audio-lab/candidatos/brainDefeated/1",
+          "source": "Kenney Digital Audio: `lowDown.ogg` + Kenney Digital Audio: `spaceTrash1.ogg` (+150 ms)",
+          "seconds": 1.437,
+          "recipes": []
+        },
+        {
+          "url": "audio-lab/candidatos/brainDefeated/2",
+          "source": "jsfxr: receta `powerDown`",
+          "seconds": 0.927,
+          "recipes": [
+            {
+              "name": "powerDown",
+              "code": "11111Fc13SdX6aXTZbZ5RD9BTDuZmocvi5NhcTFyZM5MxbBzYnRhp6aGcP5RsBLnbktMNBTmEnyB3Wat5ruouqjqh31ZfVJ67VUxRkiE5qfYrgo78nWiK56F"
+            }
+          ]
+        }
+      ]
+    },
+    {
       "id": "relocate",
       "about": "Recolocar una disparadora (T-021): sale de la tierra con un tirón y se vuelve a plantar con un bloop",
       "spec": {
