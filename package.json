@@ -1,7 +1,7 @@
 {
   "name": "rebrote",
   "private": true,
-  "version": "0.7.0",
+  "version": "0.8.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -9,6 +9,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
+    "sim": "vitest run --config vitest.sim.config.ts",
     "audio": "node scripts/audio/build.ts",
     "icons": "node scripts/icons/build.ts"
   },

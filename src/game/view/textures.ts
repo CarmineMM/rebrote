@@ -13,6 +13,24 @@ import { SHOOTER, type ShooterCannons, type ShooterDesign, type ShooterVariant }
 import { SHOOTER_CANNONS, SHOOTER_VARIANTS } from './shooters/design';
 import { WALL_SIZE, WALL_WEARS, paintWall, type WallWear } from './wallArt';
 import { FLOPPY_SIZE, HAT_SIZE, NOTE_SIZE, VERSE_SIZE, paintFloppy, paintMinstrelHat, paintNote, paintVerse } from './troopArt';
+import {
+  FEET_SIZE,
+  POEM_INK,
+  QUILL_SIZE,
+  RUFF_SIZE,
+  SCROLL_SIZE,
+  paintElkAntlers,
+  paintElkFeet,
+  paintElkHead,
+  paintElkQuill,
+  paintElkRuff,
+  paintElkScroll,
+  paintElkSegment,
+  ELK_HUBS,
+  ELK_MOODS,
+  type ElkHub,
+  type ElkMood,
+} from './elkClonerArt';
 
 /**
  * Arte hecho por codigo (ADR-0004): todo se pinta con Canvas 2D una sola vez al arrancar
@@ -122,6 +140,24 @@ export const TEX = {
   creeperHeadAngryHurt: 'unit-creeper-head-angry-hurt',
   creeperHeadLoading: 'unit-creeper-head-loading',
   creeperSegment: 'unit-creeper-segment',
+  /**
+   * Elk Cloner (T-026, `elkClonerArt.ts`): cabeza de disquete con la cara en la etiqueta (tranquila, mordiendo, dolorida,
+   * tomando aire, recitando y anunciando el poema entero), sus cuentas granate, la gorguera, los pies y la cornamenta con
+   * la pluma; el verso dorado de su poema entero; y el pergamino y la pluma con los que escribe mientras se prepara.
+   */
+  elkHead: 'unit-elk-head',
+  elkHeadBite: 'unit-elk-head-bite',
+  elkHeadHurt: 'unit-elk-head-hurt',
+  elkHeadInhale: 'unit-elk-head-inhale',
+  elkHeadRecite: 'unit-elk-head-recite',
+  elkHeadPoem: 'unit-elk-head-poem',
+  elkSegment: 'unit-elk-segment',
+  elkRuff: 'unit-elk-ruff',
+  elkFeet: 'unit-elk-feet',
+  elkAntlers: 'unit-elk-antlers',
+  poemVerse: 'unit-poem-verse',
+  elkScroll: 'fx-elk-scroll',
+  elkQuill: 'fx-elk-quill',
   /** Rayas de velocidad del gusano acelerado por Creeper (T-008), detras de la cola. */
   hasteStreak: 'fx-haste-streak',
 } as const;
@@ -138,6 +174,22 @@ export function shooterVariant(element: ElementType | null): ShooterVariant {
 /** Textura de la disparadora de forma `design` (la del juego si no se dice) con `cannons` canones y el elemento `element`. */
 export const shooterTexture = (cannons: ShooterCannons, element: ElementType | null = null, design: ShooterDesign = SHOOTER): string =>
   `${TEX.shooter}-${design.id}-${shooterVariant(element)}-${cannons}`;
+
+/**
+ * Cabeza de Elk Cloner con la cara `mood` y el aro `hub` (T-026): para comparar los aros en `/jefes.html`. El juego usa las
+ * de `TEX.elkHead*`, pintadas con el elegido (`ELK_HUB`); estas se pintan con `registerElkHubTextures`.
+ */
+export const elkHeadTexture = (mood: ElkMood, hub: ElkHub): string => `${TEX.elkHead}-${hub}-${mood}`;
+
+/** Pinta las cabezas de Elk Cloner con cada aro (solo la galeria `/jefes.html`). Antes, `registerTextures`. */
+export function registerElkHubTextures(scene: Phaser.Scene): void {
+  const { head } = WORM_SIZE;
+  for (const { id } of ELK_HUBS) {
+    for (const mood of ELK_MOODS) {
+      paintTexture(scene, artScale, elkHeadTexture(mood, id), head.width, head.height, (ctx, _w, _h, scale) => paintElkHead(ctx, mood, scale, id));
+    }
+  }
+}
 
 /** Textura de la semilla que dispara una planta con `element`. La de escudo dispara como una normal (T-024). */
 export const seedTexture = (element: ElementType | null): string =>
@@ -196,8 +248,8 @@ export const HASTE_STREAK_SIZE = { width: 64, height: 28 } as const;
 export const SEED_SIZE = { width: 48, height: 28, cx: 32 } as const;
 /** Escupitajo (T-007): una gota de moco verde que vuela a la izquierda. `cx` es el centro de la gota (la estela va detras). */
 export const SPIT_SIZE = { width: 46, height: 30, cx: 15 } as const;
-// Lo de las tropas del brote 2 (T-025) se pinta en troopArt.ts.
-export { FLOPPY_SIZE, HAT_SIZE, NOTE_SIZE, VERSE_SIZE };
+// Lo de las tropas del brote 2 (T-025) se pinta en troopArt.ts, y lo de Elk Cloner (T-026), en elkClonerArt.ts.
+export { FEET_SIZE, FLOPPY_SIZE, HAT_SIZE, NOTE_SIZE, QUILL_SIZE, RUFF_SIZE, SCROLL_SIZE, VERSE_SIZE };
 /**
  * Copa del arbol: donde engancha con el tronco, dentro de su textura y en pantalla. La textura deja margen
  * y se alarga hacia la izquierda para que en pantallas anchas no se vea cortada.
@@ -354,7 +406,7 @@ export function registerTextures(scene: Phaser.Scene, scale = 1): void {
   paint(TEX.minstrelHeadHurt, head.width, head.height, (ctx) => paintWormHead(ctx, 'hurt', WORM_PALETTES.minstrel));
   paint(TEX.minstrelSegment, segment.size, segment.size, (ctx, w) => paintWormSegment(ctx, w, WORM_PALETTES.minstrel));
   paint(TEX.minstrelHat, HAT_SIZE.width, HAT_SIZE.height, paintMinstrelHat);
-  paint(TEX.verse, VERSE_SIZE.width, VERSE_SIZE.height, paintVerse);
+  paint(TEX.verse, VERSE_SIZE.width, VERSE_SIZE.height, (ctx) => paintVerse(ctx));
   paint(TEX.note, NOTE_SIZE.width, NOTE_SIZE.height, paintNote);
   const creeperHeads: Array<[string, CreeperMood, CreeperScreenPalette]> = [
     [TEX.creeperHead, 'idle', CREEPER_SCREENS.calm],
@@ -369,6 +421,23 @@ export function registerTextures(scene: Phaser.Scene, scale = 1): void {
     paint(key, head.width, head.height, (ctx, _w, _h, scale) => paintCreeperHead(ctx, mood, screen, scale));
   }
   paint(TEX.creeperSegment, segment.size, segment.size, (ctx, w) => paintCreeperSegment(ctx, w));
+  // Elk Cloner (T-026).
+  const elkHeads: Array<[string, ElkMood]> = [
+    [TEX.elkHead, 'idle'],
+    [TEX.elkHeadBite, 'bite'],
+    [TEX.elkHeadHurt, 'hurt'],
+    [TEX.elkHeadInhale, 'inhale'],
+    [TEX.elkHeadRecite, 'recite'],
+    [TEX.elkHeadPoem, 'poem'],
+  ];
+  for (const [key, mood] of elkHeads) paint(key, head.width, head.height, (ctx, _w, _h, scale) => paintElkHead(ctx, mood, scale));
+  paint(TEX.elkSegment, segment.size, segment.size, (ctx, w) => paintElkSegment(ctx, w));
+  paint(TEX.elkRuff, RUFF_SIZE.width, RUFF_SIZE.height, paintElkRuff);
+  paint(TEX.elkFeet, FEET_SIZE.width, FEET_SIZE.height, paintElkFeet);
+  paint(TEX.elkAntlers, HAT_SIZE.width, HAT_SIZE.height, paintElkAntlers);
+  paint(TEX.poemVerse, VERSE_SIZE.width, VERSE_SIZE.height, (ctx) => paintVerse(ctx, POEM_INK));
+  paint(TEX.elkScroll, SCROLL_SIZE.width, SCROLL_SIZE.height, paintElkScroll);
+  paint(TEX.elkQuill, QUILL_SIZE.width, QUILL_SIZE.height, paintElkQuill);
   paint(TEX.hasteStreak, HASTE_STREAK_SIZE.width, HASTE_STREAK_SIZE.height, paintHasteStreak);
 }
 

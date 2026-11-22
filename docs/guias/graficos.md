@@ -32,9 +32,14 @@ Cómo se pinta y se anima Rebrote, para que todo lo nuevo (enemigos, mundos, efe
 | `src/game/view/wallArt.ts` | Muro (T-024), sin Phaser y con test: medidas (`WALL_SIZE`), desgaste según la vida (`wallWear`, `WALL_WEAR_AT`) y su pintor (`paintWall`) |
 | `src/game/view/wallView.ts` | Muro en pantalla (T-024): brota pesado, respira poco, lo muerden y le escupen (astillas), pierde placas al gastarse, se lleva a una disparadora para infundirla y se parte al romperse (`WALL_LOOK`) |
 | `src/game/view/fusionDragView.ts` | Arrastre para fusionar (T-006): planta en la mano con su sombra, casillas de destino y rótulo (`DRAG_LOOK`, `dragGround`) |
-| `src/game/view/wormView.ts` | Gusano, acorazado y escupidor (`KIND_LOOK`): sale del agujero, ondula, muerde o escupe, recibe golpes y explosiones, arde, tirita frenado, muere, se cuela y celebra. Al acorazado se le caen las placas con la vida. Acelerado (T-008), lleva rayas de velocidad. Pinta también el cuerpo del Creeper y su salto de carril (`jumpPose`). Desde T-025, las tropas del brote 2: los Copycat con su disquete a la espalda (`pack`), el Copycat acorazado con armadura de disquete, el Minstrel con su gorro (`hat`), que se hincha al tomar aire (`inhale`) y recita (`sang`), y la copia de un Copycat, pequeña, algo transparente y con su parpadeo, que nace encogiéndose (`popOut`). Interfaz común de las vistas de enemigos (`EnemyView`) |
+| `src/game/view/wormView.ts` | Gusano, acorazado y escupidor (`KIND_LOOK`): sale del agujero, ondula, muerde o escupe, recibe golpes y explosiones, arde, tirita frenado, muere, se cuela y celebra. Al acorazado se le caen las placas con la vida. Acelerado (T-008), lleva rayas de velocidad. Pinta también el cuerpo del Creeper y su salto de carril (`jumpPose`), y el de Elk Cloner (T-026), de pie: cada tipo puede tener su postura (`KindLook.pose`, `WormPose`; la del gusano es `WORM_POSE` y la de Elk Cloner, `ELK_POSE`), adornos pegados a un anillo (`KindLook.trims`: su gorguera y sus pies), y caras de tomar aire y de anunciar el poema (`HeadSet.inhale`, `HeadSet.poem`) que salen del estado (`recitePose`). Desde T-025, las tropas del brote 2: los Copycat con su disquete a la espalda (`pack`), el Copycat acorazado con armadura de disquete, el Minstrel con su gorro (`hat`), que se hincha al tomar aire (`inhale`) y recita (`sang`), y la copia de un Copycat, pequeña, algo transparente y con su parpadeo, que nace encogiéndose (`popOut`). Interfaz común de las vistas de enemigos (`EnemyView`) |
 | `src/game/view/troopArt.ts` | Arte de las tropas del brote 2 (T-025), sin Phaser: el disquete de la espalda de los Copycat (`paintFloppy`, `FLOPPY_SIZE`), el gorro del Minstrel en su lienzo (`paintMinstrelHat`, `HAT_SIZE`), el verso (`paintVerse`, `VERSE_SIZE`) y la nota musical de sus partículas (`paintNote`) |
-| `src/game/view/verseView.ts` | Verso del Minstrel en vuelo (T-025): nace en su boca, cruza el carril respirando y dejando notas, destella al pasar por algo, se aplasta contra el escudo que lo para y se apaga al salir del tablero |
+| `src/game/view/verseView.ts` | Verso del Minstrel en vuelo (T-025): nace en su boca, cruza el carril respirando y dejando notas, destella al pasar por algo, se aplasta contra el escudo que lo para y se apaga al salir del tablero. Los de Elk Cloner (T-026) van más grandes, y los de su poema entero, dorados (`TEX.poemVerse`) |
+| `src/game/view/elkClonerArt.ts` | Arte de Elk Cloner (T-026), sin Phaser: la cabeza de disquete con sus caras (`paintElkHead`, `ElkMood`), sus cuentas, la gorguera y los pies (`paintElkSegment`, `paintElkRuff`, `paintElkFeet`), la cornamenta con la pluma (`paintElkAntlers`, en el lienzo `HAT_SIZE`), la tinta dorada del poema (`POEM_INK`) y el pergamino y la pluma con los que se prepara (`paintElkScroll`, `paintElkQuill`) |
+| `src/game/view/elkClonerView.ts` | Elk Cloner (T-026): `ElkClonerView` envuelve un `WormView` de pie (`ELK_POSE`) y añade sus frases en un bocadillo de pergamino, el aviso del poema entero (pentagrama dorado en los cinco carriles, cuenta atrás y halo), el poema al soltarlo, la derrota y la huida. `ElkClonerOmen`: Elk Cloner preparándose a la derecha (`OMEN_SPOT`), escribiendo su poema en un pergamino que se llena de tinta, mandando notas a los agujeros y saltando al combate |
+| `src/game/view/bossView.ts` | Lo común de los jefes (T-026): la vista de cada enemigo, la de su jefe si lo es (`createEnemyView`), el jefe que se prepara de cada brote (`createBossOmen`, `BossOmen`) y lo que dice cada uno (`bossLines`) |
+| `jefes.html`, `src/dev/bossLab*` | Galería de los jefes (T-026), solo con `npm run dev`: "Aspecto" (Creeper y Elk Cloner con cada aro del disquete, `ELK_HUBS`; el juego usa `ELK_HUB`) y "Movimientos" (un jefe con un botón por cada animación, o todas seguidas, con las vistas del juego). `WormView` y `ElkClonerView` aceptan otro aspecto (`KindLook`) para pintar las propuestas; sus cabezas, `registerElkHubTextures` |
+| `src/game/view/bossBubble.ts` | Bocadillo de un jefe (`BossBubble`), con su estilo (`BubbleStyle`): la terminal de fósforo de Creeper y el pergamino de Elk Cloner |
 | `src/game/view/creeperView.ts` | Creeper (T-008): `CreeperView` envuelve un `WormView` grande y añade el aviso del salto (diana, curva de puntos y "!"), sus frases en un bocadillo de terminal, la luz de la antena, la fase 2, el aterrizaje y la derrota. `CreeperOmen`: Creeper preparándose a la derecha (`OMEN_SPOT`) con su barra de "CARGANDO" (`bossLoadProgress`), chispazos a los agujeros y el salto al combate |
 | `src/game/view/bulletView.ts` | Semilla en vuelo (normal, de fuego o de hielo), impacto y salida del tablero |
 | `src/game/view/spitView.ts` | Escupitajo del escupidor en vuelo (T-007), impacto y salida del tablero |
@@ -122,7 +127,7 @@ Cómo se pinta y se anima Rebrote, para que todo lo nuevo (enemigos, mundos, efe
 | `attackStarted` (T-007) | Los agujeros brillan y sueltan píxeles, y salta "¡Ahí vienen!" junto a ellos, en los colores de la corrupción |
 | `roundCleared` (T-007) | Las plantas dan un saltito en oleada, de izquierda a derecha, con destellos y "¡Ronda N superada!" en el centro del césped. Tras la última no sale: le sigue la victoria |
 | Derrota | Las balas y los escupitajos se apagan y los gusanos saltan de contentos. A los 1,1 s React muestra la pantalla de derrota |
-| Victoria (`won`, T-007) | Las balas y los escupitajos se apagan, las plantas saltan en oleada con "¡Creeper atrapado!" (T-008; antes de existir el jefe, "¡Jardín a salvo!"), y caen hojas y destellos por el césped. A los 1,6 s React muestra la pantalla de victoria |
+| Victoria (`won`, T-007) | Las balas y los escupitajos se apagan, las plantas saltan en oleada con el rótulo de su jefe ("¡Creeper atrapado!", T-008; "¡Elk Cloner, silenciado!", T-026; sin jefe, "¡Jardín a salvo!"), y caen hojas y destellos por el césped. A los 1,6 s React muestra la pantalla de victoria |
 | Enemigos acelerados (T-008) | Al salir en las rondas 8 y 9, Creeper (que se prepara a la derecha) parpadea y manda un chispazo de píxeles verdes y morados al agujero de cada carril, que brilla al llegar |
 | `shout` (T-009) | Creeper, que se prepara a la derecha, se yergue de golpe, suelta píxeles y grita en su bocadillo de terminal ("¡ADELANTE, MIS ACORAZADOS!"). Su escolta sale acelerada, así que cada acorazado recibe su chispazo |
 | `jumpWarned` (T-008) | El Creeper se agacha y tiembla (sale del estado, sección 7). Sale tierra a sus pies y un "!" sobre la diana del carril de destino. Una de cada dos veces suelta una frase ("¡HOP!", "¡POR AQUÍ!"…) |
@@ -130,6 +135,13 @@ Cómo se pinta y se anima Rebrote, para que todo lo nuevo (enemigos, mundos, efe
 | `landed` (T-008) | Se aplasta contra el suelo y rebota, onda roja en el suelo (más encendida en la fase 2), tierra y un temblor de cámara. Lo golpeado reacciona como a un mordisco; si lo rompe, como `plantDestroyed` |
 | `enemyKilled` del Creeper (T-008) | Se deshace como un gusano, con una explosión de píxeles mucho mayor, dos anillos y un temblor fuerte. Sus copias caen a la vez |
 | `enemyEscaped` del Creeper (T-008) | Dice "¡NO ME ATRAPASTE!", se mete bajo tierra y sale "¡Se escapó!" en el camino, con un temblor fuerte. La derrota dice "¡Creeper se escapó!" |
+| Elk Cloner se prepara (T-026) | En las rondas 6 y 7 del brote 2 (y en la preparación de la 8), de pie sobre el suelo corrupto escribiendo su poema: el pergamino se llena de tinta con lo que lleva (`bossLoadProgress`) y la pluma va por donde escribe. A cada tropa acelerada le vuela una nota dorada al agujero de su carril |
+| `shout` de Elk Cloner (T-026) | Se yergue de golpe, suelta notas y lo dice rimando en su bocadillo de pergamino ("¡Copycat, en formación: que empiece la función!") |
+| `verseWarned` y `sang` de Elk Cloner (T-026) | Como los del Minstrel: se hincha tomando aire (del estado, `recitePose`) con su cara de ojos cerrados y suelta el verso con la cara de recitar (la ventana del disquete muy abierta). Su verso es más grande. Una de cada tres veces dice un verso en su bocadillo |
+| `poemWarned` (T-026) | Dice uno de sus versos del poema y suelta notas y un anillo dorado; en el centro del césped sale "¡Poema entero!" en dorado. Mientras dura el aviso (del estado, `poemWarning`): se hincha y tiembla, echa la cabeza atrás con los ojos muy abiertos, le brilla un halo dorado detrás, sobre la cara va la cuenta atrás y en los cinco carriles se va encendiendo un pentagrama dorado, de él hacia las plantas, con notas que avanzan |
+| `poemRecited` (T-026) | Se lanza con la cara de recitar, con una lluvia de notas, destellos, dos anillos (dorado y magenta) y un temblor de cámara; nacen cinco versos dorados, uno por carril |
+| `enemyKilled` de Elk Cloner (T-026) | Se deshace como un gusano (la cornamenta sale volando), con muchas notas, píxeles y destellos, dos anillos (dorado y granate) y un temblor fuerte. Caen todos a la vez y los versos en vuelo se apagan (`verseGone`). Sale "¡Elk Cloner, silenciado!" |
+| `enemyEscaped` de Elk Cloner (T-026) | Dice "Fin del poema y del jardín. Firmado: Elk Cloner.", se mete bajo tierra y sale "¡Se escapó!". La derrota dice "¡Elk Cloner cruzó el jardín!" |
 
 - **Lo que dura, sale del estado, no de un evento.** La quemadura (`enemy.burn`), la ralentización (`enemy.slow`) y la cuenta atrás de la mina (`mine.fuseMs`) se leen en `sync`. Así una partida que se continúa (cambio de calidad) se pinta igual sin repetir eventos.
 
@@ -244,14 +256,14 @@ Orden de dibujo, de atrás hacia delante (`DEPTH` en `layout.ts`):
 | `canopy` | Copa del árbol |
 | `groundFx` | Efectos pegados al suelo: viento, sombras de nubes, brillos del suelo corrupto, rocío, haces de luz, chamuscado de una explosión, escarcha de la mina de hielo |
 | `highlight - 1` | Alcance de una mina armada |
-| `highlight` | Resaltado de casilla (y alcance de la mina que se va a sembrar), casilla de la planta seleccionada (T-003). Justo encima, la onda de una explosión y la diana del salto del Creeper (T-008) |
+| `highlight` | Resaltado de casilla (y alcance de la mina que se va a sembrar), casilla de la planta seleccionada (T-003). Justo encima, la onda de una explosión, la diana del salto del Creeper (T-008) y el pentagrama del poema de Elk Cloner (T-026) |
 | `entities + y` | Plantas, enemigos, balas (`+0,5`, delante de su planta), versos del Minstrel (`+0,6`, delante de las plantas de su carril, T-025), sombras de las monedas soltadas, flores y cristales de la mina de hielo, ordenados por su `y` en pantalla |
 | `pollen - 2`, `pollen - 1` | Chispazos de Creeper preparándose y curva de puntos del salto (T-008): pasan por encima de las plantas |
 | `pollen`, `butterflies` | Partículas y bichos que flotan por encima |
 | `foreground` | Matas del primer plano |
 | `droppedCoins` | Monedas soltadas que esperan a que las recojan (T-010): siempre por encima de enemigos y matas, en el sitio donde cayeron, para que se vean y se puedan pulsar. Entre ellas, la de delante tapa a la de atrás (`+ y / 900`). Su sombra sigue en el suelo, con las entidades |
 | `floatText - 10` | La planta que se arrastra para fusionar |
-| `floatText - 4`, `floatText - 3` | "!" del aviso del salto y bocadillo del Creeper (T-008) |
+| `floatText - 4`, `floatText - 3` | "!" del aviso del salto y cuenta atrás del poema de Elk Cloner (T-026); bocadillo de un jefe (`BossBubble`) |
 | `floatText - 5` | Cuenta atrás de las minas: no la tapa una planta del carril de delante |
 | `floatText` | Textos flotantes (+25), rótulos del arrastre y de las cartas, y monedas volando al marcador |
 
@@ -282,6 +294,8 @@ Orden de dibujo, de atrás hacia delante (`DEPTH` en `layout.ts`):
   | Disquete (T-025) | funda `#5c6579` a `#343b4b` a `#1b1f28`, contorno `#0b0d12`, etiqueta `#fbf8f0` con rayas `#ff5a5f` y `#8a5cf0`, aro `#d5dce6`; la armadura de disquete, `#6a748a` a `#3a4252` a `#1d2129` con remaches `#d5dce6` |
   | Minstrel (T-025) | cabeza `#ffe4e0` a `#ff6b66` a `#cc323e`, contorno `#741422`, luces verde neón. Gorro `#a780ff` a `#7046dc` a `#43238f`, contorno `#23104f`, cinta `#ffcf4a`; pluma `#fff4b8` a `#ffc23a` a `#ff8a2a` |
   | Verso (T-025) | magenta `#ff5fd2` con brillo `#ffb3ee` y contorno `#5a1470`; notas `#fffbe0` a `#ffc23a` con contorno `#5a3200` |
+  | Elk Cloner (T-026) | disquete `#8fa2ff` a `#4459d6` a `#1f2a80`, contorno `#0e1440`, etiqueta `#fff6dc` con rayas `#ffcf4a` y `#b8335f`, tinta de la cara `#1c1430`, disco marrón `#a7703f` a `#2e1708`; cuentas `#ffc8da` a `#bf3b67` a `#6c1336`, contorno `#3e0a1e`, bandas y botones de oro `#ffd36a` (`#a8700e`); gorguera `#ffffff` a `#c9bfe0`, contorno `#5b4a6e`; cornamenta `#fff1c2` a `#e2aa52` a `#8f5a20`, contorno `#4e300e`. Bocadillo de pergamino `#fff3d6` con borde `#8e1e4c` y letra `#3b1a2a` |
+  | Poema entero (T-026) | dorado `#ffc23a` con brillo `#fff6c2` y contorno `#6a3a00`; pentagrama `#ffd36a` sobre `#e0a21c` |
 
 - Se ve un cañón por cada cañón de la planta, y el nivel se muestra con una medallita con número.
   - **Forma (T-016):** cada forma de la disparadora es un `ShooterDesign` en `src/game/view/shooters/`, sin Phaser: medidas de su textura y pies (`size`), cañones de arriba abajo con su boca (`barrels`), una marca por cañón (`marks`), dónde va la medallita (`medal`), el ojo (`eye`) y su pintor (`paint`, que recibe los cañones y la variante). El juego usa una sola, `SHOOTER` en `shooterShape.ts`; `registerTextures` pinta solo esa y `shooterTexture(cañones, elemento, forma)` da la clave de su textura. `PlantView` y la batalla de la portada aceptan otra forma: así la galería pinta las propuestas con las animaciones de verdad.
@@ -335,6 +349,7 @@ Orden de dibujo, de atrás hacia delante (`DEPTH` en `layout.ts`):
   - En el tope de nivel de la ronda (T-009), el panel de nivel dice "Máximo" y, si el tope fuera a subir en otra ronda, lo dice en dorado ("Tope 5: sube en la ronda 7"). En el brote 1 el tope ya no sube (T-010).
   - **Ficha de información (T-010):** entra con un salto, la foto cae girando a su sitio, la barra de vida se llena y los estados saltan uno tras otro. El juego queda en pausa detrás. Detalle en la sección 8.
   - La pantalla de victoria entra como la de derrota, con una copa con un brote que salta y destellos que titilan.
+  - **Elk Cloner (T-026):** su barra va en azul y oro, con un disquete en miniatura por cara (etiqueta, ojos que parpadean y el aro del centro), el rótulo en letra de libro ("Poema en 2 versos", "¡Poema entero!") y, debajo, una nota por verso hasta el poema (una pastilla más larga) que se encienden al recitar; mientras anuncia el poema, la barra brilla en dorado y late. En pantallas bajas (un móvil en horizontal) no lleva la fila de notas. Su semillita de ronda es un disquete. Derrotado, dice "¡Silenciado!".
   - **Jefe (T-008):** en la ronda del jefe la ronda dice "Combate final" y su semillita es una pantallita de monitor. La barra del Creeper (`BossBar`) entra con un salto bajo la ronda: monitor en miniatura que parpadea, nombre, fase y vida con una marca por umbral de salto (las gastadas, apagadas). Lo que pierde se queda un momento en claro y luego se va. En la fase 2 se pone roja y su halo late; derrotado, dice "¡Atrapado!".
   - El menú de pausa entra con un pequeño rebote.
   - La pantalla de carga muestra un brote que crece.
@@ -426,9 +441,10 @@ Detalle y porqué en el ADR-0013. El arte se pinta con código; el sonido sale d
 | Tropas del brote 2 (T-025): el Minstrel toma aire y recita, su verso pasa por algo, un Copycat deja su copia | `minstrelInhale`, `verse`, `verseHit` (`wallHit` en el escudo que lo para), `clone`. La semilla normal que da a un Copycat acorazado suena a metal (`hitArmor`), como en el acorazado |
 | `shot` (uno por planta) y `hit` | `shot`, `shotFire`, `shotIce`; `hit`, `hitFire`, `hitIce` y `hitArmor` (semilla normal en un acorazado) |
 | `bite`, `spat`, `spitHit`, `plantDestroyed` | `bite`, `spit`, `spitHit`, `plantDestroyed` |
-| `enemyKilled`, `enemyEscaped` | `enemyKilled` (más bajo que el disparo), `enemyEscaped`; el Creeper, `creeperDefeated` |
+| `enemyKilled`, `enemyEscaped` | `enemyKilled` (más bajo que el disparo), `enemyEscaped`; el Creeper, `creeperDefeated`; Elk Cloner, `elkClonerDefeated` |
 | Mina armada y cada segundo de su cuenta; `mineExploded` | `mineTick`; `fireExplosion` o `iceExplosion` |
 | `jumpWarned`, `jumped`, `landed`, bocadillo de Creeper, fase 2 | `creeperWarn`, `creeperTakeoff`, `creeperLand`, `creeperTalk`, `creeperRage` |
+| Elk Cloner (T-026): bocadillo, aviso del poema entero, poema, derrota | `elkClonerTalk` (dos pitidos de Apple II), `poemWarn`, `poem`, `elkClonerDefeated`. Sus versos suenan como los del Minstrel (`minstrelInhale`, `verse`) |
 | Moneda recogida del suelo (la que se cobra sola no suena, S-05) | `coin` |
 | `attackStarted`, `roundCleared`, aviso de desbloqueo, derrota, victoria | `attackStarted`, `roundCleared`, `unlock`, `defeat`, `victory` |
 | Botón de un menú | `button` |
@@ -559,10 +575,13 @@ Ejemplos: el acorazado y el escupidor de T-007, en `wormView.ts` (`KIND_LOOK`).
 - [ ] Su id en `CharacterId`, su nombre en `story.names` de `src/i18n/` y su voz (`voice<Nombre>` en `SFX` y en el manifiesto, lista "Sonido nuevo").
 - [ ] Probado en la viñeta a 1600 × 900, 812 × 375 y 568 × 320, y su retrato redondo (`Cameo`): la cara entera dentro del círculo.
 
-### Jefe nuevo (T-032)
+### Jefe nuevo (T-032, T-026)
+- [ ] Su tipo en `BossKind` y `BOSS_KINDS` (`combat.ts`): así no tiene nivel, si cruza se pierde y al caer cae todo, sin copias. Su vista, en `createEnemyView`, y la de cuando se prepara (con `setProgress`, `zap`, `command`, `leapTo` y `vanish`), en `createBossOmen` (`bossView.ts`); si dice frases, en un `BossBubble` con su estilo y en `bossLines`.
+- [ ] Sus textos por jefe: `victory.title` y `victory.hint`, `defeat.bossTitle`, `bossText` y `bossHint`, `board.bossDown` y `boss.caught` (sin ellos no compila), y su barra (`BossInfo`, `.boss-bar.is-<jefe>`, `.round-info.is-boss-<jefe>`).
 - [ ] Lo que cuenta Boxer del virus de verdad, en `story.lore.<brote>` de `es.ts` y `en.ts`: `line`, una línea que avisa de que llega (sale con la escena en pausa, antes de que el jefe entre); `card`, lo completo para su ficha. Sin ellos no compila. No hace falta tocar componentes ni `stories.ts`: la viñeta (`lore:<brote>`) y su título ("El Creeper de verdad") salen solos.
 - [ ] Su guion pone al jefe a prepararse (`bossPreparing`) en la ronda en que debe hablar Boxer; si no, habla en la del combate.
 - [ ] Probado: la viñeta a 1600 × 900 y a 568 × 320, y su ficha con lo de Boxer al pie.
+- [ ] En la galería `/jefes.html` (T-026): su aspecto junto a los demás jefes y sus acciones en "Movimientos" (`BOSS_ACTIONS` y `DEMO` en `bossLabScenes.ts`).
 
 ### Secuencia de viñetas nueva (T-031)
 - [ ] Sus viñetas en `STORIES` (`src/ui/story/stories.ts`): quién habla, con qué cara y, si pide algo al jugador, su `prompt`. Pocas y cortas.

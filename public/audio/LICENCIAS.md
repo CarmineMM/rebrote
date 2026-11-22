@@ -54,6 +54,10 @@ Cada efecto va en OGG Vorbis y en MP3, en mono, con el volumen igualado y sin si
 | `verse` | Kenney Music Jingles: `jingles_PIZZI05.ogg` | CC0 1.0 (Kenney, www.kenney.nl) |
 | `verseHit` | Kenney Interface Sounds: `glass_001.ogg` (velocidad 0.9, -3 dB) | CC0 1.0 (Kenney, www.kenney.nl) |
 | `clone` | Kenney Digital Audio: `phaseJump2.ogg` (recortado 0-320 ms) | CC0 1.0 (Kenney, www.kenney.nl) |
+| `elkClonerTalk` | jsfxr: receta `chirp` | propio, generado con jsfxr (dominio público) |
+| `poemWarn` | jsfxr: receta `swell` + Kenney Music Jingles: `jingles_SAX07.ogg` (velocidad 0.8, -6 dB) | CC0 1.0 (Kenney, www.kenney.nl) + propio, generado con jsfxr (dominio público) |
+| `poem` | Kenney Music Jingles: `jingles_PIZZI16.ogg` + Kenney Impact Sounds: `impactBell_heavy_000.ogg` (-8 dB) | CC0 1.0 (Kenney, www.kenney.nl) |
+| `elkClonerDefeated` | Kenney Digital Audio: `phaserDown3.ogg` + Kenney RPG Audio: `bookClose.ogg` (-2 dB, +260 ms) | CC0 1.0 (Kenney, www.kenney.nl) |
 | `attackStarted` | Kenney Music Jingles: `jingles_NES13.ogg` | CC0 1.0 (Kenney, www.kenney.nl) |
 | `roundCleared` | Kenney Music Jingles: `jingles_PIZZI04.ogg` | CC0 1.0 (Kenney, www.kenney.nl) |
 | `unlock` | Kenney Music Jingles: `jingles_PIZZI02.ogg` | CC0 1.0 (Kenney, www.kenney.nl) |
@@ -75,3 +79,5 @@ El enlace abre la receta en sfxr.me para oírla y afinarla.
 | `terminal` | Pitidos de terminal antiguo: Creeper habla | https://sfxr.me/#111113svfEh1y7ApJDbe7j8Pf4rb4P8pp5MeHA8g72WBTWur1S6KjZHCNRnc36Bp8wHh8hQf3ubkFDTCpmYdvfoVEKN25LsRhVbws6BqiuZusQvMdquoSmoV |
 | `rage` | Gruñido digital que baja y vibra: Creeper se enfada | https://sfxr.me/#34T6PkyDSCg1eVgkvBbVnuohFy3iRjan2cJBmXd47eXVewSbR7xegyiEGf9wE7jSztYzi8jxRft7ZNasTaDSse5PVFW87sbHQjGX9Zw6hNgLYqNDrRHCmYakf |
 | `inhale` | Soplido que se hincha de grave a agudo: el juglar toma aire antes del verso (T-025) | https://sfxr.me/#7vYG4aBE9jJVf8bGuRqjWiUJXFnu8ntQSt5wCdp9QgJVP7S7D8AJTzSHPs793jbcvzibESRd4zQ513qw7LfPLLpet2ZFFEJQpqhZMbuRPP8LGFVtU1LRTcTxB |
+| `chirp` | Dos pitidos que suben, como el altavoz de un Apple II: Elk Cloner habla (T-026) | https://sfxr.me/#11111FbzaGcjtvgpKmeGg2qsFLLzGyc6nBcKrgsdHW89ANquxnwjcUkDroGS4pi6p2XHkrzrmCWi53PYYN4Dy1VFthGTHJ1EeJ56FNiVV5H5vt2GcjjaDVbm |
+| `swell` | Nota que se hincha despacio con vibrato y sube: Elk Cloner anuncia el poema entero (T-026) | https://sfxr.me/#6mTagprjRb3PkcgV9qv7x6WXMEQ1EhNjkmfKE7Pud4RcnJMPcHWZxYvqLsbhCAPWCdh4srQFCsVjzFtFtYonqqgmjxPao6jsEe6qPjgNZhdrpSMnP6EzckBdh |

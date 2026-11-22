@@ -66,12 +66,12 @@ export interface EnemySpot {
 }
 
 /**
- * Donde se para un enemigo que ataca a lo sembrado en `col`: el que muerde, a su alcance; el escupidor y el juglar
- * (T-025), a su distancia. Un pelo mas cerca para que la regla lo de por enganchado.
+ * Donde se para un enemigo que ataca a lo sembrado en `col`: el que muerde (tambien Elk Cloner, T-026), a su alcance; el
+ * escupidor y el juglar (T-025), a su distancia. Un pelo mas cerca para que la regla lo de por enganchado.
  */
 export function engagedX(kind: EnemyKind, col: number): number {
   const stats = ENEMIES[kind];
-  const reach = stats.attack === 'bite' ? stats.reach : stats.range;
+  const reach = stats.attack === 'bite' || stats.attack === 'recite' ? stats.reach : stats.range;
   return col + 0.5 + reach - 0.05;
 }
 

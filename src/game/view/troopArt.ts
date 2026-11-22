@@ -206,9 +206,10 @@ export const VERSE_INK = { glow: '#ffb3ee', mid: '#ff5fd2', outline: '#5a1470' }
 
 /**
  * Verso (T-025): tres arcos de sonido, abiertos hacia el juglar (a la derecha), el de delante grueso y los de detras cada
- * vez mas finos y transparentes, con un brillo dentro de cada uno.
+ * vez mas finos y transparentes, con un brillo dentro de cada uno. El del poema entero de Elk Cloner (T-026) va en otra
+ * tinta (`POEM_INK`, dorada).
  */
-export function paintVerse(ctx: Ctx): void {
+export function paintVerse(ctx: Ctx, ink: { readonly glow: string; readonly mid: string; readonly outline: string } = VERSE_INK): void {
   const { height, frontX } = VERSE_SIZE;
   const cy = height / 2;
   const radius = 74;
@@ -224,15 +225,15 @@ export function paintVerse(ctx: Ctx): void {
     ctx.globalAlpha = arc.alpha;
     ctx.beginPath();
     ctx.arc(center, cy, radius, Math.PI - spread, Math.PI + spread);
-    ctx.strokeStyle = VERSE_INK.outline;
+    ctx.strokeStyle = ink.outline;
     ctx.lineWidth = arc.width + 4;
     ctx.stroke();
-    ctx.strokeStyle = VERSE_INK.mid;
+    ctx.strokeStyle = ink.mid;
     ctx.lineWidth = arc.width;
     ctx.stroke();
     ctx.beginPath();
     ctx.arc(center + 1.5, cy, radius, Math.PI - spread * 0.8, Math.PI - spread * 0.1);
-    ctx.strokeStyle = VERSE_INK.glow;
+    ctx.strokeStyle = ink.glow;
     ctx.lineWidth = Math.max(1.5, arc.width * 0.35);
     ctx.stroke();
   }

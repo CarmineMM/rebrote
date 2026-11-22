@@ -2,7 +2,7 @@ import { useEffect, useId, useRef } from 'react';
 import type { OutbreakId } from '../game/core/outbreaks';
 import type { SeedSummary } from '../game/EventBus';
 import { GreenhouseIcon } from './GreenhouseIcon';
-import { outbreakTitle } from './outbreakName';
+import { outbreakBoss, outbreakTitle } from './outbreakName';
 import { SeedsEarned } from './SeedsEarned';
 import { NO_AUTO_FULLSCREEN } from './useFullscreen';
 import { useText } from './useText';
@@ -29,6 +29,7 @@ export function VictoryScreen({ outbreak, rounds, seeds, onRestart, onGreenhouse
   const titleId = useId();
   const button = useRef<HTMLButtonElement>(null);
   const t = useText();
+  const boss = outbreakBoss(outbreak);
 
   useEffect(() => {
     button.current?.focus();
@@ -60,7 +61,7 @@ export function VictoryScreen({ outbreak, rounds, seeds, onRestart, onGreenhouse
         </div>
         <p className="pause-kicker">{outbreakTitle(t, outbreak)}</p>
         <h2 id={titleId} className="pause-title">
-          {t.victory.title}
+          {t.victory.title[boss]}
         </h2>
         <p className="victory-text">{t.victory.text(rounds)}</p>
         {seeds && <SeedsEarned seeds={seeds} />}
@@ -72,7 +73,7 @@ export function VictoryScreen({ outbreak, rounds, seeds, onRestart, onGreenhouse
             <span aria-hidden="true">↻</span> {t.victory.again}
           </button>
         </div>
-        <p className="pause-hint">{t.victory.hint}</p>
+        <p className="pause-hint">{t.victory.hint[boss]}</p>
       </div>
     </div>
   );

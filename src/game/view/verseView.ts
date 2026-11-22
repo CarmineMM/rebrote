@@ -20,13 +20,20 @@ const VERSE_LOOK = {
   trailMs: 240,
   /** Magenta del verso: anillos y destellos. */
   tint: 0xff5fd2,
+  /**
+   * Elk Cloner (T-026): sus versos son los del Minstrel, mas grandes y desde mas arriba (su boca va mas alta); los de su
+   * poema entero, ademas, dorados (`TEX.poemVerse`).
+   */
+  boss: { scale: 1.3, mouth: -0.5 },
+  poemTint: 0xffd36a,
 } as const;
 
 /**
  * Verso del juglar en vuelo (T-025): una onda de sonido magenta que sale de su boca, crece con un rebote y recorre el carril
  * hacia la izquierda por encima de las plantas, respirando y dejando notas detras. Al pasar por una planta o una mina
- * destella; contra un escudo se aplasta y se deshace en notas; al salir del tablero se apaga. Sigue al estado en `sync`; no
- * decide nada. Uno que se vuelve a pintar al continuar la partida no sabe de donde salio y aparece ya entero.
+ * destella; contra un escudo se aplasta y se deshace en notas; al salir del tablero (o al caer el jefe, T-026) se apaga.
+ * Sigue al estado en `sync`; no decide nada. Uno que se vuelve a pintar al continuar la partida no sabe de donde salio y
+ * aparece ya entero. Los de Elk Cloner van mas grandes, y los de su poema entero, en dorado.
  */
 export class VerseView {
   private readonly wave: Phaser.GameObjects.Image;
@@ -41,6 +48,8 @@ export class VerseView {
   /** Al nacer en la boca del juglar crece hasta su tamano (de 0 a 1). */
   private readonly grow = { v: 1 };
   private readonly phase = Math.random() * Math.PI * 2;
+  /** Color de sus anillos: magenta, o dorado el del poema entero. */
+  private readonly tint: number;
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -48,13 +57,15 @@ export class VerseView {
     verse: Verse,
     fresh: boolean,
   ) {
+    const big = verse.by === 'elkCloner';
     this.footY = verse.lane + VERSE_LOOK.footY;
     this.cellWidth = perspective.cellWidthAt({ x: verse.x, y: this.footY });
-    this.size = this.cellWidth * VERSE_LOOK.height;
-    this.maxX = fresh ? verse.x + VERSE_LOOK.mouth : Infinity;
+    this.size = this.cellWidth * VERSE_LOOK.height * (big ? VERSE_LOOK.boss.scale : 1);
+    this.maxX = fresh ? verse.x + (big ? VERSE_LOOK.boss.mouth : VERSE_LOOK.mouth) : Infinity;
+    this.tint = verse.poem ? VERSE_LOOK.poemTint : VERSE_LOOK.tint;
     const depth = entityDepth(perspective.toScreen({ x: verse.x, y: this.footY }).y) + 0.6;
     this.wave = scene.add
-      .image(0, 0, TEX.verse)
+      .image(0, 0, verse.poem ? TEX.poemVerse : TEX.verse)
       .setOrigin(VERSE_SIZE.frontX / VERSE_SIZE.width, 0.5)
       .setDepth(depth)
       .setDisplaySize((this.size * VERSE_SIZE.width) / VERSE_SIZE.height, this.size);
@@ -96,7 +107,7 @@ export class VerseView {
     this.scene.tweens.killTweensOf([this.pulse, this.grow]);
     const { x, y } = this.wave;
     this.fx.notes(x, y, 6);
-    this.fx.ring(x, y, this.cellWidth * 0.6, VERSE_LOOK.tint, this.wave.depth + 1, 260, 0.75);
+    this.fx.ring(x, y, this.cellWidth * 0.6, this.tint, this.wave.depth + 1, 260, 0.75);
     this.scene.tweens.killTweensOf(this.wave);
     this.scene.tweens.add({
       targets: this.wave,

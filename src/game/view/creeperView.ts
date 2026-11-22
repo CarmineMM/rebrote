@@ -11,6 +11,7 @@ import { drawArea } from './boardMarks';
 import type { Effects } from './effects';
 import { DEPTH, SCENERY, entityDepth, perspective } from './layout';
 import { CREEPER_SCREEN, TEX, WORM_SIZE, artInv } from './textures';
+import { BossBubble, type BubbleStyle } from './bossBubble';
 import { CREEPER_SIZE, WORM_LOOK, WormView, type EnemyView } from './wormView';
 import { text } from '../../i18n';
 
@@ -62,96 +63,21 @@ export function bossLoadProgress(state: MatchState): number {
 
 type BubbleTone = keyof typeof CREEPER_LOOK.bubble;
 
-/**
- * Bocadillo de terminal con lo que dice Creeper: sale con un salto, sigue a su cabeza y se va solo. El pico apunta a
- * la cabeza; el cuerpo va a la derecha y, si ahi no cabe en la pantalla, a la izquierda.
- */
-class SpeechBubble {
-  private readonly holder: Phaser.GameObjects.Container;
-  private readonly bg: Phaser.GameObjects.Graphics;
-  private readonly label: Phaser.GameObjects.Text;
-  private readonly cursor: Phaser.GameObjects.Rectangle;
-  private readonly palette: (typeof CREEPER_LOOK.bubble)[BubbleTone];
-  private readonly width: number;
-  private readonly height: number;
-  private flipped: boolean | null = null;
-  private closed = false;
-
-  constructor(
-    private readonly scene: Phaser.Scene,
-    fx: Effects,
-    text: string,
-    tone: BubbleTone,
-    lifeMs: number,
-  ) {
-    this.palette = CREEPER_LOOK.bubble[tone];
-    this.label = scene.add
-      .text(0, 0, text, {
-        fontFamily: 'ui-monospace, "Cascadia Mono", "Courier New", monospace',
-        fontSize: '19px',
-        fontStyle: '900',
-        color: this.palette.text,
-        resolution: fx.quality.renderScale,
-      })
-      .setOrigin(0, 1);
-    this.width = this.label.width + BUBBLE.padX * 2 + BUBBLE.cursor;
-    this.height = this.label.height + BUBBLE.padY * 2;
-    this.bg = scene.add.graphics();
-    // Cursor de terminal que parpadea al final de la frase.
-    this.cursor = scene.add.rectangle(0, 0, 9, 3, this.palette.edge).setOrigin(0, 1);
-    scene.tweens.add({ targets: this.cursor, alpha: 0, duration: 260, yoyo: true, repeat: -1, ease: 'Stepped' });
-    this.holder = scene.add.container(0, 0, [this.bg, this.label, this.cursor]).setDepth(DEPTH.floatText - 3).setScale(0.3).setAlpha(0);
-    scene.tweens.add({ targets: this.holder, scale: 1, alpha: 1, duration: 260, ease: 'Back.Out' });
-    scene.time.delayedCall(lifeMs, () => this.close());
-  }
-
-  get alive(): boolean {
-    return !this.closed;
-  }
-
-  /** Pone el pico en `x, y` (sobre la cabeza). */
-  follow(x: number, y: number): void {
-    if (!this.holder.active) return;
-    const view = this.scene.cameras.main.worldView;
-    const flip = x + this.width - BUBBLE.tail > view.right - BUBBLE.margin;
-    if (flip !== this.flipped) this.layout(flip);
-    this.holder.setPosition(x, y);
-  }
-
-  close(): void {
-    if (this.closed) return;
-    this.closed = true;
-    this.scene.tweens.add({
-      targets: this.holder,
-      scale: 0.4,
-      alpha: 0,
-      duration: 200,
-      ease: 'Back.In',
-      onComplete: () => this.holder.destroy(),
-    });
-  }
-
-  /** Dibuja el bocadillo con el cuerpo a la derecha del pico, o a la izquierda si `flip`. */
-  private layout(flip: boolean): void {
-    this.flipped = flip;
-    const { padX, padY, tail, lift } = BUBBLE;
-    const w = this.width;
-    const h = this.height;
-    const left = flip ? tail - w : -tail;
-    const bottom = -lift;
-    const dir = flip ? -1 : 1;
-    this.label.setPosition(left + padX, bottom - padY);
-    this.cursor.setPosition(left + padX + this.label.width + 4, bottom - padY - 3);
-    this.bg.clear();
-    this.bg.fillStyle(this.palette.bg, 0.94).lineStyle(3, this.palette.edge, 1);
-    this.bg.fillRoundedRect(left, bottom - h, w, h, 9).strokeRoundedRect(left, bottom - h, w, h, 9);
-    this.bg.fillTriangle(-2 * dir, bottom - 1, 14 * dir, bottom - 1, 0, 0);
-    this.bg.lineBetween(-2 * dir, bottom, 0, 0).lineBetween(0, 0, 14 * dir, bottom);
-  }
+/** Bocadillo de terminal de Creeper (`BossBubble`): fondo de pantalla, borde y letras de fosforo, con su cursor. */
+function terminal(tone: BubbleTone): BubbleStyle {
+  const palette = CREEPER_LOOK.bubble[tone];
+  return {
+    font: 'ui-monospace, "Cascadia Mono", "Courier New", monospace',
+    fontSize: 19,
+    fontStyle: '900',
+    bg: palette.bg,
+    bgAlpha: 0.94,
+    edge: palette.edge,
+    text: palette.text,
+    cursor: true,
+    corner: 9,
+  };
 }
-
-/** Medidas del bocadillo: margen del texto, sitio del cursor, cuanto se aparta el cuerpo del pico y del borde. */
-const BUBBLE = { padX: 12, padY: 8, cursor: 14, tail: 18, lift: 14, margin: 12 } as const;
 
 /**
  * Creeper en pantalla. Sigue al estado en `sync` (posicion, salto, fase) y anima lo que la escena le cuenta: aviso,
@@ -164,7 +90,7 @@ export class CreeperView implements EnemyView {
   /** Curva de puntos del salto: va por encima de las plantas. */
   private readonly arcMark: Phaser.GameObjects.Graphics;
   private alert: Phaser.GameObjects.Text | null = null;
-  private bubble: SpeechBubble | null = null;
+  private bubble: BossBubble | null = null;
   private readonly led: Phaser.GameObjects.Image | null = null;
   private enraged: boolean;
   private jumps = 0;
@@ -326,7 +252,7 @@ export class CreeperView implements EnemyView {
   private say(text: string, lifeMs: number, voiced = this.voiced): void {
     if (voiced) sfx.play('creeperTalk', panAt(this.boardX, BOARD.columns));
     this.bubble?.close();
-    this.bubble = new SpeechBubble(this.scene, this.fx, text, this.enraged ? 'angry' : 'calm', lifeMs);
+    this.bubble = new BossBubble(this.scene, this.fx, text, terminal(this.enraged ? 'angry' : 'calm'), lifeMs);
     const top = this.worm.headPoint(10, -58);
     this.bubble.follow(top.x, top.y);
   }
@@ -444,7 +370,7 @@ export class CreeperOmen {
   private readonly cellWidth: number;
   private progress = 0;
   private ambient?: Phaser.Time.TimerEvent;
-  private bubble: SpeechBubble | null = null;
+  private bubble: BossBubble | null = null;
   private done = false;
 
   constructor(
@@ -632,7 +558,7 @@ export class CreeperOmen {
     if (this.done) return;
     sfx.play('creeperTalk', panAt(OMEN_SPOT.x, BOARD.columns));
     this.bubble?.close();
-    this.bubble = new SpeechBubble(this.scene, this.fx, text, 'calm', lifeMs);
+    this.bubble = new BossBubble(this.scene, this.fx, text, terminal('calm'), lifeMs);
     const top = this.facePoint(10, -58);
     this.bubble.follow(top.x, top.y);
   }

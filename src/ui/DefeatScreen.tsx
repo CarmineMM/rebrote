@@ -3,7 +3,7 @@ import { LIVES } from '../game/config/balance';
 import { FIRST_OUTBREAK } from '../game/core/outbreaks';
 import type { LossInfo, RoundInfo } from '../game/EventBus';
 import { HEART_PATH } from './Lives';
-import { outbreakTitle } from './outbreakName';
+import { outbreakBoss, outbreakTitle } from './outbreakName';
 import { SeedsEarned } from './SeedsEarned';
 import { NO_AUTO_FULLSCREEN } from './useFullscreen';
 import { useText } from './useText';
@@ -33,6 +33,8 @@ export function DefeatScreen({ round, loss, onRestart, onMenu }: DefeatScreenPro
   const lives: number = LIVES.start;
   const t = useText();
   const byBoss = loss?.byBoss ?? false;
+  const outbreak = round?.outbreak ?? FIRST_OUTBREAK;
+  const boss = outbreakBoss(outbreak);
 
   useEffect(() => {
     button.current?.focus();
@@ -59,12 +61,12 @@ export function DefeatScreen({ round, loss, onRestart, onMenu }: DefeatScreenPro
             </g>
           </svg>
         </div>
-        <p className="pause-kicker">{outbreakTitle(t, round?.outbreak ?? FIRST_OUTBREAK)}</p>
+        <p className="pause-kicker">{outbreakTitle(t, outbreak)}</p>
         <h2 id={titleId} className="pause-title">
-          {byBoss ? t.defeat.bossTitle : t.defeat.title}
+          {byBoss ? t.defeat.bossTitle[boss] : t.defeat.title}
         </h2>
         <p className="defeat-text">
-          {byBoss ? t.defeat.bossText : t.defeat.text(lives, round ? round.number : null, round?.total ?? 0)}
+          {byBoss ? t.defeat.bossText[boss] : t.defeat.text(lives, round ? round.number : null, round?.total ?? 0)}
         </p>
         {loss && <SeedsEarned seeds={loss.seeds} />}
         <div className="pause-actions">
@@ -76,7 +78,7 @@ export function DefeatScreen({ round, loss, onRestart, onMenu }: DefeatScreenPro
           </button>
         </div>
         <p className="pause-hint">
-          {byBoss ? t.defeat.bossHint : t.defeat.hint}
+          {byBoss ? t.defeat.bossHint[boss] : t.defeat.hint}
         </p>
       </div>
     </div>

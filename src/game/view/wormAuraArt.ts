@@ -1,4 +1,4 @@
-import type { EnemyKind } from '../core/combat';
+import { isBoss, type EnemyKind } from '../core/combat';
 import type { Ctx } from './canvasKit';
 import { MEDAL_TIERS, medalTier } from './levelMedal';
 
@@ -17,9 +17,9 @@ import { MEDAL_TIERS, medalTier } from './levelMedal';
 /** Tramos con aura, como la medallita: 1 plata (5 a 9), 2 oro (10 a 14), 3 rubi (15 a 19) y 4 cristal (20). */
 export const AURA_TIERS = 4;
 
-/** Tramo del aura de un enemigo: 0 sin aura (Creeper, o por debajo del nivel 5). */
+/** Tramo del aura de un enemigo: 0 sin aura (un jefe, Creeper o Elk Cloner, o por debajo del nivel 5). */
 export function auraTier(kind: EnemyKind, level: number): number {
-  if (kind === 'creeper' || level < 5) return 0;
+  if (isBoss(kind) || level < 5) return 0;
   return medalTier(level);
 }
 

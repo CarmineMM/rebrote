@@ -40,6 +40,7 @@ const GROUPS: Array<{ title: string; ids: SfxId[] }> = [
   { title: 'Escudo (T-024)', ids: ['sowWall', 'infuseShield', 'wallHit', 'wallBreak'] },
   { title: 'Tropas del brote 2 (T-025)', ids: ['minstrelInhale', 'verse', 'verseHit', 'clone'] },
   { title: 'Creeper', ids: ['creeperWarn', 'creeperTakeoff', 'creeperLand', 'creeperTalk', 'creeperRage', 'creeperDefeated'] },
+  { title: 'Elk Cloner (T-026)', ids: ['elkClonerTalk', 'poemWarn', 'poem', 'elkClonerDefeated'] },
   { title: 'Rondas, partida y menus', ids: ['attackStarted', 'roundCleared', 'unlock', 'defeat', 'victory', 'button'] },
 ];
 

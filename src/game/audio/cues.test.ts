@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { BOARD, MINE } from '../config/balance';
+import { BOARD, ELK_CLONER, ENEMIES, MINE } from '../config/balance';
 import type { Cell } from '../core/board';
-import { spawnEnemy, stepCombat, type Bullet, type CombatEvent } from '../core/combat';
+import { spawnEnemy, stepCombat, type Bullet, type CombatEvent, type Enemy } from '../core/combat';
 import { createMatch, createMine, createPlant, createWall, type MatchState, type Mine } from '../core/match';
 import { createShooter, type ElementType, type MineElement } from '../core/plants';
 import { FIRST_OUTBREAK, roundCount } from '../core/outbreaks';
@@ -203,7 +203,7 @@ describe('tropas del brote 2 (T-025)', () => {
   it('el juglar suena al tomar aire y al soltar su verso, desde donde esta', () => {
     const state = spawnEnemy(createMatch(), 'minstrel', lane, 7);
     const juglar = state.enemies[0];
-    const verse = { id: 50, lane, x: juglar.x, damage: 15 };
+    const verse = { id: 50, lane, x: juglar.x, damage: 15, by: 'minstrel' as const, poem: false };
     const cues = combatCues(
       [
         { type: 'verseWarned', enemyId: juglar.id },
@@ -256,6 +256,52 @@ describe('tropas del brote 2 (T-025)', () => {
     expect(heard.filter((id) => id === 'minstrelInhale')).toHaveLength(1);
     expect(heard.filter((id) => id === 'verse')).toHaveLength(1);
     expect(heard.filter((id) => id === 'verseHit')).toHaveLength(1);
+  });
+});
+
+describe('Elk Cloner (T-026)', () => {
+  const lane = 2;
+  const withBoss = (over: Partial<Enemy> = {}): MatchState => {
+    const state = spawnEnemy(createMatch(0, 7, 'elkCloner'), 'elkCloner', lane, 7.5, 1e9);
+    return { ...state, enemies: [{ ...state.enemies[0], ...over }] };
+  };
+  const run = (state: MatchState, totalMs: number) => {
+    const heard: string[] = [];
+    let current = state;
+    for (let t = 0; t < totalMs; t += 16) {
+      const before = current;
+      const step = stepCombat(current, 16);
+      current = step.state;
+      heard.push(...ids(combatCues(step.events, before)));
+    }
+    return heard;
+  };
+
+  it('toma aire y recita sus versos como el juglar', () => {
+    const heard = run(withBoss(), ENEMIES.elkCloner.firstVerseMs + 50);
+    expect(heard).toContain('minstrelInhale');
+    expect(heard).toContain('verse');
+  });
+
+  it('el aviso del poema entero suena al empezar, una vez, y el poema al soltarlo, desde donde esta', () => {
+    const heard = run(withBoss({ recital: { ms: 1, sung: ELK_CLONER.poemEvery, poemMs: null } }), ELK_CLONER.poemWarnMs + 100);
+    expect(heard.filter((id) => id === 'poemWarn')).toHaveLength(1);
+    expect(heard.filter((id) => id === 'poem')).toHaveLength(1);
+    expect(heard.indexOf('poemWarn')).toBeLessThan(heard.indexOf('poem'));
+    const state = withBoss();
+    const cue = combatCues([{ type: 'poemWarned', enemyId: state.enemies[0].id, warnMs: ELK_CLONER.poemWarnMs }], state)[0];
+    expect(cue.pan).toBeGreaterThan(0);
+  });
+
+  it('si cae, suena su derrota y no la de los que caen con el', () => {
+    let state = withBoss();
+    state = spawnEnemy(state, 'copycat', 0, 6);
+    const boss = state.enemies[0];
+    const events: CombatEvent[] = [
+      { type: 'enemyKilled', enemyId: boss.id, kind: 'elkCloner', clone: false, at: { x: boss.x, y: 2.5 } },
+      { type: 'enemyKilled', enemyId: state.enemies[1].id, kind: 'copycat', clone: false, at: { x: 6, y: 0.5 } },
+    ];
+    expect(ids(combatCues(events, state))).toEqual(['elkClonerDefeated']);
   });
 });
 

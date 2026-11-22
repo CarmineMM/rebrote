@@ -9,7 +9,8 @@ import { SHOOTER } from './shooterShape';
 import { FLOPPY_SIZE, HAT_SIZE, HASTE_STREAK_SIZE, MINE_SIZE, SHOOTER_SIZE, TEX, WALL_SIZE, WORM_SIZE, levelGardenTexture, medalTexture, mineTexture, shooterTexture, wallTexture } from './textures';
 import type { WallWear } from './wallArt';
 import { AURA_LOOK, auraTier, veilSize, veilStrength } from './wormAuraArt';
-import { KIND_LOOK, WORM_LOOK } from './wormView';
+import { isBoss } from '../core/combat';
+import { KIND_LOOK, WORM_LOOK, poseOf } from './wormView';
 
 /**
  * Foto de la ficha de informacion (T-010): la planta, la mina o el enemigo en reposo sobre un fondo de jardin, como
@@ -215,12 +216,14 @@ function piecesFor(subject: PortraitSubject): Piece[] {
 }
 
 /**
- * El gusano en reposo, con la postura de `WORM_LOOK` y las texturas de su tipo (`KIND_LOOK`, las del tablero): rayas de
- * velocidad, anillos (y placas), el disquete de la espalda de los copiones (T-025), cabeza (y casco, o el gorro del juglar)
- * y medallita.
+ * El gusano en reposo, con su postura (la de `WORM_LOOK` o, Elk Cloner, la suya de pie, T-026) y las texturas de su tipo
+ * (`KIND_LOOK`, las del tablero): rayas de velocidad, anillos (y placas), adornos pegados a los anillos (la gorguera y los
+ * pies de Elk Cloner), el disquete de la espalda de los copiones (T-025), cabeza (y casco, o el gorro del juglar o la
+ * cornamenta) y medallita.
  */
 function wormPieces(subject: Extract<PortraitSubject, { kind: 'enemy' }>): Piece[] {
   const art = KIND_LOOK[subject.enemy];
+  const pose = poseOf(subject.enemy);
   const { head, segment } = WORM_SIZE;
   const pieces: Piece[] = [];
   // Aura de los tramos de nivel (T-030, Z-03): un velo quieto detras del cuerpo, como en el tablero en lo mas alto.
@@ -246,12 +249,21 @@ function wormPieces(subject: Extract<PortraitSubject, { kind: 'enemy' }>): Piece
     const { streak } = WORM_LOOK;
     pieces.push({ key: TEX.hasteStreak, x: streak.x, y: streak.y, scale: streak.scale, ox: 0, oy: 0.5, ...HASTE_STREAK_SIZE, loose: true });
   }
-  for (const s of WORM_LOOK.segments) {
+  const trim = (behind: boolean) =>
+    (art.trims ?? [])
+      .filter((t) => t.behind === behind)
+      .forEach((t) => {
+        const s = pose.segments[t.segment];
+        pieces.push({ key: t.key, x: s.x + t.x, y: s.y + t.y, scale: t.scale, ox: t.origin.x / t.size.width, oy: t.origin.y / t.size.height, ...t.size });
+      });
+  trim(true);
+  for (const s of pose.segments) {
     pieces.push({ key: art.segment, x: s.x, y: s.y, scale: s.scale, ox: 0.5, oy: 0.5, width: segment.size, height: segment.size });
     if (art.armor) pieces.push({ key: art.armor.plate, x: s.x, y: s.y, scale: s.scale, ox: 0.5, oy: 0.5, width: segment.size, height: segment.size });
   }
+  trim(false);
   if (art.pack && !subject.clone) {
-    const [, middle, front] = WORM_LOOK.segments;
+    const [, middle, front] = pose.segments;
     const { pack } = WORM_LOOK;
     pieces.push({
       key: art.pack,
@@ -266,19 +278,19 @@ function wormPieces(subject: Extract<PortraitSubject, { kind: 'enemy' }>): Piece
     });
   }
   const headKey = subject.enraged && art.angryHead ? art.angryHead.idle : art.head.idle;
-  const headPiece = { x: WORM_LOOK.head.x, y: WORM_LOOK.head.y, scale: 1, ox: head.cx / head.width, oy: head.cy / head.height, width: head.width, height: head.height };
+  const headPiece = { x: pose.head.x, y: pose.head.y, scale: 1, ox: head.cx / head.width, oy: head.cy / head.height, width: head.width, height: head.height };
   pieces.push({ key: headKey, ...headPiece });
   if (art.armor) pieces.push({ key: art.armor.helmet, ...headPiece });
   if (art.hat) {
     const { width, height, cx, cy } = HAT_SIZE;
     pieces.push({ key: art.hat, x: headPiece.x, y: headPiece.y, scale: 1, ox: cx / width, oy: cy / height, width, height });
   }
-  if (subject.enemy !== 'creeper' && subject.level > 1) {
+  if (!isBoss(subject.enemy) && subject.level > 1) {
     const { medal } = WORM_LOOK;
     pieces.push({
       key: medalTexture(subject.level),
-      x: WORM_LOOK.head.x + medal.x,
-      y: WORM_LOOK.head.y + medal.y,
+      x: pose.head.x + medal.x,
+      y: pose.head.y + medal.y,
       scale: medal.scale,
       ox: 0.5,
       oy: 0.5,

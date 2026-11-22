@@ -1,5 +1,5 @@
-import { LIMITS, ROUND_PREP } from '../config/balance';
-import { isDefeated, rollEnemyLevel, spawnEnemy, type Enemy, type EnemyKind } from './combat';
+import { CLONE, ENEMIES, LIMITS, ROUND_PREP } from '../config/balance';
+import { enemyPower, isDefeated, rollEnemyLevel, spawnEnemy, type Enemy, type EnemyKind } from './combat';
 import type { CardId, MatchState } from './match';
 import { outbreakScript, outbreaksBefore, roundCount, type OutbreakId } from './outbreaks';
 import type { ElementType } from './plants';
@@ -20,8 +20,11 @@ import { creditRound } from './seeds';
  */
 export type Feature = 'shooter' | 'levelUp' | 'fireMine' | 'fireInfuse' | 'iceMine' | 'iceInfuse' | 'fuse' | 'shield';
 
-/** Gritos de Creeper (T-009). El texto de cada uno, en cada idioma, esta en `creeper.shouts` de `src/i18n/` (T-011). */
-export type CreeperShout = 'escort';
+/**
+ * Gritos del jefe al sacar un grupo (T-009): hoy, el de mandar a su escolta. El texto de cada uno, en cada idioma y de cada
+ * jefe, esta en `<jefe>.shouts` de `src/i18n/` (T-011; el de Elk Cloner, T-026).
+ */
+export type BossShout = 'escort';
 
 /**
  * Quien presenta lo nuevo en el aviso "¡YA LO TIENES!" (T-032): un personaje de la historia (`CharacterId` de
@@ -40,8 +43,8 @@ export interface RoundGroup {
   readonly level?: number;
   /** Velocidad de sus enemigos respecto a la normal, en vez de la de la ronda (T-009: la escolta va al paso de Creeper). */
   readonly haste?: number;
-  /** Lo que grita Creeper al sacar el grupo (T-009: "¡ADELANTE!" al mandar a su escolta). */
-  readonly shout?: CreeperShout;
+  /** Lo que grita el jefe al sacar el grupo (T-009: "¡ADELANTE!" al mandar a su escolta). */
+  readonly shout?: BossShout;
 }
 
 /** Pesos de cada nivel de enemigo (`ENEMY_LEVELS.tables`). */
@@ -109,8 +112,8 @@ export type RoundEvent =
   | { readonly type: 'roundStarted'; readonly index: number }
   /** Superada la ultima ronda del brote (vencido su jefe): partida ganada. */
   | { readonly type: 'won' }
-  /** Creeper grita al sacar un grupo (T-009: manda a su escolta). Lo pinta la vista. */
-  | { readonly type: 'shout'; readonly shout: CreeperShout };
+  /** El jefe grita al sacar un grupo (T-009: manda a su escolta). Lo pinta la vista. */
+  | { readonly type: 'shout'; readonly shout: BossShout };
 
 export interface RoundStep {
   readonly state: MatchState;
@@ -307,6 +310,42 @@ export function isBossPreparing(state: MatchState): boolean {
   return round.phase === 'prep' || round.released <= bossGroup;
 }
 
+/** Nivel medio de una tabla de pesos (`ENEMY_LEVELS.tables`); sin tabla, 1. */
+function expectedPower(table: LevelTable | undefined): number {
+  if (!table) return enemyPower(1);
+  const entries = Object.entries(table).map(([level, weight]) => [Number(level), weight] as const);
+  const total = entries.reduce((sum, [, weight]) => sum + weight, 0);
+  return entries.reduce((sum, [level, weight]) => sum + (enemyPower(level) * weight) / total, 0);
+}
+
+/**
+ * Lo dura que es la ronda `index` del brote, para comparar rondas y brotes (T-026: la dificultad sube de ronda en ronda y
+ * el final del brote 2 es mas duro que el del brote 1): la vida que saca su guion por segundo de ataque, con la fuerza
+ * media de sus niveles (o el nivel fijo de su grupo), las copias que dejan los Copycat y lo que la acelera. Sin el jefe,
+ * que no tiene par. Es una medida de diseno: el juego no la usa.
+ */
+export function roundThreat(outbreak: OutbreakId, index: number): number {
+  const { groups, levels, haste } = roundScript(outbreak, index);
+  const { boss } = outbreakScript(outbreak);
+  let hp = 0;
+  for (const group of groups) {
+    if (group.kind === boss) continue;
+    const power = group.level === undefined ? expectedPower(levels) : enemyPower(group.level);
+    const copies = (CLONE.kinds as readonly EnemyKind[]).includes(group.kind) ? 1 + CLONE.hp : 1;
+    hp += ENEMIES[group.kind].hp * power * copies * group.lanes.length * (group.haste ?? haste ?? 1);
+  }
+  const lastAt = Math.max(...groups.map((group) => group.atMs));
+  return hp / (lastAt / 1000);
+}
+
+/** ¿Salio ya el jefe de la ronda y no queda vivo? Entonces la ronda esta despejada aunque falten grupos (T-026). */
+function bossFallen(outbreak: OutbreakId, script: RoundScript, released: number, enemies: readonly Enemy[]): boolean {
+  const bossGroup = bossGroupIndex(outbreak, script);
+  if (bossGroup < 0 || released <= bossGroup) return false;
+  const { boss } = outbreakScript(outbreak);
+  return !enemies.some((enemy) => enemy.kind === boss);
+}
+
 /** El jugador adelanta el ataque ("¡Que vengan!"): la preparacion acaba en el siguiente paso. Fuera de ella no hace nada. */
 export function startAttack(state: MatchState): MatchState {
   if (state.round.phase !== 'prep' || isDefeated(state)) return state;
@@ -334,11 +373,14 @@ export function stepRound(state: MatchState, dtMs: number, spawnX: number, rando
   }
 
   const { outbreak } = state;
-  const { groups, levels } = roundScript(outbreak, round.index);
+  const script = roundScript(outbreak, round.index);
+  const { groups, levels } = script;
   const elapsedMs = round.elapsedMs + dt;
   let released = round.released;
   let current = state;
   const spawned: Enemy[] = [];
+  // T-026: en la ronda del jefe, cuando el jefe ya salio y cayo, los grupos que faltan (sus refuerzos) ya no salen.
+  if (bossFallen(outbreak, script, released, current.enemies)) released = groups.length;
   while (released < groups.length && groups[released].atMs <= elapsedMs) {
     const group = groups[released];
     if (group.shout) events.push({ type: 'shout', shout: group.shout });

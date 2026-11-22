@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { EventBus, GameEvents, type BossInfo, type RoundInfo } from '../game/EventBus';
 import { BossBar } from './BossBar';
+import { bossName, outbreakBoss } from './outbreakName';
 import { useText } from './useText';
 
 interface RoundHudProps {
@@ -25,7 +26,7 @@ export function RoundHud({ round, boss }: RoundHudProps) {
       .join(' ');
 
   return (
-    <section className="round-info" aria-label={t.round.label}>
+    <section className={`round-info is-boss-${outbreakBoss(round.outbreak)}`} aria-label={t.round.label}>
       <div className="round-badge">
         {isBoss ? (
           <span className="round-title is-boss">
@@ -51,7 +52,7 @@ export function RoundHud({ round, boss }: RoundHudProps) {
       {phase === 'prep' && prepSeconds !== null && (
         <div className="round-prep">
           <span className={`round-countdown${prepSeconds <= 3 ? ' is-soon' : ''}`}>
-            {isBoss ? t.round.bossIn : t.round.startsIn}{' '}
+            {isBoss ? t.round.bossIn(bossName(t, round.outbreak)) : t.round.startsIn}{' '}
             <strong key={prepSeconds} className="round-seconds">
               {prepSeconds}
             </strong>{' '}

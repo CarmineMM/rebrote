@@ -26,7 +26,7 @@ import {
 } from './match';
 import { isOutbreakOpen, isOutbreakReady, outbreakFromParam, outbreakScript, roundCount } from './outbreaks';
 import { createShooter, plantMaxHp, type Shooter } from './plants';
-import { availableCards, infusableElements, newFeaturesAt, roundUnlocks, unlockPresenter, unlockRound } from './rounds';
+import { availableCards, infusableElements, newFeaturesAt, roundScript, roundUnlocks, unlockPresenter, unlockRound } from './rounds';
 import { currentOutbreak, routeStops } from './route';
 
 /**
@@ -67,29 +67,39 @@ describe('desbloqueo', () => {
     expect(infusableElements(shieldMatch())).toEqual(['fire', 'ice', 'shield']);
   });
 
-  it('el brote 2 empieza con lo aprendido en el brote 1 y su ronda 1 no trae nada nuevo', () => {
+  it('el brote 2 empieza con lo aprendido en el brote 1 y su ronda 1 solo sube el tope de nivel a 10 (T-026, L-08)', () => {
     expect(availableCards(createMatch(0, 0, BROTE2))).toEqual(['shooter', 'fire', 'ice']);
-    expect(roundUnlocks(BROTE2, 0)).toEqual([]);
+    expect(roundUnlocks(BROTE2, 0)).toEqual([{ kind: 'levelCap', level: 10 }]);
+    expect(unlockPresenter(BROTE2, 0)).toBe('boxer');
   });
 });
 
-describe('brote 2 en preparacion (sin jefe hasta T-026)', () => {
-  it('no se puede jugar aunque se haya vencido a Creeper', () => {
-    expect(isOutbreakReady(BROTE2)).toBe(false);
-    expect(isOutbreakOpen(BROTE2, ['creeper'])).toBe(false);
-    expect(currentOutbreak(['creeper'])).toBeNull();
+describe('brote 2 abierto (T-026: ya tiene a su jefe)', () => {
+  it('se juega al vencer a Creeper, y no antes', () => {
+    expect(isOutbreakReady(BROTE2)).toBe(true);
+    expect(isOutbreakOpen(BROTE2, [])).toBe(false);
+    expect(isOutbreakOpen(BROTE2, ['creeper'])).toBe(true);
+    expect(currentOutbreak(['creeper'])).toBe(BROTE2);
   });
 
-  it('la ruta lo da por "Proximamente", con su numero', () => {
+  it('la ruta lo da por el que toca al vencer a Creeper y por superado al vencerlo, y luego "Proximamente"', () => {
     expect(routeStops(['creeper'])).toEqual([
       { kind: 'outbreak', id: 'creeper', standing: 'defeated', current: false },
-      { kind: 'soon', number: 2 },
+      { kind: 'outbreak', id: BROTE2, standing: 'open', current: true },
+      { kind: 'soon', number: 3 },
+      { kind: 'final' },
+    ]);
+    expect(routeStops(['creeper', BROTE2])).toEqual([
+      { kind: 'outbreak', id: 'creeper', standing: 'defeated', current: false },
+      { kind: 'outbreak', id: BROTE2, standing: 'defeated', current: false },
+      { kind: 'soon', number: 3 },
       { kind: 'final' },
     ]);
   });
 
-  it('no saca jefe en ninguna ronda', () => {
-    expect(outbreakScript(BROTE2).boss).toBeNull();
+  it('su jefe es Elk Cloner, en la ultima ronda', () => {
+    expect(outbreakScript(BROTE2).boss).toBe('elkCloner');
+    expect(roundScript(BROTE2, roundCount(BROTE2) - 1).groups.some((group) => group.kind === 'elkCloner')).toBe(true);
   });
 
   it('en desarrollo se pide por la direccion, por numero o por nombre', () => {

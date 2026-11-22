@@ -30,7 +30,7 @@ export const en: Dictionary = {
   outbreak: {
     title: (number, boss) => `Outbreak ${number}: ${boss}`,
     number: (number) => `Outbreak ${number}`,
-    comingBoss: { elkCloner: 'Elk Cloner' },
+    comingBoss: {},
   },
 
   title: {
@@ -211,7 +211,7 @@ export const en: Dictionary = {
     of: 'of',
     finalBattle: 'Final battle',
     startsIn: 'Starts in',
-    bossIn: 'Creeper arrives in',
+    bossIn: (boss) => `${boss} arrives in`,
     seconds: 's',
     go: 'Bring them on!',
     goBoss: 'Bring it on!',
@@ -229,18 +229,25 @@ export const en: Dictionary = {
         'Creeper arrives with its escort! It jumps lanes: spread out your defenses',
       ],
       elkCloner: [
-        'What you learned stays with you. Careful: Copycats leave a copy when they fall',
+        'What you learned stays with you, and now you can level up to 10. Careful: Copycats leave a copy when they fall',
         'Plant the shield alone to block shots, or drop it on a shooter',
         'Minstrels are coming! Their verses cross the lane: only a shield stops them',
+        'Armored worms, Minstrels and spitters together: mines for some, shields for others',
+        'Two waves across all five lanes, with Minstrels behind each one',
+        'Elk Cloner is getting ready! It writes its poem and its troops come faster',
+        'Elk Cloner has almost finished its poem: even more troops, and even faster',
+        'Elk Cloner is here! Every few verses it recites the whole poem across all five lanes: put a shield in each one',
       ],
     },
   },
 
   boss: {
-    caught: 'Caught!',
+    caught: { creeper: 'Caught!', elkCloner: 'Silenced!' },
     phase1: 'Phase 1',
     phase2: 'Phase 2: angry!',
     health: (name) => `${name}'s health`,
+    poemIn: (verses) => (verses <= 1 ? 'Poem on the next verse' : `Poem in ${verses} verses`),
+    poemNow: 'The whole poem!',
   },
 
   level: {
@@ -386,20 +393,29 @@ export const en: Dictionary = {
 
   defeat: {
     title: 'They got through!',
-    bossTitle: 'Creeper got away!',
+    bossTitle: { creeper: 'Creeper got away!', elkCloner: 'Elk Cloner crossed the garden!' },
     text: (crossed, round, total) =>
       `${crossed === 1 ? '1 worm' : `${crossed} worms`} crossed the garden${round === null ? '' : ` in round ${round} of ${total}`}.`,
-    bossText: 'It jumped lanes and crossed the garden in the final battle.',
+    bossText: {
+      creeper: 'It jumped lanes and crossed the garden in the final battle.',
+      elkCloner: 'It recited to the very end and crossed the garden in the final battle.',
+    },
     hint: 'Each shooter only guards its own lane: cover all five.',
-    bossHint: 'Creeper jumps lanes: spread your defenses across all five.',
+    bossHint: {
+      creeper: 'Creeper jumps lanes: spread your defenses across all five.',
+      elkCloner: 'Only a shield stops its verses and its poem: put one in front of your shooters in every lane.',
+    },
     again: 'Play again',
     menu: 'Main menu',
   },
 
   victory: {
-    title: 'You caught Creeper!',
+    title: { creeper: 'You caught Creeper!', elkCloner: 'You silenced Elk Cloner!' },
     text: (rounds) => `You beat all ${rounds} rounds and the garden is safe.`,
-    hint: 'Creeper (1971) was the first computer worm: it hopped from machine to machine.',
+    hint: {
+      creeper: 'Creeper (1971) was the first computer worm: it hopped from machine to machine.',
+      elkCloner: 'Elk Cloner (1982) traveled on Apple II floppy disks and showed a poem every 50th boot.',
+    },
     again: 'Play again',
     greenhouse: 'To the greenhouse',
   },
@@ -424,7 +440,8 @@ export const en: Dictionary = {
     attack: 'Here they come!',
     roundCleared: (round) => `Round ${round} cleared!`,
     seedsEarned: (amount, count) => `+${count === 1 ? '1 seed' : `${amount} seeds`}`,
-    bossDown: 'Creeper caught!',
+    bossDown: { creeper: 'Creeper caught!', elkCloner: 'Elk Cloner silenced!' },
+    poem: 'The whole poem!',
     gardenSafe: 'Garden saved!',
     bossEscaped: 'It got away!',
     lifeLost: '−1 ♥',
@@ -457,6 +474,16 @@ export const en: Dictionary = {
     shouts: { escort: 'CHARGE, MY ARMORED WORMS!' },
   },
 
+  elkCloner: {
+    entrance: "I'm Elk Cloner, the Poet: your garden's my page, and you'll know it!",
+    verses: ['From disk to disk, my verses whisk!', 'I copy, then copy some more: your garden is mine, I am sure!', 'Rhyme on time, the garden is mine!', 'Here a verse, there a verse!'],
+    poem: ['Hush now, all around: hear my poem\'s mighty sound!', 'Five lanes, five lines: down go your vines!', 'Here comes the whole poem, every line: listen, gardener, it is divine!'],
+    escape: 'The end of my rhyme, and your garden\'s time. Signed: Elk Cloner.',
+    cheer: 'Bravo, bravissimo! What an ending, oh so fine-issimo!',
+    preparing: 'I am writing a poem, it is true… and the subject is you!',
+    shouts: { escort: 'Copycats, form a line: let the show start on time!' },
+  },
+
   info: {
     close: 'Close the info card',
     closeTitle: 'Close (Esc)',
@@ -487,6 +514,12 @@ export const en: Dictionary = {
       spitNote: (time, cells) => `every ${time}, from ${cells} tiles`,
       verse: 'Verse',
       verseNote: (time, cells) => `to each thing, every ${time}, from ${cells} tiles`,
+      bossVerseNote: (time) => `to each thing in its lane, every ${time}`,
+      poem: 'Whole poem',
+      poemNote: (every, warn) => `across all five lanes, every ${every} verses, after a ${warn} warning`,
+      nextPoem: 'Next poem',
+      poemIn: (verses) => (verses <= 1 ? 'After the next verse' : `In ${verses} verses`),
+      poemNow: "It's reciting it now!",
       leavesClone: 'Leaves a copy',
       bite: 'Bite',
       biteNote: (time) => `every ${time}`,
@@ -518,6 +551,7 @@ export const en: Dictionary = {
       biting: 'Biting',
       reciting: 'Reciting',
       inhaling: 'Taking a breath!',
+      poem: 'Announcing the whole poem!',
       burning: (amount) => `Burning: −${amount} per second`,
       slowed: (percent) => `Slowed by ${percent}`,
       hasted: (percent) => `Sped up +${percent}`,
@@ -556,6 +590,7 @@ export const en: Dictionary = {
         armored: 'Armored worm',
         spitter: 'Spitter worm',
         creeper: 'Creeper',
+        elkCloner: 'Elk Cloner',
         copycat: 'Copycat',
         copycatArmored: 'Armored Copycat',
         copycatSpitter: 'Spitter Copycat',
@@ -573,6 +608,7 @@ export const en: Dictionary = {
         clone: 'Small and weak',
         boss: (outbreak) => `Outbreak ${outbreak} boss`,
         bossEnraged: (outbreak) => `Outbreak ${outbreak} boss · phase 2`,
+        poet: (outbreak) => `The Poet · outbreak ${outbreak} boss`,
       },
       tier: (percent) => `+${percent} strength from its tier`,
       about: {
@@ -580,6 +616,8 @@ export const en: Dictionary = {
         armored: 'Like the worm, with four times its health and slower. Its plates fall off as it loses health.',
         spitter: (cells) => `Stops ${cells} tiles away from the first thing planted and spits at it. It can burst a mine before it explodes.`,
         creeper: 'Jumps lanes as it loses health and leaves copies of itself behind. If it crosses the garden, you lose the game.',
+        elkCloner: (every) =>
+          `Walks slowly and bites whatever it touches. It recites verses down its lane and, every ${every} verses, the whole poem across all five at once: only a shield stops it, and it never kills anything at full health. If it crosses the garden, you lose the game.`,
         copycat: 'Bites like the worm. When it falls it leaves a small, weak copy behind, just once.',
         copycatArmored: 'Like the armored worm, with floppy disk plates. When it falls it leaves a small, weak copy behind, just once.',
         copycatSpitter: (cells) => `Stops ${cells} tiles away from the first thing planted and spits at it. When it falls it leaves a small, weak copy behind, just once.`,

@@ -39,9 +39,10 @@ export const es = {
     number: (number: number) => `Brote ${number}`,
     /**
      * Jefe de un brote en preparacion (T-024): el brote ya tiene rondas, pero su jefe aun no es un enemigo del juego (no
-     * esta en `info.enemy.names`). Cuando lo sea, sale de alli y se quita de aqui.
+     * esta en `info.enemy.names`). Cuando lo sea, sale de alli y se quita de aqui. Hoy no hay ninguno: Elk Cloner, el del
+     * brote 2, llego con T-026.
      */
-    comingBoss: { elkCloner: 'Elk Cloner' },
+    comingBoss: {},
   },
 
   /** Menu de inicio (T-011). */
@@ -254,7 +255,8 @@ export const es = {
     of: 'de',
     finalBattle: 'Combate final',
     startsIn: 'Empieza en',
-    bossIn: 'Creeper llega en',
+    /** En la preparacion del combate final: "Creeper llega en 12 s". */
+    bossIn: (boss: string) => `${boss} llega en`,
     seconds: 's',
     go: '¡Que vengan!',
     goBoss: '¡Que venga!',
@@ -272,20 +274,29 @@ export const es = {
         'Creeper casi está listo: aún más tropas y más rápidas',
         '¡Llega Creeper con su escolta! Salta de carril: reparte tus defensas',
       ],
-      // T-024: guion provisional del brote 2 hasta que T-026 traiga el suyo (con las tropas de T-025).
+      // T-026: el guion del brote 2, con las tropas de T-025.
       elkCloner: [
-        'Lo aprendido sigue contigo. Ojo: los Copycat dejan una copia al caer',
+        'Lo aprendido sigue contigo, y ya subes hasta el nivel 10. Ojo: los Copycat dejan una copia al caer',
         'Siembra el escudo solo y para los disparos, o suéltalo sobre una disparadora',
         '¡Llegan los Minstrel! Sus versos cruzan el carril: solo los para un escudo',
+        'Acorazados, Minstrel y escupidores juntos: minas para unos, escudos para otros',
+        'Dos oleadas por los cinco carriles, con Minstrel detrás de cada una',
+        '¡Elk Cloner se prepara! Escribe su poema y sus tropas llegan más rápido',
+        'Elk Cloner casi ha terminado su poema: aún más tropas y más rápidas',
+        '¡Llega Elk Cloner! Cada pocos versos recita el poema entero por los cinco carriles: pon un escudo en cada uno',
       ],
     },
   },
 
   boss: {
-    caught: '¡Atrapado!',
+    /** Derrotado, en su barra: cada jefe a su manera. */
+    caught: { creeper: '¡Atrapado!', elkCloner: '¡Silenciado!' },
     phase1: 'Fase 1',
     phase2: 'Fase 2: ¡enfadado!',
     health: (name: string) => `Vida de ${name}`,
+    /** Elk Cloner (T-026): cuantos versos le faltan para el poema entero, y mientras lo anuncia. */
+    poemIn: (verses: number) => (verses <= 1 ? 'Poema al próximo verso' : `Poema en ${verses} versos`),
+    poemNow: '¡Poema entero!',
   },
 
   level: {
@@ -434,7 +445,7 @@ export const es = {
         line: '¡Ojo, que viene Creeper, el primer gusano informático! Al de verdad lo paró Reaper, el primer antivirus. ¡Hoy el Reaper eres tú!',
         card: 'Creeper (1971) fue el primer gusano informático: un experimento que saltaba de un ordenador a otro por ARPANET, la red de la que nació internet. No rompía nada: solo escribía «I’M THE CREEPER: CATCH ME IF YOU CAN!». Para atraparlo se programó Reaper, el primer antivirus.',
       },
-      // T-024: el brote 2 ya existe (provisional); su viñeta sale cuando T-026 traiga a Elk Cloner.
+      // T-026: sale en la ronda 6 del brote 2, cuando Elk Cloner empieza a prepararse.
       elkCloner: {
         line: '¡Que viene Elk Cloner! En 1982 saltaba de disquete en disquete por los Apple II. ¡Y recitaba poemas!',
         card: 'Elk Cloner (1982) fue uno de los primeros virus que salió de un laboratorio. Viajaba en los disquetes de los Apple II: se copiaba en cada disquete que pasaba por un equipo infectado y, cada 50 arranques, enseñaba un poema en la pantalla. No rompía nada: lo escribió un estudiante de 15 años, como una broma.',
@@ -461,20 +472,31 @@ export const es = {
 
   defeat: {
     title: '¡Se colaron!',
-    bossTitle: '¡Creeper se escapó!',
+    /** Cuando el jefe cruza el jardin (T-008): cada uno con lo suyo. */
+    bossTitle: { creeper: '¡Creeper se escapó!', elkCloner: '¡Elk Cloner cruzó el jardín!' },
     text: (crossed: number, round: number | null, total: number) =>
       `${crossed === 1 ? '1 gusano cruzó' : `${crossed} gusanos cruzaron`} el jardín${round === null ? '' : ` en la ronda ${round} de ${total}`}.`,
-    bossText: 'Saltó de carril y cruzó el jardín en el combate final.',
+    bossText: {
+      creeper: 'Saltó de carril y cruzó el jardín en el combate final.',
+      elkCloner: 'Recitó hasta el final y cruzó el jardín en el combate final.',
+    },
     hint: 'Cada disparadora solo defiende su carril: cubre los cinco.',
-    bossHint: 'Creeper salta de carril: reparte tus defensas por los cinco.',
+    bossHint: {
+      creeper: 'Creeper salta de carril: reparte tus defensas por los cinco.',
+      elkCloner: 'Sus versos y su poema solo los para un escudo: pon uno delante de tus disparadoras en cada carril.',
+    },
     again: 'Jugar otra vez',
     menu: 'Menú principal',
   },
 
   victory: {
-    title: '¡Atrapaste a Creeper!',
+    /** Cada jefe con lo suyo (T-026). */
+    title: { creeper: '¡Atrapaste a Creeper!', elkCloner: '¡Silenciaste a Elk Cloner!' },
     text: (rounds: number) => `Superaste las ${rounds} rondas y el jardín está a salvo.`,
-    hint: 'Creeper (1971) fue el primer gusano informático: saltaba de máquina en máquina.',
+    hint: {
+      creeper: 'Creeper (1971) fue el primer gusano informático: saltaba de máquina en máquina.',
+      elkCloner: 'Elk Cloner (1982) viajaba en los disquetes de los Apple II y enseñaba un poema cada 50 arranques.',
+    },
     again: 'Jugar otra vez',
     /** Tras vencer a un jefe se va al Invernadero (T-019). */
     greenhouse: 'Al Invernadero',
@@ -512,7 +534,9 @@ export const es = {
     roundCleared: (round: number) => `¡Ronda ${round} superada!`,
     /** Bajo "¡Ronda N superada!": lo que sumo a la partida (T-020). */
     seedsEarned: (amount: string, count: number) => `+${count === 1 ? '1 semilla' : `${amount} semillas`}`,
-    bossDown: '¡Creeper atrapado!',
+    bossDown: { creeper: '¡Creeper atrapado!', elkCloner: '¡Elk Cloner, silenciado!' },
+    /** Elk Cloner anuncia el poema entero (T-026, L-03). */
+    poem: '¡Poema entero!',
     gardenSafe: '¡Jardín a salvo!',
     bossEscaped: '¡Se escapó!',
     lifeLost: '−1 ♥',
@@ -548,6 +572,26 @@ export const es = {
     shouts: { escort: '¡ADELANTE, MIS ACORAZADOS!' },
   },
 
+  /**
+   * Lo que dice Elk Cloner, el Poeta (T-026), en su bocadillo de pergamino: siempre rimando. Sus versos se inventan para el
+   * juego: no se reproduce el poema del virus de verdad.
+   */
+  elkCloner: {
+    entrance: 'Soy Elk Cloner, el Poeta: ¡tu jardín será mi libreta!',
+    /** Una de cada tantas veces que suelta un verso por su carril. */
+    verses: ['¡De disquete en disquete, mi verso se mete!', '¡Me copio y me recopio, y el jardín ya es propio!', '¡Rima, rima, que te pillo encima!', '¡Verso va, verso viene!'],
+    /** Al anunciar el poema entero (L-03), por turnos. */
+    poem: [
+      'Silencio en la sala: ¡mi poema se instala!',
+      'Cinco versos, cinco carriles: ¡que tiemblen tus perejiles!',
+      'Ahora va el poema entero: ¡escúchalo, jardinero!',
+    ],
+    escape: 'Fin del poema y del jardín. Firmado: Elk Cloner.',
+    cheer: '¡Bravo, bravísimo! ¡Qué final tan buenísimo!',
+    preparing: 'Escribo un poema, y tu jardín es el tema…',
+    shouts: { escort: '¡Copycat, en formación: que empiece la función!' },
+  },
+
   /** Ficha de informacion (T-010). */
   info: {
     close: 'Cerrar la ficha',
@@ -580,6 +624,13 @@ export const es = {
       /** Minstrel (T-025): lo que quita su verso a cada cosa que cruza. */
       verse: 'Verso',
       verseNote: (time: string, cells: string) => `a cada cosa, cada ${time}, desde ${cells} casillas`,
+      /** Elk Cloner (T-026): su verso, mientras anda, y su poema entero por los cinco carriles. */
+      bossVerseNote: (time: string) => `a cada cosa de su carril, cada ${time}`,
+      poem: 'Poema entero',
+      poemNote: (every: number, warn: string) => `por los cinco carriles, cada ${every} versos, tras ${warn} de aviso`,
+      nextPoem: 'Próximo poema',
+      poemIn: (verses: number) => (verses <= 1 ? 'Tras el próximo verso' : `Dentro de ${verses} versos`),
+      poemNow: '¡Ya lo está recitando!',
       /** Copycat (T-025): lo que dejan al caer. */
       leavesClone: 'Deja una copia',
       bite: 'Mordisco',
@@ -614,6 +665,8 @@ export const es = {
       /** Minstrel (T-025): parado a su distancia, y tomando aire antes del verso (F-04). */
       reciting: 'Recitando',
       inhaling: '¡Toma aire!',
+      /** Elk Cloner anunciando el poema entero (T-026). */
+      poem: '¡Anuncia el poema entero!',
       burning: (amount: string) => `Quemado: −${amount} por segundo`,
       slowed: (percent: string) => `Frenado un ${percent}`,
       hasted: (percent: string) => `Acelerado +${percent}`,
@@ -655,6 +708,8 @@ export const es = {
         armored: 'Gusano acorazado',
         spitter: 'Gusano escupidor',
         creeper: 'Creeper',
+        /** Jefe del brote 2 (T-026). */
+        elkCloner: 'Elk Cloner',
         /** Tropas del brote 2 (T-025). */
         copycat: 'Copycat',
         copycatArmored: 'Copycat acorazado',
@@ -674,6 +729,8 @@ export const es = {
         clone: 'Pequeña y débil',
         boss: (outbreak: number) => `Jefe del brote ${outbreak}`,
         bossEnraged: (outbreak: number) => `Jefe del brote ${outbreak} · fase 2`,
+        /** Elk Cloner, el Poeta (T-026). */
+        poet: (outbreak: number) => `El Poeta · jefe del brote ${outbreak}`,
       },
       tier: (percent: string) => `+${percent} de fuerza por su tramo`,
       about: {
@@ -681,6 +738,8 @@ export const es = {
         armored: 'Como el gusano, con cuatro veces su vida y más lento. Se le caen las placas al perder vida.',
         spitter: (cells: string) => `Se para a ${cells} casillas de lo primero sembrado y le escupe. Puede reventar una mina antes de que explote.`,
         creeper: 'Salta de carril al perder vida y deja copias suyas. Si cruza el jardín, se pierde la partida.',
+        elkCloner: (every: number) =>
+          `Avanza despacio y muerde lo que toca. Recita versos por su carril y, cada ${every} versos, el poema entero por los cinco a la vez: solo lo para un escudo, y no mata lo que tenga la vida entera. Si cruza el jardín, se pierde la partida.`,
         copycat: 'Muerde como el gusano. Al caer deja una copia pequeña y débil, una sola vez.',
         copycatArmored: 'Como el acorazado, con placas de disquete. Al caer deja una copia pequeña y débil, una sola vez.',
         copycatSpitter: (cells: string) => `Se para a ${cells} casillas de lo primero sembrado y le escupe. Al caer deja una copia pequeña y débil, una sola vez.`,

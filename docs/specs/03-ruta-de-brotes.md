@@ -41,14 +41,14 @@ De menos a más daño, mezclando dos cosas: lo que le hizo a los equipos y lo qu
 
 - **Ruta larga.** Se usan los 25 jefes de la lista, 26 con el final. La ruta corta de 10 brotes queda descartada.
 - **El orden de la lista es el orden de los brotes.** Blaster se queda en el puesto 11 (H-08 cerrada). El brote 2 es Elk Cloner.
-- **El escudo no espera a Blaster.** Sale en el brote 2 para no dejar al jugador sin progreso, así que Elk Cloner necesita una mecánica que lo justifique (T-026).
+- **El escudo no espera a Blaster.** Sale en el brote 2 para no dejar al jugador sin progreso, así que Elk Cloner necesita una mecánica que lo justifique (T-026: sus versos y su poema entero, que solo para un escudo).
 
 ## Primer tramo: la defensa del refugio
 
 | Brote | Jefe | Estado | Qué aporta |
 |---|---|---|---|
 | 1 | Creeper, el Escurridizo | Hecho | Disparadora, fuego, hielo, infundir, fusionar y subir de nivel |
-| 2 | Elk Cloner, el Poeta | En preparación: el escudo (T-024) y sus tropas, los Copycat y el Minstrel (T-025), ya están, con un guion provisional, cerrado al jugador; falta su jefe (T-026) | Escudo. Sus versos son ondas que cruzan el carril y solo un escudo las para |
+| 2 | Elk Cloner, el Poeta | Hecho (T-024 a T-026; `05-brote-2-elk-cloner.md`) | Escudo. Sus versos son ondas que cruzan el carril y solo un escudo las para; cada pocos versos, el poema entero por los cinco carriles |
 | 3 | Brain, el Cerebro | Sin diseñar | Idea suelta: el Brain real se escondía de quien lo buscaba. Enemigos que no se ven hasta que están cerca |
 | 4 | Morris, el Imparable | Sin diseñar | Idea suelta: el Morris real se copiaba tantas veces que tumbaba las máquinas. Enemigos en masa |
 

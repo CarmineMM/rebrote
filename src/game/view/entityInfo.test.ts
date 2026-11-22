@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { CLONE, CREEPER, ENEMIES, MINE, SHIELD, SHOOTER } from '../config/balance';
+import { CLONE, CREEPER, ELK_CLONER, ENEMIES, MINE, SHIELD, SHOOTER } from '../config/balance';
 import { enemyMaxHp, spawnEnemy, type Enemy } from '../core/combat';
 import { createMatch, createMine, createPlant } from '../core/match';
 import { createShooter, type Shooter } from '../core/plants';
@@ -175,6 +175,31 @@ describe('ficha de las tropas del brote 2 (T-025)', () => {
     expect(info.about).toMatch(/Solo la para un escudo/);
     expect(enemyInfo({ ...Minstrel, attackMs: ENEMIES.minstrel.warnMs + 500 }).tags).toEqual([{ text: 'Recitando', tone: 'alert' }]);
     expect(enemyInfo({ ...Minstrel, attackMs: ENEMIES.minstrel.warnMs - 100 }).tags).toEqual([{ text: '¡Toma aire!', tone: 'alert' }]);
+  });
+});
+
+describe('ficha de Elk Cloner (T-026)', () => {
+  it('sin nivel, con su apodo, su mordisco, su verso, su poema entero y cuantos versos le faltan', () => {
+    const boss = enemy('elkCloner');
+    const info = enemyInfo(boss);
+    expect(info).toMatchObject({ tone: 'elkCloner', title: 'Elk Cloner', subtitle: 'El Poeta · jefe del brote 2', level: null });
+    expect(info.hp.max).toBe(Math.round(enemyMaxHp('elkCloner')));
+    expect(stat(info, 'Mordisco')?.value).toBe(formatNumber(ENEMIES.elkCloner.biteDamage * 1.1));
+    expect(stat(info, 'Verso')).toEqual({ label: 'Verso', value: formatNumber(ENEMIES.elkCloner.verseDamage * 1.1), note: 'a cada cosa de su carril, cada 3,5 s' });
+    expect(stat(info, 'Poema entero')?.note).toBe(`por los cinco carriles, cada ${ELK_CLONER.poemEvery} versos, tras 5 s de aviso`);
+    expect(stat(info, 'Próximo poema')?.value).toBe(`Dentro de ${ELK_CLONER.poemEvery} versos`);
+    expect(stat(info, 'Al caer')?.value).toBe('¡Ganas la partida!');
+    expect(stat(info, 'Recompensa')).toBeUndefined();
+    expect(info.about).toMatch(/solo lo para un escudo/);
+    expect(info.lore).toMatch(/^Elk Cloner \(1982\)/);
+  });
+
+  it('mientras anuncia el poema lo dice, y la siguiente vez que recite es el poema', () => {
+    const boss = enemy('elkCloner');
+    const warning = enemyInfo({ ...boss, recital: { ms: 0, sung: ELK_CLONER.poemEvery, poemMs: 2000 } });
+    expect(warning.tags[0]).toEqual({ text: '¡Anuncia el poema entero!', tone: 'alert' });
+    expect(stat(warning, 'Próximo poema')?.value).toBe('¡Ya lo está recitando!');
+    expect(stat(enemyInfo({ ...boss, recital: { ms: 3000, sung: ELK_CLONER.poemEvery - 1, poemMs: null } }), 'Próximo poema')?.value).toBe('Tras el próximo verso');
   });
 });
 

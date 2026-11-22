@@ -1,4 +1,4 @@
-import { BOARD, CLONE, CREEPER, ENEMIES, MINE, SHIELD } from '../config/balance';
+import { BOARD, CLONE, CREEPER, ELK_CLONER, ENEMIES, MINE, SHIELD } from '../config/balance';
 import type { Cell } from '../core/board';
 import {
   bulletDamage,
@@ -8,10 +8,14 @@ import {
   enemyReward,
   enemyTierBonus,
   fireIntervalMs,
+  isBoss,
   isEnraged,
   leavesClone,
   mineBlast,
+  poemDamage,
+  poemWarning,
   slamDamage,
+  verseDamage,
   type Enemy,
 } from '../core/combat';
 import type { Mine, Plant, Wall } from '../core/match';
@@ -139,6 +143,7 @@ function enemyAbout(enemy: Enemy): string {
   if (enemy.clone) return about.clone(formatPercent(CLONE.hp), formatPercent(CLONE.damage));
   const { kind } = enemy;
   if (kind === 'spitter' || kind === 'copycatSpitter' || kind === 'minstrel') return about[kind](formatNumber(ENEMIES[kind].range));
+  if (kind === 'elkCloner') return about.elkCloner(ELK_CLONER.poemEvery);
   return about[kind];
 }
 
@@ -149,21 +154,23 @@ function enemyName(enemy: Enemy): string {
   return (cloneNames as Partial<Record<Enemy['kind'], string>>)[enemy.kind] ?? names[enemy.kind];
 }
 
-/** "Jefe del brote 1" (T-018: el brote del que es jefe), y su fase. */
+/** "Jefe del brote 1" (T-018: el brote del que es jefe), y su fase; el de Elk Cloner (T-026), con su apodo. */
 function bossSubtitle(enemy: Enemy): string {
   const { subtitle } = text().info.enemy;
   const number = outbreakNumber(outbreakOfBoss(enemy.kind) ?? FIRST_OUTBREAK);
+  if (enemy.kind === 'elkCloner') return subtitle.poet(number);
   return isEnraged(enemy) ? subtitle.bossEnraged(number) : subtitle.boss(number);
 }
 
 /**
  * Ficha de un enemigo: su nivel y su tramo (T-009 y T-010), lo que quita, lo rapido que va y lo que le pasa ahora. Los
- * copiones (T-025) dicen que dejan copia; el juglar, su verso y si toma aire.
+ * copiones (T-025) dicen que dejan copia; el juglar, su verso y si toma aire. Elk Cloner (T-026), su mordisco, su verso,
+ * su poema entero y cuantos versos le faltan para el.
  */
 export function enemyInfo(enemy: Enemy): EntityInfoData {
   const t = text().info;
   const stats = ENEMIES[enemy.kind];
-  const boss = enemy.kind === 'creeper';
+  const boss = isBoss(enemy.kind);
   const damage = formatNumber(enemyDamage(enemy));
   const rows: InfoStat[] = [];
   if (stats.attack === 'spit') {
@@ -173,12 +180,22 @@ export function enemyInfo(enemy: Enemy): EntityInfoData {
   } else {
     rows.push({ label: t.stats.bite, value: damage, note: t.stats.biteNote(formatSeconds(stats.biteIntervalMs)) });
   }
-  if (boss) rows.push({ label: t.stats.slam, value: formatNumber(slamDamage()), note: t.stats.slamNote });
+  if (stats.attack === 'recite') {
+    rows.push({ label: t.stats.verse, value: formatNumber(verseDamage(enemy)), note: t.stats.bossVerseNote(formatSeconds(stats.verseIntervalMs)) });
+    rows.push({ label: t.stats.poem, value: formatNumber(poemDamage()), note: t.stats.poemNote(ELK_CLONER.poemEvery, formatSeconds(ELK_CLONER.poemWarnMs)) });
+  }
+  if (enemy.kind === 'creeper') rows.push({ label: t.stats.slam, value: formatNumber(slamDamage()), note: t.stats.slamNote });
   const speed = stats.speed * enemy.haste;
   rows.push({ label: t.stats.speed, value: t.stats.speedValue(formatNumber(speed, 2)), note: t.stats.crosses(Math.round(BOARD.columns / speed)) });
-  if (boss) {
+  if (enemy.kind === 'creeper') {
     const next = CREEPER.jumpAt[enemy.jumpsUsed];
     rows.push({ label: t.stats.nextJump, value: next === undefined ? t.stats.noMoreJumps : t.stats.jumpAt(formatPercent(next)) });
+  }
+  if (enemy.recital) {
+    const left = Math.max(0, ELK_CLONER.poemEvery - enemy.recital.sung);
+    rows.push({ label: t.stats.nextPoem, value: poemWarning(enemy) !== null ? t.stats.poemNow : t.stats.poemIn(left) });
+  }
+  if (boss) {
     rows.push({ label: t.stats.onDefeat, value: t.stats.youWin });
   } else {
     if (leavesClone(enemy)) rows.push({ label: t.stats.onDefeat, value: t.stats.leavesClone });
@@ -188,6 +205,7 @@ export function enemyInfo(enemy: Enemy): EntityInfoData {
   const tags: InfoTag[] = [];
   if (boss && isEnraged(enemy)) tags.push({ text: t.tags.enraged, tone: 'alert' });
   if (enemy.jump) tags.push({ text: t.tags.jumping, tone: 'alert' });
+  else if (poemWarning(enemy) !== null) tags.push({ text: t.tags.poem, tone: 'alert' });
   else if (enemy.attackMs !== null && stats.attack === 'verse') {
     tags.push({ text: enemy.attackMs <= stats.warnMs ? t.tags.inhaling : t.tags.reciting, tone: 'alert' });
   } else if (enemy.attackMs !== null) tags.push({ text: stats.attack === 'spit' ? t.tags.spitting : t.tags.biting, tone: 'alert' });
@@ -201,7 +219,7 @@ export function enemyInfo(enemy: Enemy): EntityInfoData {
     id: `enemigo:${enemy.id}`,
     tone: enemy.kind,
     title: enemyName(enemy),
-    subtitle: enemy.kind === 'creeper' ? bossSubtitle(enemy) : enemy.clone ? subtitle.clone : subtitle[enemy.kind],
+    subtitle: isBoss(enemy.kind) ? bossSubtitle(enemy) : enemy.clone ? subtitle.clone : subtitle[enemy.kind],
     level: boss
       ? null
       : {

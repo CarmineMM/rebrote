@@ -384,12 +384,12 @@ describe('juglar (F-02 a F-06)', () => {
 });
 
 describe('partida guardada (T-025)', () => {
-  it('acepta copias y versos en vuelo (version 5)', () => {
-    expect(SAVE_VERSION).toBe(5);
+  it('acepta copias y versos en vuelo (desde la version 5)', () => {
+    expect(SAVE_VERSION).toBeGreaterThanOrEqual(5);
     let state = put(createMatch(), { lane: 2, col: 1 }, createPlant());
     state = spawnEnemy(state, 'copycat', 0, 6);
     state = spawnEnemy(state, 'minstrel', 2, 5);
-    state = { ...state, enemies: [{ ...state.enemies[0], clone: true }, state.enemies[1]], verses: [{ id: 77, lane: 2, x: 3.2, damage: verseHit }] };
+    state = { ...state, enemies: [{ ...state.enemies[0], clone: true }, state.enemies[1]], verses: [{ id: 77, lane: 2, x: 3.2, damage: verseHit, by: 'minstrel', poem: false }] };
     const loaded = decodeSave(encodeSave(state, null, 1));
     expect(loaded?.match).toEqual(state);
   });

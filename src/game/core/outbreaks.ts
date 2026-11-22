@@ -1,5 +1,5 @@
 import { OUTBREAKS } from '../config/balance';
-import type { EnemyKind } from './combat';
+import type { BossKind, EnemyKind } from './combat';
 import type { Presenter, RoundScript } from './rounds';
 
 /**
@@ -15,8 +15,8 @@ import type { Presenter, RoundScript } from './rounds';
  */
 
 /**
- * Nombre de cada brote: el de su jefe. Al anadir un brote, su nombre va aqui. El brote 2, de Elk Cloner, existe desde
- * T-024 con un guion provisional y sin jefe (`boss: null`) hasta T-026.
+ * Nombre de cada brote: el de su jefe. Al anadir un brote, su nombre va aqui. El brote 2, de Elk Cloner, existio desde
+ * T-024 en preparacion (sin jefe) hasta que T-026 trajo a su jefe y su guion de verdad.
  */
 export type OutbreakId = 'creeper' | 'elkCloner';
 
@@ -28,9 +28,9 @@ export interface OutbreakScript {
   readonly id: OutbreakId;
   /**
    * Jefe del brote: sale en su ultima ronda y al vencerlo se gana la partida. Null mientras no esta en el juego (T-024: el
-   * brote 2 trae el escudo antes que a Elk Cloner, T-026): el brote esta en preparacion (`isOutbreakReady`).
+   * brote 2 trajo el escudo antes que a Elk Cloner, T-026): el brote esta en preparacion (`isOutbreakReady`).
    */
-  readonly boss: EnemyKind | null;
+  readonly boss: BossKind | null;
   /** Saldo con el que empieza la partida (B-02: no se trae nada del brote anterior). */
   readonly startingBalance: number;
   /** Guion de rondas, en orden: cuantas hay, que desbloquea cada una y que enemigos saca. */

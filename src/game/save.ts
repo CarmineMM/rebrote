@@ -1,5 +1,5 @@
 import { BOARD, ENEMIES, LIMITS, LIVES } from './config/balance';
-import type { Burn, Enemy, Jump, Slow } from './core/combat';
+import type { Burn, Enemy, Jump, Recital, Slow } from './core/combat';
 import type { MatchState, Sown } from './core/match';
 import { isOutbreakId, roundCount, type OutbreakId } from './core/outbreaks';
 import type { UnlockInfo } from './EventBus';
@@ -20,9 +20,10 @@ export const SAVE_KEY = 'partida';
 /**
  * Sube cuando cambia la forma de `MatchState` o de la guardada: las de otra version se ignoran. La 2 (T-018) anade el
  * brote; la 3 (T-020), las semillas de la partida; la 4 (T-024), el muro y la disparadora con escudo; la 5 (T-025), las
- * copias de los copiones (`Enemy.clone`) y los versos de los juglares en vuelo (`MatchState.verses`).
+ * copias de los copiones (`Enemy.clone`) y los versos de los juglares en vuelo (`MatchState.verses`); la 6 (T-026), el
+ * recital de Elk Cloner (`Enemy.recital`) y quien recita cada verso y si es del poema entero (`Verse.by`, `Verse.poem`).
  */
-export const SAVE_VERSION = 5;
+export const SAVE_VERSION = 6;
 
 export interface SavedGame {
   readonly version: number;
@@ -150,6 +151,10 @@ const isJump = (value: unknown): value is Jump =>
   isNumber(value.ms) &&
   isNumber(value.stageMs);
 
+/** Recital de Elk Cloner (T-026): su reloj de versos, los que lleva y el aviso del poema entero, si lo anuncia. */
+const isRecital = (value: unknown): value is Recital =>
+  isRecord(value) && isNumber(value.ms) && isInt(value.sung, 0) && isNullOr(value.poemMs, isNumber);
+
 function isSown(value: unknown): value is Sown {
   if (!isRecord(value) || !isNumber(value.hp) || value.hp <= 0) return false;
   if (value.kind === 'mine') return isMineElement(value.element) && isNullOr(value.fuseMs, isNumber);
@@ -176,7 +181,8 @@ function isEnemy(value: unknown): value is Enemy {
     isInt(value.level, 1) &&
     isNullOr(value.jump, isJump) &&
     isInt(value.jumpsUsed, 0) &&
-    typeof value.clone === 'boolean'
+    typeof value.clone === 'boolean' &&
+    isNullOr(value.recital, isRecital)
   );
 }
 
@@ -215,7 +221,7 @@ export function isMatchState(value: unknown): value is MatchState {
     Array.isArray(spits) &&
     spits.every(isProjectile) &&
     Array.isArray(verses) &&
-    verses.every(isProjectile) &&
+    verses.every((verse) => isProjectile(verse) && typeof verse.by === 'string' && Object.hasOwn(ENEMIES, verse.by) && typeof verse.poem === 'boolean') &&
     isRound(value.round, value.outbreak) &&
     isNumber(value.incomeMs) &&
     isMatchSeeds(value.seeds, value.outbreak) &&

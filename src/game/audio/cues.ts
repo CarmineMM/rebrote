@@ -1,6 +1,6 @@
 import type { SfxId } from '../config/audio';
 import { BOARD } from '../config/balance';
-import { isShield, type BulletEffect, type CombatEvent } from '../core/combat';
+import { isBoss, isShield, type BulletEffect, type CombatEvent } from '../core/combat';
 import type { MatchState } from '../core/match';
 import { isMilestoneLevel, type ElementType } from '../core/plants';
 import type { RoundEvent } from '../core/rounds';
@@ -34,11 +34,13 @@ const INFUSE_OF: Record<ElementType, SfxId> = { fire: 'infuseFire', ice: 'infuse
  * - Una planta de N canones dispara N balas a la vez: suena un solo disparo, el del canon de arriba.
  * - Fuego y hielo suenan distinto al disparar y al impactar; la semilla que da a un acorazado suena a metal.
  * - Los enemigos que caen en una explosion de mina no suenan aparte: suena la explosion.
- * - Si cae el Creeper, suena su derrota y no la de sus copias, que caen con el.
+ * - Si cae un jefe, suena su derrota (la de Creeper o la de Elk Cloner) y no la de los que caen con el.
  * - Un mordisco o un escupitajo que da a un escudo (muro o disparadora con escudo, T-024) suena a madera, y el muro que se
  *   rompe, a madera que se parte.
  * - El juglar (T-025) toma aire y suelta su verso; el verso suena bajito en cada planta o mina que cruza y, en el escudo
  *   que lo para, a madera. Un copion que deja su copia suena a copiarse. El acorazado copion suena a metal, como el otro.
+ * - Elk Cloner (T-026) toma aire y suelta sus versos como el juglar; el aviso del poema entero suena al empezar (una
+ *   nota que se hincha) y el poema, al soltarlo (un acorde grande), desde donde esta.
  */
 export function combatCues(events: readonly CombatEvent[], before: MatchState): SfxCue[] {
   const cues: SfxCue[] = [];
@@ -48,7 +50,7 @@ export function combatCues(events: readonly CombatEvent[], before: MatchState): 
   for (const event of events) if (event.type === 'shot') bulletElement.set(event.bullet.id, event.bullet.effect?.element ?? null);
   const enemies = new Map(before.enemies.map((enemy) => [enemy.id, enemy]));
   const blasted = new Set(events.flatMap((event) => (event.type === 'mineExploded' ? event.enemyIds : [])));
-  const bossDown = events.some((event) => event.type === 'enemyKilled' && event.kind === 'creeper');
+  const bossDown = events.some((event) => event.type === 'enemyKilled' && isBoss(event.kind));
 
   for (const event of events) {
     switch (event.type) {
@@ -78,6 +80,7 @@ export function combatCues(events: readonly CombatEvent[], before: MatchState): 
       }
       case 'enemyKilled':
         if (event.kind === 'creeper') cues.push(at('creeperDefeated', event.at.x));
+        else if (event.kind === 'elkCloner') cues.push(at('elkClonerDefeated', event.at.x));
         else if (!bossDown && !blasted.has(event.enemyId)) cues.push(at('enemyKilled', event.at.x));
         break;
       case 'enemyEscaped':
@@ -97,6 +100,12 @@ export function combatCues(events: readonly CombatEvent[], before: MatchState): 
         break;
       case 'cloned':
         if (!bossDown) cues.push(at('clone', event.clone.x));
+        break;
+      case 'poemWarned':
+        cues.push(at('poemWarn', enemies.get(event.enemyId)?.x ?? BOARD.columns / 2));
+        break;
+      case 'poemRecited':
+        cues.push(at('poem', event.verses[0]?.x ?? BOARD.columns / 2));
         break;
       case 'jumpWarned':
         cues.push(at('creeperWarn', enemies.get(event.enemyId)?.x ?? BOARD.columns / 2));

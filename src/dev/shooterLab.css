@@ -113,3 +113,19 @@ body,
     display: none;
   }
 }
+
+/* Galeria de jefes (T-026): una casilla y la fila de botones de "Movimientos". */
+.lab-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.lab-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  width: 100%;
+}

@@ -315,6 +315,58 @@ body {
 .boss-tick { position: absolute; top: 1px; bottom: 1px; width: 2px; margin-left: -1px; background: rgba(255, 255, 255, 0.85); box-shadow: 0 0 0 1px rgba(11, 6, 16, 0.6); }
 .boss-tick.is-spent { background: rgba(255, 255, 255, 0.25); }
 
+/* ---------- Elk Cloner (T-026): disquete azul con oro y granate; una nota por verso hasta el poema entero ---------- */
+.round-info.is-boss-elkCloner .round-seed.is-boss {
+  border-radius: 2px; background: linear-gradient(160deg, #8fa2ff, #4459d6 55%, #1f2a80); border-color: #0e1440;
+  box-shadow: inset 0 3px 0 -0.5px #fff6dc;
+}
+.round-info.is-boss-elkCloner .round-seed.is-boss.is-current { background: radial-gradient(circle at 50% 60%, #fff6c2, #ffc23a 45%, #4459d6); border-color: #6a3a00; }
+.round-info.is-boss-elkCloner .round-seed.is-boss.is-done { background: radial-gradient(circle at 35% 30%, #fff6c0, #ffd23f 55%, #d1920f); border-color: #6b4505; box-shadow: none; }
+.boss-bar.is-elkCloner {
+  --boss-edge: #ffd36a; --boss-light: #fff3c9; --boss-mid: #ffc23a; --boss-dark: #b8335f;
+  background: linear-gradient(180deg, rgba(36, 40, 96, 0.95), rgba(19, 22, 60, 0.95));
+}
+.boss-bar.is-elkCloner.is-reciting { --boss-edge: #ff5fd2; animation: boss-in 0.55s cubic-bezier(0.2, 1.4, 0.4, 1) both, boss-poem 0.7s ease-in-out infinite; }
+.boss-bar.is-elkCloner.is-down { --boss-edge: #ffe066; }
+@keyframes boss-poem { 0%, 100% { box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35), 0 0 10px rgba(255, 194, 58, 0.35); } 50% { box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35), 0 0 24px rgba(255, 194, 58, 0.85); } }
+.boss-bar.is-elkCloner .boss-label strong { color: #fff3c9; text-shadow: 0 2px 0 #121845; }
+.boss-bar.is-elkCloner .boss-phase { font-family: Georgia, 'Iowan Old Style', 'Palatino Linotype', serif; font-style: italic; font-size: 0.84rem; }
+/* Disquete en miniatura: funda azul, etiqueta con dos ojos que parpadean y el aro del centro. */
+.boss-bar.is-elkCloner .boss-face {
+  width: 30px; height: 30px; border-radius: 4px; border-color: #0e1440;
+  background: linear-gradient(150deg, #8fa2ff, #4459d6 50%, #1f2a80);
+}
+.boss-bar.is-elkCloner .boss-face::before {
+  inset: 2px 3px auto; height: 11px; border-radius: 2px;
+  background:
+    radial-gradient(circle at 34% 62%, #1c1430 1.6px, transparent 2.2px),
+    radial-gradient(circle at 64% 62%, #1c1430 1.4px, transparent 2px),
+    linear-gradient(180deg, #ffcf4a 0 2px, #fff6dc 2px);
+  animation: boss-blink 3.2s steps(1) infinite;
+}
+.boss-bar.is-elkCloner .boss-face::after {
+  top: auto; bottom: 4px; left: 50%; width: 8px; height: 8px; margin-left: -4px; border-radius: 50%;
+  background: radial-gradient(circle, #0e1440 1.6px, #c9d2e3 2px); box-shadow: 0 0 0 1px #0e1440; animation: none;
+}
+.boss-bar.is-elkCloner.is-reciting .boss-face::before {
+  background:
+    radial-gradient(circle at 34% 62%, #8a5a00 1.6px, transparent 2.2px),
+    radial-gradient(circle at 64% 62%, #8a5a00 1.4px, transparent 2px),
+    linear-gradient(180deg, #ffcf4a 0 2px, #fff3b0 2px);
+}
+.boss-verses { display: flex; align-items: center; gap: 4px; }
+.boss-verse {
+  width: 9px; height: 9px; border-radius: 50%; background: #262b62; border: 1.5px solid rgba(255, 211, 106, 0.35);
+  transition: background 0.2s, box-shadow 0.2s;
+}
+.boss-verse.is-sung { background: radial-gradient(circle at 35% 30%, #fff6c2, #ffc23a 60%, #b07a0e); border-color: #6a3a00; box-shadow: 0 0 6px rgba(255, 194, 58, 0.7); }
+/* El ultimo, mas largo: el poema entero. */
+.boss-verse.is-poem { width: 30px; border-radius: 6px; margin-left: 2px; }
+.boss-verse.is-poem.is-sung { animation: boss-poem-pip 0.45s ease-in-out infinite alternate; }
+@keyframes boss-poem-pip { to { transform: scale(1.12); box-shadow: 0 0 12px rgba(255, 95, 210, 0.85); } }
+/* En un movil en horizontal la barra ya tapa parte del tablero: sin la fila de notas (el rotulo dice cuantos versos faltan). */
+@media (max-height: 560px) { .boss-verses { display: none; } }
+
 /* ---------- Carga ---------- */
 .loading {
   position: absolute; inset: 0; z-index: 3; display: grid; place-content: center; justify-items: center; gap: 18px;
@@ -823,6 +875,7 @@ body {
 .info-card.tone-copycatArmored { --tone: #8fd8ca; --tone-light: #e0f6f1; --tone-bg: #2a3d44; --tone-bg-dark: #141f24; --tone-glow: rgba(143, 216, 202, 0.3); }
 .info-card.tone-copycatSpitter { --tone: #ffd84a; --tone-light: #fff3c0; --tone-bg: #5a4510; --tone-bg-dark: #332606; --tone-glow: rgba(255, 216, 74, 0.32); }
 .info-card.tone-minstrel { --tone: #ff6b66; --tone-light: #ffd8d4; --tone-bg: #5c1c26; --tone-bg-dark: #350d14; --tone-glow: rgba(255, 107, 102, 0.32); }
+.info-card.tone-elkCloner { --tone: #ffd36a; --tone-light: #fff3c9; --tone-bg: #2a3478; --tone-bg-dark: #121845; --tone-glow: rgba(255, 211, 106, 0.32); }
 
 /* La foto: una polaroid algo torcida con un trozo de cinta, que cae en su sitio. */
 .info-photo {

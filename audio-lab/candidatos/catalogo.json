@@ -1332,6 +1332,147 @@
       ]
     },
     {
+      "id": "elkClonerTalk",
+      "about": "Elk Cloner suelta una rima en su bocadillo de pergamino (T-026): dos pitidos de Apple II",
+      "spec": {
+        "bus": "world",
+        "volume": 0.45,
+        "maxVoices": 1,
+        "minGapMs": 300,
+        "burst": 0,
+        "pitchJitter": 0.5,
+        "variants": 1
+      },
+      "pick": [
+        {
+          "url": "audio/elkClonerTalk",
+          "source": "jsfxr: receta `chirp`",
+          "seconds": 0.268
+        }
+      ],
+      "alternatives": [
+        {
+          "url": "audio-lab/candidatos/elkClonerTalk/1",
+          "source": "Kenney Music Jingles: `jingles_PIZZI05.ogg` (recortado 0-420 ms, -2 dB)",
+          "seconds": 0.389,
+          "recipes": []
+        },
+        {
+          "url": "audio-lab/candidatos/elkClonerTalk/2",
+          "source": "Kenney Interface Sounds: `pluck_001.ogg` (velocidad 0.8)",
+          "seconds": 0.124,
+          "recipes": []
+        }
+      ]
+    },
+    {
+      "id": "poemWarn",
+      "about": "Elk Cloner anuncia el poema entero (T-026, L-03): una nota que se hincha, para que se oiga venir",
+      "spec": {
+        "bus": "world",
+        "volume": 0.7,
+        "maxVoices": 1,
+        "minGapMs": 0,
+        "burst": 2,
+        "pitchJitter": 0,
+        "variants": 1
+      },
+      "pick": [
+        {
+          "url": "audio/poemWarn",
+          "source": "jsfxr: receta `swell` + Kenney Music Jingles: `jingles_SAX07.ogg` (velocidad 0.8, -6 dB)",
+          "seconds": 2.173
+        }
+      ],
+      "alternatives": [
+        {
+          "url": "audio-lab/candidatos/poemWarn/1",
+          "source": "jsfxr: receta `swell`",
+          "seconds": 1.289,
+          "recipes": [
+            {
+              "name": "swell",
+              "code": "6mTagprjRb3PkcgV9qv7x6WXMEQ1EhNjkmfKE7Pud4RcnJMPcHWZxYvqLsbhCAPWCdh4srQFCsVjzFtFtYonqqgmjxPao6jsEe6qPjgNZhdrpSMnP6EzckBdh"
+            }
+          ]
+        },
+        {
+          "url": "audio-lab/candidatos/poemWarn/2",
+          "source": "Kenney Music Jingles: `jingles_STEEL05.ogg` (velocidad 0.75)",
+          "seconds": 1.237,
+          "recipes": []
+        }
+      ]
+    },
+    {
+      "id": "poem",
+      "about": "Elk Cloner recita el poema entero por los cinco carriles (T-026): un acorde grande de pizzicato",
+      "spec": {
+        "bus": "world",
+        "volume": 0.85,
+        "maxVoices": 1,
+        "minGapMs": 0,
+        "burst": 2,
+        "pitchJitter": 0,
+        "variants": 1
+      },
+      "pick": [
+        {
+          "url": "audio/poem",
+          "source": "Kenney Music Jingles: `jingles_PIZZI16.ogg` + Kenney Impact Sounds: `impactBell_heavy_000.ogg` (-8 dB)",
+          "seconds": 1.186
+        }
+      ],
+      "alternatives": [
+        {
+          "url": "audio-lab/candidatos/poem/1",
+          "source": "Kenney Music Jingles: `jingles_HIT05.ogg`",
+          "seconds": 0.581,
+          "recipes": []
+        },
+        {
+          "url": "audio-lab/candidatos/poem/2",
+          "source": "Kenney Music Jingles: `jingles_PIZZI12.ogg`",
+          "seconds": 0.993,
+          "recipes": []
+        }
+      ]
+    },
+    {
+      "id": "elkClonerDefeated",
+      "about": "Cae Elk Cloner (T-026): un apagón que baja y un libro que se cierra",
+      "spec": {
+        "bus": "world",
+        "volume": 0.9,
+        "maxVoices": 1,
+        "minGapMs": 0,
+        "burst": 2,
+        "pitchJitter": 0,
+        "variants": 1
+      },
+      "pick": [
+        {
+          "url": "audio/elkClonerDefeated",
+          "source": "Kenney Digital Audio: `phaserDown3.ogg` + Kenney RPG Audio: `bookClose.ogg` (-2 dB, +260 ms)",
+          "seconds": 0.439
+        }
+      ],
+      "alternatives": [
+        {
+          "url": "audio-lab/candidatos/elkClonerDefeated/1",
+          "source": "Kenney Digital Audio: `lowDown.ogg` + Kenney RPG Audio: `bookClose.ogg` (+200 ms)",
+          "seconds": 0.647,
+          "recipes": []
+        },
+        {
+          "url": "audio-lab/candidatos/elkClonerDefeated/2",
+          "source": "Kenney Music Jingles: `jingles_NES09.ogg`",
+          "seconds": 0.325,
+          "recipes": []
+        }
+      ]
+    },
+    {
       "id": "attackStarted",
       "about": "Empieza el ataque (\"¡Ahí vienen!\"): trino de 8 bits",
       "spec": {

@@ -1,4 +1,5 @@
-import { isOutbreakId, outbreakNumber, outbreakScript, type OutbreakId } from '../game/core/outbreaks';
+import type { BossKind } from '../game/core/combat';
+import { FIRST_OUTBREAK, isOutbreakId, outbreakNumber, outbreakScript, type OutbreakId } from '../game/core/outbreaks';
 import type { Dictionary } from '../i18n';
 
 /**
@@ -9,6 +10,14 @@ export function bossName(t: Dictionary, id: OutbreakId): string {
   const { boss } = outbreakScript(id);
   if (boss) return t.info.enemy.names[boss];
   return (t.outbreak.comingBoss as Partial<Record<OutbreakId, string>>)[id] ?? t.outbreak.number(outbreakNumber(id));
+}
+
+/**
+ * Jefe del brote, para los textos que van con cada jefe (la victoria, la derrota, la barra). Uno en preparacion (T-024),
+ * que aun no tiene, usa los del primero.
+ */
+export function outbreakBoss(id: OutbreakId): BossKind {
+  return outbreakScript(id).boss ?? (outbreakScript(FIRST_OUTBREAK).boss as BossKind);
 }
 
 /** "Brote 1: Creeper" (T-018): el numero del brote y su jefe, que se nombra siempre, tambien antes de llegar a el (B-03). */

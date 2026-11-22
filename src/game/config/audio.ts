@@ -50,6 +50,11 @@ export type SfxId =
   | 'verse'
   | 'verseHit'
   | 'clone'
+  // Elk Cloner (T-026): su voz en el bocadillo, el aviso del poema entero, el poema y su derrota
+  | 'elkClonerTalk'
+  | 'poemWarn'
+  | 'poem'
+  | 'elkClonerDefeated'
   // Rondas y partida
   | 'attackStarted'
   | 'roundCleared'
@@ -143,6 +148,10 @@ export const SFX: Readonly<Record<SfxId, SfxSpec>> = {
   verse: world(0.55, 2, 150, 1),
   verseHit: world(0.3, 3, 70, 1.5),
   clone: world(0.45, 2, 90, 1.2),
+  elkClonerTalk: world(0.45, 1, 300, 0.5, 1, 0),
+  poemWarn: world(0.7, 1, 0, 0),
+  poem: world(0.85, 1, 0, 0),
+  elkClonerDefeated: world(0.9, 1, 0, 0),
   attackStarted: world(0.55, 1, 0, 0),
   roundCleared: world(0.6, 1, 0, 0),
   unlock: ui(0.6),

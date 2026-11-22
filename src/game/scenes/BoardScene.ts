@@ -2,9 +2,9 @@ import * as Phaser from 'phaser';
 import { actionCue, combatCues, mineTicks, roundCues } from '../audio/cues';
 import { sfx } from '../audio/sfx';
 import { panAt } from '../audio/voices';
-import { BOARD, CREEPER, ECONOMY, ENEMIES, LIMITS, MINE, SHIELD } from '../config/balance';
+import { BOARD, CREEPER, ECONOMY, ELK_CLONER, ENEMIES, LIMITS, MINE, SHIELD } from '../config/balance';
 import { cellAt, cellCenter, type BoardPoint, type Cell } from '../core/board';
-import { enemyMaxHp, enemyReward, isDefeated, isEnraged, spawnEnemy, stepCombat, type CombatEvent, type Enemy, type EnemyKind } from '../core/combat';
+import { enemyMaxHp, enemyReward, isBoss, isDefeated, isEnraged, poemWarning, spawnEnemy, stepCombat, type BossKind, type CombatEvent, type Enemy, type EnemyKind } from '../core/combat';
 import { rollKillReward, stepIncome } from '../core/economy';
 import {
   cardCost,
@@ -35,7 +35,7 @@ import {
   type Plant,
   type Wall,
 } from '../core/match';
-import { FIRST_OUTBREAK, roundCount, type OutbreakId } from '../core/outbreaks';
+import { FIRST_OUTBREAK, outbreakScript, roundCount, type OutbreakId } from '../core/outbreaks';
 import { plantMaxHp, type ElementType } from '../core/plants';
 import { settleSeeds, type SeedPayout } from '../core/seeds';
 import {
@@ -78,7 +78,9 @@ import type { TitleSceneData } from './TitleScene';
 import { createAmbience, type Ambience } from '../view/ambience';
 import { BoardLabel, drawArea, drawCell, type LabelLine } from '../view/boardMarks';
 import { BulletView } from '../view/bulletView';
-import { CreeperOmen, CreeperView, OMEN_LEAP_MS, bossLoadProgress } from '../view/creeperView';
+import { bossLines, createBossOmen, createEnemyView, type BossOmen } from '../view/bossView';
+import { CreeperView, OMEN_LEAP_MS, bossLoadProgress } from '../view/creeperView';
+import { ElkClonerView } from '../view/elkClonerView';
 import { Effects } from '../view/effects';
 import { enemyInfo, mineInfo, shooterInfo, wallInfo, type EntityInfoData } from '../view/entityInfo';
 import { DRAG_LOOK, FusionDragView, carriedMine, carriedShooter, carriedWall, dragGround } from '../view/fusionDragView';
@@ -143,6 +145,8 @@ const LOOK = {
   victoryDelayMs: 1600,
   /** Creeper (T-008): se escapa (en el camino) o lo derrotan (en el centro del cesped). */
   bossEscapedText: { color: '#ffd6df', stroke: '#5a0d1a', fontSize: 40 },
+  /** Elk Cloner anuncia el poema entero (T-026): en dorado, en el centro del cesped. */
+  poemText: { color: '#fff3b0', stroke: '#6a3a00', fontSize: 46 },
   /** Copia que deja el Creeper al saltar: destello verde de "copiarse" sobre ella. */
   copyGlow: 0x39ff88,
   /** Doble clic (o doble toque) para abrir una ficha (T-010): tiempo maximo entre los dos y lo que se puede mover el puntero. */
@@ -257,10 +261,10 @@ export class BoardScene extends Phaser.Scene {
   /** Brote de la partida nueva, si no se continua otra (T-018). */
   private outbreak: OutbreakId = FIRST_OUTBREAK;
   private plantViews = new Map<string, PlantView>();
-  /** Vistas de los enemigos por id: gusanos (`WormView`) y el Creeper (`CreeperView`, T-008). */
+  /** Vistas de los enemigos por id: gusanos (`WormView`) y los jefes (`CreeperView`, T-008; `ElkClonerView`, T-026). */
   private wormViews = new Map<number, EnemyView>();
   /** Creeper preparandose a la derecha (T-008), mientras toca verlo. */
-  private omen: CreeperOmen | null = null;
+  private omen: BossOmen | null = null;
   /** La partida se perdio porque el Creeper cruzo el jardin (T-008). */
   private lostToBoss = false;
   /** Ultima barra del jefe enviada al HUD, para avisar solo cuando cambia. */
@@ -764,7 +768,7 @@ export class BoardScene extends Phaser.Scene {
    */
   private showSpawned(spawned: readonly Enemy[]): void {
     for (const enemy of spawned) {
-      if (enemy.kind === 'creeper' && this.omen) {
+      if (isBoss(enemy.kind) && this.omen) {
         this.omen.leapTo({ x: enemy.x, y: enemy.lane + 0.64 });
         this.omen = null;
         this.addWormView(enemy, true, OMEN_LEAP_MS);
@@ -784,7 +788,8 @@ export class BoardScene extends Phaser.Scene {
    */
   private syncOmen(animate: boolean): void {
     const wanted = isBossPreparing(this.match);
-    if (wanted && !this.omen) this.omen = new CreeperOmen(this, this.fx, bossLoadProgress(this.match), animate);
+    const boss = outbreakScript(this.match.outbreak).boss;
+    if (wanted && !this.omen && boss) this.omen = createBossOmen(boss, this, this.fx, bossLoadProgress(this.match), animate);
     if (!wanted && this.omen) {
       this.omen.vanish();
       this.omen = null;
@@ -812,8 +817,8 @@ export class BoardScene extends Phaser.Scene {
         this.saveGame();
         break;
       case 'shout':
-        // Creeper manda a su escolta (T-009): lo grita desde donde se prepara y la acelera.
-        this.omen?.command(text().creeper.shouts[event.shout]);
+        // El jefe manda a su escolta (T-009): lo grita desde donde se prepara (Creeper, ademas, la acelera).
+        this.omen?.command(bossLines(this.bossKind()).shouts[event.shout]);
         break;
     }
   }
@@ -970,14 +975,14 @@ export class BoardScene extends Phaser.Scene {
         const view = this.wormViews.get(event.enemyId);
         view?.die();
         this.wormViews.delete(event.enemyId);
-        if (view instanceof CreeperView) this.cameras.main.shake(380, 0.008);
+        if (view instanceof CreeperView || view instanceof ElkClonerView) this.cameras.main.shake(380, 0.008);
         this.rewardKill(event.at, event);
         break;
       }
       case 'enemyEscaped':
         this.wormViews.get(event.enemyId)?.escape();
         this.wormViews.delete(event.enemyId);
-        if (event.kind === 'creeper') this.showBossEscaped(event.lane);
+        if (isBoss(event.kind)) this.showBossEscaped(event.lane);
         else this.showLifeLost(event.lane);
         break;
       case 'jumpWarned':
@@ -992,7 +997,33 @@ export class BoardScene extends Phaser.Scene {
         if (event.cell) this.sownHurt(event.cell);
         this.cameras.main.shake(200, 0.005);
         break;
+      case 'poemWarned':
+        // Elk Cloner anuncia el poema entero (T-026, L-03): lo dice el, y sale el aviso en el centro del cesped.
+        this.elkView(event.enemyId)?.poemWarn();
+        this.announcePoem();
+        break;
+      case 'poemRecited':
+        this.elkView(event.enemyId)?.recite();
+        event.verses.forEach((verse) => this.verseViews.set(verse.id, new VerseView(this, this.fx, verse, true)));
+        this.cameras.main.shake(260, 0.006);
+        break;
     }
+  }
+
+  private elkView(id: number): ElkClonerView | null {
+    const view = this.wormViews.get(id);
+    return view instanceof ElkClonerView ? view : null;
+  }
+
+  /** Jefe del brote de la partida (el de Creeper si el brote aun no tuviera). */
+  private bossKind(): BossKind {
+    return outbreakScript(this.match.outbreak).boss ?? 'creeper';
+  }
+
+  /** Aviso del poema entero de Elk Cloner (T-026): un rotulo dorado en el centro del cesped, como el de la ronda. */
+  private announcePoem(): void {
+    const at = perspective.toScreen({ x: BOARD.columns / 2, y: BOARD.lanes / 2 - 0.4 });
+    this.fx.floatText(text().board.poem, at.x, at.y, LOOK.poemText);
   }
 
   private creeperView(id: number): CreeperView | null {
@@ -1044,11 +1075,7 @@ export class BoardScene extends Phaser.Scene {
   }
 
   private addWormView(enemy: Enemy, emerge: boolean, emergeDelayMs = 0): void {
-    const view =
-      enemy.kind === 'creeper'
-        ? new CreeperView(this, this.fx, enemy, emerge, emergeDelayMs)
-        : new WormView(this, this.fx, enemy, emerge, emergeDelayMs);
-    this.wormViews.set(enemy.id, view);
+    this.wormViews.set(enemy.id, createEnemyView(this, this.fx, enemy, emerge, emergeDelayMs));
   }
 
   private addPlantView(cell: Cell, plant: Plant, sprout: boolean): void {
@@ -1115,7 +1142,7 @@ export class BoardScene extends Phaser.Scene {
     this.emitBoss();
     if (delayMs > 0) {
       sfx.play('victory');
-      this.celebrate(isBossRound(this.match.outbreak, this.match.round.index) ? text().board.bossDown : text().board.gardenSafe);
+      this.celebrate(isBossRound(this.match.outbreak, this.match.round.index) ? text().board.bossDown[this.bossKind()] : text().board.gardenSafe);
       for (let i = 0; i < 6; i++) {
         this.time.delayedCall(180 + i * 190, () => {
           const at = perspective.toScreen({ x: Phaser.Math.FloatBetween(1, BOARD.columns - 1), y: Phaser.Math.FloatBetween(0.5, BOARD.lanes - 0.5) });
@@ -2149,19 +2176,23 @@ export class BoardScene extends Phaser.Scene {
   }
 
   /**
-   * Avisa al HUD de la vida y la fase del Creeper (T-008), solo si cambian. Derrotado, la barra se queda a 0 hasta la
+   * Avisa al HUD de la vida del jefe, solo si cambia: de Creeper (T-008), su fase y sus umbrales de salto; de Elk Cloner
+   * (T-026), los versos que lleva hacia el poema entero y si lo esta anunciando. Derrotado, la barra se queda a 0 hasta la
    * victoria; si se escapo, se queda como estaba.
    */
   private emitBoss(): void {
-    const boss = this.match.enemies.find((enemy) => enemy.kind === 'creeper');
+    const boss = this.match.enemies.find((enemy) => isBoss(enemy.kind));
     let info: BossInfo | null = this.lastBoss;
-    if (boss) {
+    if (boss && isBoss(boss.kind)) {
+      const kind = boss.kind;
       info = {
-        name: text().creeper.name,
+        kind,
+        name: text().info.enemy.names[kind],
         hp: Math.max(0, Math.ceil(boss.hp)),
-        maxHp: enemyMaxHp('creeper'),
+        maxHp: enemyMaxHp(kind),
         enraged: isEnraged(boss),
-        jumpAt: [...CREEPER.jumpAt],
+        jumpAt: kind === 'creeper' ? [...CREEPER.jumpAt] : [],
+        poem: boss.recital ? { sung: Math.min(boss.recital.sung, ELK_CLONER.poemEvery), every: ELK_CLONER.poemEvery, warning: poemWarning(boss) !== null } : null,
       };
     } else if (this.lastBoss && !this.lostToBoss) {
       info = { ...this.lastBoss, hp: 0 };

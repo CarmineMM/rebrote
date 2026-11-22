@@ -261,6 +261,26 @@ export const MANIFEST: Readonly<Record<SfxId, SoundEntry>> = {
     pick: digital('phaseJump2', { lengthMs: 320, fadeOutMs: 140 }),
     alternatives: [digital('pepSound2', { lengthMs: 320, fadeOutMs: 150 }), digital('powerUp2', { lengthMs: 320, fadeOutMs: 150, gainDb: -2 })],
   },
+  elkClonerTalk: {
+    about: 'Elk Cloner suelta una rima en su bocadillo de pergamino (T-026): dos pitidos de Apple II',
+    pick: sfxr('chirp'),
+    alternatives: [jingle('jingles_PIZZI05', { lengthMs: 420, fadeOutMs: 160, gainDb: -2 }), ui('pluck_001', { rate: 0.8 })],
+  },
+  poemWarn: {
+    about: 'Elk Cloner anuncia el poema entero (T-026, L-03): una nota que se hincha, para que se oiga venir',
+    pick: [sfxr('swell'), jingle('jingles_SAX07', { rate: 0.8, gainDb: -6, fadeInMs: 300 })],
+    alternatives: [sfxr('swell'), jingle('jingles_STEEL05', { rate: 0.75, fadeInMs: 200 })],
+  },
+  poem: {
+    about: 'Elk Cloner recita el poema entero por los cinco carriles (T-026): un acorde grande de pizzicato',
+    pick: [jingle('jingles_PIZZI16'), impact('impactBell_heavy_000', { gainDb: -8 })],
+    alternatives: [jingle('jingles_HIT05'), jingle('jingles_PIZZI12')],
+  },
+  elkClonerDefeated: {
+    about: 'Cae Elk Cloner (T-026): un apagón que baja y un libro que se cierra',
+    pick: [digital('phaserDown3'), rpg('bookClose', { delayMs: 260, gainDb: -2 })],
+    alternatives: [[digital('lowDown'), rpg('bookClose', { delayMs: 200 })], jingle('jingles_NES09')],
+  },
   attackStarted: {
     about: 'Empieza el ataque ("¡Ahí vienen!"): trino de 8 bits',
     pick: jingle('jingles_NES13'),

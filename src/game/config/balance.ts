@@ -219,6 +219,51 @@ export const ENEMIES = {
     warnMs: 900,
     halfLength: 0.4,
   },
+  /**
+   * Elk Cloner, el Poeta (T-026), jefe del brote 2 y lo grande de su ultima ronda. Avanza despacio todo el rato (L-05) y
+   * muerde lo que toca, como Creeper (`attack: 'recite'`). Mientras pisa el cesped recita: cada `verseIntervalMs` suelta un
+   * verso por su carril, con su aviso (`warnMs`), como el Minstrel pero mas grande; y tras `ELK_CLONER.poemEvery` versos
+   * recita el poema entero por los cinco carriles (L-03). No tiene nivel: de `ENEMY_POWER` solo le toca la fuerza de todos.
+   * Si cruza el jardin, se pierde la partida; al caer se gana: no da moneda.
+   */
+  elkCloner: {
+    reward: 0,
+    hp: 9000, // PROVISIONAL: ajustado con la simulacion (docs/specs/05-brote-2-elk-cloner.md)
+    /** Casillas por segundo: la mitad que Creeper. Va despacio, pero no se para (L-05). PROVISIONAL. */
+    speed: 0.1,
+    attack: 'recite',
+    /** Muerde lo que toca, como Creeper. PROVISIONAL. */
+    biteDamage: 100,
+    biteIntervalMs: 1200, // PROVISIONAL
+    firstBiteMs: 600,
+    reach: 0.8,
+    halfLength: 0.55,
+    /** Lo que quita cada verso de su carril: mas que el del Minstrel, porque es el suyo en grande. PROVISIONAL. */
+    verseDamage: 50,
+    verseIntervalMs: 3500, // PROVISIONAL
+    /** Lo que tarda el primer verso desde que pisa el cesped. Mas que `warnMs`: siempre avisa. PROVISIONAL. */
+    firstVerseMs: 2500,
+    /** Aviso de cada verso: se hincha tomando aire, como el Minstrel. PROVISIONAL. */
+    warnMs: 1000,
+  },
+} as const;
+
+/**
+ * Lo propio de Elk Cloner (T-026; L-03 a L-06 cerradas el 22 nov 2026 con la recomendacion). El de verdad ensenaba un
+ * poema cada 50 arranques: aqui, cada `poemEvery` versos recita el poema entero, una onda por cada uno de los cinco
+ * carriles a la vez (L-03), tras un aviso largo (`poemWarnMs`) en el que no avanza ni muerde y que deja tiempo para sembrar
+ * un escudo. El poema hace mucho dano, pero no mata lo que tenia la vida entera (L-04): lo deja con `spareFraction` de
+ * ella. Cada onda la para el primer escudo de su carril, como un verso (`waveReach`). PROVISIONAL.
+ */
+export const ELK_CLONER = {
+  /** Versos de su carril entre un poema entero y el siguiente. PROVISIONAL. */
+  poemEvery: 2,
+  /** Aviso del poema entero: largo, para que de tiempo a sembrar o infundir un escudo. No va mas lento aunque este frenado. PROVISIONAL. */
+  poemWarnMs: 5000,
+  /** Lo que quita el poema a cada cosa que cruza, sin la fuerza de todos (T-010). Alto (L-04). PROVISIONAL. */
+  poemDamage: 350,
+  /** L-04: a lo que tenia la vida entera, el poema lo deja como poco con esta parte de su vida: nunca lo mata. */
+  spareFraction: 0.25,
 } as const;
 
 /**
@@ -267,6 +312,11 @@ export const ENEMY_LEVELS = {
     mid: { 1: 8, 2: 14, 3: 20, 4: 24, 5: 16, 6: 12, 7: 6 },
     /** Rondas 8 a 10: del 3 al 10, con el pico en el 7; menos el 3 y aun menos el 10. */
     late: { 3: 6, 4: 10, 5: 15, 6: 20, 7: 22, 8: 14, 9: 9, 10: 4 },
+    /**
+     * Brote 2 desde la ronda 5 (T-026): del 5 al 12, con el pico en el 8; el jugador ya puede subir sus disparadoras hasta
+     * el 10 (L-08). Es lo que hace que el final del brote 2 sea mas duro que el del brote 1.
+     */
+    high: { 5: 8, 6: 13, 7: 18, 8: 20, 9: 16, 10: 13, 11: 8, 12: 4 },
   },
 } as const;
 
@@ -571,26 +621,39 @@ const CREEPER_ROUNDS: readonly RoundScript[] = [
   },
 ];
 
+/** Los cinco carriles, para los grupos que salen por todos a la vez. */
+const ALL = [0, 1, 2, 3, 4] as const;
+
 /**
- * Las rondas del brote 2, el de Elk Cloner, PROVISIONALES (T-024): sirven para jugar el escudo y las tropas del brote 2
- * (T-025) mientras no exista su guion de verdad, que trae T-026 con su jefe. Como todo brote, empiezan con lo aprendido en
- * el anterior (B-01) y el escudo llega en la ronda 2 (decidido por Carmine); el juglar sale en la 3, como recomienda L-07.
- * Mientras su jefe no este en el juego (`boss: null`), el brote no se puede jugar fuera del modo desarrollo: la ruta lo da
- * por "Proximamente".
+ * Las rondas del brote 2, el de Elk Cloner (T-026; L-01, L-07 y L-08 cerradas el 22 nov 2026 con la recomendacion): 8
+ * rondas, porque el jugador ya sabe jugar y solo hay dos cosas nuevas. Empiezan con lo aprendido en el brote 1 (B-01) y
+ * con el tope de nivel a 10 desde la ronda 1 (L-08). Un concepto por ronda (L-07): en la 1, los Copycat y el tope 10; en
+ * la 2, el escudo; en la 3, el Minstrel; de la 4 a la 7, mezcla y mas dificultad (los niveles suben de `mid` a `high`), y
+ * en la 6 y la 7 Elk Cloner se prepara a la derecha y acelera a sus tropas, como Creeper. La 8 es el combate: primero su
+ * escolta de acorazados de nivel 10 por los cinco carriles y dos Minstrel (L-06, para que las minas sigan sirviendo), y
+ * detras el, por el centro; mientras vive llegan refuerzos, que dejan de salir en cuanto cae (`stepRound`). La simulacion
+ * con bots que lo ajusta esta en `src/game/sim/` (`npm run sim`), y lo que dio, en `docs/specs/05-brote-2-elk-cloner.md`.
+ * PROVISIONAL: se ajusta jugando.
  */
 const ELK_CLONER_ROUNDS: readonly RoundScript[] = [
   {
     unlocks: [],
-    levels: ENEMY_LEVELS.tables.mid,
+    // L-08: el tope sube a 10 desde la primera ronda: el aviso lo cuenta Boxer.
+    levelCap: 10,
+    // El tablero empieza vacio (B-02): de uno en uno al principio, como en el brote 1, pero ya con nivel y con copias.
+    levels: ENEMY_LEVELS.tables.early,
     groups: [
-      { atMs: 3_000, kind: 'copycat', lanes: [1, 3] },
-      { atMs: 10_000, kind: 'copycatArmored', lanes: [2] },
-      { atMs: 16_000, kind: 'copycatSpitter', lanes: [0] },
-      { atMs: 22_000, kind: 'copycat', lanes: [0, 2, 4] },
-      { atMs: 32_000, kind: 'copycatArmored', lanes: [1, 3] },
-      { atMs: 40_000, kind: 'copycatSpitter', lanes: [4] },
-      { atMs: 48_000, kind: 'copycat', lanes: [0, 1, 2, 3, 4] },
-      { atMs: 60_000, kind: 'copycatArmored', lanes: [0, 4] },
+      { atMs: 3_000, kind: 'copycat', lanes: [2] },
+      { atMs: 12_000, kind: 'copycat', lanes: [1] },
+      { atMs: 20_000, kind: 'copycat', lanes: [3] },
+      { atMs: 27_000, kind: 'copycat', lanes: [0, 4] },
+      { atMs: 34_000, kind: 'copycatSpitter', lanes: [2] },
+      { atMs: 40_000, kind: 'copycat', lanes: [1, 3] },
+      { atMs: 47_000, kind: 'copycatArmored', lanes: [2] },
+      { atMs: 54_000, kind: 'copycat', lanes: [0, 2, 4] },
+      { atMs: 60_000, kind: 'copycatSpitter', lanes: [1, 3] },
+      { atMs: 66_000, kind: 'copycat', lanes: ALL },
+      { atMs: 74_000, kind: 'copycatArmored', lanes: [1, 3] },
     ],
   },
   {
@@ -600,33 +663,158 @@ const ELK_CLONER_ROUNDS: readonly RoundScript[] = [
     groups: [
       { atMs: 3_000, kind: 'copycatSpitter', lanes: [2] },
       { atMs: 9_000, kind: 'copycat', lanes: [1, 3] },
-      { atMs: 16_000, kind: 'copycatSpitter', lanes: [0, 4] },
-      { atMs: 24_000, kind: 'copycatArmored', lanes: [2] },
-      { atMs: 30_000, kind: 'copycatSpitter', lanes: [1, 3] },
-      { atMs: 38_000, kind: 'copycat', lanes: [0, 2, 4] },
-      { atMs: 46_000, kind: 'copycatSpitter', lanes: [0, 2, 4] },
-      { atMs: 56_000, kind: 'copycatArmored', lanes: [1, 3] },
-      { atMs: 64_000, kind: 'copycatSpitter', lanes: [1, 2, 3] },
-      { atMs: 72_000, kind: 'copycat', lanes: [0, 1, 2, 3, 4] },
+      { atMs: 15_000, kind: 'copycatSpitter', lanes: [0, 4] },
+      { atMs: 22_000, kind: 'copycatArmored', lanes: [2] },
+      { atMs: 28_000, kind: 'copycatSpitter', lanes: [1, 3] },
+      { atMs: 35_000, kind: 'copycat', lanes: [0, 2, 4] },
+      { atMs: 42_000, kind: 'copycatSpitter', lanes: [0, 2, 4] },
+      { atMs: 50_000, kind: 'copycatArmored', lanes: [1, 3] },
+      { atMs: 57_000, kind: 'copycatSpitter', lanes: [1, 2, 3] },
+      { atMs: 64_000, kind: 'copycat', lanes: ALL },
+      { atMs: 72_000, kind: 'copycatArmored', lanes: [0, 4] },
+      { atMs: 76_000, kind: 'copycatSpitter', lanes: [2] },
+    ],
+  },
+  {
+    unlocks: [],
+    levels: ENEMY_LEVELS.tables.mid,
+    // Llegan los Minstrel: sus versos cruzan el carril y solo los para un escudo.
+    groups: [
+      { atMs: 3_000, kind: 'copycatArmored', lanes: [0, 4] },
+      { atMs: 6_000, kind: 'minstrel', lanes: [2] },
+      { atMs: 12_000, kind: 'copycat', lanes: ALL },
+      { atMs: 20_000, kind: 'minstrel', lanes: [1, 3] },
+      { atMs: 26_000, kind: 'copycatArmored', lanes: [1, 2, 3] },
+      { atMs: 34_000, kind: 'copycatSpitter', lanes: [0, 4] },
+      { atMs: 40_000, kind: 'copycat', lanes: ALL },
+      { atMs: 46_000, kind: 'minstrel', lanes: [0, 2, 4] },
+      { atMs: 56_000, kind: 'copycatArmored', lanes: [0, 2, 4] },
+      { atMs: 64_000, kind: 'copycat', lanes: ALL },
+      { atMs: 70_000, kind: 'minstrel', lanes: [1, 3] },
+      { atMs: 74_000, kind: 'copycatSpitter', lanes: [0, 1, 3, 4] },
+      { atMs: 80_000, kind: 'copycat', lanes: [1, 2, 3] },
     ],
   },
   {
     unlocks: [],
     levels: ENEMY_LEVELS.tables.late,
-    // Llegan los juglares: sus versos cruzan el carril y solo los para un escudo.
+    // Mezcla: acorazados que piden minas, Minstrel que piden escudos y escupidores que los desgastan.
     groups: [
-      { atMs: 3_000, kind: 'copycatArmored', lanes: [0, 4] },
-      { atMs: 6_000, kind: 'minstrel', lanes: [2] },
-      { atMs: 12_000, kind: 'copycat', lanes: [0, 1, 2, 3, 4] },
-      { atMs: 20_000, kind: 'minstrel', lanes: [1, 3] },
-      { atMs: 26_000, kind: 'copycatArmored', lanes: [1, 2, 3] },
-      { atMs: 34_000, kind: 'copycatSpitter', lanes: [0, 4] },
-      { atMs: 40_000, kind: 'copycat', lanes: [0, 1, 2, 3, 4] },
-      { atMs: 46_000, kind: 'minstrel', lanes: [0, 2, 4] },
-      { atMs: 56_000, kind: 'copycatArmored', lanes: [0, 2, 4] },
-      { atMs: 64_000, kind: 'copycat', lanes: [0, 1, 2, 3, 4] },
-      { atMs: 70_000, kind: 'minstrel', lanes: [1, 3] },
-      { atMs: 74_000, kind: 'copycatSpitter', lanes: [0, 1, 3, 4] },
+      { atMs: 3_000, kind: 'copycat', lanes: [0, 2, 4] },
+      { atMs: 8_000, kind: 'copycatArmored', lanes: [1, 3] },
+      { atMs: 14_000, kind: 'minstrel', lanes: [0, 4] },
+      { atMs: 20_000, kind: 'copycatSpitter', lanes: [2] },
+      { atMs: 24_000, kind: 'copycat', lanes: ALL },
+      { atMs: 32_000, kind: 'copycatArmored', lanes: [0, 2, 4] },
+      { atMs: 38_000, kind: 'minstrel', lanes: [1, 3] },
+      { atMs: 44_000, kind: 'copycatSpitter', lanes: [0, 4] },
+      { atMs: 50_000, kind: 'copycat', lanes: [1, 2, 3] },
+      { atMs: 52_000, kind: 'copycat', lanes: [1, 2, 3] },
+      { atMs: 60_000, kind: 'copycatArmored', lanes: [1, 3] },
+      { atMs: 64_000, kind: 'minstrel', lanes: [0, 2, 4] },
+      { atMs: 72_000, kind: 'copycatSpitter', lanes: [1, 3] },
+      { atMs: 78_000, kind: 'copycat', lanes: ALL },
+      { atMs: 84_000, kind: 'copycatArmored', lanes: [0, 2, 4] },
+    ],
+  },
+  {
+    unlocks: [],
+    levels: ENEMY_LEVELS.tables.late,
+    // Dos oleadas por los cinco carriles, con Minstrel detras de cada una.
+    groups: [
+      { atMs: 3_000, kind: 'copycat', lanes: ALL },
+      { atMs: 8_000, kind: 'minstrel', lanes: [1, 3] },
+      { atMs: 12_000, kind: 'copycatArmored', lanes: [0, 2, 4] },
+      { atMs: 18_000, kind: 'copycatSpitter', lanes: [1, 3] },
+      { atMs: 24_000, kind: 'copycat', lanes: ALL },
+      { atMs: 27_000, kind: 'copycat', lanes: ALL },
+      { atMs: 34_000, kind: 'minstrel', lanes: [0, 2, 4] },
+      { atMs: 40_000, kind: 'copycatArmored', lanes: [1, 3] },
+      { atMs: 46_000, kind: 'copycatSpitter', lanes: [0, 2, 4] },
+      { atMs: 54_000, kind: 'copycat', lanes: ALL },
+      { atMs: 58_000, kind: 'copycatArmored', lanes: ALL },
+      { atMs: 66_000, kind: 'minstrel', lanes: [1, 2, 3] },
+      { atMs: 72_000, kind: 'copycatSpitter', lanes: [0, 4] },
+      { atMs: 78_000, kind: 'copycat', lanes: ALL },
+      { atMs: 81_000, kind: 'copycat', lanes: ALL },
+      { atMs: 88_000, kind: 'copycatArmored', lanes: [1, 2, 3] },
+    ],
+  },
+  {
+    unlocks: [],
+    haste: 1.15,
+    bossPreparing: true,
+    levels: ENEMY_LEVELS.tables.high,
+    groups: [
+      { atMs: 3_000, kind: 'copycat', lanes: ALL },
+      { atMs: 6_000, kind: 'copycatArmored', lanes: [2] },
+      { atMs: 9_000, kind: 'minstrel', lanes: [0, 4] },
+      { atMs: 13_000, kind: 'copycatSpitter', lanes: [1, 3] },
+      { atMs: 18_000, kind: 'copycat', lanes: ALL },
+      { atMs: 22_000, kind: 'copycatArmored', lanes: [0, 4] },
+      { atMs: 26_000, kind: 'minstrel', lanes: [1, 2, 3] },
+      { atMs: 32_000, kind: 'copycat', lanes: ALL },
+      { atMs: 35_000, kind: 'copycatSpitter', lanes: [0, 2, 4] },
+      { atMs: 40_000, kind: 'copycatArmored', lanes: [1, 3] },
+      { atMs: 46_000, kind: 'minstrel', lanes: [0, 4] },
+      { atMs: 50_000, kind: 'copycat', lanes: ALL },
+      { atMs: 53_000, kind: 'copycat', lanes: [1, 2, 3] },
+      { atMs: 58_000, kind: 'copycatArmored', lanes: ALL },
+      { atMs: 64_000, kind: 'copycatSpitter', lanes: [1, 3] },
+      { atMs: 68_000, kind: 'minstrel', lanes: [0, 2, 4] },
+      { atMs: 74_000, kind: 'copycat', lanes: ALL },
+      { atMs: 77_000, kind: 'copycat', lanes: ALL },
+      { atMs: 84_000, kind: 'copycatArmored', lanes: [0, 2, 4] },
+      { atMs: 90_000, kind: 'copycatSpitter', lanes: ALL },
+    ],
+  },
+  {
+    unlocks: [],
+    haste: 1.25,
+    bossPreparing: true,
+    levels: ENEMY_LEVELS.tables.high,
+    groups: [
+      { atMs: 3_000, kind: 'copycat', lanes: ALL },
+      { atMs: 5_000, kind: 'copycatArmored', lanes: [1, 3] },
+      { atMs: 8_000, kind: 'minstrel', lanes: [0, 2, 4] },
+      { atMs: 12_000, kind: 'copycatSpitter', lanes: [1, 3] },
+      { atMs: 16_000, kind: 'copycat', lanes: ALL },
+      { atMs: 19_000, kind: 'copycatArmored', lanes: [0, 2, 4] },
+      { atMs: 23_000, kind: 'minstrel', lanes: [1, 3] },
+      { atMs: 27_000, kind: 'copycat', lanes: ALL },
+      { atMs: 30_000, kind: 'copycatSpitter', lanes: [0, 2, 4] },
+      { atMs: 34_000, kind: 'copycatArmored', lanes: ALL },
+      { atMs: 40_000, kind: 'minstrel', lanes: [0, 2, 4] },
+      { atMs: 44_000, kind: 'copycat', lanes: ALL },
+      { atMs: 46_000, kind: 'copycat', lanes: ALL },
+      { atMs: 52_000, kind: 'copycatSpitter', lanes: [1, 3] },
+      { atMs: 55_000, kind: 'copycatArmored', lanes: [1, 2, 3] },
+      { atMs: 60_000, kind: 'minstrel', lanes: ALL },
+      { atMs: 66_000, kind: 'copycat', lanes: ALL },
+      { atMs: 69_000, kind: 'copycatArmored', lanes: [0, 4] },
+      { atMs: 74_000, kind: 'copycatSpitter', lanes: ALL },
+      { atMs: 80_000, kind: 'copycat', lanes: ALL },
+      { atMs: 83_000, kind: 'copycat', lanes: ALL },
+      { atMs: 88_000, kind: 'copycatArmored', lanes: ALL },
+      { atMs: 94_000, kind: 'minstrel', lanes: [1, 3] },
+    ],
+  },
+  {
+    unlocks: [],
+    levels: ENEMY_LEVELS.tables.high,
+    groups: [
+      // L-06: su escolta, un acorazado de nivel 10 por carril (como la de Creeper) y dos Minstrel de nivel 10.
+      { atMs: 2_000, kind: 'copycatArmored', lanes: ALL, level: 10, shout: 'escort' },
+      { atMs: 4_000, kind: 'minstrel', lanes: [1, 3], level: 10 },
+      { atMs: 6_000, kind: 'elkCloner', lanes: [2] },
+      // Refuerzos mientras vive: dejan de salir en cuanto cae.
+      { atMs: 26_000, kind: 'minstrel', lanes: [0, 4] },
+      { atMs: 40_000, kind: 'copycatArmored', lanes: [1, 3] },
+      { atMs: 54_000, kind: 'minstrel', lanes: [0, 2, 4] },
+      { atMs: 70_000, kind: 'copycat', lanes: ALL },
+      { atMs: 86_000, kind: 'minstrel', lanes: [1, 3] },
+      { atMs: 100_000, kind: 'copycatArmored', lanes: [0, 2, 4] },
+      { atMs: 116_000, kind: 'minstrel', lanes: ALL },
     ],
   },
 ];
@@ -651,8 +839,8 @@ export const OUTBREAKS: readonly OutbreakScript[] = [
   },
   {
     id: 'elkCloner',
-    // T-024: su jefe aun no esta en el juego (llega con T-026). Hasta entonces, el brote solo se juega en desarrollo.
-    boss: null,
+    // T-026: Elk Cloner, el Poeta. Hasta entonces el brote estaba en preparacion (T-024, `boss: null`).
+    boss: 'elkCloner',
     startingBalance: 300, // PROVISIONAL
     rounds: ELK_CLONER_ROUNDS,
     // Lo nuevo desde el brote 2 lo crea Patty (T-032, VT-03).

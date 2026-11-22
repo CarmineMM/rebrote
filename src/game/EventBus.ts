@@ -1,4 +1,5 @@
 import * as Phaser from 'phaser';
+import type { BossKind } from './core/combat';
 import type { CardId, MatchState } from './core/match';
 import type { OutbreakId } from './core/outbreaks';
 import type { ElementType } from './core/plants';
@@ -189,15 +190,22 @@ export interface WinInfo {
   seeds: SeedSummary;
 }
 
-/** Barra del jefe (T-008). Sale del Creeper del estado y de `CREEPER` en balance. */
+/** Barra del jefe (T-008). Sale del jefe del estado y de lo suyo en balance (`CREEPER`, `ELK_CLONER`). */
 export interface BossInfo {
+  /** Que jefe es (T-026): de el salen la cara de la barra y sus rotulos. */
+  kind: BossKind;
   name: string;
   hp: number;
   maxHp: number;
-  /** Fase 2: con la mitad de la vida o menos. */
+  /** Fase 2 (Creeper): con la mitad de la vida o menos. */
   enraged: boolean;
-  /** Umbrales de vida (fracciones) en los que salta de carril: la barra los marca. */
+  /** Umbrales de vida (fracciones) en los que salta de carril (Creeper): la barra los marca. Vacio si no salta. */
   jumpAt: number[];
+  /**
+   * Elk Cloner (T-026): versos que lleva desde el ultimo poema entero, cuantos hacen falta para el siguiente y si lo esta
+   * anunciando. Null si el jefe no recita.
+   */
+  poem: { sung: number; every: number; warning: boolean } | null;
 }
 
 /** Ronda en curso (T-007). Sale de `round` en el estado y de `rounds.ts` en core. */
@@ -252,7 +260,9 @@ export type InfoTone =
   | 'copycat'
   | 'copycatArmored'
   | 'copycatSpitter'
-  | 'minstrel';
+  | 'minstrel'
+  // Elk Cloner (T-026): el oro de su cornamenta y su poema.
+  | 'elkCloner';
 
 /** Una fila de datos de la ficha: "Mordisco 57,5 (cada 1 s)". */
 export interface InfoStat {
