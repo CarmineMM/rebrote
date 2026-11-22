@@ -1,4 +1,4 @@
-import { BOARD, CLONE, CREEPER, ELK_CLONER, ENEMIES, ICE_WALL, MINE, SHIELD } from '../config/balance';
+import { BOARD, CLONE, CREEPER, ELK_CLONER, ENEMIES, HOP, ICE_WALL, MINE, SHIELD, STEALTH } from '../config/balance';
 import type { Cell } from '../core/board';
 import {
   bulletDamage,
@@ -9,6 +9,7 @@ import {
   fireIntervalMs,
   isBoss,
   isEnraged,
+  isHidden,
   leavesClone,
   mineBlast,
   poemDamage,
@@ -177,6 +178,11 @@ function enemyAbout(enemy: Enemy): string {
   const { kind } = enemy;
   if (kind === 'spitter' || kind === 'copycatSpitter' || kind === 'minstrel') return about[kind](formatNumber(ENEMIES[kind].range));
   if (kind === 'elkCloner') return about.elkCloner(ELK_CLONER.poemEvery);
+  // Tropas del brote 3 (T-038): a que distancia las ven las plantas y, el Skipper, cuanto salta.
+  const seen = formatNumber(STEALTH.revealRadius);
+  if (kind === 'lurker' || kind === 'lurkerArmored') return about[kind](seen);
+  if (kind === 'lurkerSpitter') return about.lurkerSpitter(seen, formatNumber(ENEMIES.lurkerSpitter.range));
+  if (kind === 'skipper') return about.skipper(formatNumber(HOP.length));
   return about[kind];
 }
 
@@ -218,8 +224,12 @@ export function enemyInfo(enemy: Enemy): EntityInfoData {
     rows.push({ label: t.stats.poem, value: formatNumber(poemDamage()), note: t.stats.poemNote(ELK_CLONER.poemEvery, formatSeconds(ELK_CLONER.poemWarnMs)) });
   }
   if (enemy.kind === 'creeper') rows.push({ label: t.stats.slam, value: formatNumber(slamDamage()), note: t.stats.slamNote });
+  // Skipper (T-038): cuanto salta y cuanto descansa; su velocidad es la media de los dos.
+  if (enemy.hop) rows.push({ label: t.stats.hop, value: t.stats.hopValue(formatNumber(HOP.length)), note: t.stats.hopNote(formatSeconds(HOP.restMs)) });
   const speed = stats.speed * enemy.haste;
   rows.push({ label: t.stats.speed, value: t.stats.speedValue(formatNumber(speed, 2)), note: t.stats.crosses(Math.round(BOARD.columns / speed)) });
+  // Lurker (T-038): a que distancia lo ven las plantas.
+  if (enemy.revealMs !== null) rows.push({ label: t.stats.seen, value: t.stats.seenValue(formatNumber(STEALTH.revealRadius)), note: t.stats.seenNote });
   if (enemy.kind === 'creeper') {
     const next = CREEPER.jumpAt[enemy.jumpsUsed];
     rows.push({ label: t.stats.nextJump, value: next === undefined ? t.stats.noMoreJumps : t.stats.jumpAt(formatPercent(next)) });
@@ -236,6 +246,10 @@ export function enemyInfo(enemy: Enemy): EntityInfoData {
   }
 
   const tags: InfoTag[] = [];
+  // Tropas del brote 3 (T-038): si esta oculta, y el Skipper, si esta en el aire o a punto de saltar.
+  if (enemy.revealMs !== null) tags.push(isHidden(enemy) ? { text: t.tags.hidden, tone: 'calm' } : { text: t.tags.revealed, tone: 'alert' });
+  if (enemy.hop?.stage === 'air') tags.push({ text: t.tags.airborne, tone: 'alert' });
+  else if (enemy.hop && enemy.attackMs === null && enemy.hop.ms <= HOP.crouchMs) tags.push({ text: t.tags.crouching, tone: 'alert' });
   if (boss && isEnraged(enemy)) tags.push({ text: t.tags.enraged, tone: 'alert' });
   if (enemy.jump) tags.push({ text: t.tags.jumping, tone: 'alert' });
   else if (poemWarning(enemy) !== null) tags.push({ text: t.tags.poem, tone: 'alert' });

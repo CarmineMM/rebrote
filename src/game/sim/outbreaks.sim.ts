@@ -99,3 +99,19 @@ describe('brote 1 con nivel base (T-023)', () => {
     });
   }
 });
+
+/**
+ * Brote 3 en preparacion (T-038): sus 3 rondas provisionales con las tropas nuevas (Lurker ocultos y, en la 3, el Skipper).
+ * Sin jefe, ganar es acabar las tres. Se anota en `docs/specs/06-brote-3-brain.md` para que T-039 ajuste vida y cantidades
+ * con su guion de verdad. Ojo: aqui el bot con escudos juega como el que no los usa, porque gasta cada 100 monedas en
+ * disparadoras antes de juntar las 150 de un muro. Solo se exige que el brote se pueda ganar.
+ */
+describe('brote 3: Brain, en preparacion (T-038)', () => {
+  for (const style of [SHIELDLESS, SHIELDED, SHIELDED_STRONG]) {
+    it(`bot ${style.name} (se anota)`, () => {
+      const results = play('brain', style);
+      report('brain', style, results);
+      if (style === SHIELDED) expect(results.some((r) => r.outcome === 'won')).toBe(true);
+    });
+  }
+});

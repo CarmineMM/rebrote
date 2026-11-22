@@ -125,6 +125,14 @@ export const RECIPES = {
     about: 'Nota que se hincha despacio con vibrato y sube: Elk Cloner anuncia el poema entero (T-026)',
     params: { wave_type: 2, p_env_attack: 0.55, p_env_sustain: 0.42, p_env_decay: 0.3, p_base_freq: 0.28, p_freq_ramp: 0.06, p_vib_strength: 0.3, p_vib_speed: 0.45, p_lpf_freq: 0.6 },
   },
+  boing: {
+    about: 'Muelle de dibujos animados: una senoidal corta que sube de golpe con un poco de vibrato. El salto del Skipper (T-038)',
+    params: { wave_type: 2, p_env_sustain: 0.1, p_env_punch: 0.25, p_env_decay: 0.18, p_base_freq: 0.26, p_freq_ramp: 0.34, p_vib_strength: 0.35, p_vib_speed: 0.6, p_lpf_freq: 0.8 },
+  },
+  decloak: {
+    about: 'Destello digital que sube con un fase: algo escondido que aparece. Un Lurker oculto se descubre (T-038)',
+    params: { wave_type: 0, p_env_attack: 0.06, p_env_sustain: 0.14, p_env_decay: 0.26, p_base_freq: 0.34, p_freq_ramp: 0.2, p_arp_mod: 0.3, p_arp_speed: 0.55, p_duty: 0.3, p_pha_offset: 0.2, p_pha_ramp: 0.12, p_lpf_freq: 0.75, p_hpf_freq: 0.08 },
+  },
   voiceLow: {
     about: 'Bip corto y grave de cuadrada suave: una silaba de Boxer en las viñetas',
     params: { wave_type: 0, p_env_sustain: 0.05, p_env_punch: 0.2, p_env_decay: 0.09, p_base_freq: 0.26, p_freq_ramp: -0.05, p_duty: 0.45, p_lpf_freq: 0.5, p_hpf_freq: 0.04 },

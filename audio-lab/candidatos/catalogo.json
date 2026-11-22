@@ -1332,6 +1332,74 @@
       ]
     },
     {
+      "id": "hop",
+      "about": "El Skipper salta (T-038): un boing de muelle con un poco de hierba",
+      "spec": {
+        "bus": "world",
+        "volume": 0.3,
+        "maxVoices": 2,
+        "minGapMs": 110,
+        "burst": 2,
+        "pitchJitter": 2,
+        "variants": 1
+      },
+      "pick": [
+        {
+          "url": "audio/hop",
+          "source": "jsfxr: receta `boing` + Kenney Impact Sounds: `footstep_grass_000.ogg` (recortado 0-180 ms, -8 dB)",
+          "seconds": 0.107
+        }
+      ],
+      "alternatives": [
+        {
+          "url": "audio-lab/candidatos/hop/1",
+          "source": "Kenney Digital Audio: `phaseJump1.ogg` (recortado 0-260 ms, -2 dB)",
+          "seconds": 0.161,
+          "recipes": []
+        },
+        {
+          "url": "audio-lab/candidatos/hop/2",
+          "source": "Kenney Interface Sounds: `maximize_006.ogg` (velocidad 1.3, -2 dB)",
+          "seconds": 0.283,
+          "recipes": []
+        }
+      ]
+    },
+    {
+      "id": "reveal",
+      "about": "Un Lurker oculto se descubre (T-038): un destello digital que sube, con un chasquido de interferencia",
+      "spec": {
+        "bus": "world",
+        "volume": 0.5,
+        "maxVoices": 2,
+        "minGapMs": 140,
+        "burst": 2,
+        "pitchJitter": 1,
+        "variants": 1
+      },
+      "pick": [
+        {
+          "url": "audio/reveal",
+          "source": "jsfxr: receta `decloak` + Kenney Interface Sounds: `glitch_002.ogg` (-8 dB)",
+          "seconds": 0.205
+        }
+      ],
+      "alternatives": [
+        {
+          "url": "audio-lab/candidatos/reveal/1",
+          "source": "Kenney Sci-Fi Sounds: `forceField_001.ogg` (recortado 0-450 ms, -3 dB)",
+          "seconds": 0.441,
+          "recipes": []
+        },
+        {
+          "url": "audio-lab/candidatos/reveal/2",
+          "source": "Kenney Digital Audio: `phaserUp2.ogg` (recortado 0-360 ms, -3 dB)",
+          "seconds": 0.261,
+          "recipes": []
+        }
+      ]
+    },
+    {
       "id": "elkClonerTalk",
       "about": "Elk Cloner suelta una rima en su bocadillo de pergamino (T-026): dos pitidos de Apple II",
       "spec": {

@@ -98,6 +98,7 @@ import { createAmbience, type Ambience } from '../view/ambience';
 import { BoardLabel, drawArea, drawCell, type LabelLine } from '../view/boardMarks';
 import { BulletView } from '../view/bulletView';
 import { bossLines, createBossOmen, createEnemyView, type BossOmen } from '../view/bossView';
+import { BugView } from '../view/bugView';
 import { CreeperView, OMEN_LEAP_MS, bossLoadProgress } from '../view/creeperView';
 import { ElkClonerView } from '../view/elkClonerView';
 import { Effects } from '../view/effects';
@@ -219,7 +220,10 @@ const DEBUG = {
   /** Lo que sueltan las teclas J (un juglar) y K (un copion de cada tipo, por turnos) para probar las tropas de T-025. */
   minstrel: 'minstrel',
   copycats: ['copycat', 'copycatArmored', 'copycatSpitter'],
-} as const satisfies { coins: number; minstrel: EnemyKind; copycats: readonly EnemyKind[] };
+  /** Lo que sueltan las teclas L (un Lurker de cada tipo, por turnos) y S (un Skipper) para probar las de T-038. */
+  lurkers: ['lurker', 'lurkerSpitter', 'lurkerArmored'],
+  skipper: 'skipper',
+} as const satisfies { coins: number; minstrel: EnemyKind; copycats: readonly EnemyKind[]; lurkers: readonly EnemyKind[]; skipper: EnemyKind };
 
 /** Prueba de rendimiento en desarrollo (tecla H): el presupuesto de T-002, 20 plantas y 60 enemigos. */
 const STRESS = {
@@ -369,6 +373,8 @@ export class BoardScene extends Phaser.Scene {
   private baseLevel: number | undefined;
   /** Siguiente copion que suelta la tecla K en desarrollo (T-025). */
   private debugCopycat = 0;
+  /** Que Lurker suelta la tecla L la proxima vez (T-038). */
+  private debugLurker = 0;
   /** Rotulo sobre la disparadora a la que apunta una carta de elemento: lo que costaria infundirla o por que no se puede. */
   private cardLabel!: BoardLabel;
   /** Ultimo precio de infusion enviado al HUD, para avisar solo cuando cambia. */
@@ -823,6 +829,12 @@ export class BoardScene extends Phaser.Scene {
       this.debugSpawn(DEBUG.copycats[this.debugCopycat]);
       this.debugCopycat = (this.debugCopycat + 1) % DEBUG.copycats.length;
     });
+    // L: suelta un Lurker (base, escupidor y acorazado, por turnos); S: un Skipper, en el carril del puntero (T-038).
+    this.input.keyboard?.on('keydown-L', () => {
+      this.debugSpawn(DEBUG.lurkers[this.debugLurker]);
+      this.debugLurker = (this.debugLurker + 1) % DEBUG.lurkers.length;
+    });
+    this.input.keyboard?.on('keydown-S', () => this.debugSpawn(DEBUG.skipper));
   }
 
   /** Saca un enemigo de `kind` por el agujero del carril del puntero (el del centro si no esta sobre el tablero). */
@@ -1198,6 +1210,17 @@ export class BoardScene extends Phaser.Scene {
         this.refreshDragTargets();
         break;
       }
+      // Tropas del brote 3 (T-038): el Skipper despega levantando tierra. Agacharse, el vuelo, caer y lo oculto salen del
+      // estado en `BugView.sync`; aqui solo suenan (`combatCues`).
+      case 'hopped': {
+        const view = this.wormViews.get(event.enemyId);
+        if (view instanceof BugView) view.hopped();
+        break;
+      }
+      case 'hopLanded':
+      case 'revealed':
+      case 'concealed':
+        break;
     }
   }
 

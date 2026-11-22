@@ -302,6 +302,11 @@ export type InfoTone =
   | 'minstrel'
   // Elk Cloner (T-026): el oro de su cornamenta y su poema.
   | 'elkCloner'
+  // Tropas del brote 3 (T-038).
+  | 'lurker'
+  | 'lurkerSpitter'
+  | 'lurkerArmored'
+  | 'skipper'
   // Muro de hielo del poder (T-021).
   | 'iceWall';
 

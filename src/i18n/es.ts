@@ -319,11 +319,11 @@ export const es = {
         'Elk Cloner casi ha terminado su poema: aún más tropas y más rápidas',
         '¡Llega Elk Cloner! Cada pocos versos recita el poema entero por los cinco carriles: pon un escudo en cada uno',
       ],
-      // T-037: guion provisional del brote 3, en preparacion (T-038 y T-039 traen sus tropas, su jefe y sus 8 rondas).
+      // T-037: guion provisional del brote 3, en preparacion. T-038 trae sus tropas; T-039, su jefe y sus 8 rondas.
       brain: [
-        'Lo aprendido sigue contigo: el muro ya está en tu bandeja',
+        'Ojo: los Lurker llegan ocultos y tus plantas no los ven de lejos. Las minas y el hielo los descubren',
         'Suelta el escudo sobre una disparadora: aguanta el doble y para lo que va a las de detrás',
-        'Todos a la vez: escudos delante y minas para los acorazados',
+        '¡Llega el Skipper! Salta por encima de todo: solo lo para un escudo',
       ],
     },
   },
@@ -552,8 +552,9 @@ export const es = {
     title: '¡Se colaron!',
     /** Cuando el jefe cruza el jardin (T-008): cada uno con lo suyo. */
     bossTitle: { creeper: '¡Creeper se escapó!', elkCloner: '¡Elk Cloner cruzó el jardín!' },
-    text: (crossed: number, round: number | null, total: number) =>
-      `${crossed === 1 ? '1 gusano cruzó' : `${crossed} gusanos cruzaron`} el jardín${round === null ? '' : ` en la ronda ${round} de ${total}`}.`,
+    /** `outbreak`: en el brote 3 (T-038) no son gusanos, sino bichos. */
+    text: (crossed: number, round: number | null, total: number, outbreak: string) =>
+      `${crossed === 1 ? `1 ${outbreak === 'brain' ? 'bicho' : 'gusano'} cruzó` : `${crossed} ${outbreak === 'brain' ? 'bichos' : 'gusanos'} cruzaron`} el jardín${round === null ? '' : ` en la ronda ${round} de ${total}`}.`,
     bossText: {
       creeper: 'Saltó de carril y cruzó el jardín en el combate final.',
       elkCloner: 'Recitó hasta el final y cruzó el jardín en el combate final.',
@@ -781,6 +782,14 @@ export const es = {
       poemNow: '¡Ya lo está recitando!',
       /** Copycat (T-025): lo que dejan al caer. */
       leavesClone: 'Deja una copia',
+      /** Skipper (T-038): cuanto salta y cuanto descansa entre salto y salto. */
+      hop: 'Salto',
+      hopValue: (cells: string) => `${cells} casillas`,
+      hopNote: (time: string) => `y ${time} en tierra`,
+      /** Lurker (T-038): a que distancia de lo sembrado lo ven las plantas. */
+      seen: 'Lo ven',
+      seenValue: (cells: string) => `A ${cells} casillas`,
+      seenNote: 'de lo primero sembrado en su carril',
       bite: 'Mordisco',
       biteNote: (time: string) => `cada ${time}`,
       slam: 'Golpe al caer',
@@ -826,6 +835,12 @@ export const es = {
       crumbling: '¡A punto de romperse!',
       /** Muro de hielo del poder (T-021) en sus ultimos segundos. */
       melting: '¡Derritiéndose!',
+      /** Tropas del brote 3 (T-038): oculta (las plantas no la ven) o descubierta. */
+      hidden: 'Oculto: las plantas no lo ven',
+      revealed: 'Descubierto',
+      /** Skipper (T-038) en mitad de un salto, o agachado para el siguiente. */
+      airborne: 'En el aire: no le dan las balas',
+      crouching: '¡Va a saltar!',
     },
     shooter: {
       title: { plain: 'Disparadora', fire: 'Disparadora de fuego', ice: 'Disparadora de hielo', shield: 'Disparadora con escudo' },
@@ -878,6 +893,11 @@ export const es = {
         copycatArmored: 'Copycat acorazado',
         copycatSpitter: 'Copycat escupidor',
         minstrel: 'Minstrel',
+        /** Tropas del brote 3 (T-038). */
+        lurker: 'Lurker',
+        lurkerSpitter: 'Lurker escupidor',
+        lurkerArmored: 'Lurker acorazado',
+        skipper: 'Skipper',
       },
       /** La copia que deja cada Copycat al caer (T-025, F-01). */
       cloneNames: { copycat: 'Copia de Copycat', copycatArmored: 'Copia acorazada', copycatSpitter: 'Copia escupidora' },
@@ -889,6 +909,10 @@ export const es = {
         copycatArmored: 'Con placas de disquete',
         copycatSpitter: 'Escupe y se copia',
         minstrel: 'Recita versos',
+        lurker: 'Llega oculto',
+        lurkerSpitter: 'Escupe desde la sombra',
+        lurkerArmored: 'Con placas de sectores',
+        skipper: 'Salta por encima de todo',
         clone: 'Pequeña y débil',
         boss: (outbreak: number) => `Jefe del brote ${outbreak}`,
         bossEnraged: (outbreak: number) => `Jefe del brote ${outbreak} · fase 2`,
@@ -908,6 +932,14 @@ export const es = {
         minstrel: (cells: string) =>
           `Se para a ${cells} casillas de lo primero sembrado, se hincha y suelta un verso: una onda que cruza el carril y daña todo lo que pasa, minas incluidas. Solo la para un escudo.`,
         clone: (hp: string, damage: string) => `Salió de un Copycat al caer. Ataca como él, con el ${hp} de su vida y el ${damage} de su fuerza, y ya no deja otra copia.`,
+        lurker: (cells: string) =>
+          `Llega oculto: las plantas no le apuntan hasta que está a ${cells} casillas de lo primero sembrado en su carril. Recibir daño, el hielo y el fuego lo descubren un rato. Muerde como el gusano.`,
+        lurkerSpitter: (cells: string, range: string) =>
+          `Llega oculto como el Lurker y las plantas lo ven a ${cells} casillas. Se para a ${range} casillas de lo primero sembrado y le escupe, así que siempre se descubre antes de atacar.`,
+        lurkerArmored: (cells: string) =>
+          `Llega oculto como el Lurker y las plantas lo ven a ${cells} casillas. Tiene cuatro veces su vida y va más lento. Se le caen las placas al perder vida.`,
+        skipper: (cells: string) =>
+          `Avanza a saltos de ${cells} casillas por encima de plantas y minas y solo lo para un escudo, al que muerde. En el aire no le dan las balas: hay que pillarlo en tierra.`,
       },
     },
   },

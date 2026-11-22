@@ -66,7 +66,7 @@ export function DefeatScreen({ round, loss, onRestart, onMenu }: DefeatScreenPro
           {byBoss ? t.defeat.bossTitle[boss] : t.defeat.title}
         </h2>
         <p className="defeat-text">
-          {byBoss ? t.defeat.bossText[boss] : t.defeat.text(lives, round ? round.number : null, round?.total ?? 0)}
+          {byBoss ? t.defeat.bossText[boss] : t.defeat.text(lives, round ? round.number : null, round?.total ?? 0, outbreak)}
         </p>
         {loss && <SeedsEarned seeds={loss.seeds} />}
         <div className="pause-actions">

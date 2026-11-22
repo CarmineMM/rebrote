@@ -90,8 +90,8 @@ describe('gusano', () => {
     const one = spawnEnemy(createMatch(), 'worm', 2, HOLE_X);
     const two = spawnEnemy(one, 'worm', 4, HOLE_X);
     expect(two.enemies).toEqual([
-      { id: 1, kind: 'worm', lane: 2, x: HOLE_X, hp: wormHp, attackMs: null, burn: null, slow: null, haste: 1, level: 1, jump: null, jumpsUsed: 0, clone: false, recital: null },
-      { id: 2, kind: 'worm', lane: 4, x: HOLE_X, hp: wormHp, attackMs: null, burn: null, slow: null, haste: 1, level: 1, jump: null, jumpsUsed: 0, clone: false, recital: null },
+      { id: 1, kind: 'worm', lane: 2, x: HOLE_X, hp: wormHp, attackMs: null, burn: null, slow: null, haste: 1, level: 1, jump: null, jumpsUsed: 0, clone: false, recital: null, hop: null, revealMs: null },
+      { id: 2, kind: 'worm', lane: 4, x: HOLE_X, hp: wormHp, attackMs: null, burn: null, slow: null, haste: 1, level: 1, jump: null, jumpsUsed: 0, clone: false, recital: null, hop: null, revealMs: null },
     ]);
     expect(() => spawnEnemy(createMatch(), 'worm', BOARD.lanes, HOLE_X)).toThrow();
   });

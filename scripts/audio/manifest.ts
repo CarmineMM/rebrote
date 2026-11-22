@@ -302,6 +302,16 @@ export const MANIFEST: Readonly<Record<SfxId, SoundEntry>> = {
     pick: digital('phaseJump2', { lengthMs: 320, fadeOutMs: 140 }),
     alternatives: [digital('pepSound2', { lengthMs: 320, fadeOutMs: 150 }), digital('powerUp2', { lengthMs: 320, fadeOutMs: 150, gainDb: -2 })],
   },
+  hop: {
+    about: 'El Skipper salta (T-038): un boing de muelle con un poco de hierba',
+    pick: [sfxr('boing'), impact('footstep_grass_000', { lengthMs: 180, fadeOutMs: 120, gainDb: -8 })],
+    alternatives: [digital('phaseJump1', { lengthMs: 260, fadeOutMs: 120, gainDb: -2 }), ui('maximize_006', { rate: 1.3, gainDb: -2 })],
+  },
+  reveal: {
+    about: 'Un Lurker oculto se descubre (T-038): un destello digital que sube, con un chasquido de interferencia',
+    pick: [sfxr('decloak'), ui('glitch_002', { gainDb: -8 })],
+    alternatives: [scifi('forceField_001', { lengthMs: 450, fadeOutMs: 220, gainDb: -3 }), digital('phaserUp2', { lengthMs: 360, fadeOutMs: 160, gainDb: -3 })],
+  },
   elkClonerTalk: {
     about: 'Elk Cloner suelta una rima en su bocadillo de pergamino (T-026): dos pitidos de Apple II',
     pick: sfxr('chirp'),
