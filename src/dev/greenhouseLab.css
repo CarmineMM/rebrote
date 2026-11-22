@@ -14,7 +14,7 @@ html:not(.ghl-solo) #root {
 .ghl {
   min-height: 100%;
   color: #f4ffe9;
-  font-family: ui-rounded, "Nunito", system-ui, sans-serif;
+  font-family: ui-rounded, 'Nunito', system-ui, sans-serif;
 }
 
 .ghl-bar {
@@ -178,9 +178,7 @@ html:not(.ghl-solo) #root {
 .gh-shop-area {
   position: absolute;
   left: var(--edge);
-  right: calc(
-    var(--menu-right) + var(--menu-w) + var(--gap) + var(--patty-room)
-  );
+  right: calc(var(--menu-right) + var(--menu-w) + var(--gap) + var(--patty-room));
   top: var(--top);
   bottom: var(--bottom);
   display: grid;
@@ -215,7 +213,7 @@ html:not(.ghl-solo) #root {
 }
 
 .gh-group::after {
-  content: "";
+  content: '';
   flex: 1;
   height: 2px;
   border-radius: 2px;
@@ -239,8 +237,7 @@ html:not(.ghl-solo) #root {
   flex-direction: column;
   align-items: center;
   min-width: 0;
-  animation: pop-in 0.4s calc(0.25s + var(--i, 0) * 0.09s)
-    cubic-bezier(0.2, 1.3, 0.4, 1) both;
+  animation: pop-in 0.4s calc(0.25s + var(--i, 0) * 0.09s) cubic-bezier(0.2, 1.3, 0.4, 1) both;
 }
 
 .gh-offer-art {
@@ -554,8 +551,7 @@ html:not(.ghl-solo) #root {
   border-radius: 26px 26px 14px 14px;
   border: 9px solid #4f8a6e;
   background:
-    linear-gradient(180deg, rgba(60, 40, 10, 0.18), rgba(60, 40, 10, 0) 28%),
-    repeating-linear-gradient(90deg, #f3ead0 0 78px, #e6dcbd 78px 80px), #f3ead0;
+    linear-gradient(180deg, rgba(60, 40, 10, 0.18), rgba(60, 40, 10, 0) 28%), repeating-linear-gradient(90deg, #f3ead0 0 78px, #e6dcbd 78px 80px), #f3ead0;
   box-shadow:
     0 0 0 3px #2f5e48,
     0 22px 44px rgba(20, 40, 20, 0.4),
@@ -592,7 +588,7 @@ html:not(.ghl-solo) #root {
 }
 .lab-plaque::before,
 .lab-plaque::after {
-  content: "";
+  content: '';
   position: absolute;
   top: 50%;
   width: 8px;
@@ -610,7 +606,7 @@ html:not(.ghl-solo) #root {
 /* La balda: una tabla bajo los dibujos de cada fila, de lado a lado de la vitrina. */
 .gh-lab .gh-powers .gh-offer-art::after,
 .gh-lab .gh-plant::before {
-  content: "";
+  content: '';
   position: absolute;
   bottom: -6px;
   left: -8px;
@@ -646,7 +642,7 @@ html:not(.ghl-solo) #root {
   rotate: calc((var(--i, 0) - 1) * 0.8deg);
 }
 .gh-lab .gh-offer-label::before {
-  content: "";
+  content: '';
   position: absolute;
   top: -6px;
   left: 50%;
@@ -721,36 +717,22 @@ html:not(.ghl-solo) #root {
   border-radius: 50% 50% 8px 8px / 62% 62% 8px 8px;
   border: 2px solid rgba(255, 255, 255, 0.85);
   background:
-    radial-gradient(
-      ellipse at 30% 22%,
-      rgba(255, 255, 255, 0.85),
-      rgba(255, 255, 255, 0) 28%
-    ),
-    linear-gradient(
-      90deg,
-      rgba(170, 225, 240, 0.4),
-      rgba(255, 255, 255, 0.06) 40%,
-      rgba(170, 225, 240, 0.35)
-    );
+    radial-gradient(ellipse at 30% 22%, rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0) 28%),
+    linear-gradient(90deg, rgba(170, 225, 240, 0.4), rgba(255, 255, 255, 0.06) 40%, rgba(170, 225, 240, 0.35));
   box-shadow:
     inset -6px -4px 14px rgba(90, 150, 170, 0.35),
     0 0 0 1px rgba(90, 150, 170, 0.4);
 }
 .lab-cloche-glass::after {
-  content: "";
+  content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(
-    110deg,
-    transparent 38%,
-    rgba(255, 255, 255, 0.7) 48%,
-    transparent 58%
-  );
+  background: linear-gradient(110deg, transparent 38%, rgba(255, 255, 255, 0.7) 48%, transparent 58%);
   background-size: 320% 100%;
   animation: lab-shine 5.5s calc(var(--i, 0) * 0.8s) ease-in-out infinite;
 }
 .lab-cloche::before {
-  content: "";
+  content: '';
   position: absolute;
   z-index: 1;
   left: 50%;
@@ -802,18 +784,14 @@ html:not(.ghl-solo) #root {
   border: 2px solid #283133;
 }
 .lab-lamp::after {
-  content: "";
+  content: '';
   position: absolute;
   left: -12%;
   right: -12%;
   top: 100%;
   height: calc(130px * var(--k));
   clip-path: polygon(14% 0, 86% 0, 100% 100%, 0 100%);
-  background: linear-gradient(
-    180deg,
-    rgba(255, 140, 230, 0.55),
-    rgba(255, 140, 230, 0)
-  );
+  background: linear-gradient(180deg, rgba(255, 140, 230, 0.55), rgba(255, 140, 230, 0));
   animation: lab-hum 3s ease-in-out infinite;
 }
 @keyframes lab-hum {
@@ -840,16 +818,10 @@ html:not(.ghl-solo) #root {
   height: calc(52px * var(--k));
   translate: -50% 0;
   clip-path: polygon(0 0, 100% 0, 86% 100%, 14% 100%);
-  background: linear-gradient(
-    90deg,
-    #a9512b,
-    #e48c5b 38%,
-    #c56a3c 70%,
-    #a9512b
-  );
+  background: linear-gradient(90deg, #a9512b, #e48c5b 38%, #c56a3c 70%, #a9512b);
 }
 .lab-pot-clay::before {
-  content: "";
+  content: '';
   position: absolute;
   left: 0;
   right: 0;
@@ -958,15 +930,8 @@ html:not(.ghl-solo) #root {
   border-radius: 10px;
   border: 6px solid #2b1a0e;
   background:
-    linear-gradient(
-      90deg,
-      rgba(0, 0, 0, 0.35),
-      rgba(0, 0, 0, 0) 12%,
-      rgba(0, 0, 0, 0) 88%,
-      rgba(0, 0, 0, 0.35)
-    ),
-    repeating-linear-gradient(180deg, #5c3b22 0 46px, #4a2f1a 46px 49px),
-    #5c3b22;
+    linear-gradient(90deg, rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0) 12%, rgba(0, 0, 0, 0) 88%, rgba(0, 0, 0, 0.35)),
+    repeating-linear-gradient(180deg, #5c3b22 0 46px, #4a2f1a 46px 49px), #5c3b22;
   box-shadow:
     0 22px 50px rgba(0, 0, 0, 0.6),
     inset 0 0 0 2px rgba(255, 200, 120, 0.12),
@@ -975,15 +940,13 @@ html:not(.ghl-solo) #root {
 }
 .gh-refuge .gh-shop::before,
 .gh-refuge .gh-shop::after {
-  content: "";
+  content: '';
   position: absolute;
   top: 8px;
   width: 26px;
   height: 26px;
   border-radius: 4px;
-  background:
-    radial-gradient(circle at 50% 50%, #8c8c8c 3px, transparent 4px),
-    linear-gradient(135deg, #9a9a9a, #5a5a5a);
+  background: radial-gradient(circle at 50% 50%, #8c8c8c 3px, transparent 4px), linear-gradient(135deg, #9a9a9a, #5a5a5a);
   box-shadow: 0 2px 3px rgba(0, 0, 0, 0.5);
 }
 .gh-refuge .gh-shop::before {
@@ -1002,16 +965,8 @@ html:not(.ghl-solo) #root {
   color: rgba(255, 236, 200, 0.85);
   text-shadow: 0 0 1px rgba(255, 236, 200, 0.6);
   rotate: -2deg;
-  -webkit-mask-image: repeating-linear-gradient(
-    90deg,
-    #000 0 9px,
-    rgba(0, 0, 0, 0.55) 9px 11px
-  );
-  mask-image: repeating-linear-gradient(
-    90deg,
-    #000 0 9px,
-    rgba(0, 0, 0, 0.55) 9px 11px
-  );
+  -webkit-mask-image: repeating-linear-gradient(90deg, #000 0 9px, rgba(0, 0, 0, 0.55) 9px 11px);
+  mask-image: repeating-linear-gradient(90deg, #000 0 9px, rgba(0, 0, 0, 0.55) 9px 11px);
 }
 .gh-refuge .gh-shop-hint {
   color: rgba(243, 230, 207, 0.75);
@@ -1022,7 +977,7 @@ html:not(.ghl-solo) #root {
 /* La balda: una tabla clara con escuadras de hierro. */
 .gh-refuge .gh-powers .gh-offer-art::after,
 .gh-refuge .gh-plant::before {
-  content: "";
+  content: '';
   position: absolute;
   bottom: -6px;
   left: -8px;
@@ -1057,7 +1012,7 @@ html:not(.ghl-solo) #root {
   rotate: calc((var(--i, 0) - 1) * -1.4deg);
 }
 .gh-refuge .gh-offer-label::before {
-  content: "";
+  content: '';
   position: absolute;
   top: -14px;
   left: 50%;
@@ -1066,7 +1021,7 @@ html:not(.ghl-solo) #root {
   background: #e8dcc0;
 }
 .gh-refuge .gh-offer-label::after {
-  content: "";
+  content: '';
   position: absolute;
   top: 5px;
   left: 50%;
@@ -1125,11 +1080,7 @@ html:not(.ghl-solo) #root {
   top: 0;
   height: calc(20px * var(--k));
   border-radius: 6px 6px 3px 3px;
-  background: repeating-radial-gradient(
-    circle at 30% 40%,
-    #c9945e 0 2px,
-    #b07d4b 2px 4px
-  );
+  background: repeating-radial-gradient(circle at 30% 40%, #c9945e 0 2px, #b07d4b 2px 4px);
   border: 2px solid #6b4320;
 }
 .ref-jar-glass {
@@ -1142,18 +1093,12 @@ html:not(.ghl-solo) #root {
   border-radius: 30% 30% 18% 18% / 16% 16% 12% 12%;
   border: 2px solid rgba(220, 240, 255, 0.55);
   background:
-    linear-gradient(
-      90deg,
-      rgba(255, 255, 255, 0.28),
-      rgba(255, 255, 255, 0) 22%,
-      rgba(255, 255, 255, 0) 78%,
-      rgba(255, 255, 255, 0.18)
-    ),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0) 22%, rgba(255, 255, 255, 0) 78%, rgba(255, 255, 255, 0.18)),
     rgba(180, 220, 240, 0.14);
   box-shadow: inset 0 -10px 18px rgba(0, 0, 0, 0.25);
 }
 .ref-jar-glass::before {
-  content: "";
+  content: '';
   position: absolute;
   left: 50%;
   top: 50%;
@@ -1161,11 +1106,7 @@ html:not(.ghl-solo) #root {
   aspect-ratio: 1;
   translate: -50% -50%;
   border-radius: 50%;
-  background: radial-gradient(
-    circle,
-    var(--glow, rgba(255, 214, 90, 0.75)),
-    transparent 65%
-  );
+  background: radial-gradient(circle, var(--glow, rgba(255, 214, 90, 0.75)), transparent 65%);
   animation: ref-firefly 2.8s calc(var(--i, 0) * -0.7s) ease-in-out infinite;
 }
 .ref-jar-art {
@@ -1208,11 +1149,7 @@ html:not(.ghl-solo) #root {
   aspect-ratio: 1;
   translate: -50% 0;
   border-radius: 50%;
-  background: radial-gradient(
-    circle,
-    rgba(255, 200, 110, 0.55),
-    transparent 62%
-  );
+  background: radial-gradient(circle, rgba(255, 200, 110, 0.55), transparent 62%);
   animation: ref-glow 4s ease-in-out infinite;
 }
 .ref-pot-plant {
@@ -1231,16 +1168,11 @@ html:not(.ghl-solo) #root {
   translate: -50% 0;
   border-radius: 4px 4px 8px 8px;
   background:
-    repeating-linear-gradient(
-      180deg,
-      rgba(0, 0, 0, 0) 0 8px,
-      rgba(0, 0, 0, 0.18) 8px 10px
-    ),
-    linear-gradient(90deg, #6f7d80, #c9d4d6 35%, #8a979a 70%, #5a6568);
+    repeating-linear-gradient(180deg, rgba(0, 0, 0, 0) 0 8px, rgba(0, 0, 0, 0.18) 8px 10px), linear-gradient(90deg, #6f7d80, #c9d4d6 35%, #8a979a 70%, #5a6568);
   border: 2px solid #343d3f;
 }
 .ref-pot-tin::after {
-  content: "";
+  content: '';
   position: absolute;
   left: 14%;
   right: 14%;
@@ -1345,8 +1277,7 @@ html:not(.ghl-solo) #root {
   border: 8px solid #8a5a2e;
   border-top: 0;
   background:
-    linear-gradient(180deg, rgba(40, 20, 10, 0.45), rgba(40, 20, 10, 0) 30%),
-    repeating-linear-gradient(90deg, #c08a55 0 36px, #a8723f 36px 38px), #c08a55;
+    linear-gradient(180deg, rgba(40, 20, 10, 0.45), rgba(40, 20, 10, 0) 30%), repeating-linear-gradient(90deg, #c08a55 0 36px, #a8723f 36px 38px), #c08a55;
   box-shadow: 0 22px 44px rgba(40, 10, 40, 0.45);
   color: #f4f1e6;
 }
@@ -1358,11 +1289,7 @@ html:not(.ghl-solo) #root {
   top: -58px;
   height: 58px;
   border-radius: 14px 14px 0 0;
-  background: repeating-linear-gradient(
-    90deg,
-    #3f9a35 0 44px,
-    #fff3d6 44px 88px
-  );
+  background: repeating-linear-gradient(90deg, #3f9a35 0 44px, #fff3d6 44px 88px);
   box-shadow:
     inset 0 10px 0 rgba(255, 255, 255, 0.2),
     0 6px 10px rgba(0, 0, 0, 0.25);
@@ -1370,17 +1297,15 @@ html:not(.ghl-solo) #root {
   animation: st-flutter 4s ease-in-out infinite;
 }
 .st-awning::after {
-  content: "";
+  content: '';
   position: absolute;
   left: 0;
   right: 0;
   top: 100%;
   height: 22px;
   background:
-    radial-gradient(circle at 22px 0, #3f9a35 21px, transparent 22px) 0 0 / 88px
-      22px repeat-x,
-    radial-gradient(circle at 66px 0, #fff3d6 21px, transparent 22px) 0 0 / 88px
-      22px repeat-x;
+    radial-gradient(circle at 22px 0, #3f9a35 21px, transparent 22px) 0 0 / 88px 22px repeat-x,
+    radial-gradient(circle at 66px 0, #fff3d6 21px, transparent 22px) 0 0 / 88px 22px repeat-x;
   filter: drop-shadow(0 4px 3px rgba(0, 0, 0, 0.25));
 }
 @keyframes st-flutter {
@@ -1471,16 +1396,12 @@ html:not(.ghl-solo) #root {
   height: calc(52px * var(--k));
   border-radius: 4px;
   border: 3px solid #6b4320;
-  background: repeating-linear-gradient(
-    180deg,
-    #e2ab70 0 calc(13px * var(--k)),
-    #6b4320 calc(13px * var(--k)) calc(17px * var(--k))
-  );
+  background: repeating-linear-gradient(180deg, #e2ab70 0 calc(13px * var(--k)), #6b4320 calc(13px * var(--k)) calc(17px * var(--k)));
   box-shadow: 0 6px 8px rgba(40, 20, 10, 0.35);
 }
 .st-crate-box::before,
 .st-crate-box::after {
-  content: "";
+  content: '';
   position: absolute;
   top: -3px;
   bottom: -3px;
@@ -1516,15 +1437,11 @@ html:not(.ghl-solo) #root {
   translate: -50% 0;
   clip-path: polygon(0 0, 100% 0, 86% 100%, 14% 100%);
   background:
-    repeating-linear-gradient(
-      90deg,
-      rgba(255, 255, 255, 0) 0 14px,
-      rgba(255, 255, 255, 0.25) 14px 18px
-    ),
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0) 0 14px, rgba(255, 255, 255, 0.25) 14px 18px),
     linear-gradient(90deg, #2f7fb5, #5fb2e6 38%, #3f8fc4 70%, #2f7fb5);
 }
 .st-pot-clay::before {
-  content: "";
+  content: '';
   position: absolute;
   left: 0;
   right: 0;
@@ -1680,19 +1597,13 @@ html:not(.ghl-solo) #root {
     top: -34px;
     height: 34px;
     background-size: 56px 100%;
-    background-image: repeating-linear-gradient(
-      90deg,
-      #3f9a35 0 28px,
-      #fff3d6 28px 56px
-    );
+    background-image: repeating-linear-gradient(90deg, #3f9a35 0 28px, #fff3d6 28px 56px);
   }
   .st-awning::after {
     height: 14px;
     background:
-      radial-gradient(circle at 14px 0, #3f9a35 13px, transparent 14px) 0 0 /
-        56px 14px repeat-x,
-      radial-gradient(circle at 42px 0, #fff3d6 13px, transparent 14px) 0 0 /
-        56px 14px repeat-x;
+      radial-gradient(circle at 14px 0, #3f9a35 13px, transparent 14px) 0 0 / 56px 14px repeat-x,
+      radial-gradient(circle at 42px 0, #fff3d6 13px, transparent 14px) 0 0 / 56px 14px repeat-x;
   }
   .st-sign {
     top: -10px;
@@ -1781,10 +1692,8 @@ html:not(.ghl-solo) #root {
   .st-awning::after {
     height: 10px;
     background:
-      radial-gradient(circle at 14px 0, #3f9a35 13px, transparent 14px) 0 0 /
-        56px 10px repeat-x,
-      radial-gradient(circle at 42px 0, #fff3d6 13px, transparent 14px) 0 0 /
-        56px 10px repeat-x;
+      radial-gradient(circle at 14px 0, #3f9a35 13px, transparent 14px) 0 0 / 56px 10px repeat-x,
+      radial-gradient(circle at 42px 0, #fff3d6 13px, transparent 14px) 0 0 / 56px 10px repeat-x;
   }
   .gh-stall .gh-plant {
     margin-top: 6px;

@@ -7,6 +7,17 @@ import { SCENERY, VIEW, WORLD, perspective } from './layout';
 import { GARDEN, GARDEN_PARTS, GARDEN_TIERS, paintGardenPiece, type GardenPart } from './gardenArt';
 import { MEDAL, MEDAL_SPROUT, MEDAL_TIERS, medalTier } from './levelMedal';
 import { AURA_LOOK, AURA_TIERS, paintAuraVeil } from './wormAuraArt';
+import {
+  REFUGE,
+  paintRefugeBit,
+  paintRefugeBulb,
+  paintRefugeCircuits,
+  paintRefugeLamp,
+  paintRefugeLampGlow,
+  paintRefugeOutside,
+  paintRefugeRoom,
+  paintRefugeStar,
+} from './refugeArt';
 import { text } from '../../i18n';
 import { type Ctx, circle, ellipse, leafShape, smallFlower } from './canvasKit';
 import { SHOOTER, type ShooterCannons, type ShooterDesign, type ShooterVariant } from './shooterShape';
@@ -40,13 +51,18 @@ import {
 export const TEX = {
   sky: 'scene-sky',
   land: 'scene-land',
-  /** Terreno del Invernadero (T-019): cesped liso y sin corrupcion. Se pinta la primera vez que se entra (`registerGardenLand`). */
-  gardenLand: 'scene-garden-land',
-  /** Tierra removida al pie de cada planta del jardin del Invernadero: sembrada a mano en el cesped. */
-  soilPatch: 'fx-soil-patch',
   /** Velo del aura de los gusanos de nivel alto (T-030), uno por tramo (plata, oro, rubi y cristal); el 0 no se usa. */
   auraVeils: ['', 'fx-aura-veil-1', 'fx-aura-veil-2', 'fx-aura-veil-3', 'fx-aura-veil-4'],
   corruptionGlow: 'scene-corruption-glow',
+  /** Refugio del Invernadero (T-036): fuera, circuitos y sala; y sus piezas sueltas (`registerRefugeTextures`). */
+  refugeOutside: 'scene-refuge-outside',
+  refugeCircuits: 'scene-refuge-circuits',
+  refugeRoom: 'scene-refuge-room',
+  refugeStar: 'fx-refuge-star',
+  refugeBits: ['fx-refuge-bit-0', 'fx-refuge-bit-1'],
+  refugeBulb: 'fx-refuge-bulb',
+  refugeLamp: 'fx-refuge-lamp',
+  refugeLampGlow: 'fx-refuge-lamp-glow',
   canopy: 'scene-canopy',
   sunCore: 'fx-sun-core',
   sunRays: 'fx-sun-rays',
@@ -312,15 +328,25 @@ function paintTexture(scene: Phaser.Scene, scale: number, key: string, width: nu
 }
 
 /**
- * Terreno del Invernadero (T-019): el mismo jardin, pero con un cesped liso y continuo en vez del tablero a cuadros, y sin
- * suelo corrupto, agujeros ni cables. Es tan grande como el terreno del juego, asi que no se pinta con las demas: solo
- * la primera vez que se entra en el Invernadero (llamar despues de `registerTextures`).
+ * Refugio del Invernadero (T-036, `refugeArt.ts`). Fuera y la sala son tan grandes como el mundo, asi que no se pintan
+ * con las demas: solo la primera vez que se entra en el Invernadero (llamar despues de `registerTextures`).
  */
-export function registerGardenLand(scene: Phaser.Scene): void {
-  paintTexture(scene, artScale, TEX.gardenLand, WORLD.width, WORLD.bottom - LAND_TOP, (ctx) => {
-    ctx.translate(-WORLD.left, -LAND_TOP);
-    paintLand(ctx, true);
+export function registerRefugeTextures(scene: Phaser.Scene): void {
+  const paint = (key: string, width: number, height: number, painter: Painter) => paintTexture(scene, artScale, key, width, height, painter);
+  paint(TEX.refugeOutside, WORLD.width, REFUGE.glassBottom + 40 - WORLD.top, (ctx) => {
+    ctx.translate(-WORLD.left, -WORLD.top);
+    paintRefugeOutside(ctx);
   });
+  paint(TEX.refugeCircuits, WORLD.width, REFUGE.circuits.height, paintRefugeCircuits);
+  paint(TEX.refugeRoom, WORLD.width, WORLD.height, (ctx) => {
+    ctx.translate(-WORLD.left, -WORLD.top);
+    paintRefugeRoom(ctx);
+  });
+  paint(TEX.refugeStar, 16, 16, paintRefugeStar);
+  TEX.refugeBits.forEach((key, bit) => paint(key, 16, 22, (ctx, w, h) => paintRefugeBit(ctx, w, h, bit as 0 | 1)));
+  paint(TEX.refugeBulb, 16, 28, paintRefugeBulb);
+  paint(TEX.refugeLamp, 140, REFUGE.lamp.cord + 64, paintRefugeLamp);
+  paint(TEX.refugeLampGlow, 256, 256, paintRefugeLampGlow);
 }
 
 /**
@@ -361,7 +387,6 @@ export function registerTextures(scene: Phaser.Scene, scale = 1): void {
   paint(TEX.dot, 24, 24, paintDot);
   paint(TEX.pixel, 8, 8, paintPixel);
   paint(TEX.dirt, 18, 18, paintDirt);
-  paint(TEX.soilPatch, 100, 44, paintSoilPatch);
   for (let tier = 1; tier <= AURA_TIERS; tier++) paint(TEX.auraVeils[tier], AURA_LOOK.veil.width, AURA_LOOK.veil.height, (ctx) => paintAuraVeil(ctx, tier));
   paint(TEX.bird, 40, 18, paintBird);
   paint(TEX.butterfly, 44, 34, paintButterfly);
@@ -653,25 +678,17 @@ export const SKYLINE_LIGHTS: ScreenPoint[] = BUILDINGS.filter((b) => b.antenna).
   y: b.top - 18,
 }));
 
-/**
- * Todo el terreno, en coordenadas del mundo (de WORLD.left a WORLD.right y hasta WORLD.bottom). El del Invernadero
- * (`garden`, T-019) cambia el tablero a cuadros y el suelo corrupto por un cesped liso, y el seto y el corte de tierra
- * quedan sin rastro de la corrupcion.
- */
-function paintLand(ctx: Ctx, garden = false): void {
+/** Todo el terreno, en coordenadas del mundo (de WORLD.left a WORLD.right y hasta WORLD.bottom). */
+function paintLand(ctx: Ctx): void {
   const rand = seededRandom(42);
   paintHills(ctx, rand);
   paintMeadow(ctx);
-  paintHedge(ctx, rand, garden);
+  paintHedge(ctx, rand);
   paintFlowerBed(ctx, rand);
   paintPath(ctx, rand);
-  if (garden) {
-    paintGardenLawn(ctx, rand);
-  } else {
-    paintCorruption(ctx, rand);
-    paintLawn(ctx, rand);
-  }
-  paintFrontCut(ctx, rand, garden);
+  paintCorruption(ctx, rand);
+  paintLawn(ctx, rand);
+  paintFrontCut(ctx, rand);
   paintTrunk(ctx);
 }
 
@@ -784,7 +801,7 @@ function paintMeadow(ctx: Ctx): void {
   ctx.fillRect(WORLD.left, top, WORLD.width, WORLD.bottom - top);
 }
 
-function paintHedge(ctx: Ctx, rand: () => number, garden = false): void {
+function paintHedge(ctx: Ctx, rand: () => number): void {
   const y = SCENERY.hedgeY;
   const bushes: Array<{ x: number; y: number; r: number; corrupt: boolean }> = [];
   // El seto cruza el mundo entero, tambien por el decorado extra de las pantallas anchas.
@@ -792,7 +809,7 @@ function paintHedge(ctx: Ctx, rand: () => number, garden = false): void {
     const p = P(x + rand() * 0.08, y);
     const cw = cwAt(x, y);
     const r = cw * (0.19 + rand() * 0.1);
-    bushes.push({ x: p.x, y: p.y - cw * (0.16 + rand() * 0.14), r, corrupt: !garden && x > BOARD.columns + 0.25 });
+    bushes.push({ x: p.x, y: p.y - cw * (0.16 + rand() * 0.14), r, corrupt: x > BOARD.columns + 0.25 });
   }
   for (const b of bushes) circle(ctx, b.x, b.y + b.r * 0.3, b.r * 1.05, b.corrupt ? '#352d42' : '#2b6a2b');
   for (const b of bushes) {
@@ -1062,97 +1079,6 @@ function paintLawn(ctx: Ctx, rand: () => number): void {
   ctx.stroke();
 }
 
-/**
- * Cesped del Invernadero (T-019): liso y continuo de punta a punta, sin casillas ni lineas, con manchas suaves de luz y
- * sombra como un prado natural, briznas, treboles y florecillas. Deja ver que las plantas se siembran donde se quiere.
- */
-function paintGardenLawn(ctx: Ctx, rand: () => number): void {
-  const right = SCENERY.corruption.toX;
-  const { lanes, columns } = BOARD;
-  const top = P(0, 0).y;
-  const bottom = P(0, lanes).y;
-
-  boardRect(ctx, 0, 0, right, lanes);
-  const base = ctx.createLinearGradient(0, top, 0, bottom);
-  base.addColorStop(0, '#6fc052');
-  base.addColorStop(1, '#7dcd5b');
-  ctx.fillStyle = base;
-  ctx.fill();
-
-  ctx.save();
-  boardRect(ctx, 0, 0, right, lanes);
-  ctx.clip();
-  // Manchas irregulares de luz y de sombra, aplastadas por la perspectiva: nada de cuadros.
-  for (let i = 0; i < 70; i++) {
-    const x = rand() * right;
-    const y = rand() * lanes;
-    const p = P(x, y);
-    const r = cwAt(x, y) * (0.55 + rand() * 1.1);
-    const light = rand() > 0.45;
-    ctx.save();
-    ctx.translate(p.x, p.y);
-    ctx.scale(1, 0.5);
-    const g = ctx.createRadialGradient(0, 0, 0, 0, 0, r);
-    g.addColorStop(0, light ? 'rgba(225, 255, 170, 0.16)' : 'rgba(35, 105, 35, 0.14)');
-    g.addColorStop(1, light ? 'rgba(225, 255, 170, 0)' : 'rgba(35, 105, 35, 0)');
-    ctx.fillStyle = g;
-    ctx.beginPath();
-    ctx.arc(0, 0, r, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
-  }
-  // Profundidad: el fondo un poco mas oscuro.
-  const depth = ctx.createLinearGradient(0, top, 0, bottom);
-  depth.addColorStop(0, 'rgba(20, 70, 30, 0.22)');
-  depth.addColorStop(1, 'rgba(255, 255, 200, 0.04)');
-  ctx.fillStyle = depth;
-  ctx.fillRect(WORLD.left, top - 10, WORLD.width, bottom - top + 20);
-
-  // Briznas por todo el cesped, tan tupidas como en el tablero.
-  ctx.lineCap = 'round';
-  const blades = Math.round((3400 * right) / columns);
-  for (let i = 0; i < blades; i++) {
-    const x = 0.02 + rand() * (right - 0.04);
-    const y = 0.04 + rand() * (lanes - 0.06);
-    const p = P(x, y);
-    const cw = cwAt(x, y);
-    const len = cw * (0.03 + rand() * 0.04);
-    const a = -Math.PI / 2 + (rand() - 0.5) * 0.8;
-    ctx.strokeStyle = pick(rand, ['rgba(170, 230, 120, 0.55)', 'rgba(70, 140, 50, 0.45)', 'rgba(120, 200, 90, 0.5)']);
-    ctx.lineWidth = cw * 0.011;
-    ctx.beginPath();
-    ctx.moveTo(p.x, p.y);
-    ctx.lineTo(p.x + Math.cos(a) * len, p.y + Math.sin(a) * len);
-    ctx.stroke();
-  }
-  // Treboles en corrillos y florecillas sueltas.
-  for (let i = 0; i < 26; i++) {
-    const x = 0.2 + rand() * (right - 0.4);
-    const y = 0.15 + rand() * (lanes - 0.3);
-    for (let k = 0; k < 4; k++) {
-      const p = P(x + (rand() - 0.5) * 0.3, y + (rand() - 0.5) * 0.2);
-      const r = cwAt(x, y) * 0.022;
-      for (let leaf = 0; leaf < 3; leaf++) {
-        const a = (leaf / 3) * Math.PI * 2 - Math.PI / 2;
-        circle(ctx, p.x + Math.cos(a) * r, p.y + Math.sin(a) * r * 0.6, r, 'rgba(70, 150, 55, 0.75)');
-      }
-    }
-  }
-  for (let i = 0; i < 40; i++) {
-    const x = 0.1 + rand() * (right - 0.2);
-    const y = 0.1 + rand() * (lanes - 0.2);
-    const p = P(x, y);
-    smallFlower(ctx, p.x, p.y, cwAt(x, y) * 0.016, pick(rand, ['#ffffff', '#ffffff', '#ffd1e8', '#fff1a6']), '#f6c343');
-  }
-  ctx.restore();
-
-  // Solo el borde de fuera, como el del tablero: dentro no hay lineas.
-  boardRect(ctx, 0, 0, right, lanes);
-  ctx.strokeStyle = '#3c7a2f';
-  ctx.lineWidth = 5;
-  ctx.stroke();
-}
-
 /** Linea donde empieza el corte de tierra (borde delantero del terreno). */
 const cutTop = () => P(0, SCENERY.frontEdgeY).y;
 
@@ -1160,7 +1086,7 @@ const cutTop = () => P(0, SCENERY.frontEdgeY).y;
  * Corte de tierra delante del terreno, como una maqueta. En pantallas altas se ve mas hondo,
  * asi que abajo hay sorpresas: raices, semillas brotando y los cables de la corrupcion.
  */
-function paintFrontCut(ctx: Ctx, rand: () => number, garden = false): void {
+function paintFrontCut(ctx: Ctx, rand: () => number): void {
   const top = cutTop();
   const left = WORLD.left;
   const width = WORLD.width;
@@ -1172,15 +1098,13 @@ function paintFrontCut(ctx: Ctx, rand: () => number, garden = false): void {
   ctx.fillStyle = soil;
   ctx.fillRect(left, top, width, bottom - top);
 
-  // Debajo del suelo corrupto la tierra tambien se tine. En el Invernadero no hay suelo corrupto: tierra sana de punta a punta.
-  const corruptX = garden ? WORLD.right : P(SCENERY.corruption.fromX, SCENERY.frontEdgeY).x;
-  if (!garden) {
-    const purple = ctx.createLinearGradient(corruptX - 40, 0, corruptX + 120, 0);
-    purple.addColorStop(0, 'rgba(70, 40, 90, 0)');
-    purple.addColorStop(1, 'rgba(70, 40, 90, 0.6)');
-    ctx.fillStyle = purple;
-    ctx.fillRect(corruptX - 40, top, WORLD.right - corruptX + 40, bottom - top);
-  }
+  // Debajo del suelo corrupto la tierra tambien se tine.
+  const corruptX = P(SCENERY.corruption.fromX, SCENERY.frontEdgeY).x;
+  const purple = ctx.createLinearGradient(corruptX - 40, 0, corruptX + 120, 0);
+  purple.addColorStop(0, 'rgba(70, 40, 90, 0)');
+  purple.addColorStop(1, 'rgba(70, 40, 90, 0.6)');
+  ctx.fillStyle = purple;
+  ctx.fillRect(corruptX - 40, top, WORLD.right - corruptX + 40, bottom - top);
 
   // Vetas de tierra, cada vez mas tenues hacia abajo.
   ctx.lineWidth = 2;
@@ -1223,10 +1147,10 @@ function paintFrontCut(ctx: Ctx, rand: () => number, garden = false): void {
     ctx.fillStyle = '#7fcf5f';
     ctx.fill();
   }
-  // Cables de la corrupcion que se meten bajo tierra (no en el Invernadero).
+  // Cables de la corrupcion que se meten bajo tierra.
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
-  for (let i = 0; i < (garden ? 0 : 6); i++) {
+  for (let i = 0; i < 6; i++) {
     let x = corruptX + 30 + rand() * (WORLD.right - corruptX - 60);
     let y = top + 6;
     ctx.strokeStyle = 'rgba(57, 229, 140, 0.4)';
@@ -1424,24 +1348,6 @@ function paintRing(ctx: Ctx, w: number, h: number): void {
 function paintPixel(ctx: Ctx, w: number, h: number): void {
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(1, 1, w - 2, h - 2);
-}
-
-/** Tierra removida al pie de una planta del Invernadero (T-019): un circulo de tierra con su borde de hierba y migas. */
-function paintSoilPatch(ctx: Ctx, w: number, h: number): void {
-  ellipse(ctx, w / 2, h / 2 + 1, w / 2 - 1, h / 2 - 2, 'rgba(45, 95, 35, 0.35)');
-  const soil = ctx.createRadialGradient(w * 0.46, h * 0.4, 1, w / 2, h / 2, w * 0.42);
-  soil.addColorStop(0, '#8f6440');
-  soil.addColorStop(0.7, '#6e4a2e');
-  soil.addColorStop(1, '#55381f');
-  ellipse(ctx, w / 2, h / 2, w / 2 - 7, h / 2 - 7, soil);
-  const crumbs: Array<[number, number, number, string]> = [
-    [0.3, 0.42, 2.6, '#a77b52'],
-    [0.62, 0.36, 2.2, '#a77b52'],
-    [0.7, 0.6, 2.8, '#4a2f1c'],
-    [0.42, 0.66, 2.2, '#4a2f1c'],
-    [0.52, 0.5, 1.8, '#b58a5f'],
-  ];
-  for (const [x, y, r, color] of crumbs) ellipse(ctx, w * x, h * y, r, r * 0.7, color);
 }
 
 function paintDirt(ctx: Ctx, w: number, h: number): void {

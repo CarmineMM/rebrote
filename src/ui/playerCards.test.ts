@@ -54,10 +54,10 @@ describe('pantalla de jugadores (T-034)', () => {
     expect(lostLines(text('es'), describePlayer(profile, store))).toEqual(['Jefes vencidos: Creeper', 'Semillas: 12.345']);
   });
 
-  it('al borrarlo tambien se pierden los poderes comprados en la tienda (T-022)', () => {
+  it('al borrarlo tambien se pierden los inventos fabricados en el laboratorio (T-022, T-036)', () => {
     const store = memoryStore();
     store.setItem(PROGRESS_KEY, encodeProgress({ ...recordDefeat(emptyProgress(), 'creeper'), powers: { grenade: 3, relocate: 1 }, carried: ['grenade'] }));
-    expect(lostLines(text('es'), describePlayer(profile, store))).toEqual(['Jefes vencidos: Creeper', '2 poderes comprados en la tienda']);
+    expect(lostLines(text('es'), describePlayer(profile, store))).toEqual(['Jefes vencidos: Creeper', '2 inventos fabricados en el laboratorio']);
   });
 
   it('al borrarlo tambien se pierde el nivel base de la disparadora (T-023)', () => {

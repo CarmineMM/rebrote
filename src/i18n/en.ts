@@ -89,7 +89,7 @@ export const en: Dictionary = {
     confirmNothing: 'Nothing saved yet.',
     bosses: (names) => `Bosses defeated: ${names}`,
     seeds: (amount) => `Seeds: ${amount}`,
-    powers: (count) => (count === 1 ? '1 power bought in the shop' : `${count} powers bought in the shop`),
+    powers: (count) => (count === 1 ? '1 gadget built in the lab' : `${count} gadgets built in the lab`),
     baseLevel: (level) => `Shooter at base level ${level}`,
     save: (round) => `Saved game at round ${round}`,
     story: 'The story scenes already seen',
@@ -123,10 +123,6 @@ export const en: Dictionary = {
     next: 'Next outbreak',
     route: 'Outbreak route',
     routeDetail: (defeated) => (defeated === 1 ? '1 boss defeated' : `${defeated} bosses defeated`),
-    shop: 'Shop',
-    shopDetail: 'Powers',
-    plants: 'Plants',
-    plantsDetail: (level) => `Base level ${level}`,
     back: 'Back to the title',
     confirmTitle: (outbreak) => `Start ${outbreak}?`,
     confirmText: (outbreak, round) => `Your game in progress (${outbreak}, round ${round}) will be deleted.`,
@@ -221,7 +217,7 @@ export const en: Dictionary = {
     pause: 'Pause',
     pauseTitle: 'Pause (Esc or P)',
     powers: {
-      label: 'Powers',
+      label: 'Gadgets',
       names: { relocate: 'Replant', grenade: 'Grenade', iceWall: 'Ice wall' },
       help: {
         relocate: 'Replant: move a shooter to another tile, just as it is',
@@ -460,13 +456,13 @@ export const en: Dictionary = {
     },
     again: 'Play again',
     greenhouse: 'To the greenhouse',
-    shopOpened: 'The shop is open!',
-    shopOpenedText: 'Spend your seeds on powers in the greenhouse.',
+    shopOpened: 'The lab is open!',
+    shopOpenedText: 'Patty can now build gadgets with your seeds.',
   },
 
   shop: {
-    title: 'Shop',
-    hint: (max) => `What you buy is yours forever. Before each outbreak you pick up to ${max} powers.`,
+    title: "Patty's Lab",
+    hint: (max) => `What Patty builds is yours forever. Before each outbreak you pick up to ${max} gadgets.`,
     about: {
       relocate: 'Moves a shooter to another tile, just as it is.',
       grenade: 'Lands on a tile, explodes and hurts everything around.',
@@ -481,18 +477,17 @@ export const en: Dictionary = {
     next: (level) => `Level ${level}:`,
     milestone: 'Bonus!',
     owned: { relocate: 'Yours', grenade: 'Yours', iceWall: 'Yours' },
-    buy: 'Buy',
+    buy: 'Build',
     upgrade: 'Upgrade',
     maxed: 'Max level',
     noSeeds: 'Not enough seeds',
     price: (amount, count) => (count === 1 ? '1 seed' : `${amount} seeds`),
-    bought: 'Bought!',
+    bought: 'Done!',
     upgraded: (level) => `Level ${level}!`,
   },
 
   plantShop: {
-    title: 'Plants',
-    hint: 'What you upgrade here is forever. Sowing costs the same.',
+    title: 'Nursery',
     shooter: 'Shooter',
     about: 'Every shooter you sow in a new game starts at its base level. Leveling it up in the game costs what its level costs.',
     level: (level, max) => `Base level ${level} of ${max}`,
@@ -503,12 +498,12 @@ export const en: Dictionary = {
   },
 
   loadout: {
-    title: 'Outbreak powers',
+    title: 'Outbreak gadgets',
     hint: (max) => `Pick up to ${max}. They bring their charges to the match.`,
     count: (chosen, max) => `${chosen} of ${max} picked`,
     full: (max) => `You already have ${max}: drop one first`,
     play: "Let's play!",
-    none: 'No powers',
+    none: 'No gadgets',
   },
 
   seeds: {
@@ -678,7 +673,7 @@ export const en: Dictionary = {
     },
     iceWall: {
       title: 'Ice wall',
-      subtitle: 'Power: it melts',
+      subtitle: 'Gadget: it melts',
       about: (time) => `It cuts off the way: enemies stop to bite it, and it stops the shots and verses aimed at what is behind. It lasts ${time}.`,
     },
     mine: {

@@ -77,7 +77,7 @@ export function TitleScreen({ greenhouse = false, player, inert = false, childre
   const fit = Math.min(1, FIT_LETTERS / word.length);
   return (
     // Con una viñeta de la historia encima (T-031), el menu no recibe el foco ni los clics.
-    <div className="title-screen" inert={inert}>
+    <div className={`title-screen${greenhouse ? ' is-greenhouse' : ''}`} inert={inert}>
       <header className="title-brand">
         <h1 key={word} className="title-logo" aria-label={greenhouse ? t.greenhouse.title : 'Rebrote'} style={{ '--logo-fit': fit } as CSSProperties}>
           {[...word].map((letter, i) => (

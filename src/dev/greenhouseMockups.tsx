@@ -1,45 +1,22 @@
-import {
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type CSSProperties,
-  type ReactNode,
-} from "react";
-import { BASE_LEVEL, POWER_LEVELS, POWERS } from "../game/config/balance";
-import {
-  baseLevelBlocker,
-  buyBaseLevel,
-  nextBaseStep,
-} from "../game/core/baseLevel";
-import { isMilestoneLevel, levelStepBonus } from "../game/core/plants";
-import { POWER_IDS, type PowerId } from "../game/core/powers";
-import { currentOutbreak } from "../game/core/route";
-import {
-  buyBlocker,
-  buyPower,
-  nextPowerPrice,
-  nextUpgrade,
-  ownedLevel,
-  upgradeBlocker,
-  upgradePower,
-} from "../game/core/shop";
-import { emptyProgress, type Progress } from "../game/progress";
-import { CAST } from "../game/view/characters/cast";
-import { portraitUrl } from "../game/view/characters/portraitImage";
-import { SHOOTER } from "../game/view/shooterShape";
-import { formatAmount, formatHpBonus, formatPercent } from "../i18n";
-import { outbreakTitle } from "../ui/outbreakName";
-import { PowerIcon } from "../ui/PowerPanel";
-import { SeedIcon } from "../ui/SeedIcon";
-import { SeedBalance } from "../ui/SeedsEarned";
-import { LevelLeaves, powerStats } from "../ui/Shop";
-import { useLanguage, useText } from "../ui/useText";
-import {
-  LabBackdrop,
-  RefugeBackdrop,
-  StallBackdrop,
-} from "./greenhouseBackdrops";
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { BASE_LEVEL, POWER_LEVELS, POWERS } from '../game/config/balance';
+import { baseLevelBlocker, buyBaseLevel, nextBaseStep } from '../game/core/baseLevel';
+import { isMilestoneLevel, levelStepBonus } from '../game/core/plants';
+import { POWER_IDS, type PowerId } from '../game/core/powers';
+import { currentOutbreak } from '../game/core/route';
+import { buyBlocker, buyPower, nextPowerPrice, nextUpgrade, ownedLevel, upgradeBlocker, upgradePower } from '../game/core/shop';
+import { emptyProgress, type Progress } from '../game/progress';
+import { CAST } from '../game/view/characters/cast';
+import { portraitUrl } from '../game/view/characters/portraitImage';
+import { SHOOTER } from '../game/view/shooterShape';
+import { formatAmount, formatHpBonus, formatPercent } from '../i18n';
+import { outbreakTitle } from '../ui/outbreakName';
+import { PowerIcon } from '../ui/PowerPanel';
+import { SeedIcon } from '../ui/SeedIcon';
+import { SeedBalance } from '../ui/SeedsEarned';
+import { LevelLeaves, powerStats } from '../ui/PattyLab';
+import { useLanguage, useText } from '../ui/useText';
+import { LabBackdrop, RefugeBackdrop, StallBackdrop } from './greenhouseBackdrops';
 
 /**
  * Propuestas del Invernadero (galeria `/invernadero.html`, `greenhouseLab.tsx`): tres pantallas de maqueta con la tienda
@@ -50,21 +27,21 @@ import {
  * maqueta van en espanol sin `src/i18n/`.
  */
 
-export type MockupId = "lab" | "refuge" | "stall";
-export const MOCKUP_IDS: readonly MockupId[] = ["lab", "refuge", "stall"];
+export type MockupId = 'lab' | 'refuge' | 'stall';
+export const MOCKUP_IDS: readonly MockupId[] = ['lab', 'refuge', 'stall'];
 
 /** El progreso justo al vencer el brote 1, con las semillas que se pidan. */
 function afterFirstOutbreak(seeds: number): Progress {
   return {
     ...emptyProgress(),
-    defeated: ["creeper"],
-    story: ["opening", "creeperDown", "lore:creeper", "pattyGreenhouse"],
+    defeated: ['creeper'],
+    story: ['opening', 'creeperDown', 'lore:creeper', 'pattyGreenhouse'],
     seeds,
   };
 }
 
 interface Cheer {
-  readonly id: PowerId | "plant";
+  readonly id: PowerId | 'plant';
   readonly text: string;
   readonly key: number;
 }
@@ -103,7 +80,7 @@ function useMockShop(seeds: number): MockShop {
       if (!next || baseLevelBlocker(progress) !== null) return;
       setProgress(buyBaseLevel(progress));
       setCheer({
-        id: "plant",
+        id: 'plant',
         text: t.plantShop.upgraded(next.level),
         key: Date.now(),
       });
@@ -119,29 +96,29 @@ function ShooterArt() {
   const ref = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
     const canvas = ref.current;
-    const ctx = canvas?.getContext("2d");
+    const ctx = canvas?.getContext('2d');
     if (!canvas || !ctx) return;
     const { width, height } = SHOOTER.size;
     const k = 3;
     canvas.width = width * k;
     canvas.height = height * k;
     ctx.scale(k, k);
-    SHOOTER.paint(ctx, 1, "normal");
+    SHOOTER.paint(ctx, 1, 'normal');
   }, []);
   return <canvas ref={ref} className="gh-shooter" aria-hidden="true" />;
 }
 
 /** El busto de Patty de las viñetas, contenta, que respira y parpadea. */
-function PattyBust({ className = "" }: { className?: string }) {
+function PattyBust({ className = '' }: { className?: string }) {
   const frames = useMemo(
     () => ({
       open: portraitUrl(CAST.patty, {
-        expression: "happy",
+        expression: 'happy',
         blink: false,
         open: false,
       }),
       shut: portraitUrl(CAST.patty, {
-        expression: "happy",
+        expression: 'happy',
         blink: true,
         open: false,
       }),
@@ -172,12 +149,7 @@ function Logo({ word }: { word: string }) {
   return (
     <h1 className="gh-logo" aria-label={word}>
       {[...word].map((letter, i) => (
-        <span
-          key={i}
-          className="title-letter"
-          style={{ animationDelay: `${i * 0.05}s, ${0.8 + i * 0.12}s` }}
-          aria-hidden="true"
-        >
+        <span key={i} className="title-letter" style={{ animationDelay: `${i * 0.05}s, ${0.8 + i * 0.12}s` }} aria-hidden="true">
           {letter}
         </span>
       ))}
@@ -186,13 +158,7 @@ function Logo({ word }: { word: string }) {
 }
 
 /** El menu de la derecha: semillas, siguiente brote, ruta e historia. La tienda ya no va aqui: esta abierta en la escena. */
-function Menu({
-  progress,
-  className = "",
-}: {
-  progress: Progress;
-  className?: string;
-}) {
+function Menu({ progress, className = '' }: { progress: Progress; className?: string }) {
   const t = useText();
   const next = currentOutbreak(progress.defeated);
   return (
@@ -203,17 +169,13 @@ function Menu({
           <span className="btn-line">
             <span aria-hidden="true">❀</span> {t.greenhouse.next}
           </span>
-          {next && (
-            <small className="btn-detail">{outbreakTitle(t, next)}</small>
-          )}
+          {next && <small className="btn-detail">{outbreakTitle(t, next)}</small>}
         </button>
         <button type="button" className="btn has-detail">
           <span className="btn-line">
             <span aria-hidden="true">⚑</span> {t.greenhouse.route}
           </span>
-          <small className="btn-detail">
-            {t.greenhouse.routeDetail(progress.defeated.length)}
-          </small>
+          <small className="btn-detail">{t.greenhouse.routeDetail(progress.defeated.length)}</small>
         </button>
         <button type="button" className="btn">
           <span aria-hidden="true">✎</span> {t.story.replay}
@@ -223,12 +185,11 @@ function Menu({
   );
 }
 
-function HomeButton({ className = "" }: { className?: string }) {
+function HomeButton({ className = '' }: { className?: string }) {
   const t = useText();
   return (
     <button type="button" className={`btn gh-home ${className}`}>
-      <span aria-hidden="true">⌂</span>{" "}
-      <span className="gh-home-text">{t.greenhouse.back}</span>
+      <span aria-hidden="true">⌂</span> <span className="gh-home-text">{t.greenhouse.back}</span>
     </button>
   );
 }
@@ -250,19 +211,14 @@ function BuyButton({
 }) {
   const language = useLanguage();
   return (
-    <button
-      type="button"
-      className={`btn btn-primary shop-buy${short || maxed ? " is-off" : ""}`}
-      aria-disabled={short || maxed}
-      onClick={onClick}
-    >
+    <button type="button" className={`btn btn-primary shop-buy${short || maxed ? ' is-off' : ''}`} aria-disabled={short || maxed} onClick={onClick}>
       {maxed ? (
         <span>{maxedText}</span>
       ) : (
         <>
           <span>{action}</span>
-          <span className={`shop-price${short ? " is-short" : ""}`}>
-            <SeedIcon /> {price === null ? "" : formatAmount(price, language)}
+          <span className={`shop-price${short ? ' is-short' : ''}`}>
+            <SeedIcon /> {price === null ? '' : formatAmount(price, language)}
           </span>
         </>
       )}
@@ -281,50 +237,30 @@ function CheerText({ cheer }: { cheer: Cheer | null }) {
 }
 
 /** Un poder a la venta: su dibujo dentro del marco de la propuesta (campana, tarro, caja) y su etiqueta con el boton. */
-function PowerOffer({
-  id,
-  index,
-  shop,
-  frame,
-}: {
-  id: PowerId;
-  index: number;
-  shop: MockShop;
-  frame: Frame;
-}) {
+function PowerOffer({ id, index, shop, frame }: { id: PowerId; index: number; shop: MockShop; frame: Frame }) {
   const t = useText();
   const { progress } = shop;
   const level = ownedLevel(progress, id);
   const owned = level !== null;
   const next = owned ? nextUpgrade(progress, id) : null;
   const price = owned ? (next?.cost ?? null) : nextPowerPrice(progress);
-  const blocker = owned
-    ? upgradeBlocker(progress, id)
-    : buyBlocker(progress, id);
+  const blocker = owned ? upgradeBlocker(progress, id) : buyBlocker(progress, id);
   return (
-    <li
-      className={`gh-offer power-${id}${owned ? " is-owned" : ""}`}
-      style={{ "--i": index } as CSSProperties}
-    >
+    <li className={`gh-offer power-${id}${owned ? ' is-owned' : ''}`} style={{ '--i': index } as CSSProperties}>
       <div className="gh-offer-art" aria-hidden="true">
         {frame(<PowerIcon power={id} />, index)}
         {owned && <span className="shop-owned">{t.shop.owned[id]}</span>}
       </div>
       <div className="gh-offer-label">
         <h3 className="gh-offer-name">{t.hud.powers.names[id]}</h3>
-        {owned && (
-          <LevelLeaves
-            level={level}
-            label={t.shop.level(level, POWER_LEVELS.max)}
-          />
-        )}
+        {owned && <LevelLeaves level={level} label={t.shop.level(level, POWER_LEVELS.max)} />}
         <p className="gh-offer-about">{t.shop.about[id]}</p>
         <p className="gh-offer-stats">{powerStats(t, id, level ?? 1)}</p>
         <BuyButton
           action={owned ? t.shop.upgrade : t.shop.buy}
           price={price}
-          short={blocker === "seeds"}
-          maxed={blocker === "max-level"}
+          short={blocker === 'seeds'}
+          maxed={blocker === 'max-level'}
           maxedText={t.shop.maxed}
           onClick={() => shop.actPower(id)}
         />
@@ -343,76 +279,48 @@ function PlantOffer({ shop, frame }: { shop: MockShop; frame: Frame }) {
   const blocker = baseLevelBlocker(progress);
   const step = next ? levelStepBonus(next.level) : null;
   return (
-    <div className={`gh-offer gh-plant${level > 1 ? " is-owned" : ""}`}>
+    <div className={`gh-offer gh-plant${level > 1 ? ' is-owned' : ''}`}>
       <div className="gh-offer-art" aria-hidden="true">
         {frame(<ShooterArt />, 3)}
       </div>
       <div className="gh-offer-label">
         <div className="gh-plant-head">
           <h3 className="gh-offer-name">{t.plantShop.shooter}</h3>
-          <LevelLeaves
-            level={level}
-            label={t.plantShop.level(level, BASE_LEVEL.max)}
-            max={BASE_LEVEL.max}
-            bonus={isMilestoneLevel}
-          />
+          <LevelLeaves level={level} label={t.plantShop.level(level, BASE_LEVEL.max)} max={BASE_LEVEL.max} bonus={isMilestoneLevel} />
         </div>
-        <p className="gh-plant-level">
-          {t.plantShop.level(level, BASE_LEVEL.max)}
-        </p>
+        <p className="gh-plant-level">{t.plantShop.level(level, BASE_LEVEL.max)}</p>
         <p className="gh-offer-about">{t.plantShop.about}</p>
         <p className="gh-offer-stats">{t.plantShop.now(level)}</p>
         {next && step && (
           <p className="gh-offer-next">
-            <strong>{t.shop.next(next.level)}</strong>{" "}
-            {t.level.bonus(
-              formatPercent(step.damage),
-              formatPercent(step.fireRate),
-              formatHpBonus(step.hp),
-            )}
+            <strong>{t.shop.next(next.level)}</strong> {t.level.bonus(formatPercent(step.damage), formatPercent(step.fireRate), formatHpBonus(step.hp))}
           </p>
         )}
         <BuyButton
           action={t.shop.upgrade}
           price={next?.cost ?? null}
-          short={blocker === "seeds"}
-          maxed={blocker === "max-level"}
+          short={blocker === 'seeds'}
+          maxed={blocker === 'max-level'}
           maxedText={t.plantShop.maxed}
           onClick={shop.actPlant}
         />
       </div>
-      <CheerText cheer={shop.cheer?.id === "plant" ? shop.cheer : null} />
+      <CheerText cheer={shop.cheer?.id === 'plant' ? shop.cheer : null} />
     </div>
   );
 }
 
 /** Los tres poderes y la disparadora, con un rotulo por grupo. Cada propuesta lo viste con su marco y su CSS. */
-function ShopBody({
-  shop,
-  powerFrame,
-  plantFrame,
-  children,
-}: {
-  shop: MockShop;
-  powerFrame: Frame;
-  plantFrame: Frame;
-  children?: ReactNode;
-}) {
+function ShopBody({ shop, powerFrame, plantFrame, children }: { shop: MockShop; powerFrame: Frame; plantFrame: Frame; children?: ReactNode }) {
   const t = useText();
   return (
     <>
       {children}
       <p className="gh-shop-hint">{t.shop.hint(POWERS.maxCarried)}</p>
-      <h2 className="gh-group">{t.greenhouse.shopDetail}</h2>
+      <h2 className="gh-group">{t.hud.powers.label}</h2>
       <ul className="gh-powers">
         {POWER_IDS.map((id, i) => (
-          <PowerOffer
-            key={id}
-            id={id}
-            index={i}
-            shop={shop}
-            frame={powerFrame}
-          />
+          <PowerOffer key={id} id={id} index={i} shop={shop} frame={powerFrame} />
         ))}
       </ul>
       <h2 className="gh-group">{t.plantShop.title}</h2>
@@ -541,7 +449,7 @@ function StallScreen({ seeds }: { seeds: number }) {
 }
 
 export function Mockup({ id, seeds }: { id: MockupId; seeds: number }) {
-  if (id === "refuge") return <RefugeScreen seeds={seeds} />;
-  if (id === "stall") return <StallScreen seeds={seeds} />;
+  if (id === 'refuge') return <RefugeScreen seeds={seeds} />;
+  if (id === 'stall') return <StallScreen seeds={seeds} />;
   return <LabScreen seeds={seeds} />;
 }

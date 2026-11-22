@@ -14,7 +14,7 @@ export const es = {
     back: 'Volver',
     close: 'Cerrar',
     loading: 'Cargando el jardín…',
-    /** Lo que aun no existe: la tienda y las plantas del Invernadero (T-019), el brote que viene. */
+    /** Lo que aun no existe: el brote que viene. */
     soon: 'Próximamente',
   },
 
@@ -117,8 +117,8 @@ export const es = {
     bosses: (names: string) => `Jefes vencidos: ${names}`,
     /** Su saldo de semillas (T-020), ya formateado. */
     seeds: (amount: string) => `Semillas: ${amount}`,
-    /** Los poderes que compro en la tienda (T-022). */
-    powers: (count: number) => (count === 1 ? '1 poder comprado en la tienda' : `${count} poderes comprados en la tienda`),
+    /** Los inventos que fabrico en el Laboratorio de Patty (T-022, T-036). */
+    powers: (count: number) => (count === 1 ? '1 invento fabricado en el laboratorio' : `${count} inventos fabricados en el laboratorio`),
     baseLevel: (level: number) => `La disparadora en nivel base ${level}`,
     save: (round: number) => `Partida guardada en la ronda ${round}`,
     /** Las viñetas de la historia que ya vio (T-031). */
@@ -154,7 +154,7 @@ export const es = {
 
   /**
    * Invernadero (T-019): el sitio entre brotes, con todo lo que se hace fuera de la partida. Se abre al vencer a Creeper
-   * (R-01). La tienda (T-022) y las plantas (T-023) esperan con candado.
+   * (R-01). Desde T-036, con el Laboratorio de Patty siempre abierto.
    */
   greenhouse: {
     title: 'Invernadero',
@@ -167,12 +167,6 @@ export const es = {
     next: 'Siguiente brote',
     route: 'Ruta de brotes',
     routeDetail: (defeated: number) => (defeated === 1 ? '1 jefe vencido' : `${defeated} jefes vencidos`),
-    shop: 'Tienda',
-    /** Debajo de "Tienda" (T-022): lo que se vende. */
-    shopDetail: 'Poderes',
-    plants: 'Plantas',
-    /** Debajo de "Plantas" (T-023): el nivel base de la disparadora. */
-    plantsDetail: (level: number) => `Nivel base ${level}`,
     back: 'Volver a la portada',
     confirmTitle: (outbreak: string) => `¿Empezar ${outbreak}?`,
     confirmText: (outbreak: string, round: number) => `Se borrará tu partida a medias (${outbreak}, ronda ${round}).`,
@@ -270,9 +264,9 @@ export const es = {
     lives: (lives: number, max: number) => `Vidas: ${lives} de ${max}`,
     pause: 'Pausa',
     pauseTitle: 'Pausa (Esc o P)',
-    /** Panel izquierdo de los poderes (T-021). */
+    /** Panel izquierdo de los inventos (T-021, T-036: antes "poderes"). */
     powers: {
-      label: 'Poderes',
+      label: 'Inventos',
       names: { relocate: 'Recolocar', grenade: 'Granada', iceWall: 'Muro de hielo' },
       help: {
         relocate: 'Recolocar: lleva una disparadora a otra casilla, tal como está',
@@ -554,19 +548,19 @@ export const es = {
     again: 'Jugar otra vez',
     /** Tras vencer a un jefe se va al Invernadero (T-019). */
     greenhouse: 'Al Invernadero',
-    /** La primera vez que cae Creeper se abre la tienda (T-022). */
-    shopOpened: '¡Tienda abierta!',
-    shopOpenedText: 'Gasta tus semillas en poderes, en el Invernadero.',
+    /** La primera vez que cae Creeper se abre el Laboratorio de Patty (T-022, T-036). */
+    shopOpened: '¡Laboratorio abierto!',
+    shopOpenedText: 'Patty ya puede fabricarte inventos con tus semillas.',
   },
 
   /**
-   * Tienda (T-022): los poderes se compran para siempre y se mejoran hasta el nivel maximo. Los numeros llegan de las
+   * Laboratorio de Patty (T-022, T-036): los inventos se fabrican para siempre y se mejoran hasta el nivel maximo. Los numeros llegan de las
    * reglas (`grenadeAt`, `iceWallAt`, `relocateAt`), ya formateados si llevan decimales o porcentaje.
    */
   shop: {
-    title: 'Tienda',
-    hint: (max: number) => `Lo que compras es para siempre. Antes de cada brote eliges hasta ${max} poderes.`,
-    /** Que hace cada poder, en una frase. */
+    title: 'Laboratorio de Patty',
+    hint: (max: number) => `Lo que Patty fabrica es para siempre. Antes de cada brote eliges hasta ${max} inventos.`,
+    /** Que hace cada invento, en una frase. */
     about: {
       relocate: 'Lleva una disparadora a otra casilla, tal como está.',
       grenade: 'Cae en una casilla, explota y daña a todos los de alrededor.',
@@ -584,19 +578,18 @@ export const es = {
     /** Con premio: los niveles 5 y 10 suman mas. */
     milestone: '¡Premio!',
     owned: { relocate: 'Tuyo', grenade: 'Tuya', iceWall: 'Tuyo' },
-    buy: 'Comprar',
+    buy: 'Fabricar',
     upgrade: 'Mejorar',
     maxed: 'Nivel máximo',
     noSeeds: 'Te faltan semillas',
     price: (amount: string, count: number) => (count === 1 ? '1 semilla' : `${amount} semillas`),
-    bought: '¡Comprado!',
+    bought: '¡Listo!',
     upgraded: (level: number) => `¡Nivel ${level}!`,
   },
 
-  /** Las plantas del Invernadero (T-023): el nivel base de la disparadora. */
+  /** El vivero del Laboratorio de Patty (T-023, T-036): el nivel base de la disparadora. */
   plantShop: {
-    title: 'Plantas',
-    hint: 'Lo que mejoras aquí es para siempre. Sembrar cuesta lo mismo.',
+    title: 'Vivero',
     shooter: 'Disparadora',
     about: 'Toda disparadora que siembres en una partida nueva nace en su nivel base. Subirla en la partida cuesta lo de su nivel.',
     level: (level: number, max: number) => `Nivel base ${level} de ${max}`,
@@ -608,18 +601,18 @@ export const es = {
     upgraded: (level: number) => `¡Nivel base ${level}!`,
   },
 
-  /** Antes de empezar un brote (T-022, T-04): que poderes se llevan. */
+  /** Antes de empezar un brote (T-022, T-04): que inventos se llevan. */
   loadout: {
-    title: 'Poderes del brote',
+    title: 'Inventos del brote',
     hint: (max: number) => `Elige hasta ${max}. Traen sus cargas a la partida.`,
     count: (chosen: number, max: number) => `Llevas ${chosen} de ${max}`,
     full: (max: number) => `Ya llevas ${max}: deja otro antes`,
     play: '¡A jugar!',
-    none: 'Sin poderes',
+    none: 'Sin inventos',
   },
 
   /**
-   * Semillas (T-020): la moneda que el jugador se lleva de cada partida y gasta fuera de ella (la tienda, T-022). Nunca se
+   * Semillas (T-020): la moneda que el jugador se lleva de cada partida y gasta fuera de ella (el Laboratorio de Patty, T-036). Nunca se
    * confunden con la moneda de la partida: otro nombre, otro icono y otro color. Las cantidades llegan ya formateadas
    * (`formatAmount`) y los porcentajes, con `formatPercent`.
    */
@@ -826,7 +819,7 @@ export const es = {
     /** Bloque del muro de hielo del poder (T-021). */
     iceWall: {
       title: 'Muro de hielo',
-      subtitle: 'Poder: se derrite',
+      subtitle: 'Invento: se derrite',
       about: (time: string) => `Corta el paso: los enemigos se paran a morderlo, y para los disparos y los versos que iban a lo de detrás. Dura ${time}.`,
     },
     mine: {
