@@ -151,3 +151,17 @@ describe('partida guardada (T-011)', () => {
     expect(writeSave(createMatch(), null, null)).toBe(false);
   });
 });
+
+describe('partida guardada: el nivel base (T-023)', () => {
+  it('guarda el nivel base de la partida y lo recupera igual', () => {
+    const match = createMatch(undefined, 0, OUTBREAK, false, undefined, 4);
+    expect(decodeSave(encodeSave(match, null, 0))?.match.baseLevel).toBe(4);
+  });
+
+  it('una guardada sin nivel base, o con uno que no existe, no se carga', () => {
+    const { baseLevel: _, ...without } = createMatch();
+    expect(decodeSave(JSON.stringify({ version: SAVE_VERSION, savedAt: 0, match: without, pendingUnlock: null }))).toBeNull();
+    const broken = { ...createMatch(), baseLevel: 6 };
+    expect(decodeSave(JSON.stringify({ version: SAVE_VERSION, savedAt: 0, match: broken, pendingUnlock: null }))).toBeNull();
+  });
+});

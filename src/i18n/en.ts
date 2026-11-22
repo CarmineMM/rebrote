@@ -90,6 +90,7 @@ export const en: Dictionary = {
     bosses: (names) => `Bosses defeated: ${names}`,
     seeds: (amount) => `Seeds: ${amount}`,
     powers: (count) => (count === 1 ? '1 power bought in the shop' : `${count} powers bought in the shop`),
+    baseLevel: (level) => `Shooter at base level ${level}`,
     save: (round) => `Saved game at round ${round}`,
     story: 'The story scenes already seen',
     tours: 'The help tours already seen',
@@ -125,6 +126,7 @@ export const en: Dictionary = {
     shop: 'Shop',
     shopDetail: 'Powers',
     plants: 'Plants',
+    plantsDetail: (level) => `Base level ${level}`,
     back: 'Back to the title',
     confirmTitle: (outbreak) => `Start ${outbreak}?`,
     confirmText: (outbreak, round) => `Your game in progress (${outbreak}, round ${round}) will be deleted.`,
@@ -487,6 +489,18 @@ export const en: Dictionary = {
     upgraded: (level) => `Level ${level}!`,
   },
 
+  plantShop: {
+    title: 'Plants',
+    hint: 'What you upgrade here is forever. Sowing costs the same.',
+    shooter: 'Shooter',
+    about: 'Every shooter you sow in a new game starts at its base level. Leveling it up in the game costs what its level costs.',
+    level: (level, max) => `Base level ${level} of ${max}`,
+    now: (level) => (level === 1 ? 'Starts at level 1, as always' : `Starts at level ${level}`),
+    milestone: 'Bonus and a little garden!',
+    maxed: 'Max',
+    upgraded: (level) => `Base level ${level}!`,
+  },
+
   loadout: {
     title: 'Outbreak powers',
     hint: (max) => `Pick up to ${max}. They bring their charges to the match.`,
@@ -648,6 +662,7 @@ export const en: Dictionary = {
       oneCannon: 'Single barrel',
       fused: (cannons) => `${cannons} fused barrels`,
       cap: (cap) => `Cap ${cap}`,
+      baseLevel: (level) => `Base level ${level}, from the Greenhouse`,
       about: {
         plain: 'Shoots seeds at the enemies ahead of it in its lane.',
         fire: 'Its seeds burn: the enemy keeps losing health for a while after the hit.',

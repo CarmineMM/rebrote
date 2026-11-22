@@ -1,10 +1,10 @@
 import type * as Phaser from 'phaser';
-import { OUTBREAKS } from '../config/balance';
+import { BASE_LEVEL, OUTBREAKS } from '../config/balance';
 import type { EnemyKind } from '../core/combat';
 import type { OutbreakId } from '../core/outbreaks';
 import type { CannonCount, ElementType, MineElement } from '../core/plants';
 import { GARDEN, gardenSpots, gardenTier } from './gardenArt';
-import { MEDAL, showsMedal } from './levelMedal';
+import { MEDAL, MEDAL_SPROUT, showsMedal, showsSprout } from './levelMedal';
 import { SHOOTER } from './shooterShape';
 import {
   FLOPPY_SIZE,
@@ -36,7 +36,14 @@ import { KIND_LOOK, WORM_LOOK, poseOf } from './wormView';
  * tablero: con sus canones, su elemento, su armadura y su medallita. React solo la muestra como imagen (`<img>`).
  */
 export type PortraitSubject =
-  | { readonly kind: 'shooter'; readonly cannons: CannonCount; readonly element: ElementType | null; readonly level: number }
+  | {
+      readonly kind: 'shooter';
+      readonly cannons: CannonCount;
+      readonly element: ElementType | null;
+      readonly level: number;
+      /** Nivel base de su partida (T-023): con uno comprado, su medallita lleva el brote del Invernadero. Sin decir, el 1. */
+      readonly baseLevel?: number;
+    }
   | { readonly kind: 'mine'; readonly element: MineElement; readonly armed: boolean }
   /** Muro (T-024), con su desgaste. */
   | { readonly kind: 'wall'; readonly wear: WallWear }
@@ -124,6 +131,18 @@ export function portraitUrl(scene: Phaser.Scene, subject: PortraitSubject, { bac
   const url = canvas.toDataURL('image/png');
   cache.set(key, url);
   return url;
+}
+
+/**
+ * La disparadora recien sembrada en cada nivel base (T-023), del 1 al maximo, con su medallita, su brote del Invernadero y,
+ * en el 5, su jardincito. Es la foto de la pantalla de las plantas del Invernadero.
+ */
+export function nurseryPortraits(scene: Phaser.Scene): Record<number, string> {
+  const art: Record<number, string> = {};
+  for (let level = 1; level <= BASE_LEVEL.max; level++) {
+    art[level] = portraitUrl(scene, { kind: 'shooter', cannons: 1, element: null, level, baseLevel: level });
+  }
+  return art;
 }
 
 /**
@@ -223,6 +242,10 @@ function piecesFor(subject: PortraitSubject): Piece[] {
     if (showsMedal(subject.level)) {
       const medal = SHOOTER.medal(subject.cannons);
       pieces.push({ key: medalTexture(subject.level), x: medal.x - footX, y: medal.y - footY, scale: 1, ox: 0.5, oy: 0.5, width: MEDAL.size, height: MEDAL.size });
+      if (showsSprout(subject.level, subject.baseLevel ?? 1)) {
+        const { size, dx, dy, foot } = MEDAL_SPROUT;
+        pieces.push({ key: TEX.medalSprout, x: medal.x + dx - footX, y: medal.y + dy - footY, scale: 1, ox: foot.x / size, oy: foot.y / size, width: size, height: size });
+      }
     }
     pieces.push(...garden.filter((g) => g.front).map((g) => g.piece));
     return pieces;

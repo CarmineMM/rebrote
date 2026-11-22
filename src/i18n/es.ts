@@ -119,6 +119,7 @@ export const es = {
     seeds: (amount: string) => `Semillas: ${amount}`,
     /** Los poderes que compro en la tienda (T-022). */
     powers: (count: number) => (count === 1 ? '1 poder comprado en la tienda' : `${count} poderes comprados en la tienda`),
+    baseLevel: (level: number) => `La disparadora en nivel base ${level}`,
     save: (round: number) => `Partida guardada en la ronda ${round}`,
     /** Las viñetas de la historia que ya vio (T-031). */
     story: 'Las viñetas de la historia vistas',
@@ -170,6 +171,8 @@ export const es = {
     /** Debajo de "Tienda" (T-022): lo que se vende. */
     shopDetail: 'Poderes',
     plants: 'Plantas',
+    /** Debajo de "Plantas" (T-023): el nivel base de la disparadora. */
+    plantsDetail: (level: number) => `Nivel base ${level}`,
     back: 'Volver a la portada',
     confirmTitle: (outbreak: string) => `¿Empezar ${outbreak}?`,
     confirmText: (outbreak: string, round: number) => `Se borrará tu partida a medias (${outbreak}, ronda ${round}).`,
@@ -587,6 +590,21 @@ export const es = {
     upgraded: (level: number) => `¡Nivel ${level}!`,
   },
 
+  /** Las plantas del Invernadero (T-023): el nivel base de la disparadora. */
+  plantShop: {
+    title: 'Plantas',
+    hint: 'Lo que mejoras aquí es para siempre. Sembrar cuesta lo mismo.',
+    shooter: 'Disparadora',
+    about: 'Toda disparadora que siembres en una partida nueva nace en su nivel base. Subirla en la partida cuesta lo de su nivel.',
+    level: (level: number, max: number) => `Nivel base ${level} de ${max}`,
+    /** Lo que da el nivel base de ahora. */
+    now: (level: number) => (level === 1 ? 'Nace en nivel 1, como siempre' : `Nace en nivel ${level}`),
+    /** Con premio: el nivel 5 suma mas y trae su jardincito (T-027). */
+    milestone: '¡Premio y jardincito!',
+    maxed: 'Máximo',
+    upgraded: (level: number) => `¡Nivel base ${level}!`,
+  },
+
   /** Antes de empezar un brote (T-022, T-04): que poderes se llevan. */
   loadout: {
     title: 'Poderes del brote',
@@ -787,6 +805,8 @@ export const es = {
       oneCannon: 'Un cañón',
       fused: (cannons: number) => `${cannons} cañones fusionados`,
       cap: (cap: number) => `Tope ${cap}`,
+      /** Pastilla del nivel base comprado (T-023). */
+      baseLevel: (level: number) => `Nivel base ${level}, del Invernadero`,
       about: {
         plain: 'Dispara semillas a los enemigos de su carril que tiene delante.',
         fire: 'Sus semillas queman: el enemigo sigue perdiendo vida un rato después del impacto.',

@@ -1,6 +1,6 @@
 import { useEffect, useId, useMemo, useRef, useState, type RefObject } from 'react';
 import { POWERS } from '../game/config/balance';
-import type { RouteArt } from '../game/EventBus';
+import type { NurseryArt, RouteArt } from '../game/EventBus';
 import type { OutbreakId } from '../game/core/outbreaks';
 import type { PowerId } from '../game/core/powers';
 import { currentOutbreak, routeStops } from '../game/core/route';
@@ -10,6 +10,7 @@ import { summarizeSave, type SavedGame } from '../game/save';
 import { formatSavedAt } from '../i18n';
 import { GreenhousePatty } from './GreenhousePatty';
 import { outbreakTitle } from './outbreakName';
+import { PlantShop } from './PlantShop';
 import { PowerIcon } from './PowerPanel';
 import { RouteMap } from './RouteMap';
 import { SeedBalance } from './SeedsEarned';
@@ -26,6 +27,8 @@ interface GreenhouseProps {
   progress: Progress;
   /** Jefe de cada brote, recortado por la escena, para los lugares de la ruta. */
   art: RouteArt | null;
+  /** La disparadora de cada nivel base (T-023), compuesta por la escena, para las plantas. */
+  nurseryArt: NurseryArt | null;
   onResume: () => void;
   /**
    * Empieza el brote desde la ronda 1, pisando la partida a medias (ya confirmado), con los poderes elegidos (T-022, que
@@ -35,6 +38,8 @@ interface GreenhouseProps {
   /** Tienda (T-022): comprar y mejorar un poder; true si se pudo. */
   onBuy: (id: PowerId) => boolean;
   onUpgrade: (id: PowerId) => boolean;
+  /** Plantas (T-023): sube un paso el nivel base de la disparadora; true si se pudo. */
+  onBuyBaseLevel: () => boolean;
   /** Llevar o dejar un poder en el siguiente brote (T-022, T-04). */
   onToggleCarried: (id: PowerId) => void;
   /** Vuelve a ver una secuencia de la historia ya vista (T-031, Y-05). */
@@ -52,12 +57,13 @@ type View =
   | { readonly name: 'route' }
   | { readonly name: 'story' }
   | { readonly name: 'shop' }
+  | { readonly name: 'plants' }
   | { readonly name: 'confirm'; readonly outbreak: OutbreakId }
   | { readonly name: 'loadout'; readonly outbreak: OutbreakId };
 
 const MAIN: View = { name: 'main' };
 
-/** Boton de algo que aun no existe (las plantas de T-023, el siguiente brote si no hay mas): con candado y "Proximamente". No suena. */
+/** Boton de algo que aun no existe (el siguiente brote si no hay mas): con candado y "Proximamente". No suena. */
 function LockedButton({ label, detail }: { label: string; detail: string }) {
   return (
     <button type="button" className="btn is-locked has-detail" aria-disabled="true" title={detail} data-silent onClick={(e) => e.preventDefault()}>
@@ -73,13 +79,28 @@ function LockedButton({ label, detail }: { label: string; detail: string }) {
  * Invernadero (T-019): el sitio entre un brote y el siguiente, con todo lo que se hace fuera de la partida. Se abre al
  * vencer a Creeper (R-01) y se llega desde "Continuar" en la portada o desde la victoria. Va en el panel de la derecha,
  * como el menu de la portada: reanudar la partida a medias (con su brote y su ronda), jugar el siguiente brote, abrir la
- * ruta de brotes, la historia vista para volver a verla (T-031), la tienda (T-022) y las plantas (con candado hasta T-023)
+ * ruta de brotes, la historia vista para volver a verla (T-031), la tienda (T-022) y las plantas (el nivel base, T-023)
  * y volver a la portada. Arriba, las semillas del jugador (T-020). Empezar un brote con una partida a medias pide confirmacion. Esc vuelve atras: de la confirmacion
  * o de la historia al Invernadero y de ahi a la portada. Dentro esta Patty (T-032, VT-05), junto al panel: a veces dice
  * algo al entrar; con la ruta abierta se esconde. La tienda (T-022) se abre encima, como la ruta, y quien tiene poderes los
- * elige antes de empezar cada brote (T-04), en el panel.
+ * elige antes de empezar cada brote (T-04), en el panel. Las plantas (T-023) se abren encima, como la tienda.
  */
-export function Greenhouse({ saved, progress, art, onResume, onPlay, onBuy, onUpgrade, onToggleCarried, onReplay, onBack, quiet, name }: GreenhouseProps) {
+export function Greenhouse({
+  saved,
+  progress,
+  art,
+  nurseryArt,
+  onResume,
+  onPlay,
+  onBuy,
+  onUpgrade,
+  onBuyBaseLevel,
+  onToggleCarried,
+  onReplay,
+  onBack,
+  quiet,
+  name,
+}: GreenhouseProps) {
   const t = useText();
   const language = useLanguage();
   const [view, setView] = useState<View>(MAIN);
@@ -87,6 +108,7 @@ export function Greenhouse({ saved, progress, art, onResume, onPlay, onBuy, onUp
   const firstButton = useRef<HTMLButtonElement>(null);
   const routeButton = useRef<HTMLButtonElement>(null);
   const shopButton = useRef<HTMLButtonElement>(null);
+  const plantsButton = useRef<HTMLButtonElement>(null);
   const owned = ownedPowers(progress);
   const lastView = useRef<View['name']>(view.name);
   const summary = saved ? summarizeSave(saved) : null;
@@ -98,17 +120,18 @@ export function Greenhouse({ saved, progress, art, onResume, onPlay, onBuy, onUp
   useEffect(() => {
     const from = lastView.current;
     lastView.current = view.name;
-    if (view.name === 'route' || view.name === 'shop') return;
-    // Al cerrar la ruta, la historia o la tienda, el foco vuelve a su boton; si no, al primero del panel.
+    if (view.name === 'route' || view.name === 'shop' || view.name === 'plants') return;
+    // Al cerrar la ruta, la historia, la tienda o las plantas, el foco vuelve a su boton; si no, al primero del panel.
     if (view.name === 'main' && from === 'route') routeButton.current?.focus({ preventScroll: true });
     else if (view.name === 'main' && from === 'story') storyButton.current?.focus({ preventScroll: true });
     else if (view.name === 'main' && from === 'shop') shopButton.current?.focus({ preventScroll: true });
+    else if (view.name === 'main' && from === 'plants') plantsButton.current?.focus({ preventScroll: true });
     else firstButton.current?.focus({ preventScroll: true });
   }, [view]);
 
   useEffect(() => {
-    // La ruta y la tienda atienden su propio Esc.
-    if (view.name === 'route' || view.name === 'shop') return;
+    // La ruta, la tienda y las plantas atienden su propio Esc.
+    if (view.name === 'route' || view.name === 'shop' || view.name === 'plants') return;
     const onKey = (event: KeyboardEvent) => {
       if (event.key !== 'Escape' || event.repeat) return;
       if (view.name === 'confirm' || view.name === 'story' || view.name === 'loadout') setView(MAIN);
@@ -123,8 +146,8 @@ export function Greenhouse({ saved, progress, art, onResume, onPlay, onBuy, onUp
   /** Empezar un brote: con una partida a medias, antes se confirma. */
   const start = (outbreak: OutbreakId) => (summary ? setView({ name: 'confirm', outbreak }) : play(outbreak));
 
-  // Patty sigue montada con la ruta o la tienda abiertas (escondida): al cerrarlas no vuelve a saludar como si acabara de entrar.
-  const patty = <GreenhousePatty hidden={quiet || view.name === 'route' || view.name === 'shop'} name={name} />;
+  // Patty sigue montada con la ruta, la tienda o las plantas abiertas (escondida): al cerrarlas no vuelve a saludar como si acabara de entrar.
+  const patty = <GreenhousePatty hidden={quiet || view.name === 'route' || view.name === 'shop' || view.name === 'plants'} name={name} />;
 
   if (view.name === 'route') {
     return (
@@ -140,6 +163,15 @@ export function Greenhouse({ saved, progress, art, onResume, onPlay, onBuy, onUp
       <>
         {patty}
         <Shop progress={progress} onBuy={onBuy} onUpgrade={onUpgrade} onClose={() => setView(MAIN)} />
+      </>
+    );
+  }
+
+  if (view.name === 'plants') {
+    return (
+      <>
+        {patty}
+        <PlantShop progress={progress} art={nurseryArt} onBuy={onBuyBaseLevel} onClose={() => setView(MAIN)} />
       </>
     );
   }
@@ -208,7 +240,12 @@ export function Greenhouse({ saved, progress, art, onResume, onPlay, onBuy, onUp
                   </span>
                   <small className="btn-detail">{t.greenhouse.shopDetail}</small>
                 </button>
-                <LockedButton label={t.greenhouse.plants} detail={t.common.soon} />
+                <button ref={plantsButton} type="button" className="btn has-detail greenhouse-plants" onClick={() => setView({ name: 'plants' })}>
+                  <span className="btn-line">
+                    <span aria-hidden="true">❦</span> {t.greenhouse.plants}
+                  </span>
+                  <small className="btn-detail">{t.greenhouse.plantsDetail(progress.baseLevel)}</small>
+                </button>
               </div>
               <button type="button" className="btn" onClick={onBack}>
                 <span aria-hidden="true">⌂</span> {t.greenhouse.back}

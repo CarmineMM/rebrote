@@ -16,7 +16,7 @@ import {
   recordMatchEnd,
   recordStory,
 } from './progress';
-import { SEEDS } from './config/balance';
+import { BASE_LEVEL, SEEDS } from './config/balance';
 import { clearSave, readSave, writeSave } from './save';
 import { SessionStore, type SaveStore } from './storage';
 
@@ -69,7 +69,7 @@ const sessionKeeperOn = (store: SaveStore | null) => keeperOn(new SessionStore((
 
 describe('progreso permanente: reglas (T-017)', () => {
   it('empieza sin nada vencido', () => {
-    expect(emptyProgress()).toEqual({ defeated: [], story: [], seeds: 0, powers: {}, carried: [] });
+    expect(emptyProgress()).toEqual({ defeated: [], story: [], seeds: 0, powers: {}, carried: [], baseLevel: 1 });
     expect(hasProgress(emptyProgress())).toBe(false);
   });
 
@@ -92,7 +92,7 @@ describe('progreso permanente: guardar y recargar (T-017)', () => {
     keeperOn(store).recordDefeat(CREEPER);
     // Otra pagina: otro guardian con el mismo almacen.
     expect(isOutbreakDefeated(keeperOn(store).read(), CREEPER)).toBe(true);
-    expect(JSON.parse(store.data.get(PROGRESS_KEY) ?? '')).toEqual({ version: PROGRESS_VERSION, defeated: ['creeper'], story: [], seeds: 0, powers: {}, carried: [] });
+    expect(JSON.parse(store.data.get(PROGRESS_KEY) ?? '')).toEqual({ version: PROGRESS_VERSION, defeated: ['creeper'], story: [], seeds: 0, powers: {}, carried: [], baseLevel: 1 });
   });
 
   it('volver a vencer al mismo jefe no vuelve a escribir', () => {
@@ -208,7 +208,7 @@ describe('progreso permanente: sin migraciones mientras el juego esta en desarro
   it('lo descartado se pisa con el progreso de esta version al vencer a un jefe', () => {
     const store = memoryStore({ [PROGRESS_KEY]: JSON.stringify({ version: PROGRESS_VERSION + 1, defeated: ['creeper'], seeds: 300 }) });
     keeperOn(store).recordDefeat(CREEPER);
-    expect(JSON.parse(store.data.get(PROGRESS_KEY) ?? '')).toEqual({ version: PROGRESS_VERSION, defeated: ['creeper'], story: [], seeds: 0, powers: {}, carried: [] });
+    expect(JSON.parse(store.data.get(PROGRESS_KEY) ?? '')).toEqual({ version: PROGRESS_VERSION, defeated: ['creeper'], story: [], seeds: 0, powers: {}, carried: [], baseLevel: 1 });
   });
 });
 
@@ -302,7 +302,7 @@ describe('progreso permanente: la tienda (T-022)', () => {
   const rich = (seeds: number) => memoryStore({ [PROGRESS_KEY]: encodeProgress({ ...recordDefeat(emptyProgress(), CREEPER), seeds }) });
 
   it('un progreso de la version 3 (antes de la tienda) se descarta (ADR-0014)', () => {
-    expect(PROGRESS_VERSION).toBe(4);
+    expect(PROGRESS_VERSION).toBeGreaterThanOrEqual(4);
     expect(decodeProgress(JSON.stringify({ version: 3, defeated: ['creeper'], story: [], seeds: 500 }))).toBeNull();
   });
 
@@ -336,6 +336,46 @@ describe('progreso permanente: la tienda (T-022)', () => {
       carried: ['grenade'],
     });
     expect(decodeProgress(raw({ grenade: 1, iceWall: 1, relocate: 1 }, ['iceWall', 'relocate', 'grenade', 'grenade']))?.carried).toEqual(['relocate', 'grenade']);
-    expect(decodeProgress(raw('todo', 'nada'))).toMatchObject({ powers: {}, carried: [] });
+    expect(decodeProgress(raw('todo', 'nada'))).toMatchObject({ powers: {}, carried: [], baseLevel: 1 });
+  });
+});
+
+describe('progreso permanente: el nivel base de la disparadora (T-023)', () => {
+  const rich = (seeds: number) => memoryStore({ [PROGRESS_KEY]: encodeProgress({ ...recordDefeat(emptyProgress(), CREEPER), seeds }) });
+
+  it('un progreso de la version 4 (antes del nivel base) se descarta (ADR-0014)', () => {
+    expect(PROGRESS_VERSION).toBe(5);
+    expect(decodeProgress(JSON.stringify({ version: 4, defeated: ['creeper'], story: [], seeds: 500, powers: {}, carried: [] }))).toBeNull();
+  });
+
+  it('comprar un paso descuenta las semillas y queda guardado al recargar', () => {
+    const store = rich(BASE_LEVEL.prices[0] + 100);
+    expect(keeperOn(store).buyBaseLevel().changed).toBe(true);
+    const reloaded = keeperOn(store).read();
+    expect(reloaded).toMatchObject({ baseLevel: 2, seeds: 100 });
+  });
+
+  it('dos clics seguidos con semillas para uno solo cobran una vez', () => {
+    const store = rich(BASE_LEVEL.prices[0]);
+    const keeper = keeperOn(store);
+    expect(keeper.buyBaseLevel().changed).toBe(true);
+    expect(keeper.buyBaseLevel().changed).toBe(false);
+    expect(keeper.read()).toMatchObject({ baseLevel: 2, seeds: 0 });
+  });
+
+  it('tener nivel base cuenta como algo que se pierde al borrar el jugador', () => {
+    expect(hasProgress({ ...emptyProgress(), baseLevel: 2 })).toBe(true);
+  });
+
+  it('un nivel base roto cuenta como el 1, sin perder lo demas', () => {
+    const raw = JSON.stringify({ version: PROGRESS_VERSION, defeated: ['creeper'], story: [], seeds: 50, powers: {}, carried: [], baseLevel: 9 });
+    expect(decodeProgress(raw)).toMatchObject({ defeated: ['creeper'], seeds: 50, baseLevel: 1 });
+  });
+
+  it('una partida guardada antes de comprar la mejora no cambia al cargarla', () => {
+    const store = rich(BASE_LEVEL.prices[0]);
+    writeSave(createMatch(), null, store);
+    keeperOn(store).buyBaseLevel();
+    expect(readSave(store)?.match.baseLevel).toBe(1);
   });
 });

@@ -38,16 +38,18 @@ export function hasPlayed(profile: Profile): boolean {
 }
 
 /**
- * Lo que se perderia al borrarlo, una linea por cosa: jefes vencidos, semillas (T-020), poderes comprados (T-022), partida
+ * Lo que se perderia al borrarlo, una linea por cosa: jefes vencidos, semillas (T-020), poderes comprados (T-022), el nivel
+ * base de la disparadora (T-023), partida
  * a medias, historia vista (T-031) y tours vistos.
  */
 export function lostLines(t: Dictionary, card: PlayerCard): string[] {
   const lines: string[] = [];
-  const { defeated, story, seeds, powers } = card.progress;
+  const { defeated, story, seeds, powers, baseLevel } = card.progress;
   const bought = Object.keys(powers).length;
   if (defeated.length > 0) lines.push(t.players.bosses(formatList(defeated.map((id) => defeatedBossName(t, id)))));
   if (seeds > 0) lines.push(t.players.seeds(formatAmount(seeds)));
   if (bought > 0) lines.push(t.players.powers(bought));
+  if (baseLevel > 1) lines.push(t.players.baseLevel(baseLevel));
   if (card.save) lines.push(t.players.save(card.save.round));
   if (story.length > 0) lines.push(t.players.story);
   if (card.toursSeen) lines.push(t.players.tours);

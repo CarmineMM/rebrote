@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import type { CardId } from './game/core/match';
 import { FIRST_OUTBREAK, outbreakFromParam, type OutbreakId } from './game/core/outbreaks';
+import { baseLevelFromParam } from './game/core/baseLevel';
 import { powersFromParam, type PowerId } from './game/core/powers';
 import { carriedLoadout } from './game/core/shop';
 import { isGreenhouseOpen } from './game/core/route';
@@ -16,6 +17,7 @@ import {
   type MenuPlace,
   type PlantPanel,
   type PowerInfo,
+  type NurseryArt,
   type RouteArt,
   type RoundInfo,
   type UnlockInfo,
@@ -71,6 +73,12 @@ const DEV_OUTBREAK = import.meta.env.DEV ? outbreakFromParam(new URLSearchParams
  */
 const DEV_POWERS = import.meta.env.DEV ? powersFromParam(new URLSearchParams(window.location.search).get('poderes')) : null;
 
+/**
+ * Solo en desarrollo (T-023): con `?nivelbase=5` en la direccion, las disparadoras de las partidas nuevas nacen en ese
+ * nivel base, en vez del comprado por el jugador.
+ */
+const DEV_BASE_LEVEL = import.meta.env.DEV ? baseLevelFromParam(new URLSearchParams(window.location.search).get('nivelbase')) : null;
+
 /** Escena que tiene que estar lista para cada pantalla. */
 const SCENE_OF: Record<GameScreen, string> = { title: SCENES.title, board: SCENES.board };
 
@@ -117,6 +125,7 @@ export function App() {
   const scenePlace: MenuPlace = inGreenhouse ? 'greenhouse' : 'cover';
   /** Jefes recortados por la portada para la ruta de brotes (T-019). */
   const [routeArt, setRouteArt] = useState<RouteArt | null>(null);
+  const [nurseryArt, setNurseryArt] = useState<NurseryArt | null>(null);
   const [balance, setBalance] = useState<number | null>(null);
   const [lives, setLives] = useState<number | null>(null);
   const [selected, setSelected] = useState<CardId | null>(null);
@@ -239,6 +248,7 @@ export function App() {
     EventBus.on(GameEvents.unlocked, onUnlocked);
     EventBus.on(GameEvents.entityInfo, setInfo);
     EventBus.on(GameEvents.routeArt, setRouteArt);
+    EventBus.on(GameEvents.nurseryArt, setNurseryArt);
     // Si la escena arranco antes que el HUD, que reenvie el estado.
     EventBus.emit(GameEvents.stateRequested);
     return () => {
@@ -257,6 +267,7 @@ export function App() {
       EventBus.off(GameEvents.unlocked, onUnlocked);
       EventBus.off(GameEvents.entityInfo, setInfo);
       EventBus.off(GameEvents.routeArt, setRouteArt);
+      EventBus.off(GameEvents.nurseryArt, setNurseryArt);
     };
   }, []);
 
@@ -320,8 +331,12 @@ export function App() {
       resetHud();
       setScreen('board');
       // Una partida nueva trae los poderes comprados que el jugador eligio (T-022); en desarrollo, `?poderes=` elige otros.
-      const loadout = request.resume ? undefined : (DEV_POWERS ?? carriedLoadout(playerProgress.read()));
-      EventBus.emit(GameEvents.matchRequested, loadout ? { ...request, loadout } : request);
+      // Y sus disparadoras nacen en el nivel base comprado (T-023); en desarrollo, `?nivelbase=` elige otro.
+      const progress = playerProgress.read();
+      const fresh = request.resume
+        ? request
+        : { ...request, loadout: DEV_POWERS ?? carriedLoadout(progress), baseLevel: DEV_BASE_LEVEL ?? progress.baseLevel };
+      EventBus.emit(GameEvents.matchRequested, fresh);
       if (settings.fullscreen) fullscreen.enter();
     },
     [resetHud, settings.fullscreen, fullscreen],
@@ -343,6 +358,12 @@ export function App() {
   }, []);
   const upgradePower = useCallback((id: PowerId) => {
     const result = playerProgress.upgradePower(id);
+    setProgress(result.progress);
+    return result.changed;
+  }, []);
+  /** Plantas del Invernadero (T-023): un paso mas de nivel base. */
+  const buyBaseLevel = useCallback(() => {
+    const result = playerProgress.buyBaseLevel();
     setProgress(result.progress);
     return result.changed;
   }, []);
@@ -473,10 +494,12 @@ export function App() {
               saved={saved}
               progress={progress}
               art={routeArt}
+              nurseryArt={nurseryArt}
               onResume={loadGame}
               onPlay={playOutbreak}
               onBuy={buyPower}
               onUpgrade={upgradePower}
+              onBuyBaseLevel={buyBaseLevel}
               onToggleCarried={toggleCarried}
               onReplay={story.replay}
               onBack={() => setPlace('cover')}

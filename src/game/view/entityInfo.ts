@@ -45,9 +45,9 @@ function hpOf(current: number, max: number): EntityInfo['hp'] {
 
 /**
  * Ficha de la disparadora de `cell`. `levelCap` es el tope de nivel de la ronda, o null si aun no se puede subir de
- * nivel (no se dice).
+ * nivel (no se dice). `baseLevel`, el de su partida (T-023): si se compro, una pastilla lo dice.
  */
-export function shooterInfo(plant: Plant, cell: Cell, levelCap: number | null): EntityInfoData {
+export function shooterInfo(plant: Plant, cell: Cell, levelCap: number | null, baseLevel = 1): EntityInfoData {
   const t = text().info;
   const { shooter } = plant;
   const { element, cannons, level } = shooter;
@@ -79,7 +79,7 @@ export function shooterInfo(plant: Plant, cell: Cell, levelCap: number | null): 
     level: { value: level, medalTier: showsMedal(level) ? medalTier(level) : null, note: levelCap === null ? null : t.shooter.cap(levelCap) },
     hp: hpOf(plant.hp, plantMaxHp(shooter)),
     stats,
-    tags: [],
+    tags: baseLevel > 1 ? [{ text: t.shooter.baseLevel(baseLevel), tone: 'nursery' }] : [],
     about: t.shooter.about[element ?? 'plain'],
     lore: null,
   };

@@ -122,6 +122,11 @@ export const GameEvents = {
    * para los lugares de la ruta de brotes (T-019). Lo manda la portada al arrancar y al pedirle el estado.
    */
   routeArt: 'route-art',
+  /**
+   * Phaser -> React. Payload: NurseryArt. La disparadora de cada nivel base (T-023), compuesta con sus texturas, para la
+   * pantalla de las plantas del Invernadero. Lo manda la portada con `routeArt`.
+   */
+  nurseryArt: 'nursery-art',
   /** Phaser -> React. Payload: PlayerAction. El jugador acaba de hacer algo que un tour puede estar ensenando (T-013). */
   playerAction: 'player-action',
   /**
@@ -149,6 +154,11 @@ export interface MatchRequest {
    * ninguno. En desarrollo, `?poderes=`.
    */
   loadout?: CarriedPower[];
+  /**
+   * Nivel con el que nacen las disparadoras de la partida nueva (T-023): el nivel base comprado en el Invernadero; sin el,
+   * el 1. En desarrollo, `?nivelbase=`. Una partida que se continua ya lleva el suyo.
+   */
+  baseLevel?: number;
   pendingUnlock?: UnlockInfo | null;
 }
 
@@ -306,7 +316,8 @@ export interface InfoStat {
 /** Estado del momento en la ficha (quemado, frenado, acelerado, contando...). */
 export interface InfoTag {
   text: string;
-  tone: 'fire' | 'ice' | 'haste' | 'alert' | 'calm';
+  /** `nursery`: lo que viene del Invernadero, como el nivel base (T-023). */
+  tone: 'fire' | 'ice' | 'haste' | 'alert' | 'calm' | 'nursery';
 }
 
 /**
@@ -407,6 +418,9 @@ export type TourArt = Record<TourArtKey, string>;
 
 /** Jefe de cada brote recortado (data URL), por el nombre del brote (ver `routeArt`). Uno sin jefe aun (T-024) no viene. */
 export type RouteArt = Readonly<Partial<Record<OutbreakId, string>>>;
+
+/** Foto de la disparadora recien sembrada (data URL) por nivel base, del 1 al maximo (T-023; ver `nurseryArt`). */
+export type NurseryArt = Readonly<Record<number, string>>;
 
 /** Algo que acaba de hacer el jugador y que un tour puede estar ensenando (T-013). */
 export type PlayerAction =

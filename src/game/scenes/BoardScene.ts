@@ -312,6 +312,8 @@ export interface BoardSceneData {
    * ninguno. En desarrollo, `?poderes=` en la direccion. Una partida que se continua ya lleva los suyos.
    */
   loadout?: CarriedPower[];
+  /** Nivel base de la partida nueva (T-023): el comprado en el Invernadero; sin el, el 1. Una que se continua lleva el suyo. */
+  baseLevel?: number;
 }
 
 /**
@@ -363,6 +365,7 @@ export class BoardScene extends Phaser.Scene {
   private powersKey = '';
   /** Poderes de la partida nueva (T-021): se guardan para "Jugar otra vez". */
   private loadout: CarriedPower[] | undefined;
+  private baseLevel: number | undefined;
   /** Siguiente copion que suelta la tecla K en desarrollo (T-025). */
   private debugCopycat = 0;
   /** Rotulo sobre la disparadora a la que apunta una carta de elemento: lo que costaria infundirla o por que no se puede. */
@@ -417,14 +420,16 @@ export class BoardScene extends Phaser.Scene {
     this.restoredUnlock = data.pendingUnlock ?? null;
     this.wantPaused = data.paused ?? false;
     this.loadout = data.loadout;
+    this.baseLevel = data.baseLevel;
     this.created = false;
   }
 
   create(): void {
     // B-02 (T-018): una partida nueva empieza con el tablero vacio y el saldo inicial de su brote. Si su jefe ya estaba
-    // vencido, sus semillas dan menos (T-020, C-03).
+    // vencido, sus semillas dan menos (T-020, C-03). Sus disparadoras nacen en el nivel base (T-023).
     this.match =
-      this.resume ?? createMatch(undefined, 0, this.outbreak, isOutbreakDefeated(playerProgress.read(), this.outbreak), this.loadout);
+      this.resume ??
+      createMatch(undefined, 0, this.outbreak, isOutbreakDefeated(playerProgress.read(), this.outbreak), this.loadout, this.baseLevel);
     this.selected = null;
     this.hoverCell = null;
     this.defeated = false;
@@ -754,7 +759,7 @@ export class BoardScene extends Phaser.Scene {
     const onPause = (paused: boolean) => this.applyPause(paused);
     const onTourHold = (hold: boolean) => this.setTourHold(hold);
     // Partida nueva desde cero, del mismo brote: no continua la anterior (sin `resume`) y arranca sin pausa.
-    const onRestart = () => this.scene.restart({ quality: this.level, outbreak: this.match.outbreak, loadout: this.loadout } satisfies BoardSceneData);
+    const onRestart = () => this.scene.restart({ quality: this.level, outbreak: this.match.outbreak, loadout: this.loadout, baseLevel: this.match.baseLevel } satisfies BoardSceneData);
     // T-011: se guarda al ocultar o cerrar la pestana, y al salir al menu de inicio, que pasa a la portada.
     const onSave = () => this.saveGame();
     // T-019: la escena de portada arranca ya en el sitio al que se vuelve (la portada o, desde la victoria, el Invernadero).
@@ -1259,7 +1264,8 @@ export class BoardScene extends Phaser.Scene {
   }
 
   private addPlantView(cell: Cell, plant: Plant, sprout: boolean): void {
-    const view = new PlantView(this, this.fx, cell, plant.shooter, plant.hp / plantMaxHp(plant.shooter), sprout);
+    // Con nivel base comprado (T-023), la medallita lleva el brote del Invernadero.
+    const view = new PlantView(this, this.fx, cell, plant.shooter, plant.hp / plantMaxHp(plant.shooter), sprout).setBaseLevel(this.match.baseLevel, sprout);
     this.plantViews.set(cellKey(cell), view);
   }
 
@@ -2248,8 +2254,9 @@ export class BoardScene extends Phaser.Scene {
     } else if (target.kind === 'plant') {
       const plant = plantAt(this.match, target.cell);
       if (!plant) return;
-      data = shooterInfo(plant, target.cell, isUnlocked(this.match, 'levelUp') ? levelCap(this.match) : null);
-      subject = { kind: 'shooter', cannons: plant.shooter.cannons, element: plant.shooter.element, level: plant.shooter.level };
+      data = shooterInfo(plant, target.cell, isUnlocked(this.match, 'levelUp') ? levelCap(this.match) : null, this.match.baseLevel);
+      const { cannons, element, level } = plant.shooter;
+      subject = { kind: 'shooter', cannons, element, level, baseLevel: this.match.baseLevel };
     } else if (target.kind === 'wall') {
       const wall = wallAt(this.match, target.cell);
       if (!wall) return;

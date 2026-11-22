@@ -13,6 +13,7 @@
 | Poder | Habilidad de un uso que se lanza desde el panel izquierdo: recolocar, granada y muro de hielo (T-021) |
 | Carga | Cada uso de un poder en una partida (T-021) |
 | Nivel de un poder | Lo que se mejora en la tienda, del 1 al 10 (T-022) |
+| Nivel base | Nivel con el que nace toda disparadora sembrada, del 1 al 5; se compra en "Plantas", en el Invernadero (T-023) |
 
 No se usa la palabra "combinar": se confundía con fusionar.
 
@@ -239,7 +240,7 @@ Decisiones O-01 a O-11 cerradas el 22 nov 2026 (O-04 a O-06 cambiadas por Carmin
 
 ### Nivel (T-003)
 - **Tope por ronda (T-009, P-01; T-010, A-05):** 5 desde la ronda 2 hasta el final del brote 1 (hasta T-010 subía a 10 en la 7), y 10 desde la ronda 1 del brote 2 (T-026, L-08). En el tope, el panel dice "Máximo" y, si el tope fuera a subir en otra ronda, en cuál ("Tope 5: sube en la ronda 7"). El tope absoluto del juego es 20 (`LIMITS.maxLevel`), por encima del de cualquier ronda del brote 1. El brote siguiente empieza con el último tope del anterior hasta que una de sus rondas ponga otro (T-018, B-01).
-- **Por partida (D-03, cerrada el 19 nov 2026 con la recomendación):** los niveles se pierden al acabar la partida. Lo que sí se guarda es la partida en curso, para seguirla otro día (T-011, ver "Menú de inicio y partida guardada"). De una partida a otra solo pasa el progreso permanente (T-017): hoy, los jefes vencidos.
+- **Por partida (D-03, cerrada el 19 nov 2026 con la recomendación):** los niveles se pierden al acabar la partida. Lo que sí se guarda es la partida en curso, para seguirla otro día (T-011, ver "Menú de inicio y partida guardada"). De una partida a otra solo pasa el progreso permanente (T-017); de él, lo que toca al nivel es el nivel base con el que nacen las disparadoras (T-023).
 - Se sube seleccionando la disparadora con un clic (sin arrastrarla) y pulsando "Subir" en su panel. Se cobra en el acto.
 - **Cuánto mejora:** cada nivel suma un 10 % de daño y un 3 % de cadencia sobre los de nivel 1 (decidido el 19 nov 2026). El daño es el del disparo entero: en una fusionada se multiplica con el de los cañones, y la quemadura de una de fuego crece igual.
 - **Premio en los niveles 5, 10, 15 y 20 (T-027, decidido el 21 nov 2026):** llegar a ellos suma más que un nivel normal, y lo ganado se queda. Al 5 y al 15, un 50 % más que un nivel normal (+15 % de daño y +4,5 % de cadencia); al 10 y al 20, el doble (+20 % y +6 %). Son los niveles en los que la medallita cambia de color, y a sus pies le brota un jardincito que crece con cada premio.
@@ -255,7 +256,7 @@ Decisiones O-01 a O-11 cerradas el 22 nov 2026 (O-04 a O-06 cambiadas por Carmin
   - Subir no cura ni recarga: la planta conserva su vida y su recarga.
 - **Cuánto cuesta (D-05, cerrada el 19 nov 2026):** creciente. De nivel 1 a 2 cuesta 75 y cada nivel siguiente 25 más (75, 100, 125… hasta 525 de 19 a 20). Se paga por cañón, como al infundir: una de 3 cañones paga el triple, y el panel lo muestra como "×3 = 225".
 - No se puede subir sin saldo suficiente ni pasar del tope de la ronda; en el tope el botón dice "Máximo".
-- **Medallita:** sin cambio visual grande en la planta, solo una medallita con el número en la nuca. Cambia de color cada 5 niveles: bronce, plata (desde el 5), oro (10), rubí (15) y cristal irisado en el 20. Las de nivel 1 no llevan. Se ve también en las fusionadas y no tapa los puntos del tallo.
+- **Medallita:** sin cambio visual grande en la planta, solo una medallita con el número en la nuca. Cambia de color cada 5 niveles: bronce, plata (desde el 5), oro (10), rubí (15) y cristal irisado en el 20. Las de nivel 1 no llevan. Se ve también en las fusionadas y no tapa los puntos del tallo. Con nivel base comprado (T-023), lleva prendido el brote del Invernadero.
 - Al fusionar, la planta se queda con el nivel más bajo de las dos (ver "Fusionar").
 - Los valores están como PROVISIONAL en `LEVELING` de `balance.ts` (el premio, en `LEVELING.milestones`).
 
@@ -288,7 +289,7 @@ Decisiones I-01 a I-12 cerradas el 20 nov 2026.
 Decisiones R-01 a R-04 cerradas el 21 nov 2026 con la recomendación. Cómo se hace: ADR-0016.
 - **El Invernadero** es el sitio entre un brote y el siguiente. Aparece al vencer a Creeper (R-01): un jugador nuevo va directo a jugar y nunca ve un Invernadero vacío. Se llega desde "Continuar" en la portada (R-02) y desde la victoria.
 - **Se ve distinto de la portada:** el título grande dice "INVERNADERO" y, en vez de la batalla, el jardín tiene solo las plantas que el jugador ya tiene, sin enemigos, sembradas a mano sobre un césped liso: sin casillas y sin el suelo corrupto con los agujeros por donde salen los enemigos. "Ya tiene" es lo desbloqueado hasta el último brote vencido (con los de antes); lo de una partida a medias no cuenta.
-- **Tiene:** reanudar la partida a medias (con su brote, su ronda y cuándo se guardó), el siguiente brote (el primero abierto sin vencer; si no hay más brotes en el juego, con candado y "Próximamente"), la ruta de brotes, la tienda (T-022), las plantas (T-023) con candado y "Próximamente", y volver a la portada.
+- **Tiene:** reanudar la partida a medias (con su brote, su ronda y cuándo se guardó), el siguiente brote (el primero abierto sin vencer; si no hay más brotes en el juego, con candado y "Próximamente"), la ruta de brotes, la tienda (T-022), las plantas (el nivel base de la disparadora, T-023) y volver a la portada.
 - **Empezar un brote con una partida a medias** pide confirmación y dice cuál se pierde. El progreso se conserva.
 - **La ruta** es un camino con un lugar por brote (R-03): los vencidos, superados, con un sello; el que toca, destacado con una flecha; el siguiente en sombra, con su jefe en silueta y un candado; y el destino final, pequeño y a lo lejos. Si el siguiente brote aún no existe, su lugar dice "Próximamente". El suelo está sano hasta donde llegó el jugador y corrupto después.
 - **Tocar un lugar** vencido o el que toca enseña abajo su nombre, su jefe, sus rondas y el botón para jugarlo ("Jugar" o "Volver a jugar"); si la partida a medias es de ese brote, "Reanudar" y "Empezar de cero". Los lugares en sombra no se pueden elegir.
@@ -297,7 +298,7 @@ Decisiones R-01 a R-04 cerradas el 21 nov 2026 con la recomendación. Cómo se h
 
 ### Progreso permanente (T-017)
 Decisiones K-01 y K-02 cerradas el 21 nov 2026 con la recomendación. Cómo se hace: ADR-0014.
-- **Qué es:** lo que el jugador no pierde al acabar una partida. Es de cada jugador (T-034). Hoy, los jefes vencidos, la historia vista (T-031), las semillas (T-020) y los poderes comprados, con su nivel y los que se llevan (T-022); después, las mejoras de las plantas (T-023). Las cargas de los poderes (T-021) no: son de cada partida.
+- **Qué es:** lo que el jugador no pierde al acabar una partida. Es de cada jugador (T-034). Hoy, los jefes vencidos, la historia vista (T-031), las semillas (T-020), los poderes comprados, con su nivel y los que se llevan (T-022), y el nivel base de la disparadora (T-023). Las cargas de los poderes (T-021) no: son de cada partida.
 - **Jefe vencido:** al vencer al jefe de un brote queda apuntado para siempre. Volver a vencerlo no cambia nada.
 - **No se pierde** al ganar, al perder ni al empezar una partida nueva. Mientras el juego esté en desarrollo, un progreso guardado con otra versión de su forma se descarta, sin convertirlo (ADR-0014).
 - **Se borra con el jugador:** "Borrar jugador" en la pantalla de jugadores (T-034). Hasta T-034 era "Borrar progreso", en Opciones.
@@ -345,6 +346,26 @@ Decisiones T-01 a T-04 cerradas el 22 nov 2026 (T-01 cambiada por Carmine: los p
 - **Los que se llevan (T-04, O-02):** con algún poder comprado, antes de empezar un brote (desde "Siguiente brote" o la ruta) se eligen hasta 2 en "Poderes del brote". Lo elegido se recuerda para el siguiente. Sin ninguno elegido, la partida va sin panel. Cambiar lo elegido no toca la partida a medias; "Jugar otra vez" repite lo de la partida que acaba.
 - **Sonido:** comprar suena a semillas y ta-da (`purchase`); mejorar, a arpegio (`powerUpgrade`); llegar al 5 o al 10, como un desbloqueo.
 
+### Nivel base de la disparadora (T-023)
+Decisiones N-01 a N-06 cerradas: N-01 el 21 nov 2026 y las demás el 22 nov 2026, con la recomendación. Reglas en `src/game/core/baseLevel.ts`; los valores, como PROVISIONAL en `BASE_LEVEL` de `balance.ts`.
+- **Qué es:** una mejora permanente con la que toda disparadora sembrada en una partida nueva nace en ese nivel, del 1 (sin comprar nada) al 5. Sembrarla e infundirla cuesta lo mismo. Vale también al rejugar un brote ya vencido (N-04).
+- **Dónde:** en el Invernadero, botón "Plantas" (dice el nivel base de ahora). Como la tienda, solo existe tras vencer a Creeper, así que el tour de subir de nivel ya se vio.
+- **Cuánto da cada paso (N-02, N-05):** lo mismo que un nivel de partida, con su premio: la que nace en el 5 es una planta de nivel 5 a todos los efectos, con +45 % de daño, +13,5 % de cadencia y su jardincito.
+- **Precios (N-03):** subirlo al 2 cuesta 1500 semillas; al 3, 3000; al 4, 5500, y al 5, 10.000, el artículo más caro de la tienda. Del 1 al 5, 20.000. En el 5 dice "Máximo". Dos clics seguidos nunca cobran dos veces.
+- **En la partida (N-01, N-06):** el tope de nivel de cada ronda no cambia. En el brote 1 (tope 5), una de nivel base 5 nace al máximo y su panel dice "Máximo", como una subida al tope; en el brote 2 (tope 10) sube con normalidad desde su nivel, y subirla cuesta lo de su nivel (de 5 a 6, 175). En la ronda 1, aunque subir de nivel siga bloqueado, nacen con su nivel base. Fusionar deja el nivel más bajo de las dos, que nunca baja del nivel base. El nivel base nunca pasa del tope de ninguna ronda (un test lo comprueba).
+- **Se copia al empezar la partida:** comprar otro paso con una partida a medias no la cambia, y una partida guardada antes de comprar sigue igual al cargarla. "Jugar otra vez" repite el de la partida que acaba.
+- **Dónde se ve:** las disparadoras de una partida con nivel base comprado llevan el brote del Invernadero, dos hojitas prendidas en la medallita (también las fusionadas y su foto de la ficha), y su ficha dice "Nivel base N, del Invernadero".
+- **Sonido:** subirlo suena como mejorar un poder; llegar al 5, como un desbloqueo.
+- **Simulación** (`npm run sim`, bot sin escudos, 10 partidas del brote 1, 22 nov 2026):
+
+  | Nivel base | Ganadas | Duración media | Combate final |
+  |---|---|---|---|
+  | 1 (sin comprar) | 9 de 10 | 17,3 min | 57 s |
+  | 3 | 10 de 10 | 16,8 min | 50 s |
+  | 5 | 10 de 10 | 16,5 min | 44 s |
+
+  Con nivel base 1 se sigue ganando: ningún jefe cuenta con la mejora. Las rondas duran casi lo mismo, porque los enemigos salen por tiempo: rejugar el brote 1 con nivel base 5 es más cómodo, pero no da más semillas que antes (C-03).
+
 ### Jugadores (T-034)
 Decisiones PF-01 a PF-07 cerradas el 21 nov 2026 con la recomendación. Cómo se hace: ADR-0018.
 - **Varios jugadores en el mismo aparato**, como mucho 3 (PF-01). Cada uno tiene su progreso permanente, su partida a medias y sus tours vistos (PF-02). Los ajustes (calidad, volumen, idioma y ayuda) son del aparato y no cambian al cambiar de jugador (PF-03).
@@ -353,7 +374,7 @@ Decisiones PF-01 a PF-07 cerradas el 21 nov 2026 con la recomendación. Cómo se
 - **La pantalla de jugadores**, en el panel de la portada, lista a cada uno con su avatar, su nombre, sus jefes vencidos y la última vez que jugó ("Aún sin estrenar" si nunca guardó nada); el activo, con borde dorado y "Jugando". Elegir uno lo deja activo y vuelve al menú: cambian la partida, el progreso, el Invernadero, la ruta y los tours vistos.
 - **Nuevo jugador** empieza desde cero (sin progreso, sin partida y con los tours sin ver) y queda activo. Con 3 jugadores el botón se apaga y dice "Máximo de jugadores".
 - **Nombre (PF-05):** mientras no elija uno (T-033), "Jugador 1", "Jugador 2"... (el menor número libre), en el idioma del juego. Los nombres se pueden repetir (PF-07). Cómo se elige: "Nombre del jugador (T-033)".
-- **Borrar jugador (PF-06):** la papelera de cada fila pide confirmar y dice qué se pierde para siempre (jefes vencidos, semillas desde T-020, poderes comprados desde T-022, partida guardada y tours vistos) o que no tiene nada guardado; los demás jugadores y los ajustes no cambian. Si era el activo, pasa a serlo el que jugó por última vez; si era el último, queda uno nuevo y vacío. El único jugador, sin nada guardado, no se puede borrar: no cambiaría nada.
+- **Borrar jugador (PF-06):** la papelera de cada fila pide confirmar y dice qué se pierde para siempre (jefes vencidos, semillas desde T-020, poderes comprados desde T-022, el nivel base desde T-023, partida guardada y tours vistos) o que no tiene nada guardado; los demás jugadores y los ajustes no cambian. Si era el activo, pasa a serlo el que jugó por última vez; si era el último, queda uno nuevo y vacío. El único jugador, sin nada guardado, no se puede borrar: no cambiaría nada.
 - **Lo guardado antes de T-034** (progreso, partida a medias y tours vistos) se descarta y se borra del navegador, sin convertirlo: se empieza como "Jugador 1". Los ajustes se conservan.
 - **Para el futuro:** cada jugador tiene un identificador que no cambia aunque cambie su nombre y la fecha de su último guardado. No son cuentas: no se sincronizan ni se protegen.
 - **Teclado:** Tab recorre la lista, Enter elige y Esc vuelve (de la confirmación a la lista y de la lista al menú, con el foco en "Cambiar").
@@ -406,6 +427,8 @@ Los valores recomendados ya están como PROVISIONAL en `src/game/config/balance.
 Las reglas de fusionar e infundir y el multiplicador de daño están en `src/game/core/plants.ts`, con tests en `plants.test.ts`. Fusionar dos plantas del tablero (destinos válidos, vida resultante, quién deja la casilla) está en `src/game/core/match.ts` (`fusionBlocker`, `fusionTargets`, `fusePlants`). El reparto del daño entre las balas de una fusionada, en `combat.ts` (`bulletDamage`). Los valores de D-02 están en `FUSION` de `balance.ts`.
 
 Subir de nivel (T-003): el costo, la subida y lo que suma cada nivel están en `plants.ts` (`levelUpCost`, `levelUp`, `levelBonus`; desde T-027, con el premio de los niveles 5, 10, 15 y 20: `isMilestoneLevel`, `levelStepBonus`, `milestonesReached`), y lo que ofrece el panel de una planta del tablero y la subida con su cobro, en `match.ts` (`levelUpOffer`, `levelUpPlant`). Los valores de D-05 están en `LEVELING` de `balance.ts`.
+
+Nivel base (T-023): comprarlo y sus precios en `baseLevel.ts` (`nextBaseStep`, `baseLevelBlocker`, `buyBaseLevel`), con los valores en `BASE_LEVEL` de `balance.ts`; la partida lo lleva en `MatchState.baseLevel` y `playCard` siembra la disparadora en ese nivel.
 
 Saldo, siembra, infusión y ocupación de casillas están en `src/game/core/match.ts`: qué pasa al soltar una carta en una casilla lo dice `cardPlay` y lo aplica `playCard`. Una casilla puede tener una disparadora o una mina (`Sown`); la recompensa por enemigo y la moneda soltada, en `src/game/core/economy.ts`. Los valores están en `ECONOMY` de `balance.ts`.
 

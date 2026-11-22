@@ -312,6 +312,11 @@ describe('shopCue (T-022)', () => {
     expect(shopCue({ type: 'upgrade', level: 9 }).id).toBe('powerUpgrade');
     for (const level of [5, 10]) expect(shopCue({ type: 'upgrade', level }).id).toBe('unlock');
   });
+
+  it('subir el nivel base (T-023) suena a mejora, y llegar al 5, el premio de las plantas, a desbloqueo', () => {
+    for (const level of [2, 3, 4]) expect(shopCue({ type: 'baseLevel', level })).toEqual({ id: 'powerUpgrade', pan: 0 });
+    expect(shopCue({ type: 'baseLevel', level: 5 }).id).toBe('unlock');
+  });
 });
 
 describe('actionCue', () => {

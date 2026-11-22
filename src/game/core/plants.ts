@@ -21,8 +21,9 @@ export interface Shooter {
   level: number;
 }
 
-export function createShooter(): Shooter {
-  return { element: null, cannons: 1, level: 1 };
+/** Disparadora recien sembrada: un canon, sin elemento y en el nivel `level` (el nivel base de la partida, T-023). */
+export function createShooter(level = 1): Shooter {
+  return { element: null, cannons: 1, level };
 }
 
 /** Por que no se pueden fusionar dos disparadoras: otra variante o mas canones de los permitidos. */

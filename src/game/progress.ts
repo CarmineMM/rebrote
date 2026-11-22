@@ -1,5 +1,6 @@
 import { SEEDS } from './config/balance';
 import type { PowerId } from './core/powers';
+import { NO_BASE_LEVEL, buyBaseLevel, sanitizeBaseLevel } from './core/baseLevel';
 import { addSeeds } from './core/seeds';
 import { buyPower, sanitizeCarried, sanitizeOwned, toggleCarried, upgradePower, type Wallet } from './core/shop';
 import { profiles } from './profiles';
@@ -8,7 +9,7 @@ import type { SaveStore } from './storage';
 /**
  * Progreso permanente (T-017, ADR-0014): lo que el jugador no pierde al acabar una partida. Hoy, los brotes cuyo jefe ya
  * vencio, las secuencias de la historia que ya vio (T-031), sus semillas (T-020) y los poderes que compro en la tienda,
- * con su nivel y los que lleva al siguiente brote (T-022); despues, las mejoras de las plantas (T-023).
+ * con su nivel y los que lleva al siguiente brote (T-022), y el nivel base de la disparadora (T-023).
  *
  * Es de cada jugador (T-034, ADR-0018): va en el hueco `progreso` de su perfil, aparte de la partida guardada
  * (`save.ts`). Ganar, perder o empezar una partida nueva no lo toca; se pierde al borrar el jugador.
@@ -23,8 +24,9 @@ export const PROGRESS_KEY = 'progreso';
  * 2 (T-031): las secuencias de la historia vistas (`story`).
  * 3 (T-020): las semillas (`seeds`).
  * 4 (T-022): los poderes comprados con su nivel (`powers`) y los que se llevan (`carried`).
+ * 5 (T-023): el nivel base de la disparadora (`baseLevel`).
  */
-export const PROGRESS_VERSION = 4;
+export const PROGRESS_VERSION = 5;
 
 /** Las semillas, los poderes y los que se llevan son lo que la tienda mira y cambia (`Wallet`, `core/shop.ts`). */
 export interface Progress extends Wallet {
@@ -44,9 +46,14 @@ export interface Progress extends Wallet {
   readonly powers: Readonly<Partial<Record<PowerId, number>>>;
   /** Los que se llevan al siguiente brote (T-022, T-04): comprados, en el orden del panel y como mucho dos (O-02). */
   readonly carried: readonly PowerId[];
+  /**
+   * Nivel base de la disparadora (T-023), del 1 al `BASE_LEVEL.max`: el nivel con el que nace toda disparadora sembrada en
+   * una partida nueva (`core/baseLevel.ts`). 1 sin comprar nada.
+   */
+  readonly baseLevel: number;
 }
 
-export const emptyProgress = (): Progress => ({ defeated: [], story: [], seeds: 0, powers: {}, carried: [] });
+export const emptyProgress = (): Progress => ({ defeated: [], story: [], seeds: 0, powers: {}, carried: [], baseLevel: NO_BASE_LEVEL });
 
 // ---------------------------------------------------------------------------
 // Reglas
@@ -83,7 +90,7 @@ export function recordMatchEnd(progress: Progress, won: string | null, seeds: nu
 
 /** Hay algo que perder si se borra. */
 export function hasProgress(progress: Progress): boolean {
-  return progress.defeated.length > 0 || progress.story.length > 0 || progress.seeds > 0 || Object.keys(progress.powers).length > 0;
+  return progress.defeated.length > 0 || progress.story.length > 0 || progress.seeds > 0 || Object.keys(progress.powers).length > 0 || progress.baseLevel > NO_BASE_LEVEL;
 }
 
 // ---------------------------------------------------------------------------
@@ -113,7 +120,14 @@ function parse(raw: string | null): Record<string, unknown> | null {
 /** Se queda con lo que entiende de un progreso de esta version: lo que este roto se pierde, lo demas no. */
 function sanitize(data: Record<string, unknown>): Progress {
   const powers = sanitizeOwned(data.powers);
-  return { defeated: names(data.defeated), story: names(data.story), seeds: seedBalance(data.seeds), powers, carried: sanitizeCarried(data.carried, powers) };
+  return {
+    defeated: names(data.defeated),
+    story: names(data.story),
+    seeds: seedBalance(data.seeds),
+    powers,
+    carried: sanitizeCarried(data.carried, powers),
+    baseLevel: sanitizeBaseLevel(data.baseLevel),
+  };
 }
 
 /** Un saldo de semillas: un entero de 0 al maximo. Lo que no lo es cuenta como 0; lo que pasa del maximo, como el maximo. */
@@ -194,6 +208,11 @@ export class ProgressKeeper {
 
   toggleCarried(id: PowerId): ShopResult {
     return this.attempt((progress) => toggleCarried(progress, id));
+  }
+
+  /** Sube un paso el nivel base de la disparadora (T-023), con las mismas garantias que la tienda. */
+  buyBaseLevel(): ShopResult {
+    return this.attempt((progress) => buyBaseLevel(progress));
   }
 
   /** Como `change`, diciendo ademas si cambio algo: lo que no se pudo hacer no suena ni se celebra. */
