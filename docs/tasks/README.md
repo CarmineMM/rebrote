@@ -39,6 +39,7 @@ Una task por archivo. El tamaño es orientativo.
 | T-033 | [Historia] El jugador elige su nombre | Completada (21 nov 2026, 0.4.0) | S | T-031, T-034 | Ninguna (NJ-01 a NJ-06 cerradas) |
 | T-034 | [Guardado] Perfiles de jugador en el navegador | Completada (21 nov 2026, 0.2.0) | M | T-017, T-019 | Ninguna (PF-01 a PF-07 cerradas) |
 | T-035 | [Balance] Curva de niveles compuesta, premio cada 5 niveles y dificultad de los brotes 1 y 2 | Completada (22 nov 2026, 0.12.2) | M | T-023, T-026, T-027 | Ninguna (CN-01 a CN-07 cerradas) |
+| T-036 | [Interfaz] Invernadero refugio y Laboratorio de Patty | En curso | L | T-019, T-022, T-023, T-032 | Ninguna (LP-01 a LP-04 cerradas) |
 
 ## Estados
 
