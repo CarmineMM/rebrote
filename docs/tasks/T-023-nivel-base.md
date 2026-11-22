@@ -49,6 +49,7 @@ Carmine quiere una mejora permanente y muy cara, con tope 5, para que las planta
 
 ## Cómo quedó (22 nov 2026)
 - Carmine aceptó todas las recomendaciones al empezar la task (N-02 a N-06).
+- Al revisarla (22 nov 2026), Carmine dio por buenos la marca del brote en la medallita, los sonidos reutilizados y que no lleve tour. Los precios se quedan como están; si hace falta, se ajustarán junto con el resto de la economía (siguen como PROVISIONAL en `BASE_LEVEL`, como los de la tienda).
 - Reglas en `src/game/core/baseLevel.ts` (con test); precios y tope en `BASE_LEVEL` de `balance.ts`. El nivel base va en el progreso (`Progress.baseLevel`, `PROGRESS_VERSION` 5) y en la partida (`MatchState.baseLevel`, `SAVE_VERSION` 9): se copia al empezarla, así que comprar con una partida a medias no la cambia. Lo guardado con la versión anterior se descarta (ADR-0014, regla 11).
 - Se compra en "Plantas", en el Invernadero (antes con candado). La foto de la disparadora la compone la escena (`nurseryPortraits`).
 - Marca visual: el brote del Invernadero, dos hojitas con ribete crema prendidas en la medallita (también en las fusionadas y en la foto de la ficha), y en la ficha la pastilla "Nivel base N, del Invernadero".
