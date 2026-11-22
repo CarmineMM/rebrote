@@ -53,3 +53,7 @@ Para el muro, dentro de las entidades: una entidad aparte con su vida y sus tres
 - Las rondas se siguen equilibrando sin contar con los poderes: los bots de `npm run sim` no los usan.
 - `Sown` crece: todo lo que mira lo sembrado (ficha, cues, tours, guardado) tiene que saber del hielo. El compilador avisa en los `switch` completos.
 - Hasta la tienda, todos los jugadores llevan los tres poderes en cada partida (O-08). En desarrollo, `?poderes=` en la dirección elige otros o ninguno.
+
+## Después: T-022 (22 nov 2026)
+
+La tienda siguió este camino sin cambiar el rumbo. Lo comprado va en el progreso del jugador (`Progress.powers`, con su nivel, y `Progress.carried`, los que se llevan; versión 4, ADR-0014), y la partida sigue llevando sus cargas. Cada hueco lleva además el nivel del poder (`PowerSlot.level`), y lo que depende de él se guarda en lo que deja en el tablero: el daño y el alcance en cada granada y la vida entera en cada bloque de hielo (partida guardada, versión 8). Así, una partida guardada se juega igual aunque luego se mejore el poder. `POWERS.trialLoadout` desaparece: sin poderes elegidos, la partida no trae ninguno.

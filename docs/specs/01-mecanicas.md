@@ -12,6 +12,7 @@
 | Muro | El escudo sembrado solo (T-024) |
 | Poder | Habilidad de un uso que se lanza desde el panel izquierdo: recolocar, granada y muro de hielo (T-021) |
 | Carga | Cada uso de un poder en una partida (T-021) |
+| Nivel de un poder | Lo que se mejora en la tienda, del 1 al 10 (T-022) |
 
 No se usa la palabra "combinar": se confundía con fusionar.
 
@@ -185,13 +186,14 @@ Decisiones E-01 a E-06 cerradas el 21 nov 2026 (E-01 a E-04 y E-06 con la recome
 
 ### Poderes (T-021)
 Decisiones O-01 a O-11 cerradas el 22 nov 2026 (O-04 a O-06 cambiadas por Carmine: granada en vez de meteorito, muro de hielo de tres casillas que bloquea el paso, y a los jefes igual que a todos). Cómo se hace: ADR-0020. Los valores están como PROVISIONAL en `POWERS`, `GRENADE` e `ICE_WALL` de `balance.ts`.
-- **Qué son:** habilidades de un uso que se lanzan desde un panel a la izquierda. Se compran una vez en la tienda (T-022) y cada uno trae **1 carga por partida** (O-01, b). Se llevan **2** a una partida (O-02, los elige la tienda). **Hasta la tienda, cada partida trae los tres** (O-08); en desarrollo, `?poderes=` en la dirección elige otros (`?poderes=granada,muro`) o ninguno (`?poderes=`).
+- **Qué son:** habilidades de un uso que se lanzan desde un panel a la izquierda. Se compran una vez en la tienda (T-022) y cada uno trae **1 carga por partida** (O-01, b; recolocar, más con su nivel). Se llevan **2** a una partida (O-02), elegidos antes de empezar el brote (ver "Tienda (T-022)"). Sin ninguno comprado, la partida no tiene panel. Hasta T-022, cada partida traía los tres (O-08). En desarrollo, `?poderes=` en la dirección elige otros con su nivel (`?poderes=granada,muro:10`) o ninguno (`?poderes=`).
+- **Nivel (T-022):** cada poder se mejora en la tienda del nivel 1 al 10. Lo de abajo es el nivel 1; lo que suma cada nivel está en "Tienda (T-022)". El botón del panel enseña su nivel desde el 2.
 - **Cada uso gasta exactamente una carga**, alcance o no a alguien. Las cargas van con la partida guardada.
 - **Cuándo (O-07):** recolocar, también en la preparación; la granada y el muro, solo en el ataque. En la preparación se ven en espera, con un relojito.
 - **Cómo se lanzan:** como una carta. Se toca el poder y luego el tablero, o se arrastra desde el panel. Volver a tocarlo, Esc, clic derecho o tocar fuera del tablero lo sueltan sin gastarlo. Tomar una carta lo suelta, y con un poder elegido no se arrastra ni se selecciona ninguna planta.
-- **Recolocar (O-03):** lleva una disparadora a una casilla vacía, tal como está: vida, nivel, elemento, cañones y recarga. Se toca la planta (o se arrastra) y luego la casilla vacía; tocar otra vez la planta la deja en su sitio y tocar otra disparadora cambia de planta. Lo que la mordía sigue avanzando. Solo disparadoras: minas, muros y hielo no se mueven.
+- **Recolocar (O-03):** lleva una disparadora a una casilla vacía, tal como está: vida, nivel, elemento, cañones y recarga. Se toca la planta (o se arrastra) y luego la casilla vacía; tocar otra vez la planta la deja en su sitio y tocar otra disparadora cambia de planta. Lo que la mordía sigue avanzando. Solo disparadoras: minas, muros y hielo no se mueven. Con nivel (T-022), llega curada.
 - **Granada (O-04):** del tamaño de una mina de fuego, con su mecha. Alguien la lanza desde detrás de las plantas: vuela en curva (0,9 s), cae en el centro de la casilla elegida y explota a los 2 s. Puede caer junto a una planta: no ocupa la casilla. Es invulnerable: los enemigos no la atacan ni se paran. Daña a todos los enemigos a 1,8 casillas o menos (la mina, 1,5), en cualquier carril, con el daño de la mina de fuego (200). No daña plantas. A Creeper en el aire no le alcanza, como a las minas. De los Copycat que tumba, solo dejan copia los dos primeros, como con la mina.
-- **Muro de hielo (O-05, O-09 a O-11):** tres bloques de hielo en una columna: la casilla elegida y las de arriba y abajo; en el carril de arriba o el de abajo se mete dentro del tablero. No se pone si alguna de sus casillas está ocupada (lo dice en rojo: "Hay algo en medio").
+- **Muro de hielo (O-05, O-09 a O-11):** tres bloques de hielo en una columna: la casilla elegida y las de arriba y abajo; en el carril de arriba o el de abajo se mete dentro del tablero. Con nivel, 4 desde el 5 (uno más arriba que abajo) y 5 en el 10. No se pone si alguna de sus casillas está ocupada (lo dice en rojo: "Hay algo en medio").
   - **Cada bloque es un muro:** tiene la vida de una disparadora de nivel 1 (300) por su cuenta, los enemigos se paran a morderlo y le escupen, y para lo que va hacia lo de detrás como el escudo: versos, escupitajos y saltos. El poema entero no lo rompe si está entero (L-04).
   - **Se derrite a los 10 s**, también si llega a la preparación. En sus últimos 3 s gotea, encoge y parpadea.
   - **Un enemigo dentro de una de sus casillas** (su centro cae en ella) sale con el cuerpo entero por el lado más cercano: hacia atrás si no pasó la mitad (y se para a morder el hielo) o hacia delante si la pasó (y sigue su camino). Uno en el aire (Creeper saltando) no se mueve.
@@ -286,7 +288,7 @@ Decisiones I-01 a I-12 cerradas el 20 nov 2026.
 Decisiones R-01 a R-04 cerradas el 21 nov 2026 con la recomendación. Cómo se hace: ADR-0016.
 - **El Invernadero** es el sitio entre un brote y el siguiente. Aparece al vencer a Creeper (R-01): un jugador nuevo va directo a jugar y nunca ve un Invernadero vacío. Se llega desde "Continuar" en la portada (R-02) y desde la victoria.
 - **Se ve distinto de la portada:** el título grande dice "INVERNADERO" y, en vez de la batalla, el jardín tiene solo las plantas que el jugador ya tiene, sin enemigos, sembradas a mano sobre un césped liso: sin casillas y sin el suelo corrupto con los agujeros por donde salen los enemigos. "Ya tiene" es lo desbloqueado hasta el último brote vencido (con los de antes); lo de una partida a medias no cuenta.
-- **Tiene:** reanudar la partida a medias (con su brote, su ronda y cuándo se guardó), el siguiente brote (el primero abierto sin vencer; si no hay más brotes en el juego, con candado y "Próximamente"), la ruta de brotes, la tienda (T-022) y las plantas (T-023) con candado y "Próximamente", y volver a la portada.
+- **Tiene:** reanudar la partida a medias (con su brote, su ronda y cuándo se guardó), el siguiente brote (el primero abierto sin vencer; si no hay más brotes en el juego, con candado y "Próximamente"), la ruta de brotes, la tienda (T-022), las plantas (T-023) con candado y "Próximamente", y volver a la portada.
 - **Empezar un brote con una partida a medias** pide confirmación y dice cuál se pierde. El progreso se conserva.
 - **La ruta** es un camino con un lugar por brote (R-03): los vencidos, superados, con un sello; el que toca, destacado con una flecha; el siguiente en sombra, con su jefe en silueta y un candado; y el destino final, pequeño y a lo lejos. Si el siguiente brote aún no existe, su lugar dice "Próximamente". El suelo está sano hasta donde llegó el jugador y corrupto después.
 - **Tocar un lugar** vencido o el que toca enseña abajo su nombre, su jefe, sus rondas y el botón para jugarlo ("Jugar" o "Volver a jugar"); si la partida a medias es de ese brote, "Reanudar" y "Empezar de cero". Los lugares en sombra no se pueden elegir.
@@ -295,7 +297,7 @@ Decisiones R-01 a R-04 cerradas el 21 nov 2026 con la recomendación. Cómo se h
 
 ### Progreso permanente (T-017)
 Decisiones K-01 y K-02 cerradas el 21 nov 2026 con la recomendación. Cómo se hace: ADR-0014.
-- **Qué es:** lo que el jugador no pierde al acabar una partida. Es de cada jugador (T-034). Hoy, los jefes vencidos, la historia vista (T-031) y las semillas (T-020); después, las compras (T-022) y las mejoras (T-023). Las cargas de los poderes (T-021) no: son de cada partida.
+- **Qué es:** lo que el jugador no pierde al acabar una partida. Es de cada jugador (T-034). Hoy, los jefes vencidos, la historia vista (T-031), las semillas (T-020) y los poderes comprados, con su nivel y los que se llevan (T-022); después, las mejoras de las plantas (T-023). Las cargas de los poderes (T-021) no: son de cada partida.
 - **Jefe vencido:** al vencer al jefe de un brote queda apuntado para siempre. Volver a vencerlo no cambia nada.
 - **No se pierde** al ganar, al perder ni al empezar una partida nueva. Mientras el juego esté en desarrollo, un progreso guardado con otra versión de su forma se descarta, sin convertirlo (ADR-0014).
 - **Se borra con el jugador:** "Borrar jugador" en la pantalla de jugadores (T-034). Hasta T-034 era "Borrar progreso", en Opciones.
@@ -327,6 +329,22 @@ Decisiones C-01 a C-05 cerradas el 21 nov 2026. Los valores están en `SEEDS` de
 
   Contando la subida por brote y suponiendo brotes de 10 rondas, las primeras victorias sin perder vidas suman, de media, unas 1080 semillas tras el brote 1, 4600 tras el 4, 13.000 tras el 10 y 45.000 tras los 26 de la ruta (unas 260 rondas); el brote 26 da unas 2400. La tienda debería costar más que eso en total, para que haya que repetir algún brote para comprarlo todo. Perder a propósito nunca da más que volver a ganar un brote ya vencido (hay un test que lo comprueba).
 
+### Tienda (T-022)
+Decisiones T-01 a T-04 cerradas el 22 nov 2026 (T-01 cambiada por Carmine: los poderes también se mejoran por niveles). Reglas en `src/game/core/shop.ts` y lo que da cada nivel en `src/game/core/powers.ts` (`relocateAt`, `grenadeAt`, `iceWallAt`). Los valores están como PROVISIONAL en `SHOP`, `POWER_LEVELS`, `RELOCATE`, `GRENADE` e `ICE_WALL` de `balance.ts`.
+- **Dónde:** en el Invernadero, botón "Tienda". Se abre al vencer a Creeper, como el Invernadero, así que nadie la ve cerrada: la primera vez que cae Creeper, la victoria dice "¡Tienda abierta!".
+- **Comprar un poder** es para siempre y no se devuelve (T-03). Cuesta según cuántos se tienen ya: el primero, sea cual sea, 1000; el segundo, 1500, y el tercero, 2000 (T-02). Llega en el nivel 1 y, si caben, va directo a los que se llevan.
+- **Mejorarlo** sube su nivel hasta el 10. Subir al nivel N cuesta 200 × N semillas, y los niveles 5 y 10, el doble: 13.800 por poder del 1 al 10. La tienda entera cuesta 45.900, algo más de lo que dan las primeras victorias de los 26 brotes.
+
+| Poder | Cada nivel | En los niveles 5 y 10 | En el 10 |
+|---|---|---|---|
+| Granada | +15 % del daño de nivel 1 | +40 % en vez del 15 %, y el alcance crece 0,3 casillas | 570 de daño, alcance 2,4 |
+| Muro de hielo | +20 % de la vida de nivel 1 en cada bloque | +35 % en vez del 20 %, y una casilla más | 930 por bloque, 5 casillas |
+| Recolocar | Cura un 5 % de la vida entera de la planta que se mueve, sin pasarse | Una carga más por partida | 3 usos, cura el 45 % |
+
+- **Cada poder enseña** su nombre, qué hace, sus niveles en hojitas, lo que hace en su nivel y en el siguiente, si ya es suyo y el precio. Sin semillas suficientes, el botón se ve gris y el precio en rojo; en el 10, "Nivel máximo". Dos clics seguidos nunca cobran dos veces: cada compra lee el progreso guardado justo antes.
+- **Los que se llevan (T-04, O-02):** con algún poder comprado, antes de empezar un brote (desde "Siguiente brote" o la ruta) se eligen hasta 2 en "Poderes del brote". Lo elegido se recuerda para el siguiente. Sin ninguno elegido, la partida va sin panel. Cambiar lo elegido no toca la partida a medias; "Jugar otra vez" repite lo de la partida que acaba.
+- **Sonido:** comprar suena a semillas y ta-da (`purchase`); mejorar, a arpegio (`powerUpgrade`); llegar al 5 o al 10, como un desbloqueo.
+
 ### Jugadores (T-034)
 Decisiones PF-01 a PF-07 cerradas el 21 nov 2026 con la recomendación. Cómo se hace: ADR-0018.
 - **Varios jugadores en el mismo aparato**, como mucho 3 (PF-01). Cada uno tiene su progreso permanente, su partida a medias y sus tours vistos (PF-02). Los ajustes (calidad, volumen, idioma y ayuda) son del aparato y no cambian al cambiar de jugador (PF-03).
@@ -335,7 +353,7 @@ Decisiones PF-01 a PF-07 cerradas el 21 nov 2026 con la recomendación. Cómo se
 - **La pantalla de jugadores**, en el panel de la portada, lista a cada uno con su avatar, su nombre, sus jefes vencidos y la última vez que jugó ("Aún sin estrenar" si nunca guardó nada); el activo, con borde dorado y "Jugando". Elegir uno lo deja activo y vuelve al menú: cambian la partida, el progreso, el Invernadero, la ruta y los tours vistos.
 - **Nuevo jugador** empieza desde cero (sin progreso, sin partida y con los tours sin ver) y queda activo. Con 3 jugadores el botón se apaga y dice "Máximo de jugadores".
 - **Nombre (PF-05):** mientras no elija uno (T-033), "Jugador 1", "Jugador 2"... (el menor número libre), en el idioma del juego. Los nombres se pueden repetir (PF-07). Cómo se elige: "Nombre del jugador (T-033)".
-- **Borrar jugador (PF-06):** la papelera de cada fila pide confirmar y dice qué se pierde para siempre (jefes vencidos, semillas desde T-020, partida guardada y tours vistos) o que no tiene nada guardado; los demás jugadores y los ajustes no cambian. Si era el activo, pasa a serlo el que jugó por última vez; si era el último, queda uno nuevo y vacío. El único jugador, sin nada guardado, no se puede borrar: no cambiaría nada.
+- **Borrar jugador (PF-06):** la papelera de cada fila pide confirmar y dice qué se pierde para siempre (jefes vencidos, semillas desde T-020, poderes comprados desde T-022, partida guardada y tours vistos) o que no tiene nada guardado; los demás jugadores y los ajustes no cambian. Si era el activo, pasa a serlo el que jugó por última vez; si era el último, queda uno nuevo y vacío. El único jugador, sin nada guardado, no se puede borrar: no cambiaría nada.
 - **Lo guardado antes de T-034** (progreso, partida a medias y tours vistos) se descarta y se borra del navegador, sin convertirlo: se empieza como "Jugador 1". Los ajustes se conservan.
 - **Para el futuro:** cada jugador tiene un identificador que no cambia aunque cambie su nombre y la fecha de su último guardado. No son cuentas: no se sincronizan ni se protegen.
 - **Teclado:** Tab recorre la lista, Enter elige y Esc vuelve (de la confirmación a la lista y de la lista al menú, con el foco en "Cambiar").

@@ -54,6 +54,12 @@ describe('pantalla de jugadores (T-034)', () => {
     expect(lostLines(text('es'), describePlayer(profile, store))).toEqual(['Jefes vencidos: Creeper', 'Semillas: 12.345']);
   });
 
+  it('al borrarlo tambien se pierden los poderes comprados en la tienda (T-022)', () => {
+    const store = memoryStore();
+    store.setItem(PROGRESS_KEY, encodeProgress({ ...recordDefeat(emptyProgress(), 'creeper'), powers: { grenade: 3, relocate: 1 }, carried: ['grenade'] }));
+    expect(lostLines(text('es'), describePlayer(profile, store))).toEqual(['Jefes vencidos: Creeper', '2 poderes comprados en la tienda']);
+  });
+
   it('quien solo vio la historia tambien tiene algo que perder (T-031)', () => {
     const store = memoryStore();
     store.setItem(PROGRESS_KEY, encodeProgress(recordStory(emptyProgress(), 'opening')));

@@ -60,6 +60,7 @@ Cómo se escriben los textos de Rebrote para que salgan en español y en inglés
   | Ficha | Info card |
   | Poder, carga (T-021) | Power, charge |
   | Recolocar, granada, muro de hielo (T-021) | Replant, grenade, ice wall |
+  | Tienda, comprar, mejorar, poderes del brote (T-022) | Shop, buy, upgrade, outbreak powers |
 
 - Creeper habla en mayúsculas, como en su terminal. En inglés su frase de entrada es la del original de 1971: "I'M THE CREEPER: CATCH ME IF YOU CAN!".
 - Elk Cloner (T-026) habla siempre rimando, en español y en inglés: cada frase rima en su idioma (no se traduce palabra por palabra). Sus versos se inventan para el juego: no se reproduce el poema del virus de verdad.

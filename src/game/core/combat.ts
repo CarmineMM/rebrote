@@ -1,4 +1,4 @@
-import { BOARD, CLONE, CREEPER, ELK_CLONER, ENEMIES, ENEMY_LEVELS, ENEMY_POWER, FIRE, GRENADE, ICE, ICE_WALL, MINE, SHIELD, SHOOTER, VERSE } from '../config/balance';
+import { BOARD, CLONE, CREEPER, ELK_CLONER, ENEMIES, ENEMY_LEVELS, ENEMY_POWER, FIRE, ICE, MINE, SHIELD, SHOOTER, VERSE } from '../config/balance';
 import type { BoardPoint, Cell } from './board';
 import type { MatchState, Mine, Sown } from './match';
 import { damageMultiplier, fireRateMultiplier, plantMaxHp, type MineElement, type Shooter } from './plants';
@@ -150,7 +150,8 @@ export interface Verse {
 
 /**
  * Granada del poder (T-021, O-04): vuela `flightMs` hasta el centro de su casilla y, al caer, cuenta `fuseMs` y explota
- * (`GRENADE`). No ocupa la casilla ni tiene vida: los enemigos no la atacan.
+ * (`GRENADE`). No ocupa la casilla ni tiene vida: los enemigos no la atacan. Lleva el dano y el alcance del nivel con que
+ * se lanzo (`grenadeAt`, T-022).
  */
 export interface Grenade {
   readonly id: number;
@@ -159,6 +160,10 @@ export interface Grenade {
   readonly flightMs: number;
   /** Lo que le queda para explotar desde que cae. */
   readonly fuseMs: number;
+  /** Lo que quita a cada enemigo alcanzado. */
+  readonly damage: number;
+  /** Hasta donde alcanza, en casillas desde el centro de su casilla. */
+  readonly radius: number;
 }
 
 /** Lo que paso durante un paso. La vista lo anima; la regla ya esta aplicada en el estado. */
@@ -402,7 +407,7 @@ export function poemDamage(): number {
 /** Vida entera de lo sembrado: la de la disparadora con sus canones y su variante, la de la mina, el muro o el hielo (T-021). */
 function sownFullHp(sown: Sown): number {
   if (sown.kind === 'shooter') return plantMaxHp(sown.shooter);
-  if (sown.kind === 'ice') return ICE_WALL.hp;
+  if (sown.kind === 'ice') return sown.maxHp;
   return sown.kind === 'mine' ? MINE.hp : SHIELD.wallHp;
 }
 
@@ -480,10 +485,10 @@ export function isAirborne(enemy: Enemy): boolean {
 
 /**
  * ¿Le alcanza la explosion de la granada (T-021)? Si esta vivo, en el suelo (a Creeper en el aire no, como a las minas) y a
- * `GRENADE.blastRadius` o menos del centro de su casilla, en cualquier carril.
+ * su alcance (`radius`, el de su nivel) o menos del centro de su casilla, en cualquier carril.
  */
-export function grenadeReaches(grenade: Pick<Grenade, 'cell'>, enemy: Enemy): boolean {
-  return enemy.hp > 0 && !isAirborne(enemy) && distanceToCell(enemy, grenade.cell) <= GRENADE.blastRadius;
+export function grenadeReaches(grenade: Pick<Grenade, 'cell' | 'radius'>, enemy: Enemy): boolean {
+  return enemy.hp > 0 && !isAirborne(enemy) && distanceToCell(enemy, grenade.cell) <= grenade.radius;
 }
 
 /** Fraccion de su vida llena (la de su tipo y nivel, y si es una copia) que le queda. */
@@ -826,7 +831,7 @@ function meltIce(plants: Array<Array<Sown | null>>, dtMs: number, events: Combat
 
 /**
  * La granada (T-021) explota: alcanza a todos los enemigos vivos de su radio (`grenadeReaches`), en cualquier carril y
- * tambien a los jefes (O-06), con el dano de la mina de fuego. Las plantas no reciben nada. De los copiones que tumba,
+ * tambien a los jefes (O-06), con el dano de su nivel (en el 1, el de la mina de fuego). Las plantas no reciben nada. De los copiones que tumba,
  * solo los primeros `CLONE.maxPerBlast` dejan copia, como con una mina.
  */
 function blastGrenade(grenade: Grenade, enemies: Array<Mutable<Enemy>>, events: CombatEvent[], fall: (e: Enemy, mayClone: boolean) => void): void {
@@ -834,7 +839,7 @@ function blastGrenade(grenade: Grenade, enemies: Array<Mutable<Enemy>>, events: 
   events.push({ type: 'grenadeExploded', grenadeId: grenade.id, cell: grenade.cell, enemyIds: hit.map((e) => e.id) });
   let clones = 0;
   for (const e of hit) {
-    e.hp -= GRENADE.damage;
+    e.hp -= grenade.damage;
     if (e.hp > 0) continue;
     const mayClone = leavesClone(e) && clones < CLONE.maxPerBlast;
     if (mayClone) clones++;

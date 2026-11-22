@@ -1,12 +1,14 @@
 import { SEEDS } from './config/balance';
+import type { PowerId } from './core/powers';
 import { addSeeds } from './core/seeds';
+import { buyPower, sanitizeCarried, sanitizeOwned, toggleCarried, upgradePower, type Wallet } from './core/shop';
 import { profiles } from './profiles';
 import type { SaveStore } from './storage';
 
 /**
  * Progreso permanente (T-017, ADR-0014): lo que el jugador no pierde al acabar una partida. Hoy, los brotes cuyo jefe ya
- * vencio, las secuencias de la historia que ya vio (T-031) y sus semillas (T-020); despues, las compras (T-022) y las
- * mejoras (T-023).
+ * vencio, las secuencias de la historia que ya vio (T-031), sus semillas (T-020) y los poderes que compro en la tienda,
+ * con su nivel y los que lleva al siguiente brote (T-022); despues, las mejoras de las plantas (T-023).
  *
  * Es de cada jugador (T-034, ADR-0018): va en el hueco `progreso` de su perfil, aparte de la partida guardada
  * (`save.ts`). Ganar, perder o empezar una partida nueva no lo toca; se pierde al borrar el jugador.
@@ -20,10 +22,12 @@ export const PROGRESS_KEY = 'progreso';
  * Sube cuando cambia la forma de `Progress` (un campo nuevo, otro significado). Lo de otra version se descarta.
  * 2 (T-031): las secuencias de la historia vistas (`story`).
  * 3 (T-020): las semillas (`seeds`).
+ * 4 (T-022): los poderes comprados con su nivel (`powers`) y los que se llevan (`carried`).
  */
-export const PROGRESS_VERSION = 3;
+export const PROGRESS_VERSION = 4;
 
-export interface Progress {
+/** Las semillas, los poderes y los que se llevan son lo que la tienda mira y cambia (`Wallet`, `core/shop.ts`). */
+export interface Progress extends Wallet {
   /**
    * Brotes cuyo jefe se vencio al menos una vez, en el orden en que se vencieron por primera vez, por su nombre (`id` en
    * `OUTBREAKS`, T-018: el de su jefe).
@@ -34,11 +38,15 @@ export interface Progress {
    * `src/ui/story/stories.ts`), en el orden en que se vieron. Una vista no vuelve a salir sola.
    */
   readonly story: readonly string[];
-  /** Semillas (T-020): lo cobrado al acabar cada partida, menos lo gastado. Entero, de 0 a `SEEDS.maxBalance`. */
+  /** Semillas (T-020): lo cobrado al acabar cada partida, menos lo gastado en la tienda (T-022). Entero, de 0 a `SEEDS.maxBalance`. */
   readonly seeds: number;
+  /** Poderes comprados en la tienda (T-022) y su nivel, del 1 al maximo. */
+  readonly powers: Readonly<Partial<Record<PowerId, number>>>;
+  /** Los que se llevan al siguiente brote (T-022, T-04): comprados, en el orden del panel y como mucho dos (O-02). */
+  readonly carried: readonly PowerId[];
 }
 
-export const emptyProgress = (): Progress => ({ defeated: [], story: [], seeds: 0 });
+export const emptyProgress = (): Progress => ({ defeated: [], story: [], seeds: 0, powers: {}, carried: [] });
 
 // ---------------------------------------------------------------------------
 // Reglas
@@ -75,7 +83,7 @@ export function recordMatchEnd(progress: Progress, won: string | null, seeds: nu
 
 /** Hay algo que perder si se borra. */
 export function hasProgress(progress: Progress): boolean {
-  return progress.defeated.length > 0 || progress.story.length > 0 || progress.seeds > 0;
+  return progress.defeated.length > 0 || progress.story.length > 0 || progress.seeds > 0 || Object.keys(progress.powers).length > 0;
 }
 
 // ---------------------------------------------------------------------------
@@ -104,7 +112,8 @@ function parse(raw: string | null): Record<string, unknown> | null {
 
 /** Se queda con lo que entiende de un progreso de esta version: lo que este roto se pierde, lo demas no. */
 function sanitize(data: Record<string, unknown>): Progress {
-  return { defeated: names(data.defeated), story: names(data.story), seeds: seedBalance(data.seeds) };
+  const powers = sanitizeOwned(data.powers);
+  return { defeated: names(data.defeated), story: names(data.story), seeds: seedBalance(data.seeds), powers, carried: sanitizeCarried(data.carried, powers) };
 }
 
 /** Un saldo de semillas: un entero de 0 al maximo. Lo que no lo es cuenta como 0; lo que pasa del maximo, como el maximo. */
@@ -170,12 +179,44 @@ export class ProgressKeeper {
     return this.change((progress) => recordMatchEnd(progress, won, seeds));
   }
 
+  /**
+   * Tienda (T-022): compra el poder `id`, lo mejora un nivel o lo lleva o deja en el siguiente brote. Cada una lee el
+   * progreso guardado justo antes, asi que dos clics seguidos ven el saldo ya descontado: lo que no se puede no escribe
+   * nada y devuelve lo mismo.
+   */
+  buyPower(id: PowerId): ShopResult {
+    return this.attempt((progress) => buyPower(progress, id));
+  }
+
+  upgradePower(id: PowerId): ShopResult {
+    return this.attempt((progress) => upgradePower(progress, id));
+  }
+
+  toggleCarried(id: PowerId): ShopResult {
+    return this.attempt((progress) => toggleCarried(progress, id));
+  }
+
+  /** Como `change`, diciendo ademas si cambio algo: lo que no se pudo hacer no suena ni se celebra. */
+  private attempt(rule: (progress: Progress) => Progress): ShopResult {
+    const before = this.read();
+    const after = rule(before);
+    if (after === before) return { progress: before, changed: false };
+    this.write(after);
+    return { progress: after, changed: true };
+  }
+
   private change(rule: (progress: Progress) => Progress): Progress {
     const before = this.read();
     const after = rule(before);
     if (after !== before) this.write(after);
     return after;
   }
+}
+
+/** Lo que queda tras intentar algo en la tienda (T-022): el progreso y si cambio. */
+export interface ShopResult {
+  readonly progress: Progress;
+  readonly changed: boolean;
 }
 
 /** El progreso del jugador activo. Lo usan la escena (al acabar una partida) y el menu de inicio. */

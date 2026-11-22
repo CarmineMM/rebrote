@@ -2045,6 +2045,74 @@
           "recipes": []
         }
       ]
+    },
+    {
+      "id": "purchase",
+      "about": "Comprar un poder en la tienda (T-022): las semillas tintinean y suena un ta-da",
+      "spec": {
+        "bus": "ui",
+        "volume": 0.65,
+        "maxVoices": 1,
+        "minGapMs": 120,
+        "burst": 0,
+        "pitchJitter": 0,
+        "variants": 1
+      },
+      "pick": [
+        {
+          "url": "audio/purchase",
+          "source": "Kenney RPG Audio: `handleCoins.ogg` (recortado 0-520 ms, -2 dB) + Kenney Interface Sounds: `confirmation_002.ogg` (+160 ms)",
+          "seconds": 0.636
+        }
+      ],
+      "alternatives": [
+        {
+          "url": "audio-lab/candidatos/purchase/1",
+          "source": "Kenney RPG Audio: `handleCoins2.ogg` + Kenney Music Jingles: `jingles_PIZZI00.ogg` (-4 dB, +120 ms)",
+          "seconds": 0.594,
+          "recipes": []
+        },
+        {
+          "url": "audio-lab/candidatos/purchase/2",
+          "source": "Kenney Music Jingles: `jingles_STEEL02.ogg`",
+          "seconds": 1.387,
+          "recipes": []
+        }
+      ]
+    },
+    {
+      "id": "powerUpgrade",
+      "about": "Mejorar un poder en la tienda (T-022): arpegio que sube con un tintineo",
+      "spec": {
+        "bus": "ui",
+        "volume": 0.6,
+        "maxVoices": 1,
+        "minGapMs": 120,
+        "burst": 0,
+        "pitchJitter": 0,
+        "variants": 1
+      },
+      "pick": [
+        {
+          "url": "audio/powerUpgrade",
+          "source": "Kenney Interface Sounds: `maximize_008.ogg` + Kenney RPG Audio: `handleCoins2.ogg` (-8 dB)",
+          "seconds": 0.273
+        }
+      ],
+      "alternatives": [
+        {
+          "url": "audio-lab/candidatos/powerUpgrade/1",
+          "source": "Kenney Interface Sounds: `maximize_003.ogg`",
+          "seconds": 0.206,
+          "recipes": []
+        },
+        {
+          "url": "audio-lab/candidatos/powerUpgrade/2",
+          "source": "Kenney Interface Sounds: `confirmation_004.ogg` + Kenney Digital Audio: `powerUp8.ogg` (-6 dB, +80 ms)",
+          "seconds": 0.483,
+          "recipes": []
+        }
+      ]
     }
   ]
 }

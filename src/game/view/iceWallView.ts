@@ -1,5 +1,4 @@
 import * as Phaser from 'phaser';
-import { ICE_WALL } from '../config/balance';
 import type { Cell } from '../core/board';
 import type { IceBlock } from '../core/match';
 import type { Effects } from './effects';
@@ -66,7 +65,7 @@ export class IceBlockView {
     const foot = { x: cell.col + 0.5, y: cell.lane + PLANT_LOOK.footY };
     this.base = perspective.toScreen(foot);
     this.cellWidth = perspective.cellWidthAt(foot);
-    this.wear = iceWear(block.hp / ICE_WALL.hp);
+    this.wear = iceWear(block.hp / block.maxHp);
     const depth = entityDepth(this.base.y);
 
     this.shadow = scene.add
@@ -121,7 +120,7 @@ export class IceBlockView {
   /** Sigue al bloque del estado: su desgaste (cambia de textura soltando esquirlas) y, al final, se derrite. */
   sync(block: IceBlock): void {
     if (!this.holder.active) return;
-    const wear = iceWear(block.hp / ICE_WALL.hp);
+    const wear = iceWear(block.hp / block.maxHp);
     if (wear !== this.wear) {
       const worse = wear > this.wear;
       this.wear = wear;
@@ -238,7 +237,7 @@ export class IceBlockView {
 
   /** Tira a azul apagado con la vida (multiplicado): el dibujo se sigue leyendo. Un destello en curso manda. */
   private setTintFor(block: IceBlock): void {
-    const lost = 1 - Phaser.Math.Clamp(block.hp / ICE_WALL.hp, 0, 1);
+    const lost = 1 - Phaser.Math.Clamp(block.hp / block.maxHp, 0, 1);
     const k = lost * ICE_LOOK.wearMax;
     const mix = (shift: number) => {
       const from = (0xffffff >> shift) & 0xff;

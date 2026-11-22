@@ -117,6 +117,8 @@ export const es = {
     bosses: (names: string) => `Jefes vencidos: ${names}`,
     /** Su saldo de semillas (T-020), ya formateado. */
     seeds: (amount: string) => `Semillas: ${amount}`,
+    /** Los poderes que compro en la tienda (T-022). */
+    powers: (count: number) => (count === 1 ? '1 poder comprado en la tienda' : `${count} poderes comprados en la tienda`),
     save: (round: number) => `Partida guardada en la ronda ${round}`,
     /** Las viñetas de la historia que ya vio (T-031). */
     story: 'Las viñetas de la historia vistas',
@@ -165,6 +167,8 @@ export const es = {
     route: 'Ruta de brotes',
     routeDetail: (defeated: number) => (defeated === 1 ? '1 jefe vencido' : `${defeated} jefes vencidos`),
     shop: 'Tienda',
+    /** Debajo de "Tienda" (T-022): lo que se vende. */
+    shopDetail: 'Poderes',
     plants: 'Plantas',
     back: 'Volver a la portada',
     confirmTitle: (outbreak: string) => `¿Empezar ${outbreak}?`,
@@ -268,8 +272,10 @@ export const es = {
       help: {
         relocate: 'Recolocar: lleva una disparadora a otra casilla, tal como está',
         grenade: (countdown: string) => `Granada: lánzala a una casilla; explota a los ${countdown} y daña a todos los de alrededor`,
-        iceWall: (time: string) => `Muro de hielo: tres bloques que cortan el paso durante ${time}`,
+        iceWall: (blocks: number, time: string) => `Muro de hielo: ${blocks} bloques que cortan el paso durante ${time}`,
       },
+      /** El nivel del poder (T-022), en la pastilla de su boton y en su ayuda. */
+      level: (level: number) => `Nivel ${level}`,
       charges: (count: number) => (count === 1 ? '1 carga' : `${count} cargas`),
       noCharges: 'Ya lo usaste en esta partida',
       attackOnly: 'Se usa en el ataque',
@@ -447,7 +453,7 @@ export const es = {
         throw: (countdown: string) => `En el ataque, ¡lánzala! Explota a los ${countdown}`,
       },
       iceWall: {
-        place: 'En el ataque: tres bloques que cortan el paso',
+        place: 'En el ataque: bloques que cortan el paso',
       },
     },
     /** Pista de la moneda en el suelo (G-08). */
@@ -542,6 +548,53 @@ export const es = {
     again: 'Jugar otra vez',
     /** Tras vencer a un jefe se va al Invernadero (T-019). */
     greenhouse: 'Al Invernadero',
+    /** La primera vez que cae Creeper se abre la tienda (T-022). */
+    shopOpened: '¡Tienda abierta!',
+    shopOpenedText: 'Gasta tus semillas en poderes, en el Invernadero.',
+  },
+
+  /**
+   * Tienda (T-022): los poderes se compran para siempre y se mejoran hasta el nivel maximo. Los numeros llegan de las
+   * reglas (`grenadeAt`, `iceWallAt`, `relocateAt`), ya formateados si llevan decimales o porcentaje.
+   */
+  shop: {
+    title: 'Tienda',
+    hint: (max: number) => `Lo que compras es para siempre. Antes de cada brote eliges hasta ${max} poderes.`,
+    /** Que hace cada poder, en una frase. */
+    about: {
+      relocate: 'Lleva una disparadora a otra casilla, tal como está.',
+      grenade: 'Cae en una casilla, explota y daña a todos los de alrededor.',
+      iceWall: 'Bloques de hielo que cortan el paso un rato.',
+    },
+    /** Lo que hace en un nivel. */
+    stats: {
+      relocate: (charges: number, heal: string | null) => `${charges === 1 ? '1 uso' : `${charges} usos`} por partida${heal ? ` · cura un ${heal}` : ''}`,
+      grenade: (damage: number, radius: string) => `Daño ${damage} · alcance ${radius}`,
+      iceWall: (blocks: number, hp: number) => `${blocks} bloques de ${hp} de vida`,
+    },
+    level: (level: number, max: number) => `Nivel ${level} de ${max}`,
+    /** Delante de lo que hara con la mejora. */
+    next: (level: number) => `Nivel ${level}:`,
+    /** Con premio: los niveles 5 y 10 suman mas. */
+    milestone: '¡Premio!',
+    owned: { relocate: 'Tuyo', grenade: 'Tuya', iceWall: 'Tuyo' },
+    buy: 'Comprar',
+    upgrade: 'Mejorar',
+    maxed: 'Nivel máximo',
+    noSeeds: 'Te faltan semillas',
+    price: (amount: string, count: number) => (count === 1 ? '1 semilla' : `${amount} semillas`),
+    bought: '¡Comprado!',
+    upgraded: (level: number) => `¡Nivel ${level}!`,
+  },
+
+  /** Antes de empezar un brote (T-022, T-04): que poderes se llevan. */
+  loadout: {
+    title: 'Poderes del brote',
+    hint: (max: number) => `Elige hasta ${max}. Traen sus cargas a la partida.`,
+    count: (chosen: number, max: number) => `Llevas ${chosen} de ${max}`,
+    full: (max: number) => `Ya llevas ${max}: deja otro antes`,
+    play: '¡A jugar!',
+    none: 'Sin poderes',
   },
 
   /**
@@ -600,6 +653,8 @@ export const es = {
     infuseWallPlus: (extra: string) => `Infundir: muro + ${extra}`,
     /** Poderes (T-021). */
     relocated: '¡Recolocada!',
+    /** Lo que cura recolocar con nivel (T-022). */
+    healed: (hp: number) => `+${hp}`,
     pickShooter: 'Elige una disparadora',
     relocateHere: 'Recolocar aquí',
     occupied: 'Casilla ocupada',

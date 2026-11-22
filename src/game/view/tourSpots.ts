@@ -2,7 +2,7 @@ import { BOARD } from '../config/balance';
 import type { Cell } from '../core/board';
 import { cardPlay, elementDragBlocker, elementInfusionTargets, fusionTargets, mineAt, plantAt, sownAt, wallAt, type MatchState } from '../core/match';
 import type { ElementType, MineElement } from '../core/plants';
-import { iceWallCells, relocateTargets } from '../core/powers';
+import { iceWallCellsIn, relocateTargets } from '../core/powers';
 
 /**
  * Que se senala en el tablero en cada paso de un tour de ayuda (T-013, ADR-0012). Solo elige casillas con el estado y
@@ -121,7 +121,7 @@ export function tourCells(state: MatchState): TourCells {
     shieldInfusable: firstCell(LEFT_TO_RIGHT, infusableWith('shield')),
     relocateTo: firstShooter ? nearest(firstShooter, relocateTargets(state, firstShooter)) : null,
     grenadeCell: firstCell(POWER_COLUMNS, () => true) as Cell,
-    iceWallCell: firstCell(POWER_COLUMNS, (cell) => iceWallCells(cell).every(free)),
+    iceWallCell: firstCell(POWER_COLUMNS, (cell) => iceWallCellsIn(state, cell).every(free)),
   };
 }
 

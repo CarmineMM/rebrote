@@ -5,7 +5,7 @@ import { spawnEnemy, stepCombat, type Bullet, type CombatEvent, type Enemy } fro
 import { createMatch, createMine, createPlant, createWall, type MatchState, type Mine } from '../core/match';
 import { createShooter, type ElementType, type MineElement } from '../core/plants';
 import { FIRST_OUTBREAK, roundCount } from '../core/outbreaks';
-import { VOICE_EVERY, actionCue, combatCues, mineTicks, roundCues, voiceCue } from './cues';
+import { VOICE_EVERY, actionCue, combatCues, mineTicks, roundCues, shopCue, voiceCue } from './cues';
 
 const ids = (cues: ReadonlyArray<{ id: string }>) => cues.map((cue) => cue.id);
 
@@ -302,6 +302,15 @@ describe('Elk Cloner (T-026)', () => {
       { type: 'enemyKilled', enemyId: state.enemies[1].id, kind: 'copycat', clone: false, at: { x: 6, y: 0.5 } },
     ];
     expect(ids(combatCues(events, state))).toEqual(['elkClonerDefeated']);
+  });
+});
+
+describe('shopCue (T-022)', () => {
+  it('comprar suena a compra y mejorar, a mejora; los niveles 5 y 10, a premio, como en las plantas', () => {
+    expect(shopCue({ type: 'buy' })).toEqual({ id: 'purchase', pan: 0 });
+    expect(shopCue({ type: 'upgrade', level: 2 }).id).toBe('powerUpgrade');
+    expect(shopCue({ type: 'upgrade', level: 9 }).id).toBe('powerUpgrade');
+    for (const level of [5, 10]) expect(shopCue({ type: 'upgrade', level }).id).toBe('unlock');
   });
 });
 

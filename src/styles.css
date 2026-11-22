@@ -158,6 +158,14 @@ body {
   animation: power-charge 0.45s ease-out;
 }
 .power-charges.is-empty { background: #5a4a3a; border-color: #2e2418; color: #d8c8b0; }
+/* Nivel del poder (T-022), abajo a la izquierda: una hoja verde pequena, para no confundirse con las cargas doradas. */
+.power-level {
+  position: absolute; left: -6px; bottom: -6px; min-width: 18px; height: 18px; padding: 0 4px;
+  display: grid; place-items: center; border-radius: 9px 2px 9px 2px;
+  background: linear-gradient(160deg, #c8f59a 0%, #62c046 60%, #3c8a2c 100%);
+  border: 2px solid #1f4d16; color: #102a0a; font-size: 0.66rem; font-weight: 900; line-height: 1;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
 @keyframes power-charge { 0% { transform: scale(1.6); } 100% { transform: scale(1); } }
 /* Relojito de arena: se usa en el ataque. */
 .power-wait {
@@ -179,6 +187,7 @@ body {
   .power .power-icon { width: 32px; height: 32px; }
   .power-charges { min-width: 18px; height: 18px; right: -6px; bottom: -6px; font-size: 0.7rem; }
   .power-wait { width: 16px; height: 16px; left: -5px; top: -5px; }
+  .power-level { min-width: 15px; height: 15px; left: -5px; bottom: -5px; font-size: 0.58rem; padding: 0 3px; }
 }
 
 /* ---------- Carta ---------- */
@@ -1393,11 +1402,161 @@ body {
 .greenhouse-leaf.is-left { fill: #9be564; }
 .greenhouse-leaf.is-right { fill: #74cc48; }
 .greenhouse-sprout { transform-box: fill-box; transform-origin: 50% 100%; animation: sprout-sway 2.6s ease-in-out infinite; }
-/* Tienda y plantas, con candado hasta T-022 y T-023: en una fila, la mitad cada una. */
+/* La tienda (T-022) y las plantas (con candado hasta T-023): en una fila, la mitad cada una. */
 .greenhouse-locked { display: grid; grid-template-columns: 1fr 1fr; gap: inherit; }
 /* Con la historia vista (T-031), tres en fila: "Historia", la tienda y las plantas. */
 .greenhouse-locked.has-story { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .greenhouse-locked.has-story .btn { gap: 6px; padding-left: 8px; padding-right: 8px; }
+
+/* El boton de la tienda (T-022), en la fila de "Historia" y las plantas, con su puesto de jardin. */
+.shop-icon { flex: none; width: 24px; height: 22px; overflow: visible; filter: drop-shadow(0 1px 0 rgba(0, 0, 0, 0.3)); }
+.greenhouse-shop .shop-icon { margin: -2px 0; }
+/* En la fila de tres (con "Historia"), el puesto encoge para que quepa "Tienda" o "Shop". */
+.greenhouse-locked.has-story .shop-icon { width: 17px; height: 16px; }
+
+/* ---------- Tienda (T-022): un estante con los tres poderes sobre el jardin desenfocado, como la ruta ---------- */
+.route-card.shop-card { width: min(980px, 100%); height: auto; max-height: 100%; grid-template-rows: auto auto minmax(0, 1fr); overflow: hidden; }
+.shop-card .seed-balance { margin: 0; }
+.shop-hint { margin: 0; text-align: center; font-size: 0.85rem; font-weight: 700; color: #d8eecb; opacity: 0.85; }
+.shop-shelf {
+  list-style: none; margin: 0; padding: 4px 2px 6px; min-height: 0; overflow-y: auto;
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px;
+  scrollbar-width: thin; scrollbar-color: rgba(159, 216, 138, 0.6) transparent;
+}
+.shop-item {
+  position: relative; display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 0;
+  padding: 14px 12px 12px; border-radius: 18px; text-align: center;
+  background: linear-gradient(180deg, #3d6b42 0%, #24402a 100%); border: 2px solid rgba(185, 242, 124, 0.25);
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.08), 0 6px 14px rgba(0, 0, 0, 0.3);
+  animation: pop-in 0.35s cubic-bezier(0.2, 1.3, 0.4, 1) both;
+}
+.shop-item.is-owned { border-color: rgba(255, 210, 63, 0.75); }
+.shop-art {
+  position: relative; flex: none; width: 76px; height: 76px; display: grid; place-items: center; border-radius: 50%;
+  background: radial-gradient(circle at 50% 38%, rgba(255, 255, 255, 0.2), rgba(0, 0, 0, 0.2) 72%);
+}
+.shop-art .power-icon { width: 58px; height: 58px; animation: shop-bob 2.6s ease-in-out infinite; }
+.shop-item:nth-child(2) .shop-art .power-icon { animation-delay: -0.9s; }
+.shop-item:nth-child(3) .shop-art .power-icon { animation-delay: -1.7s; }
+@keyframes shop-bob { 0%, 100% { transform: translateY(1px) rotate(-4deg); } 50% { transform: translateY(-4px) rotate(4deg); } }
+.shop-owned {
+  position: absolute; right: -18px; top: -2px; padding: 2px 8px; border-radius: 999px; rotate: 10deg;
+  background: linear-gradient(180deg, #fff1a8, #ffd23f); border: 2px solid #8a5a10; color: #3a2400;
+  font-size: 0.7rem; font-weight: 900; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+.shop-name { margin: 0; font-size: 1.15rem; font-weight: 900; color: #ffffff; text-shadow: 0 2px 0 #17301a; }
+.shop-level { display: flex; align-items: flex-end; gap: 3px; margin: 0; }
+.shop-leaf { width: 9px; height: 12px; border-radius: 9px 1px 9px 1px; background: rgba(0, 0, 0, 0.35); border: 1px solid rgba(185, 242, 124, 0.3); }
+.shop-leaf.is-on { background: linear-gradient(160deg, #c8f59a, #62c046); border-color: #1f4d16; }
+.shop-leaf.is-bonus { width: 11px; height: 15px; }
+.shop-leaf.is-bonus.is-on { background: linear-gradient(160deg, #fff6c0, #ffd23f); border-color: #8a5a10; }
+.shop-about { margin: 0; font-size: 0.82rem; line-height: 1.3; color: #d8eecb; }
+.shop-stats { margin: 0; font-size: 0.88rem; font-weight: 900; color: #b9f27c; }
+.shop-next { margin: 0; font-size: 0.76rem; font-weight: 700; color: #e3f7d2; opacity: 0.85; }
+.shop-next strong { color: #ffffff; }
+.shop-bonus { color: #ffd23f; font-weight: 900; }
+.shop-buy { margin-top: auto; justify-content: space-between; gap: 8px; padding: 9px 14px; font-size: 1rem; }
+/* Apagado: gris piedra, sin el dorado; el precio, si faltan semillas, en rojo (que no lo apague ningun filtro). */
+.shop-buy.is-off { background: linear-gradient(180deg, #ddd6c4, #b9b09a); border-color: #7d745e; color: #4f4838; box-shadow: 0 4px 0 #5e5646; cursor: not-allowed; }
+.shop-buy.is-off:hover, .shop-buy.is-off:active { transform: none; filter: none; box-shadow: 0 4px 0 #5e5646; }
+.shop-price { display: inline-flex; align-items: center; gap: 4px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.shop-price .seed-icon { width: 18px; height: 18px; }
+.shop-price.is-short { color: #d0121f; }
+/* Lo que se acaba de comprar o mejorar: salta encima del dibujo, con un aro dorado que se abre. */
+.shop-cheer {
+  position: absolute; left: 50%; top: 40px; pointer-events: none; white-space: nowrap;
+  font-size: 1.25rem; font-weight: 900; color: #fff6c0; -webkit-text-stroke: 1px #5a3a00; text-shadow: 0 3px 0 #5a3a00;
+  animation: shop-cheer 1.3s ease-out forwards;
+}
+.shop-cheer::before {
+  content: ''; position: absolute; left: 50%; top: 50%; width: 80px; height: 80px; margin: -40px 0 0 -40px; border-radius: 50%;
+  border: 3px solid #ffd23f; animation: shop-ring 0.7s ease-out forwards;
+}
+@keyframes shop-cheer {
+  0% { opacity: 0; transform: translate(-50%, 12px) scale(0.5); }
+  18% { opacity: 1; transform: translate(-50%, 0) scale(1.12); }
+  70% { opacity: 1; transform: translate(-50%, -18px) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -34px) scale(1); }
+}
+@keyframes shop-ring { from { opacity: 0.9; transform: scale(0.4); } to { opacity: 0; transform: scale(1.6); } }
+
+/* ---------- Poderes del brote (T-022): antes de empezar, en el panel del Invernadero ---------- */
+.loadout-hint { margin: 6px 0 10px; text-align: center; font-size: 0.85rem; font-weight: 700; color: #d8eecb; opacity: 0.85; }
+.loadout-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.loadout-power {
+  width: 100%; display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; align-items: center; gap: 10px;
+  padding: 7px 12px; border-radius: 14px; border: 2px solid rgba(185, 242, 124, 0.28); background: rgba(8, 28, 10, 0.45);
+  color: #f1f7ea; font: inherit; font-weight: 800; cursor: pointer; text-align: left;
+  transition: transform 0.12s ease, border-color 0.12s ease, background 0.12s ease;
+}
+.loadout-power:hover { transform: translateY(-1px); }
+.loadout-power .power-icon { width: 34px; height: 34px; }
+.loadout-power.is-on { border-color: #ffd23f; background: rgba(255, 210, 63, 0.14); }
+.loadout-power.is-on .power-icon { animation: shop-bob 2.6s ease-in-out infinite; }
+.loadout-power.is-full { opacity: 0.5; cursor: not-allowed; }
+.loadout-power.is-full:hover { transform: none; }
+.loadout-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.loadout-level { font-size: 0.74rem; color: #b9f27c; white-space: nowrap; }
+.loadout-check { position: relative; width: 22px; height: 22px; border-radius: 50%; border: 2px solid rgba(255, 255, 255, 0.4); }
+.loadout-power.is-on .loadout-check { background: #ffd23f; border-color: #8a5a10; animation: power-charge 0.35s ease-out; }
+.loadout-power.is-on .loadout-check::after {
+  content: ''; position: absolute; left: 6px; top: 2px; width: 5px; height: 10px;
+  border: solid #3a2400; border-width: 0 3px 3px 0; rotate: 40deg;
+}
+.loadout-count { margin: 10px 0; text-align: center; font-size: 0.75rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: #9fd88a; }
+
+/* El aviso de la victoria la primera vez que cae Creeper (T-022). */
+.victory-shop {
+  display: flex; align-items: center; gap: 10px; margin: 0 0 14px; padding: 8px 12px; border-radius: 14px; text-align: left;
+  background: rgba(255, 210, 63, 0.12); border: 2px solid rgba(255, 210, 63, 0.55); font-size: 0.88rem; color: #fff6c0;
+  animation: pop-in 0.4s 0.5s cubic-bezier(0.2, 1.3, 0.4, 1) both;
+}
+.victory-shop .shop-icon { width: 30px; height: 28px; }
+.victory-shop strong { color: #ffd23f; }
+
+/* Pantallas pequenas: la tienda aprieta las tarjetas para que quepan las tres en fila en un movil en horizontal. */
+@media (max-width: 860px), (max-height: 560px) {
+  .route-card.shop-card { padding: 10px 14px; gap: 8px; }
+  .shop-shelf { gap: 8px; }
+  .shop-item { gap: 3px; padding: 8px 8px 8px; border-radius: 14px; }
+  .shop-art { width: 50px; height: 50px; }
+  .shop-art .power-icon { width: 40px; height: 40px; }
+  .shop-owned { right: -22px; font-size: 0.62rem; padding: 1px 6px; }
+  .shop-name { font-size: 0.98rem; }
+  .shop-about { font-size: 0.72rem; line-height: 1.2; }
+  .shop-stats { font-size: 0.76rem; }
+  .shop-next { font-size: 0.68rem; }
+  .shop-buy { padding: 6px 10px; font-size: 0.86rem; }
+  .shop-price .seed-icon { width: 15px; height: 15px; }
+  .shop-cheer { top: 22px; font-size: 1.05rem; }
+  .loadout-hint { margin: 2px 0 6px; font-size: 0.76rem; }
+  .loadout-list { gap: 5px; }
+  .loadout-power { padding: 4px 10px; gap: 8px; font-size: 0.92rem; }
+  .loadout-power .power-icon { width: 28px; height: 28px; }
+  .loadout-count { margin: 6px 0; }
+  .victory-shop { margin-bottom: 8px; padding: 5px 10px; font-size: 0.78rem; }
+}
+@media (max-height: 420px) {
+  .shop-hint { display: none; }
+  .shop-card .route-head .pause-title.is-small { font-size: 1.25rem; }
+  .shop-level { gap: 2px; }
+  .shop-leaf { width: 7px; height: 10px; }
+  .shop-leaf.is-bonus { width: 9px; height: 12px; }
+  .loadout-hint { display: none; }
+}
+@media (max-height: 360px) {
+  .route-card.shop-card { padding: 8px 10px; gap: 6px; }
+  .shop-art { width: 40px; height: 40px; }
+  .shop-art .power-icon { width: 32px; height: 32px; }
+  .shop-name { font-size: 0.9rem; }
+  .shop-about { font-size: 0.66rem; }
+  .shop-next { display: none; }
+  .victory-shop { padding: 3px 10px; }
+  .victory-shop .shop-icon { width: 22px; height: 20px; }
+  .victory-shop-text { display: none; }
+  /* Con el aviso de la tienda no cabe todo: sobra la frase de las rondas superadas (las semillas ya las cuentan). */
+  .is-victory .pause-card:has(.victory-shop) .victory-text { display: none; }
+}
 
 /* ---------- Ruta de brotes (T-019): un mapa ancho sobre el jardin, con el camino, sus lugares y la ficha del elegido ---------- */
 .route-overlay {

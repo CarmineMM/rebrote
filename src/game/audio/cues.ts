@@ -4,7 +4,7 @@ import { isBoss, isShield, type BulletEffect, type CombatEvent } from '../core/c
 import type { MatchState } from '../core/match';
 import { isMilestoneLevel, type ElementType } from '../core/plants';
 import type { RoundEvent } from '../core/rounds';
-import type { PowerId } from '../core/powers';
+import { isPowerMilestone, type PowerId } from '../core/powers';
 import type { PlayerAction } from '../EventBus';
 import type { CharacterId } from '../view/characters/design';
 import { panAt } from './voices';
@@ -211,6 +211,18 @@ export function actionCue(action: PlayerAction, x: number): SfxCue | null {
     case 'powerPicked':
       return null;
   }
+}
+
+/** Lo que hizo el jugador en la tienda (T-022): comprar un poder o subirlo a un nivel. */
+export type ShopAction = { readonly type: 'buy' } | { readonly type: 'upgrade'; readonly level: number };
+
+/**
+ * Lo que suena en la tienda (T-022): comprar, un tintineo con ta-da; mejorar, un arpegio que sube; llegar a un nivel con
+ * premio (5 y 10), el "¡ya lo tienes!" de los desbloqueos, como en las plantas. Lo que no se pudo hacer no suena.
+ */
+export function shopCue(action: ShopAction): SfxCue {
+  if (action.type === 'buy') return centered('purchase');
+  return centered(isPowerMilestone(action.level) ? 'unlock' : 'powerUpgrade');
 }
 
 /** Voz de cada personaje en las viñetas (T-031). */

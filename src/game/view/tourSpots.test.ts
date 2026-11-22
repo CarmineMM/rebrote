@@ -106,7 +106,8 @@ describe('lo que senala un tour de ayuda (T-013)', () => {
 
   describe('poderes (T-021)', () => {
     it('recolocar lleva la disparadora senalada a la casilla libre mas cercana', () => {
-      const state = sow(matchAt(0), 'shooter', { lane: 2, col: 0 });
+      // Desde la tienda (T-022) la partida solo trae los poderes elegidos.
+      const state = sow({ ...matchAt(0), powers: [{ id: 'relocate', level: 1, charges: 1 }] }, 'shooter', { lane: 2, col: 0 });
       expect(tourCells(state).shooter).toEqual({ lane: 2, col: 0 });
       // Empatadas a una casilla, la primera que encuentra: la de arriba.
       expect(tourCells(state).relocateTo).toEqual({ lane: 1, col: 0 });

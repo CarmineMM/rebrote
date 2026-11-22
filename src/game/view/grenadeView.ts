@@ -63,6 +63,8 @@ export class GrenadeView {
   private readonly to: BoardPoint;
   /** Centro de la casilla: desde ahi se mide el alcance. */
   private readonly center: BoardPoint;
+  /** Su alcance, el del nivel con que se lanzo (T-022). */
+  private readonly radius: number;
   private readonly squash: Pulse = { v: 0 };
   private lit = false;
   private shown = 0;
@@ -77,6 +79,7 @@ export class GrenadeView {
     this.to = grenadeFoot(grenade.cell);
     this.from = { x: GRENADE_LOOK.fromX, y: this.to.y };
     this.center = { x: grenade.cell.col + 0.5, y: grenade.cell.lane + 0.5 };
+    this.radius = grenade.radius;
     const ground = perspective.toScreen(this.to);
     const cellWidth = perspective.cellWidthAt(this.to);
 
@@ -132,7 +135,7 @@ export class GrenadeView {
     const ground = perspective.toScreen(this.to);
     const w = perspective.cellWidthAt(this.to);
     const at = perspective.toScreen(this.center);
-    const area = areaSize(this.center, GRENADE.blastRadius);
+    const area = areaSize(this.center, this.radius);
     const depth = entityDepth(ground.y) + 1;
     const middle = { x: ground.x, y: ground.y - w * 0.32 };
 
@@ -206,7 +209,7 @@ export class GrenadeView {
     this.body.setTexture(TEX.grenade.lit).setScale(grenadeScale(w));
     this.holder.setPosition(ground.x, ground.y).setAngle(0).setDepth(entityDepth(ground.y));
     this.shadow.setPosition(ground.x, ground.y).setDisplaySize(w * 0.6, w * 0.2).setAlpha(0.8).setDepth(entityDepth(ground.y) - 0.5);
-    drawArea(this.area, this.center, GRENADE.blastRadius, GRENADE_LOOK.areaColor, 0.12, 3);
+    drawArea(this.area, this.center, this.radius, GRENADE_LOOK.areaColor, 0.12, 3);
     this.area.setVisible(true).setAlpha(0);
     this.scene.tweens.add({ targets: this.area, alpha: { from: 0.55, to: 1 }, duration: 280, yoyo: true, repeat: -1, ease: 'Sine.InOut' });
     this.count.setVisible(true);

@@ -1,27 +1,37 @@
 import { describe, expect, it } from 'vitest';
-import { BOARD, ELK_CLONER, ENEMIES, FIRE, GRENADE, ICE_WALL, MINE, POWERS, SHOOTER } from '../config/balance';
+import { BOARD, ELK_CLONER, ENEMIES, FIRE, GRENADE, ICE_WALL, MINE, POWER_LEVELS, POWERS, SHOOTER } from '../config/balance';
 import { decodeSave, encodeSave, SAVE_VERSION } from '../save';
 import type { Cell } from './board';
 import { enemyHalfLength, enemyMaxHp, isShield, poemHit, spawnEnemy, stepCombat, waveReach, type CombatEvent, type Enemy } from './combat';
 import { createMatch, createMine, createPlant, createWall, iceAt, plantAt, sownAt, sownElement, sownMaxHp, elementDragBlocker, cardPlay, type MatchState, type Sown } from './match';
-import { createShooter } from './plants';
+import { createShooter, plantMaxHp } from './plants';
 import {
+  ICE_WALL_MAX_SPAN,
   POWER_IDS,
+  chargesAt,
   createIceBlock,
+  grenadeAt,
   grenadeBlocker,
   iceWallBlocker,
+  iceWallAt,
   iceWallCells,
+  iceWallCellsIn,
   iceWallPushes,
   loadoutSlots,
   placeIceWall,
   powerBlocker,
   powerCharges,
+  powerLevel,
+  powerMilestones,
   powersFromParam,
+  relocateAt,
   relocateBlocker,
   relocatePlant,
   relocateSourceBlocker,
   relocateTargets,
+  relocatedHp,
   throwGrenade,
+  type CarriedPower,
 } from './powers';
 
 /**
@@ -29,12 +39,16 @@ import {
  * casillas. Un uso gasta una carga; afectan a los jefes igual que a los demas.
  */
 
+/** Los tres poderes en el nivel `level` (T-022): asi se prueban las reglas de siempre en el nivel 1. */
+const all = (level = 1): CarriedPower[] => POWER_IDS.map((id) => ({ id, level }));
+const ALL = all();
+
 function put(state: MatchState, cell: Cell, sown: Sown): MatchState {
   return { ...state, plants: state.plants.map((lane, l) => lane.map((p, c) => (l === cell.lane && c === cell.col ? sown : p))) };
 }
 
 /** Partida del brote 1 en el ataque de su ronda 5 (ya hay de todo), sin grupos por salir que estorben. */
-const attacking = (state: MatchState = createMatch(0, 4)): MatchState => ({
+const attacking = (state: MatchState = createMatch(0, 4, 'creeper', false, ALL)): MatchState => ({
   ...state,
   round: { ...state.round, phase: 'attack', prepMs: 0, elapsedMs: 0, released: 0 },
 });
@@ -46,31 +60,49 @@ const enemyById = (state: MatchState, id: number): Enemy => state.enemies.find((
 const lastEnemy = (state: MatchState): Enemy => state.enemies[state.enemies.length - 1];
 
 describe('cargas y panel', () => {
-  it('hasta la tienda, cada partida trae los tres poderes con una carga (O-01, O-08)', () => {
+  it('sin poderes elegidos, la partida no trae ninguno: salen de la tienda (T-022)', () => {
     expect(POWERS.chargesPerMatch).toBe(1);
-    expect(createMatch().powers).toEqual(POWER_IDS.map((id) => ({ id, charges: 1 })));
-    expect(createMatch(0, 0, 'elkCloner').powers).toHaveLength(3);
+    expect(createMatch().powers).toEqual([]);
+    expect(createMatch(0, 0, 'elkCloner').powers).toEqual([]);
+    expect(loadoutSlots()).toEqual([]);
   });
 
-  it('una partida puede traer otros poderes, en su orden y sin repetir, o ninguno', () => {
-    expect(createMatch(0, 0, 'creeper', false, ['iceWall', 'grenade', 'iceWall']).powers).toEqual([
-      { id: 'iceWall', charges: 1 },
-      { id: 'grenade', charges: 1 },
+  it('trae los elegidos con su nivel y sus cargas, en el orden del panel y sin repetir', () => {
+    const loadout: CarriedPower[] = [
+      { id: 'iceWall', level: 4 },
+      { id: 'grenade', level: 1 },
+      { id: 'iceWall', level: 9 },
+    ];
+    expect(createMatch(0, 0, 'creeper', false, loadout).powers).toEqual([
+      { id: 'grenade', level: 1, charges: 1 },
+      { id: 'iceWall', level: 4, charges: 1 },
     ]);
-    expect(createMatch(0, 0, 'creeper', false, []).powers).toEqual([]);
-    expect(loadoutSlots()).toHaveLength(3);
+    expect(createMatch(0, 0, 'creeper', false, ALL).powers).toEqual(POWER_IDS.map((id) => ({ id, level: 1, charges: 1 })));
+    // Un nivel que no existe cuenta como el 1.
+    expect(loadoutSlots([{ id: 'relocate', level: 99 }])).toEqual([{ id: 'relocate', level: 1, charges: 1 }]);
   });
 
-  it('en desarrollo se eligen por la direccion; vacio es ninguno y sin el, lo de siempre', () => {
-    expect(powersFromParam('granada,muro')).toEqual(['grenade', 'iceWall']);
-    expect(powersFromParam('Recolocar, hielo, granada')).toEqual(['relocate', 'iceWall', 'grenade']);
-    expect(powersFromParam('granada,granada,nada')).toEqual(['grenade']);
+  it('en desarrollo se eligen por la direccion, con su nivel; vacio es ninguno y sin el, lo elegido', () => {
+    expect(powersFromParam('granada,muro')).toEqual([
+      { id: 'grenade', level: 1 },
+      { id: 'iceWall', level: 1 },
+    ]);
+    expect(powersFromParam('Recolocar:5, hielo:10, granada:3')).toEqual([
+      { id: 'relocate', level: 5 },
+      { id: 'iceWall', level: 10 },
+      { id: 'grenade', level: 3 },
+    ]);
+    expect(powersFromParam('granada:2,granada:7,nada')).toEqual([{ id: 'grenade', level: 2 }]);
+    expect(powersFromParam('muro:11,recolocar:0')).toEqual([
+      { id: 'iceWall', level: 1 },
+      { id: 'relocate', level: 1 },
+    ]);
     expect(powersFromParam('')).toEqual([]);
     expect(powersFromParam(null)).toBeNull();
   });
 
   it('un poder que no se lleva o sin cargas no se puede usar', () => {
-    const state = attacking(createMatch(0, 4, 'creeper', false, ['grenade']));
+    const state = attacking(createMatch(0, 4, 'creeper', false, [{ id: 'grenade', level: 1 }]));
     expect(powerBlocker(state, 'iceWall')).toBe('not-carried');
     expect(powerCharges(state, 'iceWall')).toBe(0);
     const spent = throwGrenade(state, { lane: 2, col: 5 });
@@ -80,7 +112,7 @@ describe('cargas y panel', () => {
   });
 
   it('en la preparacion solo se recoloca; la granada y el muro, en el ataque (O-07)', () => {
-    const prep = createMatch(0, 4);
+    const prep = createMatch(0, 4, 'creeper', false, ALL);
     expect(prep.round.phase).toBe('prep');
     expect(powerBlocker(prep, 'relocate')).toBeNull();
     expect(powerBlocker(prep, 'grenade')).toBe('attack-only');
@@ -106,7 +138,7 @@ describe('recolocar (O-03)', () => {
   it('lleva la disparadora tal como estaba a la casilla vacia y gasta una carga', () => {
     const shooter = { ...createShooter(), cannons: 2 as const, element: 'fire' as const, level: 4 };
     const plant = { ...createPlant(shooter), hp: 123, reloadMs: 456 };
-    const state = put(createMatch(0, 4), from, plant);
+    const state = put(createMatch(0, 4, 'creeper', false, ALL), from, plant);
     const moved = relocatePlant(state, from, to);
     expect(sownAt(moved, from)).toBeNull();
     expect(plantAt(moved, to)).toEqual(plant);
@@ -116,7 +148,7 @@ describe('recolocar (O-03)', () => {
   });
 
   it('solo mueve disparadoras, a casillas vacias del tablero', () => {
-    let state = put(createMatch(0, 4), from, createPlant());
+    let state = put(createMatch(0, 4, 'creeper', false, ALL), from, createPlant());
     state = put(state, { lane: 0, col: 0 }, createMine('fire'));
     state = put(state, { lane: 0, col: 1 }, createWall());
     expect(relocateSourceBlocker(state, from)).toBeNull();
@@ -132,13 +164,13 @@ describe('recolocar (O-03)', () => {
   });
 
   it('se puede en la preparacion y en el ataque', () => {
-    const state = put(createMatch(0, 4), from, createPlant());
+    const state = put(createMatch(0, 4, 'creeper', false, ALL), from, createPlant());
     expect(relocateBlocker(state, from, to)).toBeNull();
     expect(relocateBlocker(attacking(state), from, to)).toBeNull();
   });
 
   it('el gusano que la mordia sigue avanzando', () => {
-    let state = attacking(put(createMatch(0, 4), from, createPlant()));
+    let state = attacking(put(createMatch(0, 4, 'creeper', false, ALL), from, createPlant()));
     state = spawnEnemy(state, 'worm', from.lane, from.col + 0.5 + ENEMIES.worm.reach);
     state = stepCombat(state, 1000).state;
     expect(lastEnemy(state).attackMs).not.toBeNull();
@@ -222,7 +254,7 @@ describe('granada (O-04)', () => {
   });
 
   it('a los jefes, el dano entero (O-06); a Creeper en el aire, nada', () => {
-    let state = attacking(createMatch(0, 9));
+    let state = attacking(createMatch(0, 9, 'creeper', false, ALL));
     state = spawnEnemy(state, 'creeper', cell.lane, center);
     const creeper = lastEnemy(state);
     const hit = stepCombat(throwGrenade(state, cell), GRENADE.flightMs + GRENADE.fuseMs).state;
@@ -253,7 +285,7 @@ describe('muro de hielo (O-05, O-09 a O-11)', () => {
     const { state, cells } = placeIceWall(attacking(), cell);
     expect(cells).toHaveLength(3);
     expect(ICE_WALL.hp).toBe(SHOOTER.hp);
-    for (const c of cells) expect(iceAt(state, c)).toEqual({ kind: 'ice', hp: SHOOTER.hp, ms: ICE_WALL.durationMs });
+    for (const c of cells) expect(iceAt(state, c)).toEqual({ kind: 'ice', hp: SHOOTER.hp, maxHp: SHOOTER.hp, ms: ICE_WALL.durationMs });
     expect(powerCharges(state, 'iceWall')).toBe(0);
     expect(sownMaxHp(createIceBlock())).toBe(SHOOTER.hp);
   });
@@ -333,7 +365,7 @@ describe('muro de hielo (O-05, O-09 a O-11)', () => {
   });
 
   it('a los jefes, igual (O-06); a Creeper en el aire no lo mueve', () => {
-    let state = attacking(createMatch(0, 9));
+    let state = attacking(createMatch(0, 9, 'creeper', false, ALL));
     state = spawnEnemy(state, 'creeper', 2, cell.col + 0.6);
     const creeper = lastEnemy(state);
     const half = enemyHalfLength(creeper);
@@ -344,23 +376,109 @@ describe('muro de hielo (O-05, O-09 a O-11)', () => {
 });
 
 describe('partida guardada', () => {
-  it('guarda las cargas gastadas, las granadas en vuelo y el muro de hielo (version 7)', () => {
-    expect(SAVE_VERSION).toBeGreaterThanOrEqual(7);
-    let state = put(attacking(), { lane: 0, col: 0 }, createPlant());
+  it('guarda las cargas gastadas, las granadas en vuelo y el muro de hielo, con sus niveles (version 8)', () => {
+    expect(SAVE_VERSION).toBeGreaterThanOrEqual(8);
+    let state = put(attacking(createMatch(0, 4, 'creeper', false, all(10))), { lane: 0, col: 0 }, createPlant());
     state = relocatePlant(state, { lane: 0, col: 0 }, { lane: 4, col: 4 });
     state = throwGrenade(state, { lane: 2, col: 6 });
     state = placeIceWall(state, { lane: 2, col: 3 }).state;
     state = stepCombat(state, 500).state;
     const loaded = decodeSave(encodeSave(state, null, 1));
     expect(loaded?.match).toEqual(state);
-    expect(loaded?.match.powers.every((slot) => slot.charges === 0)).toBe(true);
+    // Recolocar de nivel 10 trae tres cargas: le quedan dos.
+    expect(loaded?.match.powers.map((slot) => slot.charges)).toEqual([2, 0, 0]);
+    expect(loaded?.match.grenades[0]).toMatchObject(grenadeAt(10));
+    expect(iceAt(loaded!.match, { lane: 2, col: 3 })?.maxHp).toBe(iceWallAt(10).hp);
   });
 
-  it('no carga una partida con cargas de mas o un poder que no existe', () => {
+  it('no carga una partida con cargas de mas para su nivel, un nivel o un poder que no existen', () => {
     const state = attacking();
-    const tooMany = { ...state, powers: [{ id: 'grenade', charges: 5 }] };
-    const unknown = { ...state, powers: [{ id: 'meteor', charges: 1 }] };
-    expect(decodeSave(JSON.stringify({ version: 7, savedAt: 1, match: tooMany, pendingUnlock: null }))).toBeNull();
-    expect(decodeSave(JSON.stringify({ version: 7, savedAt: 1, match: unknown, pendingUnlock: null }))).toBeNull();
+    const save = (powers: unknown) => JSON.stringify({ version: SAVE_VERSION, savedAt: 1, match: { ...state, powers }, pendingUnlock: null });
+    expect(decodeSave(save([{ id: 'grenade', level: 1, charges: 1 }]))).not.toBeNull();
+    expect(decodeSave(save([{ id: 'relocate', level: 5, charges: 2 }]))).not.toBeNull();
+    expect(decodeSave(save([{ id: 'relocate', level: 4, charges: 2 }]))).toBeNull();
+    expect(decodeSave(save([{ id: 'grenade', level: 10, charges: 2 }]))).toBeNull();
+    expect(decodeSave(save([{ id: 'grenade', level: 11, charges: 1 }]))).toBeNull();
+    expect(decodeSave(save([{ id: 'grenade', charges: 1 }]))).toBeNull();
+    expect(decodeSave(save([{ id: 'meteor', level: 1, charges: 1 }]))).toBeNull();
+  });
+});
+
+describe('niveles de los poderes (T-022, T-01)', () => {
+  it('cada nivel suma lo suyo y el 5 y el 10 dan premio', () => {
+    expect(POWER_LEVELS.max).toBe(10);
+    expect([1, 4, 5, 9, 10].map(powerMilestones)).toEqual([0, 0, 1, 1, 2]);
+  });
+
+  it('la granada: +15 % de dano por nivel y +40 % en el 5 y el 10; mas alcance en el 5 y el 10', () => {
+    expect(grenadeAt(1)).toEqual({ damage: FIRE.blastDamage, radius: GRENADE.blastRadius });
+    expect(grenadeAt(2).damage).toBe(230);
+    expect(grenadeAt(4).damage).toBe(290);
+    expect(grenadeAt(5)).toEqual({ damage: 370, radius: 2.1 });
+    expect(grenadeAt(9)).toEqual({ damage: 490, radius: 2.1 });
+    expect(grenadeAt(10)).toEqual({ damage: 570, radius: 2.4 });
+  });
+
+  it('el muro de hielo: +20 % de vida por nivel y +35 % en el 5 y el 10; 4 casillas desde el 5 y 5 en el 10', () => {
+    expect(iceWallAt(1)).toEqual({ hp: SHOOTER.hp, span: 3 });
+    expect(iceWallAt(2).hp).toBe(360);
+    expect(iceWallAt(4)).toEqual({ hp: 480, span: 3 });
+    expect(iceWallAt(5)).toEqual({ hp: 585, span: 4 });
+    expect(iceWallAt(9)).toEqual({ hp: 825, span: 4 });
+    expect(iceWallAt(10)).toEqual({ hp: 930, span: BOARD.lanes });
+    expect(ICE_WALL_MAX_SPAN).toBe(BOARD.lanes);
+  });
+
+  it('recolocar: cura un 5 % por nivel y trae una carga mas en el 5 y otra en el 10', () => {
+    expect(relocateAt(1)).toEqual({ charges: 1, heal: 0 });
+    expect(relocateAt(4).charges).toBe(1);
+    expect(relocateAt(5).charges).toBe(2);
+    expect(relocateAt(5).heal).toBeCloseTo(0.2);
+    expect(relocateAt(10).charges).toBe(3);
+    expect(relocateAt(10).heal).toBeCloseTo(0.45);
+    // La granada y el muro siempre traen una.
+    expect(chargesAt('grenade', 10)).toBe(1);
+    expect(chargesAt('iceWall', 10)).toBe(1);
+    expect(createMatch(0, 0, 'creeper', false, [{ id: 'relocate', level: 5 }]).powers).toEqual([{ id: 'relocate', level: 5, charges: 2 }]);
+  });
+
+  it('la granada de nivel 10 dana mas y alcanza dos carriles mas alla', () => {
+    const cell = { lane: 2, col: 5 };
+    // Dos carriles por debajo y casi en la misma columna: a 2,06 casillas, fuera del alcance del nivel 1 (1,8).
+    const place = (level: number) => spawnEnemy(attacking(createMatch(0, 9, 'creeper', false, all(level))), 'creeper', 4, cell.col + 1);
+    const hp = lastEnemy(place(1)).hp;
+    const missed = stepCombat(throwGrenade(place(1), cell), GRENADE.flightMs + GRENADE.fuseMs).state;
+    expect(lastEnemy(missed).hp).toBe(hp);
+    const hit = stepCombat(throwGrenade(place(10), cell), GRENADE.flightMs + GRENADE.fuseMs).state;
+    expect(lastEnemy(hit).hp).toBeCloseTo(hp - grenadeAt(10).damage);
+  });
+
+  it('el muro de nivel 5 ocupa 4 casillas, una mas arriba que abajo; el de nivel 10, la columna entera', () => {
+    const five = attacking(createMatch(0, 4, 'creeper', false, all(5)));
+    expect(powerLevel(five, 'iceWall')).toBe(5);
+    expect(iceWallCellsIn(five, { lane: 2, col: 4 }).map((c) => c.lane)).toEqual([0, 1, 2, 3]);
+    expect(iceWallCellsIn(five, { lane: 4, col: 4 }).map((c) => c.lane)).toEqual([1, 2, 3, 4]);
+    const placed = placeIceWall(five, { lane: 3, col: 4 });
+    expect(placed.cells).toHaveLength(4);
+    for (const c of placed.cells) expect(iceAt(placed.state, c)).toMatchObject({ hp: 585, maxHp: 585 });
+    // Algo sembrado en la cuarta casilla lo impide, aunque con nivel 1 cabria.
+    expect(iceWallBlocker(put(five, { lane: 1, col: 4 }, createPlant()), { lane: 3, col: 4 })).toBe('occupied');
+    expect(iceWallBlocker(put(attacking(), { lane: 1, col: 4 }, createPlant()), { lane: 3, col: 4 })).toBeNull();
+    const ten = attacking(createMatch(0, 4, 'creeper', false, all(10)));
+    expect(placeIceWall(ten, { lane: 0, col: 2 }).cells.map((c) => c.lane)).toEqual([0, 1, 2, 3, 4]);
+  });
+
+  it('recolocar con nivel cura la planta al llegar, sin pasarse de su vida entera, y gasta solo una carga', () => {
+    const from = { lane: 1, col: 2 };
+    const to = { lane: 3, col: 6 };
+    const plant = { ...createPlant(), hp: 50 };
+    const full = plantMaxHp(plant.shooter);
+    const state = put(createMatch(0, 4, 'creeper', false, all(10)), from, plant);
+    const moved = relocatePlant(state, from, to);
+    expect(plantAt(moved, to)?.hp).toBeCloseTo(50 + full * 0.45);
+    expect(powerCharges(moved, 'relocate')).toBe(2);
+    expect(relocatedHp({ ...plant, hp: full - 10 }, 10)).toBe(full);
+    // En el nivel 1 llega igual que estaba.
+    expect(relocatedHp(plant, 1)).toBe(50);
   });
 });

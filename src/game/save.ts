@@ -1,8 +1,8 @@
-import { BOARD, ENEMIES, LIMITS, LIVES, POWERS } from './config/balance';
+import { BOARD, ENEMIES, LIMITS, LIVES } from './config/balance';
 import type { Burn, Enemy, Jump, Recital, Slow } from './core/combat';
 import type { MatchState, Sown } from './core/match';
 import { isOutbreakId, roundCount, type OutbreakId } from './core/outbreaks';
-import { isPowerId } from './core/powers';
+import { chargesAt, isPowerId, isPowerLevel } from './core/powers';
 import type { UnlockInfo } from './EventBus';
 import { profiles } from './profiles';
 import type { SaveStore } from './storage';
@@ -24,9 +24,10 @@ export const SAVE_KEY = 'partida';
  * copias de los copiones (`Enemy.clone`) y los versos de los juglares en vuelo (`MatchState.verses`); la 6 (T-026), el
  * recital de Elk Cloner (`Enemy.recital`) y quien recita cada verso y si es del poema entero (`Verse.by`, `Verse.poem`); la 7
  * (T-021), los poderes con sus cargas (`MatchState.powers`), las granadas en vuelo (`MatchState.grenades`) y los bloques
- * del muro de hielo.
+ * del muro de hielo; la 8 (T-022), el nivel de cada poder (`PowerSlot.level`), el dano y el alcance de cada granada y la
+ * vida entera de cada bloque de hielo (`IceBlock.maxHp`).
  */
-export const SAVE_VERSION = 7;
+export const SAVE_VERSION = 8;
 
 export interface SavedGame {
   readonly version: number;
@@ -162,7 +163,7 @@ function isSown(value: unknown): value is Sown {
   if (!isRecord(value) || !isNumber(value.hp) || value.hp <= 0) return false;
   if (value.kind === 'mine') return isMineElement(value.element) && isNullOr(value.fuseMs, isNumber);
   if (value.kind === 'wall') return true;
-  if (value.kind === 'ice') return isNumber(value.ms) && value.ms > 0;
+  if (value.kind === 'ice') return isNumber(value.ms) && value.ms > 0 && isNumber(value.maxHp) && value.maxHp >= value.hp;
   if (value.kind !== 'shooter' || !isNumber(value.reloadMs) || !isRecord(value.shooter)) return false;
   const { shooter } = value;
   return isNullOr(shooter.element, isElement) && isInt(shooter.cannons, 1, LIMITS.maxCannons) && isInt(shooter.level, 1, LIMITS.maxLevel);
@@ -205,12 +206,19 @@ const isGrenade = (value: unknown): boolean =>
   isInt(value.cell.col, 0, BOARD.columns - 1) &&
   isNumber(value.flightMs) &&
   value.flightMs >= 0 &&
-  isNumber(value.fuseMs);
+  isNumber(value.fuseMs) &&
+  isNumber(value.damage) &&
+  value.damage >= 0 &&
+  isNumber(value.radius) &&
+  value.radius > 0;
 
-/** Poderes de la partida (T-021): cada uno una vez, con sus cargas, nunca mas de las que trae una partida. */
+/**
+ * Poderes de la partida (T-021): cada uno una vez, con su nivel (T-022) y sus cargas, nunca mas de las que trae una
+ * partida con ese nivel.
+ */
 const isPowers = (value: unknown): boolean =>
   Array.isArray(value) &&
-  value.every((slot) => isRecord(slot) && isPowerId(slot.id) && isInt(slot.charges, 0, POWERS.chargesPerMatch)) &&
+  value.every((slot) => isRecord(slot) && isPowerId(slot.id) && isPowerLevel(slot.level) && isInt(slot.charges, 0, chargesAt(slot.id, slot.level))) &&
   new Set(value.map((slot: Data) => slot.id)).size === value.length;
 
 /** Ronda que existe en el guion del brote de la partida (T-018: cada brote tiene sus rondas). */

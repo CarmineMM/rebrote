@@ -1,14 +1,20 @@
-import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import { useEffect, useId, useMemo, useRef, useState, type RefObject } from 'react';
+import { POWERS } from '../game/config/balance';
 import type { RouteArt } from '../game/EventBus';
 import type { OutbreakId } from '../game/core/outbreaks';
+import type { PowerId } from '../game/core/powers';
 import { currentOutbreak, routeStops } from '../game/core/route';
+import { carryBlocker, ownedLevel, ownedPowers } from '../game/core/shop';
 import type { Progress } from '../game/progress';
 import { summarizeSave, type SavedGame } from '../game/save';
 import { formatSavedAt } from '../i18n';
 import { GreenhousePatty } from './GreenhousePatty';
 import { outbreakTitle } from './outbreakName';
+import { PowerIcon } from './PowerPanel';
 import { RouteMap } from './RouteMap';
 import { SeedBalance } from './SeedsEarned';
+import { Shop } from './Shop';
+import { ShopIcon } from './ShopIcon';
 import { replayableStories, storyTitle, type StoryId } from './story/stories';
 import { NO_AUTO_FULLSCREEN } from './useFullscreen';
 import { useLanguage, useText } from './useText';
@@ -21,8 +27,16 @@ interface GreenhouseProps {
   /** Jefe de cada brote, recortado por la escena, para los lugares de la ruta. */
   art: RouteArt | null;
   onResume: () => void;
-  /** Empieza el brote desde la ronda 1, pisando la partida a medias (ya confirmado). */
+  /**
+   * Empieza el brote desde la ronda 1, pisando la partida a medias (ya confirmado), con los poderes elegidos (T-022, que
+   * ya estan en el progreso).
+   */
   onPlay: (outbreak: OutbreakId) => void;
+  /** Tienda (T-022): comprar y mejorar un poder; true si se pudo. */
+  onBuy: (id: PowerId) => boolean;
+  onUpgrade: (id: PowerId) => boolean;
+  /** Llevar o dejar un poder en el siguiente brote (T-022, T-04). */
+  onToggleCarried: (id: PowerId) => void;
   /** Vuelve a ver una secuencia de la historia ya vista (T-031, Y-05). */
   onReplay: (story: StoryId) => void;
   /** Vuelve a la portada. */
@@ -37,11 +51,13 @@ type View =
   | { readonly name: 'main' }
   | { readonly name: 'route' }
   | { readonly name: 'story' }
-  | { readonly name: 'confirm'; readonly outbreak: OutbreakId };
+  | { readonly name: 'shop' }
+  | { readonly name: 'confirm'; readonly outbreak: OutbreakId }
+  | { readonly name: 'loadout'; readonly outbreak: OutbreakId };
 
 const MAIN: View = { name: 'main' };
 
-/** Boton de algo que aun no existe (la tienda de T-022, las plantas de T-023): con candado y "Proximamente". No suena. */
+/** Boton de algo que aun no existe (las plantas de T-023, el siguiente brote si no hay mas): con candado y "Proximamente". No suena. */
 function LockedButton({ label, detail }: { label: string; detail: string }) {
   return (
     <button type="button" className="btn is-locked has-detail" aria-disabled="true" title={detail} data-silent onClick={(e) => e.preventDefault()}>
@@ -57,18 +73,21 @@ function LockedButton({ label, detail }: { label: string; detail: string }) {
  * Invernadero (T-019): el sitio entre un brote y el siguiente, con todo lo que se hace fuera de la partida. Se abre al
  * vencer a Creeper (R-01) y se llega desde "Continuar" en la portada o desde la victoria. Va en el panel de la derecha,
  * como el menu de la portada: reanudar la partida a medias (con su brote y su ronda), jugar el siguiente brote, abrir la
- * ruta de brotes, la historia vista para volver a verla (T-031), la tienda y las plantas (con candado hasta T-022 y T-023)
+ * ruta de brotes, la historia vista para volver a verla (T-031), la tienda (T-022) y las plantas (con candado hasta T-023)
  * y volver a la portada. Arriba, las semillas del jugador (T-020). Empezar un brote con una partida a medias pide confirmacion. Esc vuelve atras: de la confirmacion
  * o de la historia al Invernadero y de ahi a la portada. Dentro esta Patty (T-032, VT-05), junto al panel: a veces dice
- * algo al entrar; con la ruta abierta se esconde.
+ * algo al entrar; con la ruta abierta se esconde. La tienda (T-022) se abre encima, como la ruta, y quien tiene poderes los
+ * elige antes de empezar cada brote (T-04), en el panel.
  */
-export function Greenhouse({ saved, progress, art, onResume, onPlay, onReplay, onBack, quiet, name }: GreenhouseProps) {
+export function Greenhouse({ saved, progress, art, onResume, onPlay, onBuy, onUpgrade, onToggleCarried, onReplay, onBack, quiet, name }: GreenhouseProps) {
   const t = useText();
   const language = useLanguage();
   const [view, setView] = useState<View>(MAIN);
   const titleId = useId();
   const firstButton = useRef<HTMLButtonElement>(null);
   const routeButton = useRef<HTMLButtonElement>(null);
+  const shopButton = useRef<HTMLButtonElement>(null);
+  const owned = ownedPowers(progress);
   const lastView = useRef<View['name']>(view.name);
   const summary = saved ? summarizeSave(saved) : null;
   const current = currentOutbreak(progress.defeated);
@@ -79,36 +98,48 @@ export function Greenhouse({ saved, progress, art, onResume, onPlay, onReplay, o
   useEffect(() => {
     const from = lastView.current;
     lastView.current = view.name;
-    if (view.name === 'route') return;
-    // Al cerrar la ruta o la historia, el foco vuelve a su boton; si no, al primero del panel.
+    if (view.name === 'route' || view.name === 'shop') return;
+    // Al cerrar la ruta, la historia o la tienda, el foco vuelve a su boton; si no, al primero del panel.
     if (view.name === 'main' && from === 'route') routeButton.current?.focus({ preventScroll: true });
     else if (view.name === 'main' && from === 'story') storyButton.current?.focus({ preventScroll: true });
+    else if (view.name === 'main' && from === 'shop') shopButton.current?.focus({ preventScroll: true });
     else firstButton.current?.focus({ preventScroll: true });
   }, [view]);
 
   useEffect(() => {
-    // La ruta atiende su propio Esc.
-    if (view.name === 'route') return;
+    // La ruta y la tienda atienden su propio Esc.
+    if (view.name === 'route' || view.name === 'shop') return;
     const onKey = (event: KeyboardEvent) => {
       if (event.key !== 'Escape' || event.repeat) return;
-      if (view.name === 'confirm' || view.name === 'story') setView(MAIN);
+      if (view.name === 'confirm' || view.name === 'story' || view.name === 'loadout') setView(MAIN);
       else onBack();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [view, onBack]);
 
+  /** Ya confirmado (o sin partida a medias): con poderes comprados, antes se eligen los que se llevan (T-04). */
+  const play = (outbreak: OutbreakId) => (owned.length > 0 ? setView({ name: 'loadout', outbreak }) : onPlay(outbreak));
   /** Empezar un brote: con una partida a medias, antes se confirma. */
-  const start = (outbreak: OutbreakId) => (summary ? setView({ name: 'confirm', outbreak }) : onPlay(outbreak));
+  const start = (outbreak: OutbreakId) => (summary ? setView({ name: 'confirm', outbreak }) : play(outbreak));
 
-  // Patty sigue montada con la ruta abierta (escondida): al cerrarla no vuelve a saludar como si acabara de entrar.
-  const patty = <GreenhousePatty hidden={quiet || view.name === 'route'} name={name} />;
+  // Patty sigue montada con la ruta o la tienda abiertas (escondida): al cerrarlas no vuelve a saludar como si acabara de entrar.
+  const patty = <GreenhousePatty hidden={quiet || view.name === 'route' || view.name === 'shop'} name={name} />;
 
   if (view.name === 'route') {
     return (
       <>
         {patty}
-        <RouteMap progress={progress} summary={summary} art={art} onPlay={onPlay} onResume={onResume} onClose={() => setView(MAIN)} />
+        <RouteMap progress={progress} summary={summary} art={art} onPlay={play} onResume={onResume} onClose={() => setView(MAIN)} />
+      </>
+    );
+  }
+
+  if (view.name === 'shop') {
+    return (
+      <>
+        {patty}
+        <Shop progress={progress} onBuy={onBuy} onUpgrade={onUpgrade} onClose={() => setView(MAIN)} />
       </>
     );
   }
@@ -171,7 +202,12 @@ export function Greenhouse({ saved, progress, art, onResume, onPlay, onReplay, o
                     <span aria-hidden="true">✎</span> {t.story.replay}
                   </button>
                 )}
-                <LockedButton label={t.greenhouse.shop} detail={t.common.soon} />
+                <button ref={shopButton} type="button" className="btn has-detail greenhouse-shop" onClick={() => setView({ name: 'shop' })}>
+                  <span className="btn-line">
+                    <ShopIcon /> {t.greenhouse.shop}
+                  </span>
+                  <small className="btn-detail">{t.greenhouse.shopDetail}</small>
+                </button>
                 <LockedButton label={t.greenhouse.plants} detail={t.common.soon} />
               </div>
               <button type="button" className="btn" onClick={onBack}>
@@ -217,13 +253,96 @@ export function Greenhouse({ saved, progress, art, onResume, onPlay, onReplay, o
               <button ref={firstButton} type="button" className="btn" onClick={() => setView(MAIN)}>
                 {t.greenhouse.confirmNo}
               </button>
-              <button type="button" className="btn btn-danger" onClick={() => onPlay(view.outbreak)}>
+              <button type="button" className="btn btn-danger" onClick={() => play(view.outbreak)}>
                 {t.greenhouse.confirmYes}
               </button>
             </div>
           </div>
         )}
+
+        {view.name === 'loadout' && (
+          <Loadout
+            outbreak={view.outbreak}
+            progress={progress}
+            titleId={titleId}
+            firstButton={firstButton}
+            onToggle={onToggleCarried}
+            onPlay={() => onPlay(view.outbreak)}
+            onBack={() => setView(MAIN)}
+          />
+        )}
       </nav>
+    </>
+  );
+}
+
+interface LoadoutProps {
+  outbreak: OutbreakId;
+  progress: Progress;
+  titleId: string;
+  firstButton: RefObject<HTMLButtonElement | null>;
+  onToggle: (id: PowerId) => void;
+  onPlay: () => void;
+  onBack: () => void;
+}
+
+/**
+ * Antes de empezar un brote (T-022, T-04): los poderes comprados, cada uno un interruptor con su dibujo, su nombre y su
+ * nivel, y cuantos lleva de los que caben (O-02). Lo elegido se guarda y la proxima vez sale igual. Con el maximo
+ * elegido, los demas se ven apagados y dicen que hay que dejar otro antes. "¡A jugar!" empieza el brote con lo elegido
+ * (o sin poderes).
+ */
+function Loadout({ outbreak, progress, titleId, firstButton, onToggle, onPlay, onBack }: LoadoutProps) {
+  const t = useText();
+  const max = POWERS.maxCarried;
+  const chosen = progress.carried.length;
+  return (
+    <>
+      <div className="settings-header">
+        <button type="button" className="btn btn-ghost" onClick={onBack} aria-label={t.common.back} title={t.common.back}>
+          <span aria-hidden="true">←</span>
+        </button>
+        <h2 id={titleId} className="pause-title is-small">
+          {t.loadout.title}
+        </h2>
+      </div>
+      <p className="pause-kicker">{outbreakTitle(t, outbreak)}</p>
+      <p className="loadout-hint">{t.loadout.hint(max)}</p>
+      <ul className="loadout-list">
+        {ownedPowers(progress).map((id) => {
+          const on = progress.carried.includes(id);
+          const full = carryBlocker(progress, id) === 'full';
+          const level = ownedLevel(progress, id) ?? 1;
+          return (
+            <li key={id}>
+              <button
+                type="button"
+                className={`loadout-power power-${id}${on ? ' is-on' : ''}${full ? ' is-full' : ''}`}
+                aria-pressed={on}
+                aria-disabled={full}
+                title={full ? t.loadout.full(max) : undefined}
+                onClick={() => !full && onToggle(id)}
+              >
+                <PowerIcon power={id} />
+                <span className="loadout-name">{t.hud.powers.names[id]}</span>
+                <span className="loadout-level">{t.hud.powers.level(level)}</span>
+                <span className="loadout-check" aria-hidden="true" />
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+      <p className="loadout-count" aria-live="polite">
+        {t.loadout.count(chosen, max)}
+      </p>
+      <div className="pause-actions">
+        <button ref={firstButton} type="button" className="btn btn-primary has-detail" onClick={onPlay}>
+          <span className="btn-line">
+            <span aria-hidden="true">▶</span> {t.loadout.play}
+          </span>
+          {chosen === 0 && <small className="btn-detail">{t.loadout.none}</small>}
+        </button>
+      </div>
     </>
   );
 }

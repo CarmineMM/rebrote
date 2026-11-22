@@ -3,7 +3,7 @@ import type { BossKind } from './core/combat';
 import type { CardId, MatchState } from './core/match';
 import type { OutbreakId } from './core/outbreaks';
 import type { ElementType } from './core/plants';
-import type { PowerBlocker, PowerId } from './core/powers';
+import type { CarriedPower, PowerBlocker, PowerId } from './core/powers';
 import type { RoundPhase } from './core/rounds';
 import type { SeedPayout } from './core/seeds';
 
@@ -144,8 +144,11 @@ export interface MatchRequest {
   resume?: MatchState;
   /** Brote de la partida nueva (T-018); sin el, el primero. Una guardada ya lleva el suyo. */
   outbreak?: OutbreakId;
-  /** Poderes de la partida nueva (T-021); sin ellos, los de prueba (`POWERS.trialLoadout`). En desarrollo, `?poderes=`. */
-  loadout?: PowerId[];
+  /**
+   * Poderes de la partida nueva (T-021) con su nivel (T-022): los comprados que se eligieron antes del brote; sin ellos,
+   * ninguno. En desarrollo, `?poderes=`.
+   */
+  loadout?: CarriedPower[];
   pendingUnlock?: UnlockInfo | null;
 }
 
@@ -266,6 +269,8 @@ export interface UnlockInfo {
 /** Un poder del panel izquierdo (T-021): sus cargas y por que no se puede usar ahora (null si se puede). Sale de `powerBlocker`. */
 export interface PowerInfo {
   id: PowerId;
+  /** Su nivel (T-022): de el salen lo que hace y las cargas con que empezo. */
+  level: number;
   charges: number;
   blocker: PowerBlocker | null;
 }
