@@ -1,5 +1,5 @@
 import type { OutbreakId } from '../../game/core/outbreaks';
-import { roundUnlocks, unlockPresenter } from '../../game/core/rounds';
+import { newFeaturesAt, roundUnlocks, unlockPresenter } from '../../game/core/rounds';
 import type { CharacterId, Expression } from '../../game/view/characters/design';
 import type { Dictionary } from '../../i18n';
 
@@ -18,10 +18,16 @@ export interface Speech {
 /**
  * Quien presenta lo nuevo de la ronda `index` (desde 0) del brote en "¡YA LO TIENES!" y que dice (VT-02, VT-03): Boxer
  * en el brote 1 ("Toma, esto te va a hacer falta") y Patty en los siguientes ("¡He creado algo nuevo!"), segun el guion
- * (`unlockPresenter`). Sus frases rotan por el orden de los avisos que presenta en el brote: el primero, la primera.
+ * (`unlockPresenter`). Sus frases rotan por el orden de los avisos que presenta en el brote: el primero, la primera. Lo que
+ * tiene frase propia (`unlock.featureLines`, T-037: Patty refuerza el escudo, ES-01) la dice en vez de esas.
  */
 export function unlockSpeech(t: Dictionary, outbreak: OutbreakId, index: number): Speech {
   const speaker = unlockPresenter(outbreak, index);
+  const featureLines: Readonly<Partial<Record<string, string>>> = t.unlock.featureLines;
+  const own = newFeaturesAt(outbreak, index)
+    .map((feature) => featureLines[feature])
+    .find((line) => line !== undefined);
+  if (own) return { speaker, expression: 'happy', text: own };
   const lines = t.unlock.presenters[speaker];
   let before = 0;
   for (let i = 0; i < index; i++) {

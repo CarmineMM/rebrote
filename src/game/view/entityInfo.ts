@@ -113,13 +113,16 @@ export function mineInfo(mine: Mine, cell: Cell): EntityInfoData {
   };
 }
 
-/** Ficha del muro (T-024): el escudo sembrado solo. No ataca; para lo de detras y se puede llevar a una disparadora. */
-export function wallInfo(wall: Wall, cell: Cell): EntityInfoData {
+/**
+ * Ficha del muro (T-024): el escudo sembrado solo. No ataca y para lo de detras. Que se puede llevar a una disparadora solo
+ * lo dice si en la partida ya se puede infundir el escudo (`canInfuse`, T-037: no en el brote 2).
+ */
+export function wallInfo(wall: Wall, cell: Cell, canInfuse: boolean): EntityInfoData {
   const t = text().info;
   const stats: InfoStat[] = [
     { label: t.stats.attack, value: t.stats.noAttack },
     { label: t.stats.blocks, value: t.stats.blocksValue },
-    { label: t.stats.drag, value: t.stats.dragValue },
+    ...(canInfuse ? [{ label: t.stats.drag, value: t.stats.dragValue }] : []),
   ];
   const wear = wallWear(wall.hp / SHIELD.wallHp);
   const tags: InfoTag[] = wear === 2 ? [{ text: t.tags.crumbling, tone: 'alert' }] : wear === 1 ? [{ text: t.tags.cracked, tone: 'calm' }] : [];
@@ -132,7 +135,7 @@ export function wallInfo(wall: Wall, cell: Cell): EntityInfoData {
     hp: hpOf(wall.hp, SHIELD.wallHp),
     stats,
     tags,
-    about: t.wall.about,
+    about: canInfuse ? `${t.wall.about} ${t.wall.aboutInfuse}` : t.wall.about,
     lore: null,
   };
 }

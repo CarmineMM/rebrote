@@ -20,7 +20,7 @@ import {
 import { NO_BASE_LEVEL, isBaseLevel } from './baseLevel';
 import { FIRST_OUTBREAK, outbreakScript, type OutbreakId } from './outbreaks';
 import { loadoutSlots, type CarriedPower, type PowerSlot } from './powers';
-import { createRound, infuseFeature, isUnlocked, levelCap, levelCapRaisedAfter, sowFeature, type RoundState } from './rounds';
+import { createRound, infuseFeature, isUnlocked, levelCap, levelCapRaisedAfter, sowFeature, type Feature, type RoundState } from './rounds';
 import { newMatchSeeds, type MatchSeeds } from './seeds';
 
 /** Cartas que se pueden jugar desde el HUD: la disparadora y los elementos (fuego, hielo y, desde T-024, escudo). */
@@ -103,6 +103,11 @@ export interface MatchState {
    * cambia aunque se compre otro paso con la partida a medias, asi que una guardada sigue igual al cargarla.
    */
   readonly baseLevel: number;
+  /**
+   * Lo que la partida trae desbloqueado desde la ronda 1 por brotes posteriores ya vencidos (norma ES-03, T-037:
+   * `carriedFeatures`). Se decide al empezarla y no cambia, aunque se venza otro brote con ella a medias.
+   */
+  readonly carried: readonly Feature[];
   /** Ronda en curso: preparacion o ataque, y que grupos del guion ya salieron (T-007). */
   readonly round: RoundState;
   /**
@@ -125,7 +130,8 @@ export interface MatchState {
  * primera ronda; empezar en otra sirve para probar lo que desbloquean las siguientes. `replay` dice si su jefe ya estaba
  * vencido: entonces las semillas dan menos (T-020, C-03). `loadout`, los poderes que trae (T-021) con su nivel (T-022),
  * que salen de la tienda y se eligen antes del brote; sin el, ninguno. `baseLevel`, el nivel con el que nacen sus
- * disparadoras (T-023); sin el, el 1.
+ * disparadoras (T-023); sin el, el 1. `carried`, lo que trae desbloqueado de brotes posteriores ya vencidos (ES-03,
+ * `carriedFeatures`); sin el, nada.
  */
 export function createMatch(
   balance?: number,
@@ -134,6 +140,7 @@ export function createMatch(
   replay = false,
   loadout?: readonly CarriedPower[],
   baseLevel = NO_BASE_LEVEL,
+  carried: readonly Feature[] = [],
 ): MatchState {
   if (!isBaseLevel(baseLevel)) throw new Error(`Nivel base invalido: ${baseLevel}`);
   const start = balance ?? outbreakScript(outbreak).startingBalance;
@@ -151,6 +158,7 @@ export function createMatch(
     grenades: [],
     powers: loadoutSlots(loadout),
     baseLevel,
+    carried: [...carried],
     round: createRound(outbreak, roundIndex),
     incomeMs: 0,
     seeds: newMatchSeeds(replay),
@@ -355,13 +363,14 @@ function isArmed(sown: Mine | Wall): boolean {
 }
 
 /**
- * Por que no se puede empezar a arrastrar la mina o el muro de `cell` (o null si se puede): una mina que aun espera, o un
- * muro, desde la ronda que desbloquea infundir su elemento.
+ * Por que no se puede empezar a arrastrar la mina o el muro de `cell` (o null si se puede): una mina que aun espera,
+ * desde la ronda que desbloquea infundir su elemento. El muro, siempre (T-037, ES-02): antes de poder infundir el escudo
+ * se levanta igual, y sobre una disparadora se ve en rojo por que aun no (`elementInfusion` responde `locked`).
  */
 export function elementDragBlocker(state: MatchState, cell: Cell): 'locked' | 'no-element' | 'armed' | null {
   const found = elementAt(state, cell);
   if (!found) return 'no-element';
-  if (!isUnlocked(state, infuseFeature(found.element))) return 'locked';
+  if (found.sown.kind === 'mine' && !isUnlocked(state, infuseFeature(found.element))) return 'locked';
   return isArmed(found.sown) ? 'armed' : null;
 }
 

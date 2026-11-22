@@ -266,7 +266,7 @@ export interface RoundInfo {
  * `levelCap` es el tope de nivel nuevo de las disparadoras.
  */
 export type UnlockItem =
-  | { id: 'shooter' | 'levelUp' | 'fireMine' | 'iceMine' | 'infuse' | 'fuse' | 'shield' }
+  | { id: 'shooter' | 'levelUp' | 'fireMine' | 'iceMine' | 'infuse' | 'fuse' | 'shield' | 'shieldInfuse' }
   | { id: 'levelCap'; level: number };
 
 /** Aviso de lo desbloqueado al empezar una ronda (T-009). Sale de `roundUnlocks` en core. */
@@ -369,6 +369,9 @@ export type TourSpotId =
   | 'wallCell'
   | 'wall'
   | 'shieldInfusable'
+  // Infundir el escudo arrastrando un muro (T-037): el muro y la disparadora a la que se puede llevar
+  | 'wallSource'
+  | 'wallTarget'
   // Poderes (T-021): adonde llevar la disparadora al recolocarla, donde lanzar la granada (con su alcance) y donde poner el
   // muro de hielo (sus tres casillas)
   | 'relocateTo'

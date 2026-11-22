@@ -39,10 +39,10 @@ export const es = {
     number: (number: number) => `Brote ${number}`,
     /**
      * Jefe de un brote en preparacion (T-024): el brote ya tiene rondas, pero su jefe aun no es un enemigo del juego (no
-     * esta en `info.enemy.names`). Cuando lo sea, sale de alli y se quita de aqui. Hoy no hay ninguno: Elk Cloner, el del
-     * brote 2, llego con T-026.
+     * esta en `info.enemy.names`). Cuando lo sea, sale de alli y se quita de aqui. Elk Cloner, el del brote 2, llego con
+     * T-026; Brain, el del brote 3, llega con T-039.
      */
-    comingBoss: {},
+    comingBoss: { brain: 'Brain' },
   },
 
   /** Menu de inicio (T-011). */
@@ -257,7 +257,9 @@ export const es = {
       fireInfuse: 'Fuego: en una casilla vacía, mina; sobre una disparadora, la infunde (un fuego por cañón)',
       ice: 'Hielo: en una casilla vacía, mina que frena',
       iceInfuse: 'Hielo: en una casilla vacía, mina que frena; sobre una disparadora, la infunde (un hielo por cañón)',
-      shield: 'Escudo: en una casilla vacía, muro que aguanta y para los disparos; sobre una disparadora, la infunde (un escudo por cañón)',
+      /** Hasta que se puede infundir (T-037: el escudo se infunde desde el brote 3), solo el muro. */
+      shield: 'Escudo: en una casilla vacía, muro que aguanta y para los disparos',
+      shieldInfuse: 'Escudo: en una casilla vacía, muro que aguanta y para los disparos; sobre una disparadora, la infunde (un escudo por cañón)',
     },
     noFunds: 'Saldo insuficiente',
     coins: 'Monedas',
@@ -309,13 +311,19 @@ export const es = {
       // T-026: el guion del brote 2, con las tropas de T-025.
       elkCloner: [
         'Lo aprendido sigue contigo. Ojo: los Copycat dejan una copia al caer',
-        'Siembra el escudo solo y para los disparos, o suéltalo sobre una disparadora',
+        'Siembra el escudo en una casilla vacía: un muro que para los disparos',
         '¡Llegan los Minstrel! Sus versos cruzan el carril: solo los para un escudo',
         'Acorazados, Minstrel y escupidores juntos: minas para unos, escudos para otros',
         'Dos oleadas por los cinco carriles, con Minstrel detrás de cada una',
         '¡Elk Cloner se prepara! Escribe su poema y sus tropas llegan más rápido',
         'Elk Cloner casi ha terminado su poema: aún más tropas y más rápidas',
         '¡Llega Elk Cloner! Cada pocos versos recita el poema entero por los cinco carriles: pon un escudo en cada uno',
+      ],
+      // T-037: guion provisional del brote 3, en preparacion (T-038 y T-039 traen sus tropas, su jefe y sus 8 rondas).
+      brain: [
+        'Lo aprendido sigue contigo: el muro ya está en tu bandeja',
+        'Suelta el escudo sobre una disparadora: aguanta el doble y para lo que va a las de detrás',
+        'Todos a la vez: escudos delante y minas para los acorazados',
       ],
     },
   },
@@ -362,6 +370,13 @@ export const es = {
       boxer: ['Toma, esto te va a hacer falta.', 'Otra cosa para tu caja de herramientas.', '¡Esto no les va a gustar nada!'],
       patty: ['¡He creado algo nuevo!', '¡He creado algo nuevo! Recién brotado.', '¡He creado algo nuevo! Trátalo con cariño.'],
     },
+    /**
+     * Frase propia de quien presenta una cosa que no es nueva del todo, en vez de la que toca de `presenters` (T-037): el
+     * escudo ya existia y Patty solo lo refuerza (ES-01).
+     */
+    featureLines: {
+      shieldInfuse: 'He reforzado el escudo: ahora aguanta sobre una disparadora.',
+    },
     shooter: { title: 'Disparadora', text: 'Siémbrala en una casilla: dispara a los gusanos de su carril.' },
     levelUp: {
       title: 'Subir de nivel',
@@ -380,7 +395,12 @@ export const es = {
     fuse: { title: 'Fusionar', text: 'Arrastra una disparadora sobre otra igual: suman cañones y pegan más fuerte.' },
     shield: {
       title: 'Escudo',
-      text: 'Siémbralo solo y es un muro que aguanta y para los disparos. Sobre una disparadora, le dobla la vida.',
+      text: 'Siémbralo en una casilla vacía: es un muro que aguanta y para los disparos.',
+    },
+    /** T-037: infundir el escudo, en el brote 3. */
+    shieldInfuse: {
+      title: 'Disparadora con escudo',
+      text: 'Suelta el escudo sobre una disparadora, o arrástrale un muro: aguanta el doble y para lo que va a las de detrás.',
     },
   },
 
@@ -398,6 +418,7 @@ export const es = {
       infuse: 'Infundir',
       fuse: 'Fusionar',
       shield: 'Escudo',
+      shieldInfuse: 'Disparadora con escudo',
       relocate: 'Recolocar',
       grenade: 'Granada',
       iceWall: 'Muro de hielo',
@@ -442,7 +463,11 @@ export const es = {
       shield: {
         wall: '¡Siembra el escudo solo: un muro!',
         block: 'Los disparos se quedan en el muro',
-        infuse: 'Sobre una disparadora: ¡doble de vida!',
+      },
+      // T-037: infundir el escudo, en el brote 3.
+      shieldInfuse: {
+        card: 'Sobre una disparadora: ¡doble de vida!',
+        wall: 'O llévale un muro ya sembrado',
       },
       // T-021: los poderes del panel izquierdo.
       relocate: {
@@ -497,6 +522,11 @@ export const es = {
       elkCloner: {
         line: '¡Que viene Elk Cloner! En 1982 saltaba de disquete en disquete por los Apple II. ¡Y recitaba poemas!',
         card: 'Elk Cloner (1982) fue uno de los primeros virus que salió de un laboratorio. Viajaba en los disquetes de los Apple II: se copiaba en cada disquete que pasaba por un equipo infectado y, cada 50 arranques, enseñaba un poema en la pantalla. No rompía nada: lo escribió un estudiante de 15 años, como una broma.',
+      },
+      // T-037: el brote 3, en preparacion. Sale cuando Brain empiece a prepararse (T-039).
+      brain: {
+        line: '¡Que viene Brain! En 1986 fue el primer virus para PC. Se escondía de quien lo buscaba… ¡y dejó su teléfono en el código!',
+        card: 'Brain (1986) fue el primer virus para PC. Lo escribieron dos hermanos de Lahore, que dejaron dentro del código su nombre, su dirección y su teléfono. Viajaba en los disquetes, en el sector de arranque, y era sigiloso: si alguien miraba el disco, le enseñaba una copia limpia. No destruía nada.',
       },
     },
     lines: {
@@ -651,7 +681,8 @@ export const es = {
     lifeLost: '−1 ♥',
     fused: '¡Fusión!',
     infused: { fire: '¡Fuego!', ice: '¡Hielo!', shield: '¡Escudo!' },
-    cannotInfuse: 'No se puede infundir',
+    /** Infundir lo que aun no se puede en este brote (T-037, ES-02: el escudo en el brote 2). */
+    infuseLater: 'Infundir: aún no',
     infuseFrom: (round: number) => `Infundir: desde la ronda ${round}`,
     hasElement: { fire: 'Ya tiene fuego', ice: 'Ya tiene hielo', shield: 'Ya tiene escudo' },
     infuse: (price: string) => `Infundir: ${price}`,
@@ -814,7 +845,9 @@ export const es = {
     wall: {
       title: 'Muro',
       subtitle: 'Escudo sembrado solo',
-      about: 'No dispara ni explota: aguanta los mordiscos y los disparos que iban a lo de detrás. Arrástralo sobre una disparadora para infundirle escudo.',
+      about: 'No dispara ni explota: aguanta los mordiscos y los disparos que iban a lo de detrás.',
+      /** Lo que se suma a `about` cuando ya se puede infundir el escudo (T-037). */
+      aboutInfuse: 'Arrástralo sobre una disparadora para infundirle escudo.',
     },
     /** Bloque del muro de hielo del poder (T-021). */
     iceWall: {

@@ -9,6 +9,8 @@ const matchAt = (round: number) => earn(createMatch(undefined, round), 10_000);
 const sow = (state: MatchState, card: CardId, ...cells: Cell[]) => cells.reduce((s, cell) => playCard(s, card, cell), state);
 /** Ronda del escudo (T-024): la 2 del brote 2, con saldo de sobra. */
 const shieldRound = () => earn(createMatch(undefined, 1, 'elkCloner'), 10_000);
+/** Ronda de infundir el escudo (T-037): la 2 del brote 3, con saldo de sobra. */
+const infuseRound = () => earn(createMatch(undefined, 1, 'brain'), 10_000);
 
 describe('lo que senala un tour de ayuda (T-013)', () => {
   it('los carriles van del centro hacia fuera', () => {
@@ -84,13 +86,23 @@ describe('lo que senala un tour de ayuda (T-013)', () => {
       expect(tourCells(shieldRound()).wallCell).toEqual({ lane: 2, col: 5 });
     });
 
-    it('senala el muro sembrado y la disparadora que se puede infundir con escudo', () => {
-      let state = sow(shieldRound(), 'shooter', { lane: 2, col: 0 }, { lane: 2, col: 1 });
+    it('senala el muro sembrado y la disparadora que se puede infundir con escudo (T-037: en el brote 3)', () => {
+      let state = sow(infuseRound(), 'shooter', { lane: 2, col: 0 }, { lane: 2, col: 1 });
       state = sow(state, 'shield', { lane: 2, col: 3 });
       expect(tourCells(state).wall).toEqual({ lane: 2, col: 3 });
       expect(tourCells(state).shieldInfusable).toEqual({ lane: 2, col: 0 });
+      // El muro, con la disparadora mas cercana a la que llevarlo.
+      expect(tourCells(state).wallInfusion).toEqual({ wall: { lane: 2, col: 3 }, target: { lane: 2, col: 1 } });
       state = playCard(state, 'shield', { lane: 2, col: 0 });
       expect(tourCells(state).shieldInfusable).toEqual({ lane: 2, col: 1 });
+    });
+
+    it('en el brote 2 el muro se siembra, pero no hay a quien infundir con escudo (T-037)', () => {
+      let state = sow(shieldRound(), 'shooter', { lane: 2, col: 0 });
+      state = sow(state, 'shield', { lane: 2, col: 3 });
+      expect(tourCells(state).wall).toEqual({ lane: 2, col: 3 });
+      expect(tourCells(state).shieldInfusable).toBeNull();
+      expect(tourCells(state).wallInfusion).toBeNull();
     });
 
     it('antes de su ronda no hay a quien infundir con escudo', () => {

@@ -85,13 +85,20 @@ describe('escudo (T-024)', () => {
   });
 
   it('el muro: no ataca, para lo de detras, se arrastra a una disparadora y avisa de su desgaste', () => {
-    const full = wallInfo({ kind: 'wall', hp: SHIELD.wallHp }, cell);
+    const full = wallInfo({ kind: 'wall', hp: SHIELD.wallHp }, cell, true);
     expect(full).toMatchObject({ id: 'muro:2:3', tone: 'shield', title: 'Muro', level: null, hp: { current: SHIELD.wallHp, max: SHIELD.wallHp }, tags: [] });
     expect(stat(full, 'Ataque')?.value).toBe('No ataca');
     expect(stat(full, 'Para')).toBeDefined();
     expect(stat(full, 'Arrastrarlo')).toBeDefined();
-    expect(wallInfo({ kind: 'wall', hp: SHIELD.wallHp * 0.5 }, cell).tags).toEqual([{ text: 'Agrietado', tone: 'calm' }]);
-    expect(wallInfo({ kind: 'wall', hp: SHIELD.wallHp * 0.2 }, cell).tags).toEqual([{ text: '¡A punto de romperse!', tone: 'alert' }]);
+    expect(full.about).toContain('infundirle escudo');
+    expect(wallInfo({ kind: 'wall', hp: SHIELD.wallHp * 0.5 }, cell, true).tags).toEqual([{ text: 'Agrietado', tone: 'calm' }]);
+    expect(wallInfo({ kind: 'wall', hp: SHIELD.wallHp * 0.2 }, cell, true).tags).toEqual([{ text: '¡A punto de romperse!', tone: 'alert' }]);
+  });
+
+  it('el muro, antes de poder infundir el escudo (brote 2, T-037), no habla de infundir', () => {
+    const info = wallInfo({ kind: 'wall', hp: SHIELD.wallHp }, cell, false);
+    expect(stat(info, 'Arrastrarlo')).toBeUndefined();
+    expect(info.about).not.toMatch(/infund/i);
   });
 });
 

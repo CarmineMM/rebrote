@@ -16,9 +16,10 @@ import type { Presenter, RoundScript } from './rounds';
 
 /**
  * Nombre de cada brote: el de su jefe. Al anadir un brote, su nombre va aqui. El brote 2, de Elk Cloner, existio desde
- * T-024 en preparacion (sin jefe) hasta que T-026 trajo a su jefe y su guion de verdad.
+ * T-024 en preparacion (sin jefe) hasta que T-026 trajo a su jefe y su guion de verdad. El 3, de Brain, lo esta desde
+ * T-037 hasta T-039.
  */
-export type OutbreakId = 'creeper' | 'elkCloner';
+export type OutbreakId = 'creeper' | 'elkCloner' | 'brain';
 
 export interface OutbreakScript {
   /**

@@ -1,7 +1,7 @@
-import { CLONE, ENEMIES, LIMITS, ROUND_PREP } from '../config/balance';
+import { CLONE, ENEMIES, LIMITS, OUTBREAKS, ROUND_PREP } from '../config/balance';
 import { enemyPower, isDefeated, rollEnemyLevel, spawnEnemy, type Enemy, type EnemyKind } from './combat';
 import type { CardId, MatchState } from './match';
-import { outbreakScript, outbreaksBefore, roundCount, type OutbreakId } from './outbreaks';
+import { outbreakIndex, outbreakScript, outbreaksBefore, roundCount, type OutbreakId } from './outbreaks';
 import type { ElementType } from './plants';
 import { creditRound } from './seeds';
 
@@ -15,10 +15,29 @@ import { creditRound } from './seeds';
 
 /**
  * Lo que una ronda desbloquea (un concepto nuevo por ronda): sembrar disparadoras, subir de nivel, sembrar o
- * infundir cada elemento, fusionar, y el escudo (T-024: el muro y la infusion llegan juntos). Lo desbloqueado sigue
- * desbloqueado en las rondas siguientes y en los brotes siguientes (T-018, B-01).
+ * infundir cada elemento, fusionar, y el escudo en dos pasos (T-037): sembrarlo como muro (`shield`, brote 2) e
+ * infundirlo en una disparadora (`shieldInfuse`, brote 3). Lo desbloqueado sigue desbloqueado en las rondas siguientes y
+ * en los brotes siguientes (T-018, B-01) y, si su brote ya esta vencido, tambien en los anteriores (ES-03,
+ * `carriedFeatures`).
  */
-export type Feature = 'shooter' | 'levelUp' | 'fireMine' | 'fireInfuse' | 'iceMine' | 'iceInfuse' | 'fuse' | 'shield';
+export type Feature = 'shooter' | 'levelUp' | 'fireMine' | 'fireInfuse' | 'iceMine' | 'iceInfuse' | 'fuse' | 'shield' | 'shieldInfuse';
+
+/** Todas las `Feature`, para comprobar las que trae una partida guardada (`MatchState.carried`). Sin una, no compila. */
+const FEATURE_SET: Record<Feature, true> = {
+  shooter: true,
+  levelUp: true,
+  fireMine: true,
+  fireInfuse: true,
+  iceMine: true,
+  iceInfuse: true,
+  fuse: true,
+  shield: true,
+  shieldInfuse: true,
+};
+
+export function isFeature(value: unknown): value is Feature {
+  return typeof value === 'string' && Object.hasOwn(FEATURE_SET, value);
+}
 
 /**
  * Gritos del jefe al sacar un grupo (T-009): hoy, el de mandar a su escolta. El texto de cada uno, en cada idioma y de cada
@@ -151,14 +170,37 @@ function roundsUpTo(outbreak: OutbreakId, index: number): RoundScript[] {
 
 /**
  * Lo desbloqueado al llegar a la ronda `index` del brote: lo suyo, lo de las anteriores y lo de los brotes anteriores
- * (T-018, B-01).
+ * (T-018, B-01), y `carried`, lo que la partida trae de brotes posteriores ya vencidos (ES-03, `carriedFeatures`).
  */
-export function unlockedAt(outbreak: OutbreakId, index: number): ReadonlySet<Feature> {
-  return new Set(roundsUpTo(outbreak, index).flatMap((round) => round.unlocks));
+export function unlockedAt(outbreak: OutbreakId, index: number, carried: readonly Feature[] = []): ReadonlySet<Feature> {
+  return new Set([...roundsUpTo(outbreak, index).flatMap((round) => round.unlocks), ...carried]);
+}
+
+/** Lo desbloqueado en la ronda en curso de la partida, con lo que trae de brotes posteriores (`MatchState.carried`). */
+function unlockedNow(state: MatchState): ReadonlySet<Feature> {
+  return unlockedAt(state.outbreak, state.round.index, state.carried);
 }
 
 export function isUnlocked(state: MatchState, feature: Feature): boolean {
-  return unlockedAt(state.outbreak, state.round.index).has(feature);
+  return unlockedNow(state).has(feature);
+}
+
+/**
+ * Lo que una partida del brote `outbreak` trae desbloqueado desde su ronda 1 por brotes posteriores ya vencidos (norma
+ * ES-03, decidida el 22 nov 2026; T-037): lo que desbloquearon (con los de antes, B-01) y que ni este brote ni los
+ * anteriores ensenan en ninguna de sus rondas. Lo que este brote ensena sigue llegando en su ronda, con su aviso y su tour.
+ * Rejugar el brote 2 con el 3 vencido trae infundir el escudo; rejugar el 1 con el 2 vencido, el escudo entero. Cuenta lo
+ * de los brotes vencidos (`defeated`, del progreso permanente), no lo que una partida a medias llego a desbloquear. El tope
+ * de nivel no viaja hacia atras.
+ */
+export function carriedFeatures(outbreak: OutbreakId, defeated: readonly string[]): Feature[] {
+  const taught = unlockedAt(outbreak, roundCount(outbreak) - 1);
+  const carried = new Set<Feature>();
+  for (const later of OUTBREAKS.slice(outbreakIndex(outbreak) + 1)) {
+    if (!defeated.includes(later.id)) continue;
+    for (const feature of unlockedAt(later.id, roundCount(later.id) - 1)) if (!taught.has(feature)) carried.add(feature);
+  }
+  return [...carried];
 }
 
 /** Lo que la ronda `index` desbloquea por primera vez: lo que trae su guion y no llego ya desbloqueado de antes. */
@@ -233,15 +275,18 @@ export function unlockRound(outbreak: OutbreakId, feature: Feature): number | nu
   return index < 0 ? null : index;
 }
 
-/** Lo que hay que tener desbloqueado para sembrar la carta en una casilla vacia. El escudo, para el muro (T-024). */
+/** Lo que hay que tener desbloqueado para sembrar la carta en una casilla vacia. El escudo, para el muro (T-024, T-037). */
 export function sowFeature(card: CardId): Feature {
   if (card === 'shooter' || card === 'shield') return card;
   return card === 'fire' ? 'fireMine' : 'iceMine';
 }
 
-/** Lo que hay que tener desbloqueado para infundir el elemento en una disparadora. El escudo llega entero (T-024). */
+/**
+ * Lo que hay que tener desbloqueado para infundir el elemento en una disparadora. El escudo, desde T-037, aparte de su
+ * muro: se infunde desde la ronda 2 del brote 3.
+ */
 export function infuseFeature(element: ElementType): Feature {
-  if (element === 'shield') return 'shield';
+  if (element === 'shield') return 'shieldInfuse';
   return element === 'fire' ? 'fireInfuse' : 'iceInfuse';
 }
 
@@ -250,13 +295,13 @@ const CARDS: readonly CardId[] = ['shooter', 'fire', 'ice', 'shield'];
 
 /** Cartas de la bandeja: las que ya se pueden jugar de alguna forma (sembrar o infundir). Las bloqueadas no se ven. */
 export function availableCards(state: MatchState): CardId[] {
-  const unlocked = unlockedAt(state.outbreak, state.round.index);
+  const unlocked = unlockedNow(state);
   return CARDS.filter((card) => unlocked.has(sowFeature(card)) || (card !== 'shooter' && unlocked.has(infuseFeature(card))));
 }
 
 /** Elementos que ya se pueden infundir. */
 export function infusableElements(state: MatchState): ElementType[] {
-  const unlocked = unlockedAt(state.outbreak, state.round.index);
+  const unlocked = unlockedNow(state);
   return (['fire', 'ice', 'shield'] as const).filter((element) => unlocked.has(infuseFeature(element)));
 }
 

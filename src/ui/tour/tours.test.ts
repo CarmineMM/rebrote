@@ -76,6 +76,17 @@ describe('tours de ayuda (T-013)', () => {
     expect(toursOfRound('elkCloner', 1)).toEqual(['shield']);
   });
 
+  it('el tour del escudo acaba en el muro, y la infusion tiene el suyo en la ronda 2 del brote 3 (T-037)', () => {
+    expect(TOURS.shield.map((step) => step.id)).toEqual(['wall', 'block']);
+    expect(TOURS.shield.some((step) => step.doneWhen === 'infuseShield')).toBe(false);
+    expect(TOUR_OF_FEATURE.shieldInfuse).toBe('shieldInfuse');
+    expect(toursOfRound('brain', 0)).toEqual([]);
+    expect(toursOfRound('brain', 1)).toEqual(['shieldInfuse']);
+    // Con la carta o arrastrando un muro, el primer paso queda hecho; el del muro se ensena sin exigirlo.
+    expect(TOURS.shieldInfuse.map((step) => step.doneWhen)).toEqual(['infuseShield', null]);
+    expect(cueOf({ type: 'infuse', element: 'shield', dragged: true })).toBe('infuseShield');
+  });
+
   it('un paso sin su objetivo en el tablero sale sin iluminarlo ni gesto (no se atasca)', () => {
     const step = TOURS.fuse[0];
     expect(placeStep(step, { spots: {}, areas: {} }, {})).toEqual({ shapes: [], gesture: null });
@@ -189,8 +200,9 @@ const LENGTH_BEFORE_T032: Record<Language, Record<TourId, Record<string, number>
     iceMine: { sow: 29, freeze: 43 },
     infuse: { card: 42, mine: 39 },
     fuse: { drag: 41 },
-    // T-024: pasos nuevos, con lo que miden.
-    shield: { wall: 33, block: 33, infuse: 38 },
+    // T-024: pasos nuevos, con lo que miden. T-037: la infusion del escudo pasa a su tour, con lo que mide.
+    shield: { wall: 33, block: 33 },
+    shieldInfuse: { card: 38, wall: 29 },
     // T-021: los poderes, con lo que miden.
     relocate: { pick: 32, move: 38 },
     grenade: { throw: 41 },
@@ -203,7 +215,8 @@ const LENGTH_BEFORE_T032: Record<Language, Record<TourId, Record<string, number>
     iceMine: { sow: 25, freeze: 50 },
     infuse: { card: 31, mine: 30 },
     fuse: { drag: 34 },
-    shield: { wall: 31, block: 22, infuse: 32 },
+    shield: { wall: 31, block: 22 },
+    shieldInfuse: { card: 32, wall: 38 },
     relocate: { pick: 26, move: 33 },
     grenade: { throw: 37 },
     iceWall: { place: 42 },

@@ -29,13 +29,13 @@ No se usa la palabra "combinar": se confundía con fusionar.
 
 El elemento solo siempre tiene un efecto mayor que su versión infundida, a cambio de gastarse.
 
-## Pieza del brote 2 (T-024)
+## Pieza de los brotes 2 y 3 (T-024, T-037)
 
 | Pieza | Sembrada sola | Infundida en una disparadora |
 |---|---|---|
 | Escudo | Muro: aguanta mucho, no dispara ni explota y para lo que va hacia lo de detrás | Disparadora con escudo: dispara igual que una normal, con el doble de vida, y también para lo que va hacia las de detrás |
 
-El escudo no se gasta al sembrarlo solo: es la defensa pura. Ver "Escudo (T-024)".
+El escudo no se gasta al sembrarlo solo: es la defensa pura. Llega en dos pasos (T-037): el muro en el brote 2 y la infusión en el brote 3. Ver "Escudo (T-024)".
 
 ## Reglas confirmadas
 
@@ -63,8 +63,9 @@ Decisiones B-01 a B-04 cerradas el 21 nov 2026 con la recomendación. Cómo se h
 - **Qué es un brote:** una campaña que termina en un jefe. Se llama por su número y su jefe: "Brote 1: Creeper" ("Outbreak 1: Creeper" en inglés). La palabra "mundo" no sale en el juego: queda reservada para el futuro (familias de virus, `00-vision.md`).
 - Cada brote tiene su guion de rondas, sus tropas, su jefe y su saldo inicial. El brote 1 es el de Creeper (`02-brote-1-creeper.md`) y el 2, el de Elk Cloner (`05-brote-2-elk-cloner.md`, T-026); los jefes candidatos para los siguientes están en `03-ruta-de-brotes.md`.
 - **Una partida es de un brote** y lo conserva al guardarse y cargarse. El indicador de ronda ("Ronda 3 de 10") y el resumen de la partida guardada ("Continuar" y "Reanudar", T-019) cuentan las rondas de su brote. Al vencer a su jefe, el brote queda vencido en el progreso permanente (T-017).
-- **Lo aprendido se queda (B-01):** al empezar un brote, todo lo que desbloquearon los anteriores llega desbloqueado desde la ronda 1, con el último tope de nivel que pusieron. Sus rondas solo desbloquean lo nuevo: lo ya sabido no saca "¡YA LO TIENES!" ni su tour. Al revés no: rejugar un brote no trae lo de los siguientes (el escudo no existe en el brote 1).
-- **Brote en preparación (T-024):** un brote cuyo jefe aún no está en el juego tiene sus rondas, pero no se puede jugar: la ruta lo da por "Próximamente" y el Invernadero no lo ofrece. Lo fue el brote 2 hasta T-026, con un guion provisional de 3 rondas; hoy no hay ninguno. En desarrollo, `?brote=N` en la dirección hace que "Nueva partida" empiece el brote N.
+- **Lo aprendido se queda (B-01):** al empezar un brote, todo lo que desbloquearon los anteriores llega desbloqueado desde la ronda 1, con el último tope de nivel que pusieron. Sus rondas solo desbloquean lo nuevo: lo ya sabido no saca "¡YA LO TIENES!" ni su tour.
+- **Y también hacia atrás (norma, ES-03, decidida por Carmine el 22 nov 2026):** lo desbloqueado en un brote vencido se puede usar al jugar los brotes anteriores, desde su ronda 1. Rejugar el brote 2 con el brote 3 vencido trae la infusión del escudo, y rejugar el brote 1 con el brote 2 vencido trae el escudo entero. Cuenta lo de los brotes vencidos, no lo que una partida a medias llegó a desbloquear. Lo que el propio brote enseña sigue llegando en su ronda, con su aviso y su tour; lo que llega de un brote posterior no avisa ni saca tour, porque ya se enseñó allí. Va con la partida (`MatchState.carried`): se decide al empezarla y no cambia aunque se venza otro brote con ella a medias. El tope de nivel no se trae hacia atrás: cada brote juega con el suyo. Una mecánica nueva se escribe para que funcione también en los brotes anteriores.
+- **Brote en preparación (T-024):** un brote cuyo jefe aún no está en el juego tiene sus rondas, pero no se puede jugar: la ruta lo da por "Próximamente" y el Invernadero no lo ofrece. Lo fue el brote 2 hasta T-026, con un guion provisional de 3 rondas; desde T-037 lo es el brote 3 (Brain), también con 3 rondas provisionales y las tropas del brote 2 sin el Minstrel, hasta T-038 y T-039. En desarrollo, `?brote=N` en la dirección hace que "Nueva partida" empiece el brote N.
 - **Cada brote empieza de cero (B-02):** tablero vacío, todas las vidas y el saldo inicial del brote. No pasan plantas ni monedas de un brote a otro.
 - **El jefe se nombra siempre (B-03):** "Brote 2: Elk Cloner" desde el principio, también antes de llegar a él.
 - **En orden (B-04):** para entrar en un brote hay que haber vencido al jefe del anterior; el primero siempre se puede jugar. Hasta la ruta de brotes (T-019), "Nueva partida" empieza el brote 1 y "Jugar otra vez" repite el mismo brote desde su ronda 1.
@@ -74,7 +75,7 @@ Decisiones B-01 a B-04 cerradas el 21 nov 2026 con la recomendación. Cómo se h
 - **Preparación:** cada ronda, también la 1, empieza con una cuenta atrás de 20 s en la que se puede sembrar, infundir, fusionar y subir de nivel. El goteo se para (T-010). El botón "¡Que vengan!" la adelanta.
 - **Ataque:** los enemigos salen a su hora por el agujero de su carril. La ronda termina cuando no quedan enemigos por salir ni vivos; empieza entonces la preparación de la siguiente.
 - Plantas, saldo y vidas se conservan de una ronda a la siguiente.
-- **Un concepto por ronda (T-009, P-01):** lo nuevo se desbloquea al empezar la preparación de su ronda y sigue desbloqueado después, también en los brotes siguientes (T-018, B-01). En el brote 1, ronda 1: disparadora. 2: subir de nivel, hasta el 5. 3: mina de fuego. 4: mina de hielo. 5: infundir (fuego y hielo, con la carta o arrastrando una mina sembrada). 6: fusionar. 7 a 10: nada nuevo (desde T-010 la 7 ya no sube el tope de nivel). En el brote 2 (T-026, L-07 y L-08), ronda 1: los Copycat y el tope de nivel a 10 (lo cuenta Boxer). 2: el escudo. 3: llega el Minstrel. 4 a 8: mezcla y más dificultad.
+- **Un concepto por ronda (T-009, P-01):** lo nuevo se desbloquea al empezar la preparación de su ronda y sigue desbloqueado después, también en los brotes siguientes (T-018, B-01). En el brote 1, ronda 1: disparadora. 2: subir de nivel, hasta el 5. 3: mina de fuego. 4: mina de hielo. 5: infundir (fuego y hielo, con la carta o arrastrando una mina sembrada). 6: fusionar. 7 a 10: nada nuevo (desde T-010 la 7 ya no sube el tope de nivel). En el brote 2 (T-026, L-07 y L-08), ronda 1: los Copycat y el tope de nivel a 10 (lo cuenta Boxer). 2: el escudo, como muro (T-037). 3: llega el Minstrel. 4 a 8: mezcla y más dificultad. En el brote 3 (en preparación, T-037): ronda 2, infundir el escudo.
 - **Aviso que hay que aceptar (T-009, P-02):** al empezar una ronda con algo nuevo sale "¡YA LO TIENES!" con lo desbloqueado. El juego espera en pausa (la cuenta atrás no corre) hasta que el jugador pulsa "¡A jugar!" (o Enter o Esc). Además, cada ronda sigue sacando su aviso de una línea.
   - **La ronda 1 no lo saca (T-010, A-01):** la disparadora se da por sabida y basta su aviso de una línea. En el guion, la ronda lleva `quiet`.
   - **Quién lo presenta (T-032, VT-02 y VT-03):** arriba del aviso sale un personaje con su retrato y una frase, dicha letra a letra con su voz. Lo del brote 1 lo da Boxer ("Toma, esto te va a hacer falta"); lo nuevo de los brotes siguientes, plantas y piezas, lo crea Patty ("¡He creado algo nuevo!"), y luego Boxer enseña a usarlo en el tour. Un aviso que solo sube el tope de nivel lo cuenta Boxer. Es un dato del guion: cada brote puede decir quién presenta lo suyo, y cada ronda, otro. Las frases de cada uno rotan por orden: su primer aviso del brote dice la primera.
@@ -180,7 +181,12 @@ Decisiones L-01 a L-09 cerradas el 21 y el 22 nov 2026 (L-02, por Carmine; las d
 
 ### Escudo (T-024)
 Decisiones E-01 a E-06 cerradas el 21 nov 2026 (E-01 a E-04 y E-06 con la recomendación; E-05, con los valores de Carmine). Los valores están como PROVISIONAL en `SHIELD` y `COSTS.shield` de `balance.ts`.
-- **Cuándo:** se gana en la ronda 2 del brote 2 (el de Elk Cloner). El muro y la infusión llegan juntos, con un solo aviso y un tour. Lo presenta Patty ("¡He creado algo nuevo!") y lo enseña Boxer. En el brote 1 la carta no existe.
+- **Cuándo (en dos pasos desde T-037, ES-01 a ES-04 cerradas el 22 nov 2026):**
+  - **El muro**, en la ronda 2 del brote 2 (el de Elk Cloner), con su aviso y su tour (sembrar el muro y lo que para). Lo presenta Patty ("¡He creado algo nuevo!") y lo enseña Boxer. Hasta T-037 llegaba junto a la infusión.
+  - **La infusión**, en la ronda 2 del brote 3 (el de Brain), con su aviso y su tour (la carta sobre una disparadora y, sin exigirlo, llevarle un muro sembrado). Patty no crea nada: "He reforzado el escudo: ahora aguanta sobre una disparadora" (ES-01, `unlock.featureLines`). Desde la ronda 1 del brote 3 el muro ya está, como todo lo de los brotes anteriores.
+  - **Antes de poder infundirlo (ES-02, b):** la carta sobre una disparadora se resalta en rojo con el motivo y su precio no sale multiplicado; el muro se levanta igual y, sobre una disparadora, también sale en rojo. En el brote 2 dice "Infundir: aún no"; en la ronda 1 del brote 3, "Infundir: desde la ronda 2". La ficha del muro y la ayuda de la carta solo hablan de infundir cuando ya se puede.
+  - **Hacia atrás (ES-03):** rejugar el brote 2 con el 3 vencido trae la infusión desde la ronda 1 (ver "Brotes (T-018)"). En el brote 1 la carta solo sale si el brote 2 está vencido.
+  - **Partidas guardadas de antes:** las de la versión 9 se descartan (`SAVE_VERSION` 10), también las del brote 2 con una disparadora con escudo. Sin migración (ADR-0014).
 - **Precio:** 150 por escudo, al sembrar el muro o por cada cañón al infundir (E-04, como fuego y hielo).
 - **Muro (escudo sembrado solo):** 1200 de vida, cuatro veces la de una disparadora (E-05). No dispara ni explota; los enemigos lo muerden hasta romperlo. Se ve su desgaste: pierde placas de corteza con dos tercios de su vida y con un tercio, y tira a gastado.
 - **Disparadora con escudo (infundida):** dispara igual que una normal (mismo daño, cadencia y semilla) y tiene el doble de su vida normal, con sus cañones: 600, 1200 o 1800 (E-05). Dos con escudo se fusionan como cualquier variante igual y suman su vida (E-03).
@@ -188,9 +194,9 @@ Decisiones E-01 a E-06 cerradas el 21 nov 2026 (E-01 a E-04 y E-06 con la recome
   - Hoy el escupitajo ya da a lo primero que encuentra: con el escudo no cambia, solo tarda más en romperlo.
   - Los ataques que cruzan el carril por encima de las plantas (los versos de Elk Cloner y del Minstrel, T-025 y T-026) alcanzan todo lo que no es escudo, de delante atrás, hasta el primer escudo, que lo recibe; lo de detrás no recibe nada (`waveReach`).
   - Una unidad que salta por su carril (ninguna todavía) cae delante del primer escudo que encuentre, a su alcance para morderlo (`hopLanding`).
-  - **Creeper al rejugar el brote 1 (E-06, a):** si cayera sobre un escudo, lo golpearía como a cualquier planta. Hoy no puede pasar: el escudo no existe en el brote 1.
+  - **Creeper al rejugar el brote 1 (E-06, a):** si cae sobre un escudo, lo golpea como a cualquier planta. Desde T-037 puede pasar: al rejugar el brote 1 con el brote 2 vencido hay escudo (ES-03).
 - **No hay mezclas:** una disparadora con fuego o hielo no admite escudo, y una con escudo no admite fuego ni hielo ("Ya tiene escudo").
-- **Ficha:** la del muro dice que no ataca, que para lo de detrás, que se puede llevar a una disparadora y si está agrietado o a punto de romperse; la de la disparadora con escudo, que para lo de detrás.
+- **Ficha:** la del muro dice que no ataca, que para lo de detrás, si está agrietado o a punto de romperse y, cuando ya se puede infundir el escudo (T-037), que se puede llevar a una disparadora; la de la disparadora con escudo, que para lo de detrás.
 
 ### Inventos (T-021; antes "poderes")
 Decisiones O-01 a O-11 cerradas el 22 nov 2026 (O-04 a O-06 cambiadas por Carmine: granada en vez de meteorito, muro de hielo de tres casillas que bloquea el paso, y a los jefes igual que a todos). Cómo se hace: ADR-0020. Los valores están como PROVISIONAL en `POWERS`, `GRENADE` e `ICE_WALL` de `balance.ts`.
@@ -389,7 +395,7 @@ Decisiones PF-01 a PF-07 cerradas el 21 nov 2026 con la recomendación. Cómo se
 
 ### Tours de ayuda (T-013)
 Decisiones G-01 a G-10 cerradas el 20 nov 2026. Cómo se hace: ADR-0012.
-- **Cada cosa nueva se enseña la primera vez:** al empezar la preparación de la ronda que la desbloquea, tras aceptar "¡YA LO TIENES!", sale su tour. En la ronda 1, lo básico: sembrar, el carril, monedas, vidas, la ficha y "¡Que vengan!". En la 2, subir de nivel; en la 3 y la 4, las minas; en la 5, infundir (con la carta o con una mina); en la 6, fusionar. En la ronda 2 del brote 2, el escudo: sembrar el muro, lo que para y la infusión (T-024).
+- **Cada cosa nueva se enseña la primera vez:** al empezar la preparación de la ronda que la desbloquea, tras aceptar "¡YA LO TIENES!", sale su tour. En la ronda 1, lo básico: sembrar, el carril, monedas, vidas, la ficha y "¡Que vengan!". En la 2, subir de nivel; en la 3 y la 4, las minas; en la 5, infundir (con la carta o con una mina); en la 6, fusionar. En la ronda 2 del brote 2, el escudo: sembrar el muro y lo que para (T-024). En la ronda 2 del brote 3, la disparadora con escudo: la carta sobre una disparadora y llevarle un muro (T-037).
 - **Mira y prueba:** se oscurece todo menos lo importante y una mano hace el gesto sobre el tablero de verdad. Si el jugador lo hace, el paso se celebra ("¡Bien!") y pasa al siguiente; si no, "Siguiente". "Saltar" cierra el tour. Si no hay lo que señalar (sin planta, sin dos iguales para fusionar...), el paso sale solo con su dibujo.
 - **La cuenta atrás de la preparación no corre mientras dura el tour.** "¡Que vengan!" sigue funcionando y lo cierra.
 - **Un tour visto no vuelve a salir** en este navegador, tampoco en una partida nueva. Cuenta como visto al acabarlo, al saltarlo o si empieza el ataque a medias.

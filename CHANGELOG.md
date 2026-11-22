@@ -4,6 +4,7 @@ Una línea por task cerrada, lo más nuevo arriba. Cómo se numera: `docs/adr/00
 
 | Versión | Fecha | Task | Qué cambia |
 |---|---|---|---|
+| 0.13.0 | 22 nov 2026 | T-037 | El escudo llega en dos pasos: en el brote 2 solo se siembra como muro y la disparadora con escudo se estrena en el brote 3 (Brain), que queda en preparación. Lo desbloqueado en un brote vencido se puede usar también al rejugar los anteriores |
 | 0.12.3 | 22 nov 2026 | T-036 | El Invernadero es un refugio de noche, sin plantas en el jardín, con el Laboratorio de Patty siempre abierto: los inventos en tarros y el vivero de la disparadora. El menú a la derecha y "Volver a la portada" abajo a la izquierda. Los poderes se llaman inventos, la tienda es el Laboratorio de Patty y se fabrica en vez de comprar |
 | 0.12.2 | 22 nov 2026 | T-035 | Niveles con crecimiento compuesto y premio cada 5 niveles en todo lo que tiene nivel: las plantas ganan daño y, en cada premio, vida; los enemigos no pasan del nivel 9 en los brotes 1 y 2 y el tope de las plantas se queda en 5 hasta el brote 5. Elk Cloner y el Minstrel, más fuertes. Sin aviso de "Combate final" y sin jefes en los créditos |
 | 0.12.1 | 22 nov 2026 | T-015 | Música de fondo en bucle: una para los menús, otra para las rondas y otra para los jefes de los cuatro primeros brotes, con fundidos entre ellas. Baja en pausa y al acabar la partida, se calla con la pestaña oculta y tiene su propio volumen en Opciones. Se guarda sola tras la portada para jugar sin conexión. Créditos con el título, el autor y la licencia de cada pista |

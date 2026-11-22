@@ -30,7 +30,7 @@ export const en: Dictionary = {
   outbreak: {
     title: (number, boss) => `Outbreak ${number}: ${boss}`,
     number: (number) => `Outbreak ${number}`,
-    comingBoss: {},
+    comingBoss: { brain: 'Brain' },
   },
 
   title: {
@@ -209,7 +209,8 @@ export const en: Dictionary = {
       fireInfuse: 'Fire: on an empty tile, a mine; on a shooter, it infuses it (one fire per barrel)',
       ice: 'Ice: on an empty tile, a mine that slows',
       iceInfuse: 'Ice: on an empty tile, a mine that slows; on a shooter, it infuses it (one ice per barrel)',
-      shield: 'Shield: on an empty tile, a sturdy wall that blocks shots; on a shooter, it infuses it (one shield per barrel)',
+      shield: 'Shield: on an empty tile, a sturdy wall that blocks shots',
+      shieldInfuse: 'Shield: on an empty tile, a sturdy wall that blocks shots; on a shooter, it infuses it (one shield per barrel)',
     },
     noFunds: 'Not enough coins',
     coins: 'Coins',
@@ -255,13 +256,18 @@ export const en: Dictionary = {
       ],
       elkCloner: [
         'What you learned stays with you. Careful: Copycats leave a copy when they fall',
-        'Plant the shield alone to block shots, or drop it on a shooter',
+        'Plant the shield on an empty tile: a wall that blocks shots',
         'Minstrels are coming! Their verses cross the lane: only a shield stops them',
         'Armored worms, Minstrels and spitters together: mines for some, shields for others',
         'Two waves across all five lanes, with Minstrels behind each one',
         'Elk Cloner is getting ready! It writes its poem and its troops come faster',
         'Elk Cloner has almost finished its poem: even more troops, and even faster',
         'Elk Cloner is here! Every few verses it recites the whole poem across all five lanes: put a shield in each one',
+      ],
+      brain: [
+        'What you learned stays with you: the wall is already in your tray',
+        'Drop the shield on a shooter: it lasts twice as long and stops what heads for the ones behind',
+        'All at once: shields up front and mines for the armored ones',
       ],
     },
   },
@@ -299,6 +305,9 @@ export const en: Dictionary = {
       boxer: ["Here, you're going to need this.", 'One more thing for your toolbox.', "Oh, they're not going to like this!"],
       patty: ['I made something new!', 'I made something new! Freshly sprouted.', 'I made something new! Be gentle with it.'],
     },
+    featureLines: {
+      shieldInfuse: 'I reinforced the shield: now it holds on a shooter.',
+    },
     shooter: { title: 'Shooter', text: 'Plant it on a tile: it shoots the worms in its lane.' },
     levelUp: {
       title: 'Level up',
@@ -315,7 +324,11 @@ export const en: Dictionary = {
       text: 'Drop fire or ice on a shooter, or drag a planted mine onto it: its seeds burn or slow.',
     },
     fuse: { title: 'Fuse', text: 'Drag a shooter onto a matching one: their barrels add up and they hit harder.' },
-    shield: { title: 'Shield', text: 'Plant it alone and it is a wall that holds and blocks shots. On a shooter, it doubles its health.' },
+    shield: { title: 'Shield', text: 'Plant it on an empty tile: it is a wall that holds and blocks shots.' },
+    shieldInfuse: {
+      title: 'Shield shooter',
+      text: 'Drop the shield on a shooter, or drag a wall onto it: it lasts twice as long and stops what heads for the ones behind.',
+    },
   },
 
   tour: {
@@ -328,6 +341,7 @@ export const en: Dictionary = {
       infuse: 'Infuse',
       fuse: 'Fuse',
       shield: 'Shield',
+      shieldInfuse: 'Shield shooter',
       relocate: 'Replant',
       grenade: 'Grenade',
       iceWall: 'Ice wall',
@@ -368,7 +382,10 @@ export const en: Dictionary = {
       shield: {
         wall: 'Plant the shield alone: a wall!',
         block: 'Shots stop at the wall',
-        infuse: 'On a shooter: double the health!',
+      },
+      shieldInfuse: {
+        card: 'On a shooter: double the health!',
+        wall: 'Or bring it a wall you already planted',
       },
       relocate: {
         pick: 'Tap “Replant”, on the left',
@@ -408,6 +425,10 @@ export const en: Dictionary = {
       elkCloner: {
         line: "Elk Cloner's coming! In 1982 it hopped from floppy to floppy on Apple IIs. And it recited poems!",
         card: 'Elk Cloner (1982) was one of the first viruses to spread outside a lab. It traveled on Apple II floppy disks, copying itself onto every disk that went through an infected computer, and every 50th boot it showed a poem on screen. It broke nothing: a 15-year-old student wrote it as a prank.',
+      },
+      brain: {
+        line: "Brain's coming! In 1986 it was the first PC virus. It hid from anyone looking for it… and left its phone number in the code!",
+        card: 'Brain (1986) was the first PC virus. Two brothers from Lahore wrote it and left their names, address and phone number inside the code. It traveled on floppy disks, in the boot sector, and it was stealthy: if someone looked at the disk, it showed them a clean copy. It destroyed nothing.',
       },
     },
     lines: {
@@ -533,7 +554,7 @@ export const en: Dictionary = {
     lifeLost: '−1 ♥',
     fused: 'Fused!',
     infused: { fire: 'Fire!', ice: 'Ice!', shield: 'Shield!' },
-    cannotInfuse: "Can't infuse",
+    infuseLater: 'Infuse: not yet',
     infuseFrom: (round) => `Infuse: from round ${round}`,
     hasElement: { fire: 'Already has fire', ice: 'Already has ice', shield: 'Already has a shield' },
     infuse: (price) => `Infuse: ${price}`,
@@ -669,7 +690,8 @@ export const en: Dictionary = {
     wall: {
       title: 'Wall',
       subtitle: 'Shield planted on its own',
-      about: 'It neither shoots nor explodes: it takes the bites and the shots aimed at what is behind it. Drag it onto a shooter to infuse it with a shield.',
+      about: 'It neither shoots nor explodes: it takes the bites and the shots aimed at what is behind it.',
+      aboutInfuse: 'Drag it onto a shooter to infuse it with a shield.',
     },
     iceWall: {
       title: 'Ice wall',

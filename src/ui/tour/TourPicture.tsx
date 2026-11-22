@@ -198,6 +198,17 @@ export function TourPicture({ id, art }: TourPictureProps) {
         </>
       );
       break;
+    // T-037: un muro ya sembrado entra en la disparadora, que se vuelve de corteza (como la mina en `infuseMine`).
+    case 'wallInfuse':
+      scene = (
+        <>
+          {plant('pic-center pic-swap-a')}
+          {plant('pic-center pic-swap-b', 'shooterShield')}
+          {pic('wall', 'pic-slide-in is-wall', <CardIcon card="shield" />)}
+          <span className="pic-glow is-shield" />
+        </>
+      );
+      break;
     // Poderes (T-021). Recolocar: la disparadora salta en curva de su monton de tierra a otro y brota alli.
     case 'relocate':
       scene = (

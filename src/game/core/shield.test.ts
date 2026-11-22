@@ -26,20 +26,37 @@ import {
 } from './match';
 import { isOutbreakOpen, isOutbreakReady, outbreakFromParam, outbreakScript, roundCount } from './outbreaks';
 import { createShooter, plantMaxHp, type Shooter } from './plants';
-import { availableCards, infusableElements, newFeaturesAt, roundScript, roundUnlocks, unlockPresenter, unlockRound } from './rounds';
+import {
+  availableCards,
+  carriedFeatures,
+  infusableElements,
+  isUnlocked,
+  newFeaturesAt,
+  roundScript,
+  roundUnlocks,
+  unlockPresenter,
+  unlockRound,
+  unlockedAt,
+} from './rounds';
 import { currentOutbreak, routeStops } from './route';
 
 /**
  * Escudo (T-024; E-01 a E-06 decididas el 21 nov 2026). Solo, un muro; infundido, una disparadora con el doble de vida.
- * Los dos paran lo que va por su carril hacia lo de detras. Llega en la ronda 2 del brote 2, el de Elk Cloner.
+ * Los dos paran lo que va por su carril hacia lo de detras. Desde T-037 llega en dos pasos: el muro en la ronda 2 del brote
+ * 2 (Elk Cloner) y la infusion en la ronda 2 del brote 3 (Brain).
  */
 
 const BROTE2 = 'elkCloner' as const;
-/** Ronda (desde 0) del brote 2 que trae el escudo. */
+const BROTE3 = 'brain' as const;
+/** Ronda (desde 0) del brote 2 que trae el muro. */
 const SHIELD_ROUND = 1;
+/** Ronda (desde 0) del brote 3 que trae infundir el escudo (T-037). */
+const INFUSE_ROUND = 1;
 
 /** Partida del brote 2 en la preparacion de la ronda del escudo, con `balance` de saldo. */
 const shieldMatch = (balance = 2000): MatchState => createMatch(balance, SHIELD_ROUND, BROTE2);
+/** Partida del brote 3 en la preparacion de la ronda que trae infundir el escudo (T-037). */
+const infuseMatch = (balance = 2000): MatchState => createMatch(balance, INFUSE_ROUND, BROTE3);
 
 function put(state: MatchState, cell: Cell, sown: Sown): MatchState {
   return { ...state, plants: state.plants.map((lane, l) => lane.map((p, c) => (l === cell.lane && c === cell.col ? sown : p))) };
@@ -57,14 +74,18 @@ describe('desbloqueo', () => {
     expect(unlockRound('creeper', 'shield')).toBeNull();
   });
 
-  it('llega en la ronda 2 del brote 2, con su aviso, y la presenta Patty', () => {
+  it('el muro llega en la ronda 2 del brote 2, con su aviso, y lo presenta Patty; infundirlo, no (T-037)', () => {
     expect(unlockRound(BROTE2, 'shield')).toBe(SHIELD_ROUND);
     expect(availableCards(createMatch(0, 0, BROTE2))).not.toContain('shield');
     expect(availableCards(shieldMatch())).toEqual(['shooter', 'fire', 'ice', 'shield']);
     expect(newFeaturesAt(BROTE2, SHIELD_ROUND)).toEqual(['shield']);
     expect(roundUnlocks(BROTE2, SHIELD_ROUND)).toEqual([{ kind: 'feature', feature: 'shield' }]);
     expect(unlockPresenter(BROTE2, SHIELD_ROUND)).toBe('patty');
-    expect(infusableElements(shieldMatch())).toEqual(['fire', 'ice', 'shield']);
+    expect(infusableElements(shieldMatch())).toEqual(['fire', 'ice']);
+    expect(unlockRound(BROTE2, 'shieldInfuse')).toBeNull();
+    for (let index = 0; index < roundCount(BROTE2); index++) {
+      expect(isUnlocked(createMatch(0, index, BROTE2), 'shieldInfuse'), `ronda ${index + 1}`).toBe(false);
+    }
   });
 
   it('el brote 2 empieza con lo aprendido en el brote 1 y su ronda 1 no desbloquea nada: el tope sigue en 5 (T-035)', () => {
@@ -105,10 +126,110 @@ describe('brote 2 abierto (T-026: ya tiene a su jefe)', () => {
     expect(outbreakFromParam('2')).toBe(BROTE2);
     expect(outbreakFromParam('elkCloner')).toBe(BROTE2);
     expect(outbreakFromParam('1')).toBe('creeper');
-    expect(outbreakFromParam('3')).toBeNull();
+    expect(outbreakFromParam('3')).toBe(BROTE3);
+    expect(outbreakFromParam('4')).toBeNull();
     expect(outbreakFromParam('0')).toBeNull();
     expect(outbreakFromParam('')).toBeNull();
     expect(outbreakFromParam(null)).toBeNull();
+  });
+});
+
+describe('escudo en dos pasos (T-037)', () => {
+  const cell = { lane: 2, col: 3 };
+  const wall = { lane: 2, col: 6 };
+
+  it('el brote 3 esta en preparacion: sin jefe, cerrado al jugador y en la ruta como "Proximamente"', () => {
+    expect(outbreakScript(BROTE3)).toMatchObject({ boss: null, startingBalance: 300, presenter: 'patty' });
+    expect(isOutbreakReady(BROTE3)).toBe(false);
+    expect(isOutbreakOpen(BROTE3, ['creeper', BROTE2])).toBe(false);
+    expect(currentOutbreak(['creeper', BROTE2])).toBeNull();
+    expect(routeStops(['creeper', BROTE2]).at(-2)).toEqual({ kind: 'soon', number: 3 });
+  });
+
+  it('el brote 3 trae el muro desde la ronda 1 y la infusion desde la 2, con su aviso, que presenta Patty', () => {
+    const first = createMatch(0, 0, BROTE3);
+    expect(availableCards(first)).toEqual(['shooter', 'fire', 'ice', 'shield']);
+    expect(isUnlocked(first, 'shield')).toBe(true);
+    expect(infusableElements(first)).toEqual(['fire', 'ice']);
+    expect(roundUnlocks(BROTE3, 0)).toEqual([]);
+    expect(unlockRound(BROTE3, 'shieldInfuse')).toBe(INFUSE_ROUND);
+    expect(roundUnlocks(BROTE3, INFUSE_ROUND)).toEqual([{ kind: 'feature', feature: 'shieldInfuse' }]);
+    expect(unlockPresenter(BROTE3, INFUSE_ROUND)).toBe('patty');
+    expect(infusableElements(infuseMatch())).toEqual(['fire', 'ice', 'shield']);
+  });
+
+  it('brote 2: la carta sobre una disparadora no infunde, y su precio no sale multiplicado', () => {
+    const state = put(shieldMatch(), cell, createPlant(shooter({ cannons: 2 })));
+    expect(cardPlay(state, 'shield', cell)).toMatchObject({ action: 'infuse', blocker: 'locked' });
+    expect(() => playCard(state, 'shield', cell)).toThrow();
+    // En una casilla vacia sigue sembrando el muro.
+    expect(cardPlay(state, 'shield', { lane: 0, col: 0 })).toEqual({ action: 'sow', cost: COSTS.shield, multiplier: 1, blocker: null });
+  });
+
+  it('brote 2: el muro se levanta igual, pero sobre una disparadora dice que aun no (ES-02)', () => {
+    const state = put(put(shieldMatch(), wall, createWall()), cell, createPlant());
+    expect(elementDragBlocker(state, wall)).toBeNull();
+    expect(elementInfusion(state, wall, cell).blocker).toBe('locked');
+    expect(elementInfusionTargets(state, wall)).toEqual([]);
+    expect(() => infuseWithElement(state, wall, cell)).toThrow();
+  });
+
+  it('la mina, en cambio, no se levanta antes de poder infundir su elemento (como siempre, T-009)', () => {
+    const mine = { lane: 0, col: 5 };
+    const early = put(createMatch(0, 2), mine, createMine('fire'));
+    expect(elementDragBlocker(early, mine)).toBe('locked');
+  });
+
+  it('brote 3, ronda 1: ni con la carta ni con el muro; desde la ronda 2, con los dos', () => {
+    const before = put(put(createMatch(2000, 0, BROTE3), wall, createWall()), cell, createPlant());
+    expect(cardPlay(before, 'shield', cell).blocker).toBe('locked');
+    expect(elementInfusion(before, wall, cell).blocker).toBe('locked');
+    const after = put(put(infuseMatch(), wall, createWall()), cell, createPlant(shooter({ cannons: 2 })));
+    expect(cardPlay(after, 'shield', cell)).toEqual({ action: 'infuse', cost: COSTS.shield * 2, multiplier: 2, blocker: null });
+    expect(elementInfusion(after, wall, cell)).toEqual({ cost: COSTS.shield, multiplier: 1, blocker: null });
+  });
+});
+
+describe('lo desbloqueado vale hacia atras (norma ES-03, T-037)', () => {
+  const cell = { lane: 1, col: 2 };
+
+  it('rejugar el brote 2 con el brote 3 vencido trae la infusion del escudo desde la ronda 1', () => {
+    const carried = carriedFeatures(BROTE2, ['creeper', BROTE2, BROTE3]);
+    expect(carried).toEqual(['shieldInfuse']);
+    const replay = createMatch(2000, 0, BROTE2, true, undefined, undefined, carried);
+    expect(isUnlocked(replay, 'shieldInfuse')).toBe(true);
+    expect(infusableElements(replay)).toEqual(['fire', 'ice', 'shield']);
+    // La carta sale ya para infundir; el muro sigue llegando en su ronda, con su aviso.
+    expect(availableCards(replay)).toContain('shield');
+    expect(cardPlay(replay, 'shield', { lane: 0, col: 0 }).blocker).toBe('locked');
+    expect(cardPlay(put(replay, cell, createPlant()), 'shield', cell).blocker).toBeNull();
+    expect(roundUnlocks(BROTE2, SHIELD_ROUND)).toEqual([{ kind: 'feature', feature: 'shield' }]);
+  });
+
+  it('sin el brote 3 vencido no hay nada que traer', () => {
+    expect(carriedFeatures(BROTE2, ['creeper', BROTE2])).toEqual([]);
+    expect(carriedFeatures(BROTE2, [])).toEqual([]);
+  });
+
+  it('rejugar el brote 1 con el 2 vencido trae el muro; con el 3, tambien la infusion', () => {
+    expect(carriedFeatures('creeper', ['creeper', BROTE2])).toEqual(['shield']);
+    expect(carriedFeatures('creeper', ['creeper', BROTE2, BROTE3]).sort()).toEqual(['shield', 'shieldInfuse']);
+    const replay = createMatch(2000, 0, 'creeper', true, undefined, undefined, ['shield']);
+    expect(availableCards(replay)).toEqual(['shooter', 'shield']);
+    expect(cardPlay(replay, 'shield', cell).blocker).toBeNull();
+    // Lo que el brote 1 ensena sigue llegando en su ronda.
+    expect(isUnlocked(replay, 'fireMine')).toBe(false);
+  });
+
+  it('lo que el propio brote ensena no se trae: llega en su ronda', () => {
+    expect(carriedFeatures(BROTE3, ['creeper', BROTE2, BROTE3])).toEqual([]);
+    expect(unlockedAt(BROTE2, 0, carriedFeatures(BROTE2, ['creeper', BROTE2, BROTE3])).has('shield')).toBe(false);
+  });
+
+  it('va con la partida guardada', () => {
+    const replay = createMatch(2000, 0, BROTE2, true, undefined, undefined, ['shieldInfuse']);
+    expect(decodeSave(encodeSave(replay, null, 1))?.match.carried).toEqual(['shieldInfuse']);
+    expect(decodeSave(encodeSave({ ...replay, carried: ['poder' as never] }, null, 1))).toBeNull();
   });
 });
 
@@ -155,11 +276,11 @@ describe('muro (escudo solo)', () => {
   });
 });
 
-describe('infusion (escudo sobre una disparadora)', () => {
+describe('infusion (escudo sobre una disparadora, desde T-037 en el brote 3)', () => {
   const cell = { lane: 1, col: 2 };
 
   it('convierte una disparadora sin elemento en una con escudo, con el doble de vida (E-05)', () => {
-    const after = playCard(put(shieldMatch(), cell, createPlant()), 'shield', cell);
+    const after = playCard(put(infuseMatch(), cell, createPlant()), 'shield', cell);
     const plant = plantAt(after, cell);
     expect(plant?.shooter).toEqual(shooter({ element: 'shield' }));
     expect(plant?.hp).toBe(SHOOTER.hp * SHIELD.hpMultiplier);
@@ -168,27 +289,27 @@ describe('infusion (escudo sobre una disparadora)', () => {
   });
 
   it('en una de N canones cuesta N escudos (E-04)', () => {
-    const state = put(shieldMatch(), cell, createPlant(shooter({ cannons: 3 })));
+    const state = put(infuseMatch(), cell, createPlant(shooter({ cannons: 3 })));
     expect(cardPlay(state, 'shield', cell)).toEqual({ action: 'infuse', cost: COSTS.shield * 3, multiplier: 3, blocker: null });
   });
 
   it('conserva en proporcion la vida que le faltaba', () => {
     const hurt = { ...createPlant(), hp: SHOOTER.hp / 2 };
-    const after = playCard(put(shieldMatch(), cell, hurt), 'shield', cell);
+    const after = playCard(put(infuseMatch(), cell, hurt), 'shield', cell);
     expect(plantAt(after, cell)?.hp).toBe((SHOOTER.hp * SHIELD.hpMultiplier) / 2);
   });
 
   it('el fuego y el hielo no cambian la vida al infundir', () => {
     const hurt = { ...createPlant(), hp: 123.25 };
-    expect(plantAt(playCard(put(shieldMatch(), cell, hurt), 'fire', cell), cell)?.hp).toBe(123.25);
+    expect(plantAt(playCard(put(infuseMatch(), cell, hurt), 'fire', cell), cell)?.hp).toBe(123.25);
   });
 
   it('no hay mezclas: con fuego o hielo no admite escudo, y con escudo no admite fuego ni hielo', () => {
     for (const element of ['fire', 'ice'] as const) {
-      const elemental = put(shieldMatch(), cell, createPlant(shooter({ element })));
+      const elemental = put(infuseMatch(), cell, createPlant(shooter({ element })));
       expect(cardPlay(elemental, 'shield', cell).blocker, element).toBe('has-element');
     }
-    const shielded = put(shieldMatch(), cell, createPlant(shooter({ element: 'shield' })));
+    const shielded = put(infuseMatch(), cell, createPlant(shooter({ element: 'shield' })));
     expect(cardPlay(shielded, 'fire', cell).blocker).toBe('has-element');
     expect(cardPlay(shielded, 'ice', cell).blocker).toBe('has-element');
     expect(cardPlay(shielded, 'shield', cell).blocker).toBe('has-element');
@@ -199,17 +320,17 @@ describe('infusion (escudo sobre una disparadora)', () => {
     const shielded = { ...plain, element: 'shield' as const };
     expect(bulletDamage(shielded)).toBe(bulletDamage(plain));
     expect(bulletEffect(shielded)).toBeNull();
-    const state = spawnEnemy(put(shieldMatch(), cell, createPlant(shielded)), 'worm', 1, 7);
+    const state = spawnEnemy(put(infuseMatch(), cell, createPlant(shielded)), 'worm', 1, 7);
     expect(ofType(stepCombat(state, 50).events, 'shot')).toHaveLength(2);
   });
 });
 
-describe('arrastrar el muro sobre una disparadora (como una mina, T-009)', () => {
+describe('arrastrar el muro sobre una disparadora (como una mina, T-009; desde T-037, en el brote 3)', () => {
   const wall = { lane: 2, col: 5 };
   const target = { lane: 2, col: 3 };
 
   it('la infunde con escudo, el muro deja su casilla y en una de un canon es gratis', () => {
-    const state = put(put(shieldMatch(), wall, createWall()), target, createPlant());
+    const state = put(put(infuseMatch(), wall, createWall()), target, createPlant());
     expect(elementDragBlocker(state, wall)).toBeNull();
     expect(elementInfusion(state, wall, target)).toEqual({ cost: 0, multiplier: 0, blocker: null });
     expect(elementInfusionTargets(state, wall)).toEqual([target]);
@@ -221,18 +342,18 @@ describe('arrastrar el muro sobre una disparadora (como una mina, T-009)', () =>
   });
 
   it('en una de N canones paga los N - 1 escudos que faltan', () => {
-    const state = put(put(shieldMatch(), wall, createWall()), target, createPlant(shooter({ cannons: 3 })));
+    const state = put(put(infuseMatch(), wall, createWall()), target, createPlant(shooter({ cannons: 3 })));
     expect(elementInfusion(state, wall, target)).toEqual({ cost: COSTS.shield * 2, multiplier: 2, blocker: null });
   });
 
   it('un muro mordido tambien vale; la vida que le faltaba no pasa a la planta', () => {
-    const state = put(put(shieldMatch(), wall, { kind: 'wall', hp: 40 }), target, createPlant());
+    const state = put(put(infuseMatch(), wall, { kind: 'wall', hp: 40 }), target, createPlant());
     expect(elementDragBlocker(state, wall)).toBeNull();
     expect(plantAt(infuseWithElement(state, wall, target), target)?.hp).toBe(SHOOTER.hp * SHIELD.hpMultiplier);
   });
 
   it('no sirve sobre una disparadora con elemento', () => {
-    const state = put(put(shieldMatch(), wall, createWall()), target, createPlant(shooter({ element: 'ice' })));
+    const state = put(put(infuseMatch(), wall, createWall()), target, createPlant(shooter({ element: 'ice' })));
     expect(elementInfusion(state, wall, target).blocker).toBe('has-element');
     expect(elementInfusionTargets(state, wall)).toEqual([]);
   });
