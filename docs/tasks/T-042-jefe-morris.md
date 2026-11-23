@@ -1,6 +1,6 @@
 # [Jefe] Morris, la sobrecarga y las rondas del brote 4
 
-**Estado:** Pendiente · **Prioridad:** Media · **Tamaño estimado:** L (orientativo) · **Depende de:** T-041 · **Bloquea a:** T-043 · **Origen:** conversación de diseño del 23 nov 2026
+**Estado:** Completada (23 nov 2026, 0.16.0) · **Prioridad:** Media · **Tamaño estimado:** L (orientativo) · **Depende de:** T-041 · **Bloquea a:** T-043 · **Origen:** conversación de diseño del 23 nov 2026
 
 ## Contexto
 El diseño está en `docs/specs/07-brote-4-morris.md`. Carmine eligió la opción B: Morris inunda el tablero y además hay sobrecarga. Son 9 rondas.
@@ -29,54 +29,60 @@ Tras T-041 el brote 4 existe en preparación, con sus tropas de variante y 600 m
 - 9 rondas, con el repaso de la spec.
 - Mismo escenario y misma música que los brotes 1 a 3.
 - Ninguna planta ni invento nuevo.
+- MR-02 a MR-07 y MR-09 a MR-11, por Carmine al empezar la task, y MR-08 en la galería (abajo).
 
 ## Decisiones pendientes
 | # | Pregunta | Opciones | Recomendación | Decide |
 |---|---|---|---|---|
 | MR-01 | ¿Nivel de las tropas? (regla 14) | **Cerrada (23 nov 2026):** hasta el 9 como máximo; el 10 solo cuando sale el jefe, en su escolta y sus refuerzos | Cerrada | Carmine |
-| MR-02 | ¿Desde qué ronda hay sobrecarga? | a) Desde la 1. b) Solo en el combate final | a, con un umbral que en las primeras rondas casi no se alcanza: llega aprendida al jefe | Carmine |
-| MR-03 | ¿Cuánto aceleran con la barra llena? | Libre | Un 25 %, como la ronda más rápida de los otros brotes | Carmine |
-| MR-04 | ¿Cuándo se apaga? | a) Al bajar de lleno. b) Al bajar bastante más | b: se enciende al 100 % y se apaga al 60 %. Sin ese margen parpadea | Carmine |
-| MR-05 | ¿Qué cuenta para la barra? | Libre | Todo enemigo vivo en el césped, también las copias y los ocultos. El jefe no | Carmine |
-| MR-06 | ¿Qué hace un escudo contra Morris? | a) Lo para. b) Lo frena a la mitad mientras lo rompe. c) Nada | b: es "el Imparable", pero el escudo sigue sirviendo de algo | Carmine |
-| MR-07 | ¿Cada cuánto saca gusanos? | Libre | Empieza despacio y se acelera con el tiempo, no con su vida: es una carrera | Carmine |
-| MR-08 | ¿Qué aspecto tiene? | Propuestas | Que no se confunda con Creeper, que también es un gusano. Idea: un gusano enorme hecho de gusanos pequeños que se le van soltando | Carmine |
-| MR-09 | ¿Qué dice? | Libre | Pide perdón mientras lo inunda todo: "¡Perdón, perdón! ¡No paran de salir!" | Carmine |
-| MR-10 | ¿Cuántos enemigos puede haber a la vez? | Libre | Un tope medido en un móvil con la calidad más baja; lo que no cabe espera fuera | Carmine |
-| MR-11 | ¿Qué resultado se busca sin mejoras del Vivero? | Libre | Que un bot que juega bien gane la mayoría (7 de 10 o más) | Carmine |
+| MR-02 | ¿Desde qué ronda hay sobrecarga? | **Cerrada (23 nov 2026):** a) desde la ronda 1, con un umbral que en las primeras rondas casi no se alcanza | Cerrada | Carmine |
+| MR-03 | ¿Cuánto aceleran con la barra llena? | **Cerrada (23 nov 2026):** un 25 %, como la ronda más rápida de los otros brotes. Como el acelerado de las rondas antes del jefe, solo cambia lo que avanzan | Cerrada | Carmine |
+| MR-04 | ¿Cuándo se apaga? | **Cerrada (23 nov 2026):** b) se enciende al 100 % y se apaga al 60 % | Cerrada | Carmine |
+| MR-05 | ¿Qué cuenta para la barra? | **Cerrada (23 nov 2026):** todo enemigo vivo en el césped, también las copias y los ocultos. Morris ni cuenta ni acelera | Cerrada | Carmine |
+| MR-06 | ¿Qué hace un escudo contra Morris? | **Cerrada (23 nov 2026):** nada lo para. Muerde lo que toca (muro, disparadora o mina) y, mientras lo muerde, avanza a la mitad de su velocidad: un muro aguanta más y lo frena más tiempo | Cerrada | Carmine |
+| MR-07 | ¿Cada cuánto saca gusanos? | **Cerrada (23 nov 2026):** por los agujeros de los cinco carriles; al principio uno cada pocos segundos y cada vez más seguido con el tiempo, no con su vida | Cerrada | Carmine |
+| MR-08 | ¿Qué aspecto tiene? | **Cerrada (23 nov 2026):** la propuesta A de `/proposals/jefes.html`, un gusano enorme hecho de gusanos pequeños que se le van soltando (`MORRIS_DESIGN = 'swarm'`) | Cerrada | Carmine |
+| MR-09 | ¿Qué dice? | **Cerrada (23 nov 2026):** "¡Perdón, perdón! ¡No paran de salir!" al salir; las demás frases, en el mismo tono, las dio por buenas Carmine el mismo día | Cerrada | Carmine |
+| MR-10 | ¿Cuántos enemigos puede haber a la vez? | **Cerrada (23 nov 2026):** 60, el presupuesto de rendimiento de T-002, en todos los brotes. Lo que no cabe espera fuera y entra en cuanto hay sitio; las copias de un Copycat salen siempre | Cerrada | Carmine |
+| MR-11 | ¿Qué resultado se busca sin mejoras del Vivero? | **Cerrada (23 nov 2026):** que un bot que juega bien gane unas 5 de 10 | Cerrada | Carmine |
 
 ## Criterios de aceptación
 ### Sobrecarga
-- [ ] Una barra en pantalla sube y baja con los enemigos vivos.
-- [ ] Al llenarse, todos los enemigos aceleran y se nota de un vistazo y de oído.
-- [ ] Se apaga según MR-04, y los enemigos vuelven a su velocidad.
-- [ ] La granada y el muro de hielo ayudan a vaciarla.
-- [ ] En pausa y durante la preparación no cambia.
-- [ ] La primera vez que aparece, el jugador sabe qué es sin leer más de una línea.
+- [x] Una barra en pantalla sube y baja con los enemigos vivos.
+- [x] Al llenarse, todos los enemigos aceleran y se nota de un vistazo y de oído: la barra dice "¡Sobrecarga!" y late en rojo, sale el rótulo en el césped, las tropas llevan las rayas del acelerado y suena una alarma.
+- [x] Se apaga según MR-04, y los enemigos vuelven a su velocidad.
+- [x] La granada y el muro de hielo ayudan a vaciarla (la granada, con test; el muro de hielo para la marea mientras las plantas la tumban).
+- [x] En pausa y durante la preparación no cambia.
+- [x] La primera vez que aparece, el jugador sabe qué es sin leer más de una línea: el aviso de la ronda 1 y la línea bajo la barra.
 
 ### Rondas
-- [ ] El brote 4 tiene sus 9 rondas, editables como datos, con el repaso de la spec: gusanos en la 1, acorazados y escupidores en la 2, Copycat en la 3, Minstrel en la 4, Lurker en la 5, Skipper en la 6, jefe preparándose en la 7 y la 8, y combate en la 9.
-- [ ] Ninguna ronda desbloquea nada nuevo.
-- [ ] La dificultad medida sube de ronda en ronda, y la ronda 1 es más dura que la 1 del brote 3 aun contando las 600 monedas.
-- [ ] Los niveles de las tropas siguen MR-01.
+- [x] El brote 4 tiene sus 9 rondas, editables como datos, con el repaso de la spec: gusanos en la 1, acorazados y escupidores en la 2, Copycat en la 3, Minstrel en la 4, Lurker en la 5, Skipper en la 6, jefe preparándose en la 7 y la 8, y combate en la 9.
+- [x] Ninguna ronda desbloquea nada nuevo.
+- [x] La dificultad medida sube de ronda en ronda, y la ronda 1 es más dura que la 1 del brote 3 aun contando las 600 monedas.
+- [x] Los niveles de las tropas siguen MR-01.
 
 ### Combate
-- [ ] Morris se ve preparándose en las rondas 7 y 8, y en la 7 Boxer cuenta qué fue el virus de verdad.
-- [ ] Mientras vive, saca gusanos por los cinco carriles, cada vez más seguido.
-- [ ] Un escudo se comporta frente a él según MR-06.
-- [ ] Tiene barra de vida de jefe.
-- [ ] Si cruza el jardín, se pierde la partida.
-- [ ] Al caer, caen todos sus gusanos, se gana el brote, queda vencido para ese jugador, se entregan las semillas y la ruta lo muestra superado.
+- [x] Morris se ve preparándose en las rondas 7 y 8, y en la 7 Boxer cuenta qué fue el virus de verdad.
+- [x] Mientras vive, saca gusanos por los cinco carriles, cada vez más seguido.
+- [x] Un escudo se comporta frente a él según MR-06.
+- [x] Tiene barra de vida de jefe.
+- [x] Si cruza el jardín, se pierde la partida.
+- [x] Al caer, caen todos sus gusanos, se gana el brote, queda vencido para ese jugador, se entregan las semillas y la ruta lo muestra superado.
 
 ### Calidad
-- [ ] Reglas en `core` con tests propios; valores en `balance.ts`.
-- [ ] Con el tope de MR-10 lleno, el juego va fluido en un móvil con la calidad más baja.
-- [ ] Simulación anotada en la spec con nivel base 1, 3 y 5: un bot que solo pone muros pierde; uno que usa área gana según MR-11.
-- [ ] Propuestas de aspecto antes de pintar el definitivo, y Morris en el catálogo (regla 16).
-- [ ] La partida guardada conserva la sobrecarga; sin migración (ADR-0014).
-- [ ] `docs/specs/07-brote-4-morris.md`, `03-ruta-de-brotes.md` y `01-mecanicas.md`, al día.
-- [ ] Textos en español e inglés.
-- [ ] `npm test` y `npm run build` pasan.
+- [x] Reglas en `core` con tests propios (`morris.test.ts`); valores en `balance.ts`.
+- [x] Con el tope de MR-10 lleno, el juego va fluido en un móvil con la calidad más baja. Medido aquí solo en JavaScript (sin GPU); Carmine lo prueba en su móvil después de cerrar (lo pidió así).
+- [x] Simulación anotada en la spec con nivel base 1, 3 y 5: un bot que solo pone muros pierde; uno que usa área gana según MR-11.
+- [x] Propuestas de aspecto antes de pintar el definitivo, y Morris en el catálogo (regla 16). Carmine eligió la A, el enjambre (MR-08).
+- [x] La partida guardada conserva la sobrecarga; sin migración (ADR-0014): `SAVE_VERSION` 13.
+- [x] `docs/specs/07-brote-4-morris.md`, `03-ruta-de-brotes.md` y `01-mecanicas.md`, al día, con la ADR-0025.
+- [x] Textos en español e inglés.
+- [x] `npm test` y `npm run build` pasan.
+
+## Al cerrarla (23 nov 2026, 0.16.0)
+- Carmine dio por buenos el aspecto (MR-08, la A), las frases de Morris y sus sonidos y los de la sobrecarga (los elegidos de `scripts/audio/manifest.ts`).
+- Queda por su parte probar el combate final en un móvil con la calidad más baja.
+- Versión menor (ADR-0017): un jefe nuevo y una mecánica nueva.
 
 ## Casos límite y riesgos
 - La barra se llena justo al acabar una ronda: no se arrastra a la preparación siguiente.

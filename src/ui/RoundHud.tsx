@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import { EventBus, GameEvents, type BossInfo, type RoundInfo } from '../game/EventBus';
+import { EventBus, GameEvents, type BossInfo, type OverloadInfo, type RoundInfo } from '../game/EventBus';
 import { BossBar } from './BossBar';
+import { OverloadBar } from './OverloadBar';
 import { bossName, outbreakBoss } from './outbreakName';
 import { useText } from './useText';
 
@@ -8,16 +9,18 @@ interface RoundHudProps {
   round: RoundInfo;
   /** Barra del jefe (T-008), mientras dura su combate. */
   boss: BossInfo | null;
+  /** Barra de sobrecarga (T-042), en el brote que la tiene. */
+  overload: OverloadInfo | null;
 }
 
 /**
  * Ronda en curso (T-007): "Ronda N de 10" con una semillita por ronda (las superadas, verdes; la actual late; la del
  * jefe, una pantallita). En la ronda del jefe (T-008) dice su numero como las demas, sin aviso aparte, y, cuando sale el
- * jefe, muestra su barra de vida.
+ * jefe, muestra su barra de vida. En el brote 4 (T-042), debajo de la ronda, la barra de sobrecarga.
  * En la preparacion, la cuenta atras y el boton para adelantar el ataque. Al empezar cada ronda sale debajo su aviso de
  * una linea, que se va solo. React solo pinta y avisa a Phaser por EventBus: la ronda vive en core.
  */
-export function RoundHud({ round, boss }: RoundHudProps) {
+export function RoundHud({ round, boss, overload }: RoundHudProps) {
   const { number, total, bossRound, phase, prepSeconds, notice } = round;
   const isBoss = number === bossRound;
   const t = useText();
@@ -56,6 +59,7 @@ export function RoundHud({ round, boss }: RoundHudProps) {
           </button>
         </div>
       )}
+      {overload && <OverloadBar overload={overload} round={number} />}
       {boss && <BossBar boss={boss} />}
       {/* La clave cambia con la ronda: el aviso vuelve a salir. */}
       <RoundNotice key={number} text={notice} />

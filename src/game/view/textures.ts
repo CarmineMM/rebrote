@@ -83,6 +83,19 @@ import {
   type BrainDesign,
   type BrainMood,
 } from './brainArt';
+import {
+  MORRIS_DESIGN,
+  MORRIS_MOODS,
+  MORRIS_SIZE,
+  MORRIS_TALLY,
+  paintMorrisHead,
+  paintMorrisSegment,
+  paintMorrisTally,
+  paintMorrisTallyMark,
+  paintMorrisWormlet,
+  type MorrisDesign,
+  type MorrisMood,
+} from './morrisArt';
 
 /**
  * Arte hecho por codigo (ADR-0004): todo se pinta con Canvas 2D una sola vez al arrancar
@@ -333,6 +346,31 @@ export function registerBrainTextures(scene: Phaser.Scene, designs: readonly Bra
   }
   paint(BRAIN_TEX.sectorMap, SECTOR_MAP.width, SECTOR_MAP.height, paintSectorMap);
   paint(BRAIN_TEX.badSector, SECTOR_MAP.cell, SECTOR_MAP.cell, paintBadSector);
+}
+
+/** Texturas de Morris (T-042, `morrisArt.ts`) en la propuesta `design`, el gusanito que suelta y su libreta de cuando se prepara. */
+export const MORRIS_TEX = {
+  head: (design: MorrisDesign, mood: MorrisMood) => `morris-${design}-head-${mood}`,
+  segment: (design: MorrisDesign, variant: 0 | 1) => `morris-${design}-segment-${variant}`,
+  wormlet: 'morris-wormlet',
+  tally: 'morris-tally',
+  tallyMark: 'morris-tally-mark',
+} as const;
+
+/**
+ * Pinta a Morris (T-042) en las propuestas `designs`: `registerTextures` pinta la del juego (`MORRIS_DESIGN`); la galeria
+ * `/proposals/jefes.html`, todas. Llamar despues de `registerTextures`.
+ */
+export function registerMorrisTextures(scene: Phaser.Scene, designs: readonly MorrisDesign[] = [MORRIS_DESIGN]): void {
+  const paint = (key: string, width: number, height: number, painter: Painter) => paintTexture(scene, artScale, key, width, height, painter);
+  const { head, segment, wormlet } = MORRIS_SIZE;
+  for (const design of designs) {
+    for (const mood of MORRIS_MOODS) paint(MORRIS_TEX.head(design, mood), head.width, head.height, (ctx) => paintMorrisHead(ctx, design, mood));
+    for (const variant of [0, 1] as const) paint(MORRIS_TEX.segment(design, variant), segment.size, segment.size, (ctx) => paintMorrisSegment(ctx, design, variant));
+  }
+  paint(MORRIS_TEX.wormlet, wormlet.width, wormlet.height, paintMorrisWormlet);
+  paint(MORRIS_TEX.tally, MORRIS_TALLY.width, MORRIS_TALLY.height, paintMorrisTally);
+  paint(MORRIS_TEX.tallyMark, MORRIS_TALLY.cell, MORRIS_TALLY.cell, paintMorrisTallyMark);
 }
 
 /** Textura de la semilla que dispara una planta con `element`. La de escudo dispara como una normal (T-024). */
@@ -628,9 +666,10 @@ export function registerTextures(scene: Phaser.Scene, scale = 1): void {
   paint(TEX.elkScroll, SCROLL_SIZE.width, SCROLL_SIZE.height, paintElkScroll);
   paint(TEX.elkQuill, QUILL_SIZE.width, QUILL_SIZE.height, paintElkQuill);
   paint(TEX.hasteStreak, HASTE_STREAK_SIZE.width, HASTE_STREAK_SIZE.height, paintHasteStreak);
-  // Tropas del brote 3 (T-038), con las propuestas que usa el juego, y su jefe (T-039).
+  // Tropas del brote 3 (T-038), con las propuestas que usa el juego, y su jefe (T-039). Morris (T-042), con la suya.
   registerBugTextures(scene);
   registerBrainTextures(scene);
+  registerMorrisTextures(scene);
 }
 
 // ---------------------------------------------------------------------------

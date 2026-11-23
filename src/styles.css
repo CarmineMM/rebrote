@@ -473,8 +473,91 @@ body {
 }
 .boss-bar.is-brain.is-hidden .boss-face { background: radial-gradient(ellipse at 50% 62%, #2b2034 0 46%, transparent 48%), linear-gradient(180deg, rgba(180, 140, 255, 0.25), rgba(43, 32, 52, 0.4)); border-color: #b48cff; }
 .boss-bar.is-brain.is-hidden .boss-face::after { background: #39ff88; box-shadow: 8px -1px 0 #39ff88, 0 0 6px #39ff88; }
+/* ---------- Morris (T-042): un ovillo de gusanos ciruela con cara de apuro y consola ambar ---------- */
+.round-info.is-boss-morris .round-seed.is-boss {
+  border-radius: 50%; background: radial-gradient(circle at 35% 30%, #f2e4ff, #9c76d2 55%, #52347e); border-color: #2b1746;
+  box-shadow: inset 2px -2px 0 -1px #8a6bbd;
+}
+.round-info.is-boss-morris .round-seed.is-boss.is-current { background: radial-gradient(circle at 50% 50%, #fff4e0, #ffb347 40%, #52347e); border-color: #2b1746; }
+.round-info.is-boss-morris .round-seed.is-boss.is-done { background: radial-gradient(circle at 35% 30%, #fff6c0, #ffd23f 55%, #d1920f); border-color: #6b4505; box-shadow: none; }
+.boss-bar.is-morris {
+  --boss-edge: #ffb347; --boss-light: #f2e4ff; --boss-mid: #9c76d2; --boss-dark: #52347e;
+  background: linear-gradient(180deg, rgba(40, 26, 14, 0.95), rgba(22, 13, 6, 0.95));
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+.boss-bar.is-morris .boss-label strong { color: #f2e4ff; text-shadow: 0 2px 0 #1e1206; }
+.boss-bar.is-morris .boss-phase { font-family: 'Courier New', ui-monospace, Menlo, monospace; font-weight: 700; color: #ffd9a0; }
+/* Mordiendo sin pararse (MR-06): el rotulo late en ambar. */
+.boss-bar.is-morris.is-chewing .boss-phase { color: #ffb347; animation: boss-chew 0.5s ease-in-out infinite alternate; }
+@keyframes boss-chew { to { transform: scale(1.06); text-shadow: 0 0 8px rgba(255, 179, 71, 0.8); } }
+/* Cara en miniatura: una bola ciruela con dos ojos que parpadean, una gota de sudor y un gusanito de pelo. */
+.boss-bar.is-morris .boss-face {
+  width: 32px; height: 30px; border-radius: 50%; border-color: #2b1746;
+  background: radial-gradient(circle at 35% 30%, #f2e4ff, #9c76d2 55%, #52347e);
+}
+.boss-bar.is-morris .boss-face::before {
+  inset: auto; top: -6px; left: 12px; width: 9px; height: 9px; border-radius: 50% 50% 50% 0; background: #8a6bbd; border: 2px solid #23133b;
+}
+.boss-bar.is-morris .boss-face::after {
+  top: 11px; left: 7px; width: 4px; height: 5px; background: #1d1030; box-shadow: 8px -1px 0 #1d1030, 15px -4px 0 -1px #c8ecff;
+  animation: boss-blink 3.2s steps(1) infinite;
+}
 /* En un movil en horizontal la barra ya tapa parte del tablero: sin la fila de notas (el rotulo dice cuantos versos faltan). */
 @media (max-height: 560px) { .boss-verses { display: none; } }
+
+/* ---------- Sobrecarga (T-042): medidor de memoria de una maquina de 1988, bajo la ronda, en el brote 4 ---------- */
+.overload-bar {
+  --overload-color: #39ff88;
+  display: grid; justify-items: center; gap: 4px;
+  animation: pop-in 0.3s cubic-bezier(0.2, 1.3, 0.4, 1) both;
+}
+.overload-bar.is-mid { --overload-color: #ffd23f; }
+.overload-bar.is-high { --overload-color: #ff9a3c; }
+.overload-bar.is-on { --overload-color: #ff4d6d; }
+.overload-meter {
+  display: flex; align-items: center; gap: 8px; padding: 4px 12px 4px 10px; border-radius: 999px;
+  background: rgba(12, 20, 15, 0.86); border: 2px solid color-mix(in srgb, var(--overload-color) 55%, transparent);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3), 0 0 10px color-mix(in srgb, var(--overload-color) 25%, transparent);
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+.overload-bar.is-on .overload-meter { animation: overload-alarm 0.7s ease-in-out infinite; }
+@keyframes overload-alarm {
+  50% { box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3), 0 0 22px rgba(255, 77, 109, 0.85); transform: scale(1.04); }
+}
+/* La clave cambia al encenderse: el rotulo salta. */
+.overload-label {
+  display: inline-block; min-width: 9ch; font-family: 'Courier New', ui-monospace, monospace; font-size: 0.82rem; font-weight: 800;
+  letter-spacing: 0.02em; color: var(--overload-color); text-shadow: 0 0 6px color-mix(in srgb, var(--overload-color) 60%, transparent);
+  animation: cost-pop 0.35s cubic-bezier(0.2, 1.6, 0.4, 1);
+}
+.overload-track {
+  position: relative; width: 150px; height: 12px; border-radius: 4px; overflow: hidden;
+  background: #0a1610; box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.12);
+}
+/* Se llena a bloques, como la memoria de una maquina vieja. */
+.overload-fill {
+  position: absolute; inset: 2px auto 2px 2px; width: max(0px, calc(var(--overload-fill, 0%) - 4px));
+  border-radius: 2px; transition: width 0.25s ease, background-color 0.3s ease;
+  background: repeating-linear-gradient(90deg, var(--overload-color) 0 7px, transparent 7px 9px);
+}
+/* Donde se apaga (MR-04). */
+.overload-off { position: absolute; top: 0; bottom: 0; left: var(--overload-off); width: 2px; background: rgba(255, 255, 255, 0.55); }
+.overload-hint {
+  margin: 0; padding: 3px 10px; border-radius: 10px; max-width: min(360px, calc(100vw - 32px));
+  background: rgba(27, 48, 32, 0.9); border: 1.5px solid rgba(255, 224, 102, 0.35);
+  font-size: 0.8rem; font-weight: 700; color: #f1f7ea; text-align: center; text-wrap: balance; pointer-events: none;
+}
+.overload-hint.is-brief { animation: overload-hint-life 6s ease both; }
+@keyframes overload-hint-life { 0% { opacity: 0; transform: translateY(-4px); } 8%, 85% { opacity: 1; transform: none; } 100% { opacity: 0; } }
+.app.is-paused .overload-bar, .app.is-paused .overload-meter, .app.is-paused .overload-hint { animation-play-state: paused; }
+@media (max-height: 560px) {
+  .overload-meter { gap: 6px; padding: 2px 10px 2px 8px; }
+  .overload-label { font-size: 0.72rem; }
+  .overload-track { width: 110px; height: 10px; }
+  /* En el movil cae sobre el carril de arriba: sale unos segundos y se va, tambien en la ronda 1. */
+  .overload-hint { font-size: 0.7rem; padding: 2px 8px; animation: overload-hint-life 6s ease both; }
+}
+
 
 /* ---------- Carga ---------- */
 .loading {

@@ -150,3 +150,39 @@ describe('brote 3: Brain (T-039; vida +50 % en 0.15.1)', () => {
     expect(five.filter((r) => r.outcome === 'won').length).toBeGreaterThan(0);
   });
 });
+
+/**
+ * Brote 4: Morris (T-042). Lo que pide la task: un bot que solo pone muros pierde; uno que usa dano en area gana segun MR-11
+ * (Carmine, 23 nov 2026: unas 5 de 10 sin mejoras del Vivero). El de area es el de muros con 3 canones que, ademas, siembra
+ * minas de fuego donde pillan a 5 enemigos o mas (`area` en `bot.ts`), tambien antes de montar sus columnas. Ninguno usa
+ * inventos (las rondas se equilibran sin ellos). Lo que da esta en `docs/specs/07-brote-4-morris.md`.
+ */
+const AREA_STRONG: BotStyle = { name: 'con area y 3 canones', shields: 'always', columns: 3, cannons: 3, area: 5, areaEarly: true };
+const AREA: BotStyle = { name: 'con area y 2 canones', shields: 'always', columns: 3, cannons: 2, area: 5, areaEarly: true };
+
+describe('brote 4: Morris (T-042)', () => {
+  it('un bot que solo pone muros pierde, tambien con 3 canones', () => {
+    for (const style of [SHIELDED, SHIELDED_STRONG]) {
+      const results = play('morris', style);
+      report('morris', style, results);
+      expect(results.filter((r) => r.outcome === 'won').length).toBeLessThanOrEqual(RUNS * 0.2);
+    }
+  });
+
+  it('uno que usa area gana unas 5 de 10 sin mejoras (MR-11)', () => {
+    const results = play('morris', AREA_STRONG);
+    report('morris', AREA_STRONG, results);
+    const wins = results.filter((r) => r.outcome === 'won').length;
+    expect(wins).toBeGreaterThanOrEqual(RUNS * 0.3);
+    expect(wins).toBeLessThanOrEqual(RUNS * 0.7);
+  });
+
+  it('con nivel base 3 y 5 (se anota): el de area gana mas; el de muros, algo', () => {
+    for (const baseLevel of [3, 5]) {
+      for (const style of [SHIELDED_STRONG, AREA_STRONG, AREA]) {
+        const results = play('morris', style, baseLevel);
+        report('morris', style, results, baseLevel);
+      }
+    }
+  });
+});

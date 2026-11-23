@@ -1,5 +1,5 @@
-import { CLONE, ENEMIES, LIMITS, OUTBREAKS, ROUND_PREP, STEALTH } from '../config/balance';
-import { enemyPower, isDefeated, rollEnemyLevel, sneaks, spawnEnemy, type Enemy, type EnemyKind } from './combat';
+import { CLONE, CROWD, ENEMIES, LIMITS, MORRIS, OUTBREAKS, ROUND_PREP, STEALTH } from '../config/balance';
+import { enemyPower, isBoss, isDefeated, rollEnemyLevel, sneaks, spawnEnemy, type Enemy, type EnemyKind } from './combat';
 import type { CardId, MatchState } from './match';
 import { outbreakIndex, outbreakScript, outbreaksBefore, roundCount, type OutbreakId } from './outbreaks';
 import type { ElementType } from './plants';
@@ -106,6 +106,27 @@ export interface RoundScript {
 /** Preparacion (cuenta atras antes del ataque), ataque, o partida ganada tras la ultima ronda del brote. */
 export type RoundPhase = 'prep' | 'attack' | 'won';
 
+/**
+ * Un enemigo que tenia que salir cuando ya no cabia (T-042, MR-10: `CROWD.max` a la vez): espera fuera, en orden, y sale por
+ * el agujero de su carril en cuanto hay sitio, con el nivel y el paso que le tocaron.
+ */
+export interface Waiting {
+  readonly kind: EnemyKind;
+  readonly lane: number;
+  readonly level: number;
+  readonly haste: number;
+}
+
+/**
+ * Los gusanos de Morris (T-042, MR-07): lo que lleva fuera, lo que falta para el siguiente y cuantos lleva. Corre desde que
+ * sale y hasta que cae, tambien si va frenado: es una carrera contra el.
+ */
+export interface Brood {
+  readonly sinceMs: number;
+  readonly nextMs: number;
+  readonly count: number;
+}
+
 export interface RoundState {
   /** Ronda en curso, empezando en 0. */
   readonly index: number;
@@ -116,6 +137,10 @@ export interface RoundState {
   readonly elapsedMs: number;
   /** Grupos del guion que ya salieron. */
   readonly released: number;
+  /** Lo que espera fuera a que haya sitio (T-042, `CROWD`), en el orden en que tenia que salir. */
+  readonly waiting: readonly Waiting[];
+  /** Los gusanos de Morris (T-042), desde que sale en el combate final; null antes y en las demas rondas. */
+  readonly brood: Brood | null;
 }
 
 /** Lo que paso con las rondas durante un paso. La vista lo anima; el estado ya esta cambiado. */
@@ -132,7 +157,12 @@ export type RoundEvent =
   /** Superada la ultima ronda del brote (vencido su jefe): partida ganada. */
   | { readonly type: 'won' }
   /** El jefe grita al sacar un grupo (T-009: manda a su escolta). Lo pinta la vista. */
-  | { readonly type: 'shout'; readonly shout: BossShout };
+  | { readonly type: 'shout'; readonly shout: BossShout }
+  /**
+   * Morris (T-042) suelta un gusano por el carril `lane` (MR-07). Si cabe, ya esta en `spawned`; si no, espera fuera
+   * (`RoundState.waiting`). La vista anima que se le suelta.
+   */
+  | { readonly type: 'brooded'; readonly lane: number };
 
 export interface RoundStep {
   readonly state: MatchState;
@@ -146,7 +176,7 @@ export function createRound(outbreak: OutbreakId, index = 0): RoundState {
   if (!Number.isInteger(index) || index < 0 || index >= roundCount(outbreak)) {
     throw new Error(`Ronda invalida: ${index} del brote ${outbreak}`);
   }
-  return { index, phase: 'prep', prepMs: ROUND_PREP.durationMs, elapsedMs: 0, released: 0 };
+  return { index, phase: 'prep', prepMs: ROUND_PREP.durationMs, elapsedMs: 0, released: 0, waiting: [], brood: null };
 }
 
 export function roundScript(outbreak: OutbreakId, index: number): RoundScript {
@@ -385,6 +415,44 @@ export function roundThreat(outbreak: OutbreakId, index: number): number {
   return hp / (lastAt / 1000);
 }
 
+/** ¿Saca gusanos mientras vive (T-042, MR-07)? Morris. */
+export function broods(kind: EnemyKind): boolean {
+  return kind === 'morris';
+}
+
+/**
+ * Lo que tarda Morris en soltar el siguiente gusano cuando lleva `sinceMs` fuera (T-042, MR-07): `MORRIS.brood.startEveryMs` al
+ * salir, y cada vez menos, en linea recta, hasta `minEveryMs` a los `rampMs`. Con el tiempo, no con su vida.
+ */
+export function broodEveryMs(sinceMs: number): number {
+  const { startEveryMs, minEveryMs, rampMs } = MORRIS.brood;
+  const t = Math.min(1, Math.max(0, sinceMs / rampMs));
+  return startEveryMs + (minEveryMs - startEveryMs) * t;
+}
+
+/** Los gusanos de Morris recien salido: el primero, a los `MORRIS.brood.firstMs`. */
+export function newBrood(): Brood {
+  return { sinceMs: 0, nextMs: MORRIS.brood.firstMs, count: 0 };
+}
+
+/**
+ * Avanza `dtMs` los gusanos de Morris (T-042): los carriles por los que suelta uno en este paso, por turnos
+ * (`MORRIS.brood.lanes`), y como queda su reloj.
+ */
+export function stepBrood(brood: Brood, dtMs: number): { readonly brood: Brood; readonly lanes: readonly number[] } {
+  const { lanes: order } = MORRIS.brood;
+  const sinceMs = brood.sinceMs + dtMs;
+  let nextMs = brood.nextMs - dtMs;
+  let count = brood.count;
+  const lanes: number[] = [];
+  while (nextMs <= 0) {
+    lanes.push(order[count % order.length]);
+    count++;
+    nextMs += broodEveryMs(sinceMs + nextMs);
+  }
+  return { brood: { sinceMs, nextMs, count }, lanes };
+}
+
 /** ¿Salio ya el jefe de la ronda y no queda vivo? Entonces la ronda esta despejada aunque falten grupos (T-026). */
 function bossFallen(outbreak: OutbreakId, script: RoundScript, released: number, enemies: readonly Enemy[]): boolean {
   const bossGroup = bossGroupIndex(outbreak, script);
@@ -423,24 +491,61 @@ export function stepRound(state: MatchState, dtMs: number, spawnX: number, rando
   const script = roundScript(outbreak, round.index);
   const { groups, levels } = script;
   const elapsedMs = round.elapsedMs + dt;
+  const haste = roundHaste(outbreak, round.index);
   let released = round.released;
+  let brood = round.brood;
+  /** Lo que corre este paso el reloj de los gusanos de Morris: todo el paso o, si acaba de salir, desde su hora. */
+  let broodMs = dt;
+  const waiting = [...round.waiting];
   let current = state;
   const spawned: Enemy[] = [];
-  // T-026: en la ronda del jefe, cuando el jefe ya salio y cayo, los grupos que faltan (sus refuerzos) ya no salen.
-  if (bossFallen(outbreak, script, released, current.enemies)) released = groups.length;
+  /** Sale por el agujero de su carril si cabe (T-042, `CROWD`); si no, espera fuera. El jefe sale siempre. */
+  const release = (next: Waiting) => {
+    if (!isBoss(next.kind) && current.enemies.length >= CROWD.max) {
+      waiting.push(next);
+      return;
+    }
+    current = spawnEnemy(current, next.kind, next.lane, spawnX, undefined, next.haste, next.level);
+    spawned.push(current.enemies[current.enemies.length - 1]);
+  };
+  // T-026: en la ronda del jefe, cuando el jefe ya salio y cayo, los grupos que faltan (sus refuerzos) ya no salen, ni lo que
+  // esperaba fuera (T-042), ni mas gusanos de Morris.
+  if (bossFallen(outbreak, script, released, current.enemies)) {
+    released = groups.length;
+    waiting.length = 0;
+    brood = null;
+  }
+  // Lo que esperaba fuera sale antes que lo nuevo, en orden, mientras quepa.
+  while (waiting.length > 0 && current.enemies.length < CROWD.max) {
+    const next = waiting.shift() as Waiting;
+    release(next);
+  }
   while (released < groups.length && groups[released].atMs <= elapsedMs) {
     const group = groups[released];
     if (group.shout) events.push({ type: 'shout', shout: group.shout });
     for (const lane of group.lanes) {
       const level = group.level ?? rollEnemyLevel(levels, random);
-      current = spawnEnemy(current, group.kind, lane, spawnX, undefined, group.haste ?? roundHaste(outbreak, round.index), level);
-      spawned.push(current.enemies[current.enemies.length - 1]);
+      release({ kind: group.kind, lane, level, haste: group.haste ?? haste });
+    }
+    // T-042: Morris empieza a soltar gusanos en cuanto sale. Lo que tarda el primero cuenta desde su hora en el guion.
+    if (broods(group.kind)) {
+      brood = newBrood();
+      broodMs = elapsedMs - group.atMs;
     }
     released++;
   }
-  round = { ...round, elapsedMs, released };
+  // Los gusanos de Morris (MR-07): mientras vive, uno cada poco por turnos en los cinco carriles, con los niveles de la ronda.
+  if (brood) {
+    const step = stepBrood(brood, broodMs);
+    brood = step.brood;
+    for (const lane of step.lanes) {
+      events.push({ type: 'brooded', lane });
+      release({ kind: MORRIS.brood.kind, lane, level: rollEnemyLevel(levels, random), haste });
+    }
+  }
+  round = { ...round, elapsedMs, released, waiting, brood };
 
-  if (released === groups.length && current.enemies.length === 0) {
+  if (released === groups.length && current.enemies.length === 0 && waiting.length === 0) {
     if (round.index + 1 < roundCount(outbreak)) {
       // T-020: la ronda superada suma sus semillas a la partida; la ultima no, que da las del jefe al cobrar.
       const credit = creditRound(current, random);
@@ -450,9 +555,11 @@ export function stepRound(state: MatchState, dtMs: number, spawnX: number, rando
       events.push({ type: 'roundStarted', index: round.index });
     } else {
       events.push({ type: 'roundCleared', index: round.index, seeds: 0 });
-      round = { ...round, phase: 'won' };
+      round = { ...round, phase: 'won', brood: null };
       events.push({ type: 'won' });
     }
+    // T-042: la sobrecarga no pasa a la preparacion siguiente.
+    current = { ...current, overload: false };
   }
   return { state: { ...current, round }, spawned, events };
 }

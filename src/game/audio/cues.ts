@@ -46,6 +46,7 @@ const POWER_OF: Record<PowerId, SfxId> = { relocate: 'relocate', grenade: 'grena
  *   nota que se hincha) y el poema, al soltarlo (un acorde grande), desde donde esta.
  * - La granada del poder (T-021) suena al caer y al explotar; los que caen en su explosion no suenan aparte. Lo que da al
  *   muro de hielo suena a cristal (no a madera, como el escudo), el bloque que se rompe estalla y el que se derrite chapotea.
+ * - La sobrecarga (T-042) suena al encenderse (una alarma) y al apagarse (un respiro); cae Morris, su derrota.
  */
 export function combatCues(events: readonly CombatEvent[], before: MatchState): SfxCue[] {
   const cues: SfxCue[] = [];
@@ -99,6 +100,7 @@ export function combatCues(events: readonly CombatEvent[], before: MatchState): 
         if (event.kind === 'creeper') cues.push(at('creeperDefeated', event.at.x));
         else if (event.kind === 'elkCloner') cues.push(at('elkClonerDefeated', event.at.x));
         else if (event.kind === 'brain') cues.push(at('brainDefeated', event.at.x));
+        else if (event.kind === 'morris') cues.push(at('morrisDefeated', event.at.x));
         else if (!bossDown && !blasted.has(event.enemyId)) cues.push(at('enemyKilled', event.at.x));
         break;
       case 'enemyEscaped':
@@ -147,6 +149,12 @@ export function combatCues(events: readonly CombatEvent[], before: MatchState): 
         break;
       case 'concealed':
         break;
+      // La sobrecarga (T-042): una alarma al encenderse y un respiro al apagarse, sin paneo (es de todo el tablero). Si cae el
+      // jefe, se apaga con el y ya suena su derrota.
+      case 'overloaded':
+        if (event.active) cues.push(centered('overloadOn'));
+        else if (!bossDown) cues.push(centered('overloadOff'));
+        break;
       // La mina armada suena con su cuenta atras (`mineTicks`); lo que se apaga o sale del tablero, no suena.
       case 'mineArmed':
       case 'bulletGone':
@@ -159,15 +167,17 @@ export function combatCues(events: readonly CombatEvent[], before: MatchState): 
 }
 
 /**
- * Lo que suena con las rondas: el inicio del ataque y la ronda superada. Tras la ultima ronda del brote (`rounds` son
- * las suyas, T-018) suena la victoria, que la pone la escena con su celebracion. El grito de Creeper suena con su
- * bocadillo.
+ * Lo que suena con las rondas: el inicio del ataque, la ronda superada y cada gusano que suelta Morris (T-042). Tras la
+ * ultima ronda del brote (`rounds` son las suyas, T-018) suena la victoria, que la pone la escena con su celebracion. El grito
+ * de Creeper suena con su bocadillo.
  */
 export function roundCues(events: readonly RoundEvent[], rounds: number): SfxCue[] {
   const cues: SfxCue[] = [];
   for (const event of events) {
     if (event.type === 'attackStarted') cues.push(centered('attackStarted'));
     else if (event.type === 'roundCleared' && event.index + 1 < rounds) cues.push(centered('roundCleared'));
+    // Morris suelta un gusano (T-042, MR-07): un plop por el lado de los agujeros, de donde sale.
+    else if (event.type === 'brooded') cues.push(at('morrisBrood', BOARD.columns));
   }
   return cues;
 }

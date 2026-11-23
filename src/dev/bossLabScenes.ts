@@ -9,6 +9,8 @@ import { BossOmen } from '../game/view/bossView';
 import { createBossOmen } from '../game/view/bossView';
 import { BRAIN_DESIGN, BRAIN_DESIGNS, type BrainDesign } from '../game/view/brainArt';
 import { BrainOmen, BrainView } from '../game/view/brainView';
+import { MORRIS_DESIGN, MORRIS_DESIGNS, type MorrisDesign } from '../game/view/morrisArt';
+import { MorrisOmen, MorrisView } from '../game/view/morrisView';
 import { CreeperView, OMEN_LEAP_MS } from '../game/view/creeperView';
 import { ELK_HUB, ELK_HUBS, type ElkHub } from '../game/view/elkClonerArt';
 import { ElkClonerView } from '../game/view/elkClonerView';
@@ -16,7 +18,7 @@ import { Effects } from '../game/view/effects';
 import { DEPTH, SCENERY, perspective } from '../game/view/layout';
 import { PlantView } from '../game/view/plantView';
 import { QUALITY_PROFILES, type QualityLevel, type QualityProfile } from '../game/view/quality';
-import { elkHeadTexture, registerBrainTextures, registerElkHubTextures, registerTextures } from '../game/view/textures';
+import { elkHeadTexture, registerBrainTextures, registerElkHubTextures, registerMorrisTextures, registerTextures } from '../game/view/textures';
 import { VerseView } from '../game/view/verseView';
 import { WallView } from '../game/view/wallView';
 import { KIND_LOOK, WORM_LOOK, type KindLook } from '../game/view/wormView';
@@ -25,7 +27,7 @@ import { text } from '../i18n';
 /**
  * Escenas de los jefes: "Aspecto" es la de las propuestas (`/proposals/jefes.html`) y "Movimientos", la del catalogo
  * (`/catalog/jefes.html`, T-040). Solo con `npm run dev`. Usan las vistas del juego (`CreeperView`,
- * `ElkClonerView`, `BrainView`, sus versos y el jefe que se prepara) sobre el tablero de verdad, sin partida alrededor: lo que
+ * `ElkClonerView`, `BrainView`, `MorrisView`, sus versos y el jefe que se prepara) sobre el tablero de verdad, sin partida alrededor: lo que
  * dura (el aviso del poema, el salto de Creeper, los saltos de Brain, la quemadura) se lleva aqui a mano, como lo llevaria el
  * estado. No las ve el jugador: sus textos van en espanol sin `src/i18n/` (salvo lo que dicen los jefes, que es lo del juego).
  */
@@ -48,6 +50,8 @@ export type BossAction =
   | 'hide'
   | 'rage'
   | 'talk'
+  | 'brood'
+  | 'overload'
   | 'omen'
   | 'die'
   | 'escape'
@@ -74,6 +78,8 @@ export const BOSS_ACTIONS: Record<BossKind, ReadonlyArray<readonly [BossAction, 
   elkCloner: [...COMMON, ['verse', 'Verso'], ['poem', 'Poema entero'], ...ENDINGS],
   // Brain (T-039): "Andar" es botar sin parar en su sitio; "Saltar", un salto; "Ocultarse", alternar oculto y descubierto.
   brain: [...COMMON, ['hop', 'Saltar'], ['hide', 'Ocultarse / descubrirse'], ['rage', 'Fase 2'], ['talk', 'Hablar'], ...ENDINGS],
+  // Morris (T-042): "Morder" es el mordisco al paso, sin pararse (MR-06); "Soltar gusano" (MR-07) y la sobrecarga, encender y apagar.
+  morris: [...COMMON, ['brood', 'Soltar gusano'], ['overload', 'Sobrecarga'], ['talk', 'Hablar'], ...ENDINGS],
 };
 
 /** Lo que hace "Ver todo seguido": cada accion y cuanto se espera despues. */
@@ -81,6 +87,7 @@ const DEMO: Record<BossKind, ReadonlyArray<readonly [BossAction, number]>> = {
   creeper: [['bite', 1200], ['hit', 700], ['jump', 2600], ['rage', 2200], ['jump', 2200], ['freeze', 2400], ['burn', 2400], ['rage', 1500], ['talk', 2400], ['die', 2400], ['omen', 11000], ['cheer', 3000]],
   elkCloner: [['verse', 3000], ['bite', 1200], ['hit', 700], ['verse', 3200], ['poem', 7800], ['freeze', 2400], ['burn', 2400], ['blast', 1500], ['die', 2400], ['omen', 11000], ['escape', 2600]],
   brain: [['hop', 4200], ['hide', 1800], ['hop', 4200], ['hide', 1600], ['bite', 1400], ['hit', 700], ['talk', 2600], ['rage', 2600], ['hop', 3600], ['freeze', 2400], ['burn', 2400], ['die', 2400], ['omen', 11000], ['cheer', 3000]],
+  morris: [['walk', 1600], ['brood', 1400], ['bite', 1400], ['brood', 1200], ['hit', 700], ['overload', 2600], ['brood', 900], ['brood', 1400], ['overload', 1200], ['freeze', 2400], ['burn', 2400], ['talk', 2600], ['walk', 400], ['die', 2400], ['omen', 11000], ['escape', 2600]],
 };
 
 const LABEL_STYLE = { fontFamily: 'ui-rounded, "Nunito", system-ui, sans-serif', fontStyle: '900', color: '#ffffff', stroke: '#1d2b1f', strokeThickness: 7 };
@@ -90,6 +97,9 @@ interface BossLabData {
   /** Camara acercada a los jefes. */
   zoom: boolean;
 }
+
+/** Lo que ensena "Aspecto": las propuestas de Morris (T-042, MR-08) o las de los jefes de antes. */
+export type BossLookShow = 'morris' | 'earlier';
 
 /** Camara acercada: cuanto y a donde mira (en pantalla). */
 interface Zoom {
@@ -102,6 +112,7 @@ function prepare(scene: Phaser.Scene, quality: QualityProfile, zoomAt: Zoom | nu
   registerTextures(scene, quality.renderScale);
   registerElkHubTextures(scene);
   registerBrainTextures(scene, BRAIN_DESIGNS.map((d) => d.id));
+  registerMorrisTextures(scene, MORRIS_DESIGNS.map((d) => d.id));
   const fit = () => {
     fitCamera(scene, quality.renderScale);
     if (zoomAt) {
@@ -134,10 +145,20 @@ export function elkLook(hub: ElkHub): KindLook {
   };
 }
 
-type LabBossView = CreeperView | ElkClonerView | BrainView;
+type LabBossView = CreeperView | ElkClonerView | BrainView | MorrisView;
 
-function bossView(scene: Phaser.Scene, fx: Effects, enemy: Enemy, hub: ElkHub, design: BrainDesign, emerge: boolean, delayMs = 0): LabBossView {
+function bossView(
+  scene: Phaser.Scene,
+  fx: Effects,
+  enemy: Enemy,
+  hub: ElkHub,
+  design: BrainDesign,
+  emerge: boolean,
+  delayMs = 0,
+  morris: MorrisDesign = MORRIS_DESIGN,
+): LabBossView {
   if (enemy.kind === 'brain') return new BrainView(scene, fx, enemy, emerge, delayMs, design);
+  if (enemy.kind === 'morris') return new MorrisView(scene, fx, enemy, emerge, delayMs, morris);
   return enemy.kind === 'creeper' ? new CreeperView(scene, fx, enemy, emerge, delayMs) : new ElkClonerView(scene, fx, enemy, emerge, delayMs, elkLook(hub));
 }
 
@@ -172,28 +193,42 @@ function hopInPlace(enemy: Enemy, anchor: number, delta: number, again: boolean,
 const LOOKS = { lane: 1, creeperX: 1.35, elkX: [3.45, 5.15, 6.85, 8.55], brainLane: 3, brainX: [2.1, 4.9, 7.7], veilEveryMs: 2600 } as const;
 
 /**
+ * Donde va cada uno con las propuestas de Morris (T-042, MR-08): una por carril (0, 2 y 4), andando sin moverse de su sitio y
+ * soltando un gusano cada poco, con su rotulo a la izquierda; y Creeper en el carril 3, para ver que no se confunden.
+ */
+const MORRIS_LOOKS = { lanes: [0, 2, 4], x: 6.1, labelX: 4.55, creeperLane: 3, creeperX: 1.6, broodEveryMs: 2600 } as const;
+
+/**
  * Los dos jefes en reposo, andando sin moverse de su sitio, en el carril de delante: Creeper y Elk Cloner con cada uno de
  * los aros del disquete (`ELK_HUBS`), el que usa el juego marcado.
  */
 export class BossLooksScene extends Phaser.Scene {
   private quality: QualityProfile = QUALITY_PROFILES.high;
   private zoom = false;
+  private show: BossLookShow = 'morris';
   private ambience?: Ambience;
   private walkers: Array<{ enemy: Enemy; view: LabBossView; stride: number; anchor: number }> = [];
   private veilMs = 0;
+  private broodMs = 0;
 
   constructor() {
     super(BOSS_LAB_SCENES.looks);
   }
 
-  init(data: Partial<BossLabData>): void {
+  init(data: Partial<BossLabData & { show: BossLookShow }>): void {
     this.quality = QUALITY_PROFILES[data.quality ?? 'high'];
     this.zoom = data.zoom ?? false;
+    this.show = data.show ?? 'morris';
     this.walkers = [];
     this.veilMs = 0;
+    this.broodMs = 0;
   }
 
   create(): void {
+    if (this.show === 'morris') {
+      this.createMorris();
+      return;
+    }
     const focus = perspective.toScreen({ x: 4.95, y: LOOKS.brainLane - 0.6 });
     const { ambience, fx } = prepare(this, this.quality, this.zoom ? { ...focus, factor: 1.45 } : null);
     this.ambience = ambience;
@@ -230,8 +265,54 @@ export class BossLooksScene extends Phaser.Scene {
     });
   }
 
+  /** Las tres propuestas de Morris (MR-08), una por carril, y Creeper al lado para comparar. */
+  private createMorris(): void {
+    const focus = perspective.toScreen({ x: MORRIS_LOOKS.x, y: 2.2 });
+    const { ambience, fx } = prepare(this, this.quality, this.zoom ? { ...focus, factor: 1.3 } : null);
+    this.ambience = ambience;
+    const label = (x: number, lane: number, title: string, chosen: boolean) => {
+      const at = perspective.toScreen({ x, y: lane + 0.25 });
+      this.add
+        .text(at.x, at.y, chosen ? `★ ${title}\nen el juego` : title, {
+          ...LABEL_STYLE,
+          color: chosen ? '#ffe27a' : '#ffffff',
+          fontSize: '20px',
+          align: 'right',
+          resolution: this.quality.renderScale,
+        })
+        .setOrigin(1, 0.5)
+        .setDepth(DEPTH.floatText);
+    };
+    MORRIS_DESIGNS.forEach((proposal, i) => {
+      const lane = MORRIS_LOOKS.lanes[i];
+      const enemy = makeBoss('morris', lane, MORRIS_LOOKS.x);
+      const view = bossView(this, fx, enemy, ELK_HUB, BRAIN_DESIGN, false, 0, proposal.id);
+      view.voiced = false;
+      this.walkers.push({ enemy, view, stride: 0, anchor: enemy.x });
+      label(MORRIS_LOOKS.labelX, lane, `Morris ${proposal.letter} · ${proposal.short}`, proposal.id === MORRIS_DESIGN);
+    });
+    const creeper = makeBoss('creeper', MORRIS_LOOKS.creeperLane, MORRIS_LOOKS.creeperX);
+    const view = bossView(this, fx, creeper, ELK_HUB, BRAIN_DESIGN, false);
+    view.voiced = false;
+    this.walkers.push({ enemy: creeper, view, stride: 0, anchor: creeper.x });
+    const at = perspective.toScreen({ x: MORRIS_LOOKS.creeperX, y: MORRIS_LOOKS.creeperLane + 0.95 });
+    this.add
+      .text(at.x, at.y, 'Creeper, para comparar', { ...LABEL_STYLE, fontSize: '18px', resolution: this.quality.renderScale })
+      .setOrigin(0.5, 0)
+      .setDepth(DEPTH.floatText);
+  }
+
   update(_time: number, delta: number): void {
     this.ambience?.update(delta);
+    // Las de Morris sueltan un gusano cada poco, por turnos.
+    this.broodMs += delta;
+    if (this.broodMs >= MORRIS_LOOKS.broodEveryMs) {
+      this.broodMs -= MORRIS_LOOKS.broodEveryMs;
+      const morrises = this.walkers.filter((w) => w.view instanceof MorrisView);
+      morrises.forEach((walker, i) =>
+        this.time.delayedCall(i * 500, () => walker.view instanceof MorrisView && walker.view.brooded((walker.enemy.lane + 1 + i) % 5)),
+      );
+    }
     // Las de Brain se ocultan y se descubren a la vez cada poco, para comparar las siluetas.
     this.veilMs += delta;
     const veiled = Math.floor(this.veilMs / LOOKS.veilEveryMs) % 2 === 1;
@@ -257,6 +338,8 @@ interface MovesData extends BossLabData {
   hub: ElkHub;
   /** Propuesta de Brain (T-039, BR-01). */
   design: BrainDesign;
+  /** Propuesta de Morris (T-042, MR-08). */
+  morrisDesign: MorrisDesign;
 }
 
 /** Carril y columna del jefe en "Movimientos", y lo sembrado delante para ver como le dan sus versos. */
@@ -280,6 +363,9 @@ export class BossMovesScene extends Phaser.Scene {
   private kind: BossKind = 'elkCloner';
   private hub: ElkHub = ELK_HUB;
   private design: BrainDesign = BRAIN_DESIGN;
+  private morrisDesign: MorrisDesign = MORRIS_DESIGN;
+  /** Morris: si la sobrecarga esta encendida ("Sobrecarga"). */
+  private overload = false;
   private ambience?: Ambience;
   private fx?: Effects;
   private enemy: Enemy | null = null;
@@ -306,6 +392,8 @@ export class BossMovesScene extends Phaser.Scene {
     this.kind = data.boss ?? 'elkCloner';
     this.hub = data.hub ?? ELK_HUB;
     this.design = data.design ?? BRAIN_DESIGN;
+    this.morrisDesign = data.morrisDesign ?? MORRIS_DESIGN;
+    this.overload = false;
     this.bouncing = false;
     this.enemy = null;
     this.view = null;
@@ -405,7 +493,21 @@ export class BossMovesScene extends Phaser.Scene {
         this.enemy = { ...enemy, hp: enemy.hp > full * below ? full * 0.4 : full };
         break;
       }
+      case 'brood':
+        // Suelta un gusano (MR-07): se le desprende uno; en la partida, el de verdad sale por el agujero de otro carril.
+        if (view instanceof MorrisView) view.brooded(Math.floor(Math.random() * 5));
+        break;
+      case 'overload':
+        if (view instanceof MorrisView) {
+          this.overload = !this.overload;
+          view.overloaded(this.overload);
+        }
+        break;
       case 'talk':
+        if (view instanceof MorrisView) {
+          const lines = [text().morris.entrance, ...text().morris.brood, ...text().morris.chew, text().morris.overload, text().morris.escape];
+          view.taunt(lines[Math.floor(Math.random() * lines.length)]);
+        }
         if (view instanceof CreeperView) view.taunt(text().cover.creeperLines[Math.floor(Math.random() * text().cover.creeperLines.length)]);
         if (view instanceof BrainView) {
           const lines = [text().brain.entrance, ...text().brain.concealed, ...text().brain.bite, text().brain.escape];
@@ -541,7 +643,8 @@ export class BossMovesScene extends Phaser.Scene {
     if (!this.fx) return;
     this.enemy = this.labBoss(STAGE.x);
     this.stride = 0;
-    this.view = bossView(this, this.fx, this.enemy, this.hub, this.design, emerge, delayMs);
+    this.overload = false;
+    this.view = bossView(this, this.fx, this.enemy, this.hub, this.design, emerge, delayMs, this.morrisDesign);
   }
 
   /** El jefe de la galeria en `x`: Brain, descubierto y quieto hasta que se le pida saltar. */
@@ -567,12 +670,24 @@ export class BossMovesScene extends Phaser.Scene {
       this.view.die();
       this.dropBoss();
     }
-    const omen = this.kind === 'brain' ? new BrainOmen(this, this.fx, 0, true, this.design) : createBossOmen(this.kind, this, this.fx, 0, true);
+    const omen =
+      this.kind === 'brain'
+        ? new BrainOmen(this, this.fx, 0, true, this.design)
+        : this.kind === 'morris'
+          ? new MorrisOmen(this, this.fx, 0, true, this.morrisDesign)
+          : createBossOmen(this.kind, this, this.fx, 0, true);
     this.omen = omen;
     const progress = { v: 0 };
     this.tweens.add({ targets: progress, v: 1, duration: 7000, onUpdate: () => omen.setProgress(progress.v) });
     for (let i = 0; i < 4; i++) this.time.delayedCall(1500 + i * 1100, () => omen.zap(i % 5));
-    const shout = this.kind === 'brain' ? text().brain.shouts.escort : this.kind === 'elkCloner' ? text().elkCloner.shouts.escort : text().creeper.shouts.escort;
+    const shout =
+      this.kind === 'morris'
+        ? text().morris.shouts.escort
+        : this.kind === 'brain'
+          ? text().brain.shouts.escort
+          : this.kind === 'elkCloner'
+            ? text().elkCloner.shouts.escort
+            : text().creeper.shouts.escort;
     this.time.delayedCall(6200, () => omen.command(shout));
     this.time.delayedCall(9000, () => {
       omen.leapTo({ x: SCENERY.holeX, y: STAGE.lane + WORM_LOOK.footY });
@@ -585,7 +700,7 @@ export class BossMovesScene extends Phaser.Scene {
       }
       this.enemy = this.labBoss(SCENERY.holeX);
       this.stride = 0;
-      this.view = bossView(this, this.fx, this.enemy, this.hub, this.design, true, OMEN_LEAP_MS);
+      this.view = bossView(this, this.fx, this.enemy, this.hub, this.design, true, OMEN_LEAP_MS, this.morrisDesign);
       // Sale andando hasta su sitio.
       const walk = { x: SCENERY.holeX };
       this.tweens.add({

@@ -352,6 +352,31 @@ export const MANIFEST: Readonly<Record<SfxId, SoundEntry>> = {
     pick: [digital('phaserDown3'), digital('spaceTrash3', { delayMs: 180, gainDb: -4 }), impact('impactGlass_light_001', { delayMs: 320, gainDb: -6 })],
     alternatives: [[digital('lowDown'), digital('spaceTrash1', { delayMs: 150 })], sfxr('powerDown')],
   },
+  morrisTalk: {
+    about: 'Morris pide perdon en su bocadillo de consola (T-042): el tecleo de un terminal de 1988, mas suave que el de Creeper',
+    pick: [sfxr('terminal', { rate: 0.85, gainDb: -2 }), ui('click_002', { gainDb: -10 })],
+    alternatives: [digital('twoTone1', { lengthMs: 360, fadeOutMs: 140, gainDb: -3 }), sfxr('chirp', { rate: 0.8 })],
+  },
+  morrisBrood: {
+    about: 'A Morris se le suelta un gusano (T-042, MR-07): un plop blando que se hunde en la tierra',
+    pick: [sfxr('pixelPop', { rate: 0.8, gainDb: -4 }), impact('footstep_grass_002', { lengthMs: 160, fadeOutMs: 100, gainDb: -8 })],
+    alternatives: [digital('pepSound1', { lengthMs: 260, fadeOutMs: 120, gainDb: -4 }), sfxr('womp', { rate: 1.3, gainDb: -4 })],
+  },
+  morrisDefeated: {
+    about: 'Cae Morris (T-042): un parche que se instala (arpegio que sube) y el gusano que se deshace en gusanitos',
+    pick: [digital('phaserDown3'), digital('powerUp4', { delayMs: 260, gainDb: -4 }), impact('footstep_grass_001', { delayMs: 380, gainDb: -6 })],
+    alternatives: [[digital('lowDown'), digital('pepSound2', { delayMs: 200 })], sfxr('powerDown')],
+  },
+  overloadOn: {
+    about: 'Se enciende la sobrecarga (T-042): la alarma de una maquina sin recursos, que sube',
+    pick: [sfxr('alarm', { gainDb: -4 }), digital('phaserUp5', { lengthMs: 500, fadeOutMs: 200, gainDb: -6 })],
+    alternatives: [sfxr('alarmLow'), scifi('forceField_002', { lengthMs: 600, fadeOutMs: 250, gainDb: -3 })],
+  },
+  overloadOff: {
+    about: 'Se apaga la sobrecarga (T-042): un respiro, un barrido que baja y se calma',
+    pick: digital('phaserDown2', { lengthMs: 420, fadeOutMs: 200, gainDb: -4 }),
+    alternatives: [scifi('forceField_000', { lengthMs: 450, fadeOutMs: 220, gainDb: -6 }), sfxr('powerDown', { rate: 1.3, gainDb: -6 })],
+  },
   attackStarted: {
     about: 'Empieza el ataque ("¡Ahí vienen!"): trino de 8 bits',
     pick: jingle('jingles_NES13'),

@@ -30,7 +30,7 @@ export const en: Dictionary = {
   outbreak: {
     title: (number, boss) => `Outbreak ${number}: ${boss}`,
     number: (number) => `Outbreak ${number}`,
-    comingBoss: { morris: 'Morris' },
+    comingBoss: {},
   },
 
   title: {
@@ -217,6 +217,12 @@ export const en: Dictionary = {
     lives: (lives, max) => `Lives: ${lives} of ${max}`,
     pause: 'Pause',
     pauseTitle: 'Pause (Esc or P)',
+    overload: {
+      label: 'Overload',
+      full: 'Overload!',
+      hint: 'If the bar fills up, they all run faster. Keep the lawn clear!',
+      aria: (percent, on) => `Overload: ${percent}${on ? ', on' : ''}`,
+    },
     powers: {
       label: 'Gadgets',
       names: { relocate: 'Replant', grenade: 'Grenade', iceWall: 'Ice wall' },
@@ -275,15 +281,21 @@ export const en: Dictionary = {
         'Brain is here! It hops over everything, hidden: only a shield stops it, and mines give it away',
       ],
       morris: [
-        "The worms are back, and in swarms. They've changed color: Morris recruited them",
-        'Copycats and Minstrels are back: clear them fast and put up shields',
-        "All at once: hidden Lurkers, Skippers and everything you've met",
+        'The worms are back, in swarms, recruited by Morris. Watch the bar: if it fills, they all run faster',
+        'Armored worms and spitters in the swarm: fire mines for the crowds',
+        'The Copycats are back: their copies fill the bar. Clear them fast!',
+        'The Minstrel is back: shields up front, and keep clearing',
+        'The Lurkers are back, hidden and in numbers: mines and ice give them away',
+        'The Skipper is back: a gate in every lane, with the swarm behind it',
+        "Morris is getting ready! It can't stop copying itself, and everything comes faster",
+        'Morris is almost ready: even more troops, and even faster. Have the lawn clear when it comes',
+        'Morris is here! Nothing stops it and it keeps shedding worms: knock its worms down so your shots reach it',
       ],
     },
   },
 
   boss: {
-    caught: { creeper: 'Caught!', elkCloner: 'Silenced!', brain: 'Formatted!' },
+    caught: { creeper: 'Caught!', elkCloner: 'Silenced!', brain: 'Formatted!', morris: 'Patched!' },
     phase1: 'Phase 1',
     phase2: 'Phase 2: angry!',
     health: (name) => `${name}'s health`,
@@ -292,6 +304,8 @@ export const en: Dictionary = {
 
     hidden: (enraged) => (enraged ? 'Hidden · phase 2' : 'Hidden'),
     revealed: (enraged) => (enraged ? 'Spotted! · phase 2' : 'Spotted!'),
+    brood: (time) => `A worm every ${time}`,
+    chewing: 'Chewing! · at half speed',
   },
 
   level: {
@@ -469,31 +483,34 @@ export const en: Dictionary = {
 
   defeat: {
     title: 'They got through!',
-    bossTitle: { creeper: 'Creeper got away!', elkCloner: 'Elk Cloner crossed the garden!', brain: 'Brain crossed the garden!' },
+    bossTitle: { creeper: 'Creeper got away!', elkCloner: 'Elk Cloner crossed the garden!', brain: 'Brain crossed the garden!', morris: 'Morris crossed the garden!' },
     text: (crossed, round, total, outbreak) =>
       `${crossed === 1 ? `1 ${outbreak === 'brain' ? 'bug' : 'worm'}` : `${crossed} ${outbreak === 'brain' ? 'bugs' : 'worms'}`} crossed the garden${round === null ? '' : ` in round ${round} of ${total}`}.`,
     bossText: {
       creeper: 'It jumped lanes and crossed the garden in the final battle.',
       elkCloner: 'It recited to the very end and crossed the garden in the final battle.',
       brain: 'It hopped over everything, hidden, and crossed the garden in the final battle.',
+      morris: 'It buried you in worms and crossed the garden in the final battle.',
     },
     hint: 'Each shooter only guards its own lane: cover all five.',
     bossHint: {
       creeper: 'Creeper jumps lanes: spread your defenses across all five.',
       elkCloner: 'Only a shield stops its verses and its poem: put one in front of your shooters in every lane.',
       brain: 'Only a shield stops it: put one in its lane and replace it when it falls. A mine next to it gives it away too.',
+      morris: 'Its worms soak up your shots: blow up the crowds with fire mines or the grenade and your shots will reach it.',
     },
     again: 'Play again',
     menu: 'Main menu',
   },
 
   victory: {
-    title: { creeper: 'You caught Creeper!', elkCloner: 'You silenced Elk Cloner!', brain: 'You formatted Brain!' },
+    title: { creeper: 'You caught Creeper!', elkCloner: 'You silenced Elk Cloner!', brain: 'You formatted Brain!', morris: 'You patched Morris!' },
     text: (rounds) => `You beat all ${rounds} rounds and the garden is safe.`,
     hint: {
       creeper: 'Creeper (1971) was the first computer worm: it hopped from machine to machine.',
       elkCloner: 'Elk Cloner (1982) traveled on Apple II floppy disks and showed a poem every 50th boot.',
       brain: 'Brain (1986) was the first PC virus: it hid in the boot sector of floppy disks.',
+      morris: 'Morris (1988) was the first big internet worm: it copied itself again and again until the machines ran out of resources.',
     },
     again: 'Play again',
     greenhouse: 'To the greenhouse',
@@ -567,7 +584,8 @@ export const en: Dictionary = {
     attack: 'Here they come!',
     roundCleared: (round) => `Round ${round} cleared!`,
     seedsEarned: (amount, count) => `+${count === 1 ? '1 seed' : `${amount} seeds`}`,
-    bossDown: { creeper: 'Creeper caught!', elkCloner: 'Elk Cloner silenced!', brain: 'Brain formatted!' },
+    bossDown: { creeper: 'Creeper caught!', elkCloner: 'Elk Cloner silenced!', brain: 'Brain formatted!', morris: 'Morris patched!' },
+    overload: 'Overload!',
     poem: 'The whole poem!',
     gardenSafe: 'Garden saved!',
     bossEscaped: 'It got away!',
@@ -629,6 +647,17 @@ export const en: Dictionary = {
     shouts: { escort: 'Lurkers, hide! Skippers, hop!' },
   },
 
+  morris: {
+    entrance: "Sorry, sorry! They won't stop coming out!",
+    brood: ['Oops, another one!', 'Sorry, I copy myself!', 'Sorry! I only wanted to count you all!', 'Somebody stop me!', "Oh no, they're getting away!"],
+    chew: ["Excuse me, I'm in a hurry!", 'Sorry about the bite!', "I can't brake!"],
+    overload: "Oh dear, it's filling up!",
+    escape: "I'm so, so sorry! Will you forgive me?",
+    cheer: 'Sorry! Sorry! But look at all those copies!',
+    preparing: 'Counting machines… one, two, two? I copied myself again!',
+    shouts: { escort: 'Sorry about the escort! Armored worms, forward!' },
+  },
+
   info: {
     close: 'Close the info card',
     closeTitle: 'Close (Esc)',
@@ -679,6 +708,12 @@ export const en: Dictionary = {
       biteNote: (time) => `every ${time}`,
       slam: 'Landing slam',
       slamNote: 'when it lands from a jump',
+      brood: 'Worms',
+      broodValue: (time) => `One every ${time}`,
+      broodNote: (time) => `faster and faster, up to one every ${time}`,
+      chew: 'When it bites',
+      chewValue: 'Keeps going at half speed',
+      chewNote: 'nothing stops it',
       speed: 'Speed',
       speedValue: (cells) => `${cells} tiles/s`,
       crosses: (seconds) => `crosses the garden in ${seconds} s`,
@@ -711,6 +746,7 @@ export const en: Dictionary = {
       burning: (amount) => `Burning: −${amount} per second`,
       slowed: (percent) => `Slowed by ${percent}`,
       hasted: (percent) => `Sped up +${percent}`,
+      overloaded: (percent) => `Overload: +${percent}`,
       cracked: 'Cracked',
       crumbling: 'About to break!',
       melting: 'Melting!',
@@ -769,6 +805,7 @@ export const en: Dictionary = {
         lurkerArmored: 'Armored Lurker',
         skipper: 'Skipper',
         brain: 'Brain',
+        morris: 'Morris',
       },
       cloneNames: { copycat: 'Copycat copy', copycatArmored: 'Armored copy', copycatSpitter: 'Spitter copy' },
       subtitle: {
@@ -789,6 +826,7 @@ export const en: Dictionary = {
         poet: (outbreak) => `The Poet · outbreak ${outbreak} boss`,
         mastermind: (outbreak) => `The Mastermind · outbreak ${outbreak} boss`,
         mastermindEnraged: (outbreak) => `The Mastermind · outbreak ${outbreak} boss · phase 2`,
+        unstoppable: (outbreak) => `The Unstoppable · outbreak ${outbreak} boss`,
       },
       about: {
         worm: 'Crawls along its lane and bites the first thing it finds until it is destroyed.',
@@ -813,6 +851,8 @@ export const en: Dictionary = {
           `Hops ${cells} tiles at a time over plants and mines, and only a shield stops it, which it then bites. Shots miss it in the air: catch it on the ground.`,
         brain: (cells) =>
           `Moves hidden, hopping ${cells} tiles at a time over plants and mines, and plants don't aim at it. Only a shield stops it: it lands in front, shows itself and bites it. A mine or the grenade going off next to it also gives it away for a while. If it crosses the garden, you lose the game.`,
+        morris:
+          'Nothing stops it: it bites whatever it touches and keeps going at half speed. It sheds worms down all five lanes, faster and faster, and its worms soak up the shots meant for it. If it crosses the garden, you lose the game.',
       },
     },
   },

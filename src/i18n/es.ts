@@ -40,10 +40,9 @@ export const es = {
     /**
      * Jefe de un brote en preparacion (T-024): el brote ya tiene rondas, pero su jefe aun no es un enemigo del juego (no
      * esta en `info.enemy.names`). Cuando lo sea, sale de alli y se quita de aqui. Elk Cloner, el del brote 2, llego con
-     * T-026; Brain, el del brote 3, llega con T-039.
+     * T-026; Brain, el del brote 3, con T-039, y Morris, el del brote 4, con T-042. Hoy no hay ninguno.
      */
-    /** T-024: el jefe de un brote en preparacion, por su `id`, mientras no es un enemigo del juego. Hoy, Morris (T-041; llega con T-042). */
-    comingBoss: { morris: 'Morris' },
+    comingBoss: {} as Partial<Record<string, string>>,
   },
 
   /** Menu de inicio (T-011). */
@@ -267,6 +266,16 @@ export const es = {
     lives: (lives: number, max: number) => `Vidas: ${lives} de ${max}`,
     pause: 'Pausa',
     pauseTitle: 'Pausa (Esc o P)',
+    /**
+     * La barra de sobrecarga (T-042) del brote 4: su rotulo, encendida y la linea que la explica la primera vez que sale. Si
+     * se llena, todos corren mas (MR-03) hasta que baja bastante (MR-04).
+     */
+    overload: {
+      label: 'Sobrecarga',
+      full: '¡Sobrecarga!',
+      hint: 'Si la barra se llena, todos corren más. ¡Limpia el césped!',
+      aria: (percent: string, on: boolean) => `Sobrecarga: ${percent}${on ? ', encendida' : ''}`,
+    },
     /** Panel izquierdo de los inventos (T-021, T-036: antes "poderes"). */
     powers: {
       label: 'Inventos',
@@ -331,18 +340,24 @@ export const es = {
         'Brain casi está listo: aún más tropas y más rápidas. Cierra los cinco carriles',
         '¡Llega Brain! Salta oculto por encima de todo: solo lo para un escudo, y las minas lo descubren',
       ],
-      // T-041: el guion provisional del brote 4, en preparacion. T-042 escribe el de verdad.
+      // T-042: el guion del brote 4, con las tropas que recluta Morris (T-041). La 1 presenta la sobrecarga en una linea.
       morris: [
-        'Vuelven los gusanos, y ahora en masa. Tienen otro color: los ha reclutado Morris',
-        'Vuelven los Copycat y los Minstrel: limpia deprisa y pon escudos',
-        'Todos a la vez: Lurker ocultos, Skipper y lo que ya conoces',
+        'Vuelven los gusanos, en masa y reclutados por Morris. Ojo a la barra: si se llena, todos corren más',
+        'Acorazados y escupidores entre la marea: minas de fuego para los grupos',
+        'Vuelven los Copycat: sus copias llenan la barra. ¡Limpia deprisa!',
+        'Vuelve el Minstrel: escudos delante, sin dejar de limpiar',
+        'Vuelven los Lurker, ocultos y en cantidad: minas y hielo para descubrirlos',
+        'Vuelve el Skipper: una puerta en cada carril, con la marea detrás',
+        '¡Morris se prepara! No para de copiarse y todo llega más rápido',
+        'Morris casi está listo: aún más tropas y más rápidas. Llega con el césped limpio',
+        '¡Llega Morris! Nada lo para y no deja de soltar gusanos: tumba a los suyos para que tus balas le lleguen',
       ],
     },
   },
 
   boss: {
     /** Derrotado, en su barra: cada jefe a su manera. */
-    caught: { creeper: '¡Atrapado!', elkCloner: '¡Silenciado!', brain: '¡Formateado!' },
+    caught: { creeper: '¡Atrapado!', elkCloner: '¡Silenciado!', brain: '¡Formateado!', morris: '¡Parcheado!' },
     phase1: 'Fase 1',
     phase2: 'Fase 2: ¡enfadado!',
     health: (name: string) => `Vida de ${name}`,
@@ -352,6 +367,9 @@ export const es = {
     /** Brain (T-039): oculto o descubierto, y en su fase 2. */
     hidden: (enraged: boolean): string => (enraged ? 'Oculto · fase 2' : 'Oculto'),
     revealed: (enraged: boolean): string => (enraged ? '¡Descubierto! · fase 2' : '¡Descubierto!'),
+    /** Morris (T-042): cada cuanto suelta un gusano (MR-07), y mientras muerde algo, que va a la mitad (MR-06). */
+    brood: (time: string) => `Un gusano cada ${time}`,
+    chewing: '¡Mordiendo! · a media marcha',
   },
 
   level: {
@@ -543,7 +561,7 @@ export const es = {
         line: '¡Que viene Brain! En 1986 fue el primer virus para PC. Se escondía de quien lo buscaba… ¡y dejó su teléfono en el código!',
         card: 'Brain (1986) fue el primer virus para PC. Lo escribieron dos hermanos de Lahore, que dejaron dentro del código su nombre, su dirección y su teléfono. Viajaba en los disquetes, en el sector de arranque, y era sigiloso: si alguien miraba el disco, le enseñaba una copia limpia. No destruía nada.',
       },
-      // T-041: el brote 4, en preparacion. Sale cuando Morris empiece a prepararse (T-042); la historia del brote, T-043.
+      // T-041: el brote 4. Sale en la ronda 7, cuando Morris empieza a prepararse (T-042); la historia del brote, T-043.
       morris: {
         line: '¡Que viene Morris! En 1988 fue el primer gran gusano de internet. No quería romper nada… pero no paraba de copiarse.',
         card: 'Morris (1988) fue el primer gran gusano de internet. Lo escribió un estudiante que solo quería medir lo grande que era la red. Pero tenía un fallo: se volvía a copiar en equipos que ya estaban infectados, una y otra vez, hasta dejarlos sin recursos. Dejó fuera de servicio miles de equipos.',
@@ -571,7 +589,7 @@ export const es = {
   defeat: {
     title: '¡Se colaron!',
     /** Cuando el jefe cruza el jardin (T-008): cada uno con lo suyo. */
-    bossTitle: { creeper: '¡Creeper se escapó!', elkCloner: '¡Elk Cloner cruzó el jardín!', brain: '¡Brain cruzó el jardín!' },
+    bossTitle: { creeper: '¡Creeper se escapó!', elkCloner: '¡Elk Cloner cruzó el jardín!', brain: '¡Brain cruzó el jardín!', morris: '¡Morris cruzó el jardín!' },
     /** `outbreak`: en el brote 3 (T-038) no son gusanos, sino bichos. */
     text: (crossed: number, round: number | null, total: number, outbreak: string) =>
       `${crossed === 1 ? `1 ${outbreak === 'brain' ? 'bicho' : 'gusano'} cruzó` : `${crossed} ${outbreak === 'brain' ? 'bichos' : 'gusanos'} cruzaron`} el jardín${round === null ? '' : ` en la ronda ${round} de ${total}`}.`,
@@ -579,12 +597,14 @@ export const es = {
       creeper: 'Saltó de carril y cruzó el jardín en el combate final.',
       elkCloner: 'Recitó hasta el final y cruzó el jardín en el combate final.',
       brain: 'Saltó oculto por encima de todo y cruzó el jardín en el combate final.',
+      morris: 'Te enterró en gusanos y cruzó el jardín en el combate final.',
     },
     hint: 'Cada disparadora solo defiende su carril: cubre los cinco.',
     bossHint: {
       creeper: 'Creeper salta de carril: reparte tus defensas por los cinco.',
       elkCloner: 'Sus versos y su poema solo los para un escudo: pon uno delante de tus disparadoras en cada carril.',
       brain: 'Solo lo para un escudo: pon uno en su carril y repónlo cuando caiga. Una mina a su lado también lo descubre.',
+      morris: 'Sus gusanos se comen tus balas: tumba los grupos con minas de fuego o la granada y tus disparos le llegarán a él.',
     },
     again: 'Jugar otra vez',
     menu: 'Menú principal',
@@ -592,12 +612,13 @@ export const es = {
 
   victory: {
     /** Cada jefe con lo suyo (T-026). */
-    title: { creeper: '¡Atrapaste a Creeper!', elkCloner: '¡Silenciaste a Elk Cloner!', brain: '¡Formateaste a Brain!' },
+    title: { creeper: '¡Atrapaste a Creeper!', elkCloner: '¡Silenciaste a Elk Cloner!', brain: '¡Formateaste a Brain!', morris: '¡Parcheaste a Morris!' },
     text: (rounds: number) => `Superaste las ${rounds} rondas y el jardín está a salvo.`,
     hint: {
       creeper: 'Creeper (1971) fue el primer gusano informático: saltaba de máquina en máquina.',
       elkCloner: 'Elk Cloner (1982) viajaba en los disquetes de los Apple II y enseñaba un poema cada 50 arranques.',
       brain: 'Brain (1986) fue el primer virus para PC: se escondía en el sector de arranque de los disquetes.',
+      morris: 'Morris (1988) fue el primer gran gusano de internet: se copiaba una y otra vez hasta dejar las máquinas sin recursos.',
     },
     again: 'Jugar otra vez',
     /** Tras vencer a un jefe se va al Invernadero (T-019). */
@@ -697,7 +718,9 @@ export const es = {
     roundCleared: (round: number) => `¡Ronda ${round} superada!`,
     /** Bajo "¡Ronda N superada!": lo que sumo a la partida (T-020). */
     seedsEarned: (amount: string, count: number) => `+${count === 1 ? '1 semilla' : `${amount} semillas`}`,
-    bossDown: { creeper: '¡Creeper atrapado!', elkCloner: '¡Elk Cloner, silenciado!', brain: '¡Brain, formateado!' },
+    bossDown: { creeper: '¡Creeper atrapado!', elkCloner: '¡Elk Cloner, silenciado!', brain: '¡Brain, formateado!', morris: '¡Morris, parcheado!' },
+    /** La sobrecarga (T-042) se enciende sobre el tablero. */
+    overload: '¡Sobrecarga!',
     /** Elk Cloner anuncia el poema entero (T-026, L-03). */
     poem: '¡Poema entero!',
     gardenSafe: '¡Jardín a salvo!',
@@ -784,6 +807,24 @@ export const es = {
     shouts: { escort: '¡Lurkers, a esconderse! ¡Skippers, a saltar!' },
   },
 
+  /**
+   * Lo que dice Morris, el Imparable (T-042, MR-09), en su bocadillo de consola: pide perdon mientras lo inunda todo. El Morris
+   * real lo escribio un estudiante que solo queria medir la red, y un fallo lo hacia copiarse sin parar.
+   */
+  morris: {
+    entrance: '¡Perdón, perdón! ¡No paran de salir!',
+    /** Una de cada pocas veces que se le suelta un gusano, por turnos. */
+    brood: ['¡Uy, otro!', '¡Lo siento, me copio solo!', '¡Perdón! ¡Yo solo quería contaros!', '¡Que alguien me pare!', '¡Ay, ay, ay, que se me escapan!'],
+    /** Una de cada pocas veces que muerde algo sin pararse (MR-06), por turnos. */
+    chew: ['¡Disculpa, voy con prisa!', '¡Perdón por el mordisco!', '¡No puedo frenar!'],
+    /** Al encenderse la sobrecarga (T-042). */
+    overload: '¡Ay, que esto se llena!',
+    escape: '¡Lo siento muchísimo! ¿Me perdonas?',
+    cheer: '¡Perdón! ¡Perdón! ¡Pero qué de copias!',
+    preparing: 'Contando máquinas… uno, dos, ¿dos? ¡Me he vuelto a copiar!',
+    shouts: { escort: '¡Perdón por la escolta! ¡Acorazados, adelante!' },
+  },
+
   /** Ficha de informacion (T-010). */
   info: {
     close: 'Cerrar la ficha',
@@ -841,6 +882,13 @@ export const es = {
       biteNote: (time: string) => `cada ${time}`,
       slam: 'Golpe al caer',
       slamNote: 'al aterrizar de un salto',
+      /** Morris (T-042): los gusanos que suelta (MR-07) y lo que hace al morder (MR-06). */
+      brood: 'Gusanos',
+      broodValue: (time: string) => `Uno cada ${time}`,
+      broodNote: (time: string) => `cada vez más seguido, hasta uno cada ${time}`,
+      chew: 'Al morder',
+      chewValue: 'Sigue a media marcha',
+      chewNote: 'nada lo para',
       speed: 'Velocidad',
       speedValue: (cells: string) => `${cells} casillas/s`,
       crosses: (seconds: number) => `cruza el jardín en ${seconds} s`,
@@ -877,6 +925,8 @@ export const es = {
       burning: (amount: string) => `Quemado: −${amount} por segundo`,
       slowed: (percent: string) => `Frenado un ${percent}`,
       hasted: (percent: string) => `Acelerado +${percent}`,
+      /** La sobrecarga encendida (T-042) acelera a todos menos al jefe. */
+      overloaded: (percent: string) => `Sobrecarga: +${percent}`,
       /** Desgaste del muro (T-024). */
       cracked: 'Agrietado',
       crumbling: '¡A punto de romperse!',
@@ -949,6 +999,8 @@ export const es = {
         skipper: 'Skipper',
         /** Jefe del brote 3 (T-039). */
         brain: 'Brain',
+        /** Jefe del brote 4 (T-042). */
+        morris: 'Morris',
       },
       /** La copia que deja cada Copycat al caer (T-025, F-01). */
       cloneNames: { copycat: 'Copia de Copycat', copycatArmored: 'Copia acorazada', copycatSpitter: 'Copia escupidora' },
@@ -972,6 +1024,8 @@ export const es = {
         /** Brain, el Cerebro (T-039), y en su fase 2 (BR-06). */
         mastermind: (outbreak: number) => `El Cerebro · jefe del brote ${outbreak}`,
         mastermindEnraged: (outbreak: number) => `El Cerebro · jefe del brote ${outbreak} · fase 2`,
+        /** Morris, el Imparable (T-042). */
+        unstoppable: (outbreak: number) => `El Imparable · jefe del brote ${outbreak}`,
       },
       about: {
         worm: 'Avanza por su carril y muerde lo primero que encuentra hasta destruirlo.',
@@ -996,6 +1050,8 @@ export const es = {
           `Avanza a saltos de ${cells} casillas por encima de plantas y minas y solo lo para un escudo, al que muerde. En el aire no le dan las balas: hay que pillarlo en tierra.`,
         brain: (cells: string) =>
           `Avanza oculto, a saltos de ${cells} casillas por encima de plantas y minas, y las plantas no le apuntan. Solo lo para un escudo: cae delante, se descubre y lo muerde. Una mina o la granada que estalla a su lado también lo descubre un rato. Si cruza el jardín, se pierde la partida.`,
+        morris:
+          'Nada lo para: muerde lo que toca y, mientras, sigue a media marcha. Suelta gusanos por los cinco carriles, cada vez más seguido, y los suyos se comen las balas que van hacia él. Si cruza el jardín, se pierde la partida.',
       },
     },
   },

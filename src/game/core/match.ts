@@ -120,6 +120,12 @@ export interface MatchState {
    * cobran al acabar (`settleSeeds`); salir al menu con la partida guardada no entrega nada.
    */
   readonly seeds: MatchSeeds;
+  /**
+   * Sobrecarga encendida (T-042, `OVERLOAD`): la barra se lleno y todos los enemigos, menos el jefe, avanzan mas deprisa hasta
+   * que baja de `OVERLOAD.offBelow`. Lo llena que esta la barra no se guarda: sale de los enemigos (`overloadFill`). Siempre
+   * false en un brote sin sobrecarga, y al empezar cada ronda.
+   */
+  readonly overload: boolean;
   /** Siguiente id libre para enemigos y balas: la vista sigue a cada uno por su id. */
   readonly nextId: number;
 }
@@ -162,6 +168,7 @@ export function createMatch(
     round: createRound(outbreak, roundIndex),
     incomeMs: 0,
     seeds: newMatchSeeds(replay),
+    overload: false,
     nextId: 1,
   };
 }

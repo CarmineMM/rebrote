@@ -17,7 +17,7 @@ import type { Presenter, RoundScript } from './rounds';
 /**
  * Nombre de cada brote: el de su jefe. Al anadir un brote, su nombre va aqui. El brote 2, de Elk Cloner, existio desde
  * T-024 en preparacion (sin jefe) hasta que T-026 trajo a su jefe y su guion de verdad. El 3, de Brain, lo estuvo desde
- * T-037 hasta T-039. El 4, de Morris, lo esta desde T-041 hasta que T-042 traiga a su jefe.
+ * T-037 hasta T-039. El 4, de Morris, lo estuvo desde T-041 hasta T-042, que trajo a su jefe y sus 9 rondas.
  */
 export type OutbreakId = 'creeper' | 'elkCloner' | 'brain' | 'morris';
 
@@ -48,6 +48,11 @@ export interface OutbreakScript {
    * color de este brote (`troopVariant` en `variants.ts`), con su nombre, sus reglas y sus valores base. Desde el brote 4.
    */
   readonly recruits?: boolean;
+  /**
+   * Tiene sobrecarga (T-042, `OVERLOAD`): una barra sube con los enemigos vivos en el cesped y, llena, los acelera a todos menos
+   * al jefe. El rasgo del brote 4, desde su ronda 1 (MR-02).
+   */
+  readonly overload?: boolean;
 }
 
 /** Brote con el que empieza el juego: el primero de la lista. */
@@ -93,6 +98,11 @@ export function outbreakFromParam(value: string | null): OutbreakId | null {
 /** Brotes que van antes que `id`, en orden (B-01: lo que desbloquearon llega ya desbloqueado). */
 export function outbreaksBefore(id: OutbreakId): readonly OutbreakScript[] {
   return OUTBREAKS.slice(0, outbreakIndex(id));
+}
+
+/** ¿Tiene sobrecarga el brote (T-042)? El 4, el de Morris. */
+export function hasOverload(id: OutbreakId): boolean {
+  return outbreakScript(id).overload === true;
 }
 
 /** Brote cuyo jefe es `kind`, o null si no es jefe de ninguno. */

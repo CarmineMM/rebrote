@@ -3,15 +3,17 @@ import { useEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { ELK_HUB, ELK_HUBS } from '../game/view/elkClonerArt';
 import { BRAIN_DESIGN, BRAIN_DESIGNS } from '../game/view/brainArt';
+import { MORRIS_DESIGN, MORRIS_DESIGNS } from '../game/view/morrisArt';
 import { viewFor } from '../game/view/layout';
 import { QUALITY_LEVELS, QUALITY_PROFILES, type QualityLevel } from '../game/view/quality';
-import { BOSS_LAB_SCENES, BossLooksScene } from './bossLabScenes';
+import { BOSS_LAB_SCENES, BossLooksScene, type BossLookShow } from './bossLabScenes';
 import './shooterLab.css';
 
 /**
- * Propuestas de los jefes (T-026): `npm run dev` y abrir `/proposals/jefes.html`. Pone a Creeper y a Elk Cloner lado a
- * lado, Elk Cloner con cada propuesta del aro del disquete (`ELK_HUBS`), y detras las tres propuestas de Brain (T-039,
- * BR-01, `BRAIN_DESIGNS`). Usa las vistas del juego, asi que se ve como en una partida. Lo que hace cada jefe en su combate
+ * Propuestas de los jefes (T-026): `npm run dev` y abrir `/proposals/jefes.html`. Abre con las tres propuestas de Morris
+ * (T-042, MR-08, `MORRIS_DESIGNS`), una por carril y soltando gusanos, con Creeper al lado para comparar. "Jefes de antes"
+ * pone a Creeper y a Elk Cloner lado a lado, Elk Cloner con cada propuesta del aro del disquete (`ELK_HUBS`), y detras las
+ * tres propuestas de Brain (T-039, BR-01, `BRAIN_DESIGNS`). Usa las vistas del juego, asi que se ve como en una partida. Lo que hace cada jefe en su combate
  * ("Movimientos") esta en el catalogo, `/catalog/jefes.html` (T-040). No la ve el jugador (`npm run build` no la
  * incluye), asi que sus textos van en espanol sin `src/i18n/`.
  */
@@ -23,6 +25,9 @@ function BossLab() {
   const game = useRef<Phaser.Game | null>(null);
   const [quality, setQuality] = useState<QualityLevel>('high');
   const [zoom, setZoom] = useState(false);
+  const [show, setShow] = useState<BossLookShow>('morris');
+  const restart = (next: Partial<{ zoom: boolean; show: BossLookShow }>) =>
+    game.current?.scene.getScene(BOSS_LAB_SCENES.looks)?.scene.restart({ quality, zoom, show, ...next });
 
   // El juego se crea con su nivel grafico; cambiarlo lo vuelve a crear, como en el juego.
   useEffect(() => {
@@ -41,7 +46,7 @@ function BossLab() {
       render: { powerPreference: 'high-performance' },
       audio: { noAudio: true },
     });
-    created.scene.add(BOSS_LAB_SCENES.looks, BossLooksScene, true, { quality, zoom });
+    created.scene.add(BOSS_LAB_SCENES.looks, BossLooksScene, true, { quality, zoom, show });
     game.current = created;
     (window as unknown as { __bossLab?: Phaser.Game }).__bossLab = created;
     return () => {
@@ -58,13 +63,25 @@ function BossLab() {
           Jefes <span>propuestas de aspecto, solo desarrollo · <a href="/catalog/jefes.html">sus movimientos, en el catálogo</a></span>
         </h1>
         <div className="lab-tools">
+          <select
+            value={show}
+            onChange={(event) => {
+              const next = event.target.value as BossLookShow;
+              setShow(next);
+              restart({ show: next });
+            }}
+            title="Qué jefes"
+          >
+            <option value="morris">Morris (brote 4)</option>
+            <option value="earlier">Jefes de antes</option>
+          </select>
           <label className="lab-check">
             <input
               type="checkbox"
               checked={zoom}
               onChange={(event) => {
                 setZoom(event.target.checked);
-                game.current?.scene.getScene(BOSS_LAB_SCENES.looks)?.scene.restart({ quality, zoom: event.target.checked });
+                restart({ zoom: event.target.checked });
               }}
             />
             Acercar
@@ -80,6 +97,20 @@ function BossLab() {
       </header>
       <div className="lab-stage" ref={host} />
       <footer className="lab-notes">
+        {MORRIS_DESIGNS.map((option) => (
+          <p key={option.id}>
+            <b>
+              Morris {option.letter} · {option.name}
+              {option.id === MORRIS_DESIGN ? ' (en el juego)' : ''}.
+            </b>{' '}
+            {option.about}
+          </p>
+        ))}
+        <p className="lab-ask">
+          MR-08 (T-042): ¿qué aspecto tiene Morris? Las tres son un gusano enorme que pide perdón todo el rato (sudor, cejas de apuro, bocadillo de consola ámbar), sin
+          pantalla, para no confundirse con Creeper, que está al lado. Carmine eligió la A, el enjambre (23 nov 2026); el juego usa la que diga
+          `MORRIS_DESIGN` en `src/game/view/morrisArt.ts`. Lo que hace en su combate (morder sin pararse, soltar gusanos, la sobrecarga) está en el catálogo.
+        </p>
         {BRAIN_DESIGNS.map((option) => (
           <p key={option.id}>
             <b>

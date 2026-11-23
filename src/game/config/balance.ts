@@ -400,6 +400,80 @@ export const ENEMIES = {
     reach: 0.75,
     halfLength: 0.6,
   },
+  /**
+   * Morris, el Imparable (T-042), jefe del brote 4 y lo grande de su ultima ronda. Nada lo para (MR-06): muerde lo que toca
+   * (muro, disparadora, mina o hielo) y, mientras lo muerde, avanza a `MORRIS.chewPace` de su velocidad. Mientras vive saca
+   * gusanos por los cinco carriles (`MORRIS.brood`). No tiene nivel: de `ENEMY_POWER` solo le toca la fuerza de todos. Si
+   * cruza el jardin, se pierde la partida; al caer se gana: no da moneda.
+   */
+  morris: {
+    reward: 0,
+    /** PROVISIONAL (docs/specs/07-brote-4-morris.md). */
+    hp: 15000,
+    /** Casillas por segundo: algo menos que Elk Cloner (0,15). Con lo que muerde, a la mitad (MR-06). PROVISIONAL. */
+    speed: 0.13,
+    attack: 'bite',
+    /** PROVISIONAL. */
+    biteDamage: 120,
+    biteIntervalMs: 1200, // PROVISIONAL
+    firstBiteMs: 600,
+    reach: 0.85,
+    halfLength: 0.7,
+  },
+} as const;
+
+/**
+ * Lo propio de Morris, el Imparable (T-042; MR-06 y MR-07 cerradas por Carmine el 23 nov 2026 con la recomendacion), jefe del
+ * brote 4. El Morris real se copiaba una y otra vez en equipos ya infectados hasta dejarlos sin recursos.
+ * - Nada lo para (MR-06): mientras muerde algo avanza a `chewPace` de su velocidad. Un muro aguanta mas que una disparadora,
+ *   asi que lo frena durante mas tiempo.
+ * - Mientras vive saca gusanos (MR-07) por los agujeros de los cinco carriles, uno cada vez, por turnos (`brood.lanes`): el
+ *   primero `brood.firstMs` despues de salir y luego cada vez mas seguido con el tiempo, no con su vida. Es una carrera. Salen
+ *   con los niveles de su ronda, la variante de Morris y sin acelerar; si no caben (`CROWD`), esperan fuera.
+ * PROVISIONAL: se ajusta con `npm run sim` (docs/specs/07-brote-4-morris.md).
+ */
+export const MORRIS = {
+  /** MR-06: lo que avanza, respecto a su velocidad, mientras muerde algo. */
+  chewPace: 0.5,
+  brood: {
+    /** Lo que saca cada vez. */
+    kind: 'worm',
+    /** Carriles por turnos: el primero, el de arriba. */
+    lanes: [0, 4, 1, 3, 2],
+    /** Desde que sale hasta su primer gusano. PROVISIONAL. */
+    firstMs: 4000,
+    /** Entre un gusano y el siguiente al empezar... PROVISIONAL. */
+    startEveryMs: 1500,
+    /** ...y como mucho, tras `rampMs` fuera: entre medias baja en linea recta. PROVISIONAL. */
+    minEveryMs: 400,
+    rampMs: 50_000,
+  },
+} as const;
+
+/**
+ * La sobrecarga (T-042; MR-02 a MR-05 cerradas por Carmine el 23 nov 2026 con la recomendacion): el rasgo del brote 4 (`overload`
+ * en `OUTBREAKS`). Una barra sube con los enemigos vivos que pisan el cesped (tambien las copias y los ocultos; el jefe no,
+ * MR-05). Al llenarse (`fullAt`) se enciende y todos, menos el jefe, avanzan `haste` veces mas deprisa (MR-03; como el acelerado
+ * de las rondas antes del jefe, solo cambia lo que avanzan: muerden y escupen igual). Se apaga al bajar de `offBelow` (MR-04):
+ * sin ese margen parpadearia. Se combina con todo lo demas multiplicando: con el acelerado de la ronda y con lo que frena el
+ * hielo. Desde la ronda 1 (MR-02): en las primeras casi no se llena. Al acabar la ronda se apaga. PROVISIONAL.
+ */
+export const OVERLOAD = {
+  /** Enemigos vivos en el cesped con los que la barra se llena. PROVISIONAL. */
+  fullAt: 24,
+  /** MR-04: encendida, se apaga al bajar de esta parte de la barra. */
+  offBelow: 0.6,
+  /** MR-03: un 25 % mas deprisa. */
+  haste: 1.25,
+} as const;
+
+/**
+ * Tope de enemigos a la vez en el tablero (T-042, MR-10, Carmine, 23 nov 2026): el presupuesto de rendimiento de T-002, en todos
+ * los brotes. Lo que el guion (o Morris) saca cuando ya estan todos espera fuera, en orden, y sale en cuanto hay sitio. El jefe
+ * sale siempre, y las copias (las de los Copycat y las del Creeper) tambien: nacen de alguien que ya estaba en el tablero.
+ */
+export const CROWD = {
+  max: 60,
 } as const;
 
 /**
@@ -1172,68 +1246,304 @@ const BRAIN_ROUNDS: readonly RoundScript[] = [
 ];
 
 /**
- * Las rondas del brote 4, el de Morris (T-041), en preparacion: un guion PROVISIONAL de 3 rondas para probar las tropas
- * reutilizadas, hasta que T-042 escriba las 9 de verdad con la sobrecarga y el jefe (`docs/specs/07-brote-4-morris.md`). No
- * trae tropas nuevas: vuelven las de los tres brotes anteriores, con su nombre y el color de Morris (`recruits`, MT-01 a
- * MT-04). Cada ronda repasa un brote, ya en cantidad, y la ultima los junta. No desbloquea nada: todo llega de los brotes
- * anteriores (B-01), tambien la infusion del escudo. Niveles hasta el 9 (MR-01): el 10, solo con el jefe.
+ * Las rondas del brote 4, el de Morris (T-042; diseno en docs/specs/07-brote-4-morris.md): 9 (decidido), una mas que los
+ * brotes 2 y 3. No trae tropas nuevas: vuelven las de los tres brotes anteriores, con su nombre y el color de Morris
+ * (`recruits`, T-041). Cada ronda repasa una leccion de antes, ahora en cantidad: gusanos en la 1, acorazados y escupidores en
+ * la 2, Copycat en la 3, el Minstrel en la 4, los Lurker en la 5 y el Skipper en la 6; en la 7 y la 8 Morris se prepara (todo
+ * mezclado y acelerado) y la 9 es su combate. No desbloquea nada: todo llega de los brotes anteriores (B-01). La dificultad
+ * sale de la cantidad y de la sobrecarga (`OVERLOAD`), no del nivel: ninguna tropa pasa del 9 (MR-01); el 10, solo con el
+ * jefe. Empieza con 600 monedas, asi que las primeras rondas aprietan desde el principio. PROVISIONAL: ajustado con
+ * `npm run sim`.
  */
 const MORRIS_ROUNDS: readonly RoundScript[] = [
   {
-    // Brote 1 en masa: gusanos, acorazados y escupidores.
+    // Gusanos en masa, cada vez mas: pocos al principio, para que de tiempo a montar la defensa. Aparece la barra de
+    // sobrecarga (MR-02).
     unlocks: [],
     quiet: true,
-    levels: ENEMY_LEVELS.tables.mid,
+    levels: ENEMY_LEVELS.tables.early,
     groups: [
-      { atMs: 3_000, kind: 'worm', lanes: [1, 2, 3] },
-      { atMs: 7_000, kind: 'worm', lanes: ALL },
-      { atMs: 12_000, kind: 'armored', lanes: [0, 4] },
-      { atMs: 16_000, kind: 'spitter', lanes: [1, 3] },
-      { atMs: 21_000, kind: 'worm', lanes: ALL },
-      { atMs: 23_000, kind: 'worm', lanes: ALL },
-      { atMs: 30_000, kind: 'armored', lanes: [1, 2, 3] },
-      { atMs: 35_000, kind: 'spitter', lanes: [0, 2, 4] },
-      { atMs: 42_000, kind: 'worm', lanes: ALL },
-      { atMs: 44_000, kind: 'worm', lanes: ALL },
-      { atMs: 50_000, kind: 'armored', lanes: ALL },
+      { atMs: 3_000, kind: 'worm', lanes: [2] },
+      { atMs: 5_000, kind: 'worm', lanes: [1, 3] },
+      { atMs: 8_000, kind: 'worm', lanes: [0, 4] },
+      { atMs: 11_000, kind: 'worm', lanes: [1, 2, 3] },
+      { atMs: 14_000, kind: 'worm', lanes: [0, 4] },
+      { atMs: 17_000, kind: 'worm', lanes: ALL },
+      { atMs: 20_000, kind: 'worm', lanes: [1, 3] },
+      { atMs: 23_000, kind: 'worm', lanes: [0, 2, 4] },
+      { atMs: 26_000, kind: 'worm', lanes: ALL },
+      { atMs: 29_000, kind: 'worm', lanes: [1, 2, 3] },
+      { atMs: 32_000, kind: 'worm', lanes: ALL },
+      { atMs: 35_000, kind: 'worm', lanes: [0, 4] },
+      { atMs: 38_000, kind: 'worm', lanes: ALL },
+      { atMs: 41_000, kind: 'worm', lanes: ALL },
+      { atMs: 44_000, kind: 'worm', lanes: [1, 2, 3] },
+      { atMs: 47_000, kind: 'worm', lanes: ALL },
+      { atMs: 50_000, kind: 'worm', lanes: ALL },
+      { atMs: 53_000, kind: 'worm', lanes: [0, 2, 4] },
+      { atMs: 56_000, kind: 'worm', lanes: ALL },
+      { atMs: 59_000, kind: 'worm', lanes: ALL },
+      { atMs: 62_000, kind: 'worm', lanes: ALL },
+      { atMs: 65_000, kind: 'worm', lanes: [1, 3] },
+      { atMs: 68_000, kind: 'worm', lanes: ALL },
+      { atMs: 70_000, kind: 'worm', lanes: ALL },
+      { atMs: 72_000, kind: 'worm', lanes: ALL },
+      { atMs: 74_000, kind: 'worm', lanes: ALL },
+      { atMs: 76_000, kind: 'worm', lanes: ALL },
+      { atMs: 78_000, kind: 'worm', lanes: ALL },
     ],
   },
   {
-    // Brote 2: los tres Copycat, que dejan su copia, y el Minstrel, que pide escudos.
+    // Con acorazados y escupidores: los gusanos siguen llegando en masa.
+    unlocks: [],
+    levels: ENEMY_LEVELS.tables.early,
+    groups: [
+      { atMs: 3_000, kind: 'worm', lanes: ALL },
+      { atMs: 6_000, kind: 'armored', lanes: [1, 3] },
+      { atMs: 9_000, kind: 'spitter', lanes: [0, 2, 4] },
+      { atMs: 13_000, kind: 'worm', lanes: ALL },
+      { atMs: 17_000, kind: 'armored', lanes: [0, 2, 4] },
+      { atMs: 20_000, kind: 'worm', lanes: ALL },
+      { atMs: 24_000, kind: 'spitter', lanes: [1, 3] },
+      { atMs: 27_000, kind: 'worm', lanes: ALL },
+      { atMs: 31_000, kind: 'armored', lanes: ALL },
+      { atMs: 35_000, kind: 'worm', lanes: ALL },
+      { atMs: 38_000, kind: 'spitter', lanes: [0, 2, 4] },
+      { atMs: 42_000, kind: 'worm', lanes: ALL },
+      { atMs: 45_000, kind: 'worm', lanes: ALL },
+      { atMs: 49_000, kind: 'armored', lanes: [1, 3] },
+      { atMs: 53_000, kind: 'spitter', lanes: ALL },
+      { atMs: 57_000, kind: 'worm', lanes: ALL },
+      { atMs: 61_000, kind: 'armored', lanes: [0, 2, 4] },
+      { atMs: 65_000, kind: 'worm', lanes: ALL },
+      { atMs: 68_000, kind: 'worm', lanes: ALL },
+      { atMs: 72_000, kind: 'spitter', lanes: [1, 3] },
+      { atMs: 76_000, kind: 'armored', lanes: ALL },
+      { atMs: 80_000, kind: 'worm', lanes: ALL },
+    ],
+  },
+  {
+    // Vuelven los Copycat: sus copias llenan la barra si no se limpia deprisa.
     unlocks: [],
     levels: ENEMY_LEVELS.tables.mid,
     groups: [
       { atMs: 3_000, kind: 'copycat', lanes: ALL },
-      { atMs: 8_000, kind: 'copycatSpitter', lanes: [1, 3] },
-      { atMs: 13_000, kind: 'minstrel', lanes: [2] },
-      { atMs: 18_000, kind: 'copycatArmored', lanes: [0, 4] },
-      { atMs: 24_000, kind: 'copycat', lanes: ALL },
-      { atMs: 28_000, kind: 'minstrel', lanes: [0, 4] },
-      { atMs: 34_000, kind: 'copycatSpitter', lanes: [0, 2, 4] },
-      { atMs: 40_000, kind: 'copycatArmored', lanes: [1, 2, 3] },
-      { atMs: 46_000, kind: 'copycat', lanes: ALL },
-      { atMs: 48_000, kind: 'copycat', lanes: ALL },
+      { atMs: 7_000, kind: 'worm', lanes: [1, 2, 3] },
+      { atMs: 10_000, kind: 'copycatSpitter', lanes: [0, 4] },
+      { atMs: 14_000, kind: 'copycat', lanes: ALL },
+      { atMs: 18_000, kind: 'copycatArmored', lanes: [1, 3] },
+      { atMs: 22_000, kind: 'copycat', lanes: ALL },
+      { atMs: 25_000, kind: 'worm', lanes: ALL },
+      { atMs: 27_000, kind: 'copycat', lanes: [1, 2, 3] },
+      { atMs: 29_000, kind: 'copycatSpitter', lanes: [0, 2, 4] },
+      { atMs: 33_000, kind: 'copycat', lanes: ALL },
+      { atMs: 37_000, kind: 'copycatArmored', lanes: [0, 2, 4] },
+      { atMs: 41_000, kind: 'copycat', lanes: ALL },
+      { atMs: 48_000, kind: 'worm', lanes: ALL },
+      { atMs: 52_000, kind: 'copycatSpitter', lanes: [1, 3] },
+      { atMs: 56_000, kind: 'copycat', lanes: ALL },
+      { atMs: 58_000, kind: 'copycat', lanes: [0, 4] },
+      { atMs: 60_000, kind: 'copycatArmored', lanes: ALL },
+      { atMs: 65_000, kind: 'copycat', lanes: ALL },
+      { atMs: 72_000, kind: 'copycatSpitter', lanes: [0, 2, 4] },
+      { atMs: 76_000, kind: 'copycat', lanes: ALL },
+      { atMs: 80_000, kind: 'copycatArmored', lanes: [1, 3] },
+      { atMs: 84_000, kind: 'copycat', lanes: ALL },
     ],
   },
   {
-    // Brote 3, y luego todos juntos: Lurker ocultos, el Skipper y lo de los dos brotes de antes.
+    // Vuelve el Minstrel: escudos delante de las plantas, sin dejar de limpiar.
+    unlocks: [],
+    levels: ENEMY_LEVELS.tables.mid,
+    groups: [
+      { atMs: 3_000, kind: 'copycat', lanes: ALL },
+      { atMs: 6_000, kind: 'minstrel', lanes: [2] },
+      { atMs: 10_000, kind: 'worm', lanes: ALL },
+      { atMs: 14_000, kind: 'armored', lanes: [0, 4] },
+      { atMs: 18_000, kind: 'minstrel', lanes: [1, 3] },
+      { atMs: 21_000, kind: 'copycat', lanes: ALL },
+      { atMs: 23_000, kind: 'worm', lanes: ALL },
+      { atMs: 25_000, kind: 'spitter', lanes: [0, 2, 4] },
+      { atMs: 29_000, kind: 'worm', lanes: ALL },
+      { atMs: 33_000, kind: 'copycatArmored', lanes: [1, 3] },
+      { atMs: 36_000, kind: 'minstrel', lanes: [0, 4] },
+      { atMs: 40_000, kind: 'copycat', lanes: ALL },
+      { atMs: 43_000, kind: 'worm', lanes: ALL },
+      { atMs: 45_000, kind: 'worm', lanes: ALL },
+      { atMs: 47_000, kind: 'armored', lanes: [1, 2, 3] },
+      { atMs: 51_000, kind: 'minstrel', lanes: [2] },
+      { atMs: 54_000, kind: 'copycatSpitter', lanes: [0, 4] },
+      { atMs: 58_000, kind: 'copycat', lanes: ALL },
+      { atMs: 60_000, kind: 'copycat', lanes: [1, 2, 3] },
+      { atMs: 61_000, kind: 'worm', lanes: ALL },
+      { atMs: 65_000, kind: 'minstrel', lanes: [1, 3] },
+      { atMs: 69_000, kind: 'copycatArmored', lanes: [0, 2, 4] },
+      { atMs: 73_000, kind: 'copycat', lanes: ALL },
+      { atMs: 75_000, kind: 'copycat', lanes: ALL },
+      { atMs: 77_000, kind: 'spitter', lanes: ALL },
+      { atMs: 81_000, kind: 'worm', lanes: ALL },
+      { atMs: 83_000, kind: 'armored', lanes: [0, 4] },
+      { atMs: 85_000, kind: 'minstrel', lanes: [0, 2, 4] },
+    ],
+  },
+  {
+    // Vuelven los Lurker: llegan ocultos y en cantidad. Minas y hielo para descubrirlos.
+    unlocks: [],
+    levels: ENEMY_LEVELS.tables.mid,
+    groups: [
+      { atMs: 3_000, kind: 'lurker', lanes: ALL },
+      { atMs: 7_000, kind: 'worm', lanes: ALL },
+      { atMs: 11_000, kind: 'lurkerSpitter', lanes: [1, 3] },
+      { atMs: 15_000, kind: 'lurker', lanes: ALL },
+      { atMs: 19_000, kind: 'lurkerArmored', lanes: [0, 2, 4] },
+      { atMs: 23_000, kind: 'copycat', lanes: ALL },
+      { atMs: 27_000, kind: 'lurker', lanes: ALL },
+      { atMs: 29_000, kind: 'worm', lanes: ALL },
+      { atMs: 31_000, kind: 'lurkerSpitter', lanes: [0, 2, 4] },
+      { atMs: 35_000, kind: 'minstrel', lanes: [1, 3] },
+      { atMs: 39_000, kind: 'lurker', lanes: ALL },
+      { atMs: 43_000, kind: 'lurkerArmored', lanes: [1, 3] },
+      { atMs: 47_000, kind: 'worm', lanes: ALL },
+      { atMs: 51_000, kind: 'lurker', lanes: ALL },
+      { atMs: 55_000, kind: 'lurkerSpitter', lanes: [0, 4] },
+      { atMs: 59_000, kind: 'copycatArmored', lanes: [2] },
+      { atMs: 63_000, kind: 'lurker', lanes: ALL },
+      { atMs: 65_000, kind: 'copycat', lanes: ALL },
+      { atMs: 67_000, kind: 'lurkerArmored', lanes: [0, 2, 4] },
+      { atMs: 71_000, kind: 'worm', lanes: ALL },
+      { atMs: 75_000, kind: 'lurker', lanes: ALL },
+      { atMs: 79_000, kind: 'lurkerSpitter', lanes: [1, 3] },
+      { atMs: 83_000, kind: 'lurker', lanes: ALL },
+      { atMs: 87_000, kind: 'lurkerArmored', lanes: [1, 3] },
+    ],
+  },
+  {
+    // Vuelve el Skipper: una puerta en cada carril, con la marea detras.
     unlocks: [],
     levels: ENEMY_LEVELS.tables.late,
     groups: [
-      { atMs: 3_000, kind: 'lurker', lanes: ALL },
-      { atMs: 8_000, kind: 'skipper', lanes: [1, 3] },
-      { atMs: 13_000, kind: 'lurkerSpitter', lanes: [0, 4] },
-      { atMs: 18_000, kind: 'lurkerArmored', lanes: [2] },
-      { atMs: 24_000, kind: 'worm', lanes: ALL },
-      { atMs: 28_000, kind: 'copycat', lanes: [0, 2, 4] },
-      { atMs: 32_000, kind: 'skipper', lanes: [0, 4] },
-      { atMs: 36_000, kind: 'minstrel', lanes: [1, 3] },
-      { atMs: 42_000, kind: 'lurker', lanes: ALL },
-      { atMs: 46_000, kind: 'armored', lanes: [0, 4] },
-      { atMs: 50_000, kind: 'copycatArmored', lanes: [2] },
-      { atMs: 56_000, kind: 'spitter', lanes: [1, 3] },
-      { atMs: 60_000, kind: 'lurkerArmored', lanes: [0, 2, 4] },
-      { atMs: 66_000, kind: 'skipper', lanes: ALL },
+      { atMs: 3_000, kind: 'worm', lanes: ALL },
+      { atMs: 6_000, kind: 'skipper', lanes: [2] },
+      { atMs: 10_000, kind: 'lurker', lanes: ALL },
+      { atMs: 14_000, kind: 'skipper', lanes: [0, 4] },
+      { atMs: 18_000, kind: 'copycat', lanes: ALL },
+      { atMs: 20_000, kind: 'worm', lanes: ALL },
+      { atMs: 22_000, kind: 'armored', lanes: [1, 3] },
+      { atMs: 26_000, kind: 'skipper', lanes: [1, 3] },
+      { atMs: 30_000, kind: 'worm', lanes: ALL },
+      { atMs: 32_000, kind: 'lurker', lanes: ALL },
+      { atMs: 34_000, kind: 'lurkerSpitter', lanes: [0, 2, 4] },
+      { atMs: 38_000, kind: 'skipper', lanes: ALL },
+      { atMs: 42_000, kind: 'copycat', lanes: ALL },
+      { atMs: 46_000, kind: 'minstrel', lanes: [2] },
+      { atMs: 50_000, kind: 'worm', lanes: ALL },
+      { atMs: 52_000, kind: 'copycat', lanes: ALL },
+      { atMs: 54_000, kind: 'skipper', lanes: [0, 2, 4] },
+      { atMs: 58_000, kind: 'lurkerArmored', lanes: [1, 3] },
+      { atMs: 62_000, kind: 'copycat', lanes: ALL },
+      { atMs: 64_000, kind: 'lurker', lanes: ALL },
+      { atMs: 66_000, kind: 'skipper', lanes: [1, 3] },
+      { atMs: 70_000, kind: 'worm', lanes: ALL },
+      { atMs: 74_000, kind: 'spitter', lanes: [0, 2, 4] },
+      { atMs: 78_000, kind: 'lurker', lanes: ALL },
+      { atMs: 82_000, kind: 'skipper', lanes: ALL },
+      { atMs: 86_000, kind: 'copycatArmored', lanes: [0, 2, 4] },
+      { atMs: 90_000, kind: 'worm', lanes: ALL },
+    ],
+  },
+  {
+    // Morris se prepara: todo mezclado y un 15 % mas rapido. Boxer cuenta quien fue Morris.
+    unlocks: [],
+    haste: 1.15,
+    bossPreparing: true,
+    levels: ENEMY_LEVELS.tables.late,
+    groups: [
+      { atMs: 3_000, kind: 'worm', lanes: ALL },
+      { atMs: 5_000, kind: 'copycat', lanes: ALL },
+      { atMs: 9_000, kind: 'armored', lanes: [1, 3] },
+      { atMs: 12_000, kind: 'skipper', lanes: [0, 4] },
+      { atMs: 15_000, kind: 'lurker', lanes: ALL },
+      { atMs: 19_000, kind: 'minstrel', lanes: [2] },
+      { atMs: 22_000, kind: 'worm', lanes: ALL },
+      { atMs: 25_000, kind: 'copycatSpitter', lanes: [0, 2, 4] },
+      { atMs: 29_000, kind: 'lurkerArmored', lanes: [1, 3] },
+      { atMs: 32_000, kind: 'skipper', lanes: [1, 2, 3] },
+      { atMs: 36_000, kind: 'copycat', lanes: ALL },
+      { atMs: 39_000, kind: 'worm', lanes: ALL },
+      { atMs: 41_000, kind: 'copycat', lanes: ALL },
+      { atMs: 43_000, kind: 'spitter', lanes: [0, 4] },
+      { atMs: 46_000, kind: 'lurker', lanes: ALL },
+      { atMs: 50_000, kind: 'copycatArmored', lanes: [0, 2, 4] },
+      { atMs: 54_000, kind: 'skipper', lanes: [0, 4] },
+      { atMs: 57_000, kind: 'worm', lanes: ALL },
+      { atMs: 60_000, kind: 'copycat', lanes: ALL },
+      { atMs: 64_000, kind: 'minstrel', lanes: [1, 3] },
+      { atMs: 67_000, kind: 'lurkerSpitter', lanes: [0, 2, 4] },
+      { atMs: 71_000, kind: 'armored', lanes: ALL },
+      { atMs: 75_000, kind: 'worm', lanes: ALL },
+      { atMs: 77_000, kind: 'worm', lanes: ALL },
+      { atMs: 78_000, kind: 'skipper', lanes: ALL },
+      { atMs: 82_000, kind: 'lurker', lanes: ALL },
+      { atMs: 86_000, kind: 'copycat', lanes: ALL },
+      { atMs: 90_000, kind: 'lurkerArmored', lanes: [0, 2, 4] },
+      { atMs: 94_000, kind: 'worm', lanes: ALL },
+    ],
+  },
+  {
+    // Mas tropas y mas rapidas (+25 %): hay que llegar al combate con el tablero limpio.
+    unlocks: [],
+    haste: 1.25,
+    bossPreparing: true,
+    levels: ENEMY_LEVELS.tables.high,
+    groups: [
+      { atMs: 3_000, kind: 'worm', lanes: ALL },
+      { atMs: 5_000, kind: 'copycat', lanes: ALL },
+      { atMs: 8_000, kind: 'armored', lanes: [0, 2, 4] },
+      { atMs: 11_000, kind: 'skipper', lanes: [1, 3] },
+      { atMs: 14_000, kind: 'lurker', lanes: ALL },
+      { atMs: 17_000, kind: 'minstrel', lanes: [0, 4] },
+      { atMs: 20_000, kind: 'worm', lanes: ALL },
+      { atMs: 22_000, kind: 'copycat', lanes: ALL },
+      { atMs: 26_000, kind: 'copycatSpitter', lanes: [1, 3] },
+      { atMs: 29_000, kind: 'lurkerArmored', lanes: [0, 2, 4] },
+      { atMs: 32_000, kind: 'skipper', lanes: ALL },
+      { atMs: 36_000, kind: 'worm', lanes: ALL },
+      { atMs: 37_000, kind: 'copycat', lanes: ALL },
+      { atMs: 38_000, kind: 'lurker', lanes: ALL },
+      { atMs: 42_000, kind: 'copycatArmored', lanes: [1, 3] },
+      { atMs: 45_000, kind: 'spitter', lanes: [0, 2, 4] },
+      { atMs: 48_000, kind: 'copycat', lanes: ALL },
+      { atMs: 51_000, kind: 'minstrel', lanes: [2] },
+      { atMs: 54_000, kind: 'worm', lanes: ALL },
+      { atMs: 56_000, kind: 'worm', lanes: ALL },
+      { atMs: 60_000, kind: 'skipper', lanes: [0, 2, 4] },
+      { atMs: 63_000, kind: 'lurkerSpitter', lanes: ALL },
+      { atMs: 67_000, kind: 'armored', lanes: ALL },
+      { atMs: 71_000, kind: 'copycat', lanes: ALL },
+      { atMs: 74_000, kind: 'lurker', lanes: ALL },
+      { atMs: 78_000, kind: 'skipper', lanes: [1, 3] },
+      { atMs: 81_000, kind: 'worm', lanes: ALL },
+      { atMs: 82_000, kind: 'copycat', lanes: ALL },
+      { atMs: 84_000, kind: 'copycat', lanes: ALL },
+      { atMs: 88_000, kind: 'lurkerArmored', lanes: ALL },
+      { atMs: 92_000, kind: 'minstrel', lanes: [1, 3] },
+      { atMs: 96_000, kind: 'worm', lanes: ALL },
+    ],
+  },
+  {
+    unlocks: [],
+    levels: ENEMY_LEVELS.tables.high,
+    groups: [
+      // Su escolta (MR-01): un acorazado de nivel 10 por carril, con su grito, y dos Minstrel de nivel 10.
+      { atMs: 2_000, kind: 'armored', lanes: ALL, level: 10, shout: 'escort' },
+      { atMs: 4_000, kind: 'minstrel', lanes: [1, 3], level: 10 },
+      { atMs: 6_000, kind: 'morris', lanes: [2] },
+      // Lo demas lo saca el mientras vive (MR-07, `MORRIS.brood`). Refuerzos, por si tarda: dejan de salir en cuanto cae.
+      { atMs: 30_000, kind: 'copycat', lanes: ALL },
+      { atMs: 50_000, kind: 'lurker', lanes: ALL },
+      { atMs: 70_000, kind: 'skipper', lanes: [0, 2, 4] },
+      { atMs: 90_000, kind: 'copycatArmored', lanes: ALL },
+      { atMs: 110_000, kind: 'skipper', lanes: ALL },
     ],
   },
 ];
@@ -1277,8 +1587,8 @@ export const OUTBREAKS: readonly OutbreakScript[] = [
   },
   {
     id: 'morris',
-    // T-041: en preparacion (`boss: null`) hasta que T-042 traiga a Morris, el Imparable.
-    boss: null,
+    // T-042: Morris, el Imparable. Desde T-041 el brote estaba en preparacion (`boss: null`).
+    boss: 'morris',
     // Decidido el 23 nov 2026: el doble que el brote 3. En la historia, lo deja preparado Patty.
     startingBalance: 600,
     rounds: MORRIS_ROUNDS,
@@ -1286,6 +1596,8 @@ export const OUTBREAKS: readonly OutbreakScript[] = [
     presenter: 'patty',
     // Sus tropas son las de los brotes 1 a 3, con el color de Morris (T-041).
     recruits: true,
+    // Su rasgo (T-042): la sobrecarga, desde la ronda 1 (MR-02).
+    overload: true,
   },
 ];
 

@@ -1,4 +1,4 @@
-import { BOARD, BRAIN, CLONE, CREEPER, ELK_CLONER, ENEMIES, HOP, ICE_WALL, MINE, SHIELD, STEALTH } from '../config/balance';
+import { BOARD, BRAIN, CLONE, CREEPER, ELK_CLONER, ENEMIES, HOP, ICE_WALL, MINE, MORRIS, OVERLOAD, SHIELD, STEALTH } from '../config/balance';
 import type { Cell } from '../core/board';
 import {
   bulletDamage,
@@ -13,6 +13,7 @@ import {
   isHidden,
   leavesClone,
   mineBlast,
+  overloadHaste,
   poemDamage,
   poemWarning,
   slamDamage,
@@ -201,15 +202,16 @@ function bossSubtitle(enemy: Enemy): string {
   const number = outbreakNumber(outbreakOfBoss(enemy.kind) ?? FIRST_OUTBREAK);
   if (enemy.kind === 'elkCloner') return subtitle.poet(number);
   if (enemy.kind === 'brain') return isEnraged(enemy) ? subtitle.mastermindEnraged(number) : subtitle.mastermind(number);
+  if (enemy.kind === 'morris') return subtitle.unstoppable(number);
   return isEnraged(enemy) ? subtitle.bossEnraged(number) : subtitle.boss(number);
 }
 
 /**
  * Ficha de un enemigo: su nivel y su tramo (T-009 y T-010), lo que quita, lo rapido que va y lo que le pasa ahora. Los
  * copiones (T-025) dicen que dejan copia; el juglar, su verso y si toma aire. Elk Cloner (T-026), su mordisco, su verso,
- * su poema entero y cuantos versos le faltan para el.
+ * su poema entero y cuantos versos le faltan para el. Con la sobrecarga encendida (T-042, `overload`), lo que le acelera.
  */
-export function enemyInfo(enemy: Enemy): EntityInfoData {
+export function enemyInfo(enemy: Enemy, overload = false): EntityInfoData {
   const t = text().info;
   const stats = ENEMIES[enemy.kind];
   const boss = isBoss(enemy.kind);
@@ -227,6 +229,11 @@ export function enemyInfo(enemy: Enemy): EntityInfoData {
     rows.push({ label: t.stats.poem, value: formatNumber(poemDamage()), note: t.stats.poemNote(ELK_CLONER.poemEvery, formatSeconds(ELK_CLONER.poemWarnMs)) });
   }
   if (enemy.kind === 'creeper') rows.push({ label: t.stats.slam, value: formatNumber(slamDamage()), note: t.stats.slamNote });
+  // Morris (T-042): nada lo para (MR-06) y suelta gusanos cada vez mas seguido (MR-07).
+  if (enemy.kind === 'morris') {
+    rows.push({ label: t.stats.chew, value: t.stats.chewValue, note: t.stats.chewNote });
+    rows.push({ label: t.stats.brood, value: t.stats.broodValue(formatSeconds(MORRIS.brood.startEveryMs)), note: t.stats.broodNote(formatSeconds(MORRIS.brood.minEveryMs)) });
+  }
   // Skipper (T-038) y Brain (T-039): cuanto salta y cuanto descansa (Brain, el de su fase); su velocidad es la media de los dos.
   const gait = hopGait(enemy);
   if (enemy.hop) rows.push({ label: t.stats.hop, value: t.stats.hopValue(formatNumber(gait.length)), note: t.stats.hopNote(formatSeconds(gait.restMs)) });
@@ -266,6 +273,7 @@ export function enemyInfo(enemy: Enemy): EntityInfoData {
   if (enemy.burn) tags.push({ text: t.tags.burning(formatNumber(enemy.burn.dps)), tone: 'fire' });
   if (enemy.slow) tags.push({ text: t.tags.slowed(formatPercent(enemy.slow.amount)), tone: 'ice' });
   if (enemy.haste > 1) tags.push({ text: t.tags.hasted(formatPercent(enemy.haste - 1)), tone: 'haste' });
+  if (overloadHaste(overload, enemy.kind) > 1) tags.push({ text: t.tags.overloaded(formatPercent(OVERLOAD.haste - 1)), tone: 'haste' });
 
   const subtitle = t.enemy.subtitle;
   return {

@@ -65,7 +65,7 @@ describe('goteo pasivo (T-010): solo durante el ataque', () => {
   /** Partida en el ataque de la ronda 1, sin enemigos fuera. */
   const attacking = (over: Partial<MatchState> = {}): MatchState => ({
     ...createMatch(100),
-    round: { index: 0, phase: 'attack', prepMs: 0, elapsedMs: 0, released: 0 },
+    round: { index: 0, phase: 'attack', prepMs: 0, elapsedMs: 0, released: 0, waiting: [], brood: null },
     ...over,
   });
 
@@ -96,7 +96,7 @@ describe('goteo pasivo (T-010): solo durante el ataque', () => {
   it('el reloj se para en la preparacion y sigue donde iba en el siguiente ataque', () => {
     // 7 s de ataque en la ronda 1, luego la preparacion entera de la 2 y 3 s de su ataque: un goteo justo al final.
     let state = stepIncome(attacking(), 7000).state;
-    state = { ...state, round: { index: 1, phase: 'prep', prepMs: 20_000, elapsedMs: 0, released: 0 } };
+    state = { ...state, round: { index: 1, phase: 'prep', prepMs: 20_000, elapsedMs: 0, released: 0, waiting: [], brood: null } };
     expect(stepIncome(state, 20_000).earned).toBe(0);
     state = { ...state, round: { ...state.round, phase: 'attack', prepMs: 0 } };
     expect(stepIncome(state, passiveIntervalMs - 7000 - 1).earned).toBe(0);
@@ -112,7 +112,7 @@ describe('goteo pasivo (T-010): solo durante el ataque', () => {
 
   it('sin vidas o con la partida ganada no corre', () => {
     expect(stepIncome(attacking({ lives: 0 }), passiveIntervalMs * 2).earned).toBe(0);
-    const won = attacking({ round: { index: 9, phase: 'won', prepMs: 0, elapsedMs: 0, released: 2 } });
+    const won = attacking({ round: { index: 9, phase: 'won', prepMs: 0, elapsedMs: 0, released: 2, waiting: [], brood: null } });
     expect(stepIncome(won, passiveIntervalMs * 2).earned).toBe(0);
   });
 

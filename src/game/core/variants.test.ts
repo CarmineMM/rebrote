@@ -9,8 +9,9 @@ import { carriedFeatures, newFeaturesAt, roundUnlocks, startAttack, stepRound, u
 import { recruitingOutbreaks, troopHome, troopVariant } from './variants';
 
 /**
- * Tropas reutilizadas con variante de color y brote 4 en preparacion (T-041; MT-01 a MT-05 cerradas el 23 nov 2026 con la
- * recomendacion). Una tropa de un brote anterior sale en el brote que la recluta con su variante, sin cambiar nada mas.
+ * Tropas reutilizadas con variante de color (T-041; MT-01 a MT-05 cerradas el 23 nov 2026 con la recomendacion) y el brote 4,
+ * que T-041 dejo en preparacion y T-042 abrio con su jefe. Una tropa de un brote anterior sale en el brote que la recluta con su
+ * variante, sin cambiar nada mas.
  */
 
 const MORRIS: OutbreakId = 'morris';
@@ -116,17 +117,23 @@ describe('una tropa de variante sigue siendo la misma (MT-03 y MT-04)', () => {
   });
 });
 
-describe('brote 4 en preparacion (T-041)', () => {
+describe('brote 4 (T-041; abierto con su jefe en T-042)', () => {
   const script = outbreakScript(MORRIS);
 
-  it('va despues de Brain, sin jefe todavia y cerrado al jugador aunque haya vencido a todos', () => {
+  it('va despues de Brain, con Morris de jefe, y se abre al vencer a Brain', () => {
     expect(outbreakNumber(MORRIS)).toBe(4);
     expect(outbreaksBefore(MORRIS).map((o) => o.id)).toEqual(['creeper', 'elkCloner', 'brain']);
-    expect(script.boss).toBeNull();
-    expect(isOutbreakReady(MORRIS)).toBe(false);
-    expect(isOutbreakOpen(MORRIS, ['creeper', 'elkCloner', 'brain'])).toBe(false);
-    // La ruta lo da por "Proximamente": el brote 4 que viene.
-    expect(routeStops(['creeper', 'elkCloner', 'brain']).at(-2)).toEqual({ kind: 'soon', number: 4 });
+    expect(script.boss).toBe('morris');
+    expect(isOutbreakReady(MORRIS)).toBe(true);
+    expect(isOutbreakOpen(MORRIS, ['creeper', 'elkCloner'])).toBe(false);
+    expect(isOutbreakOpen(MORRIS, ['creeper', 'elkCloner', 'brain'])).toBe(true);
+    // La ruta lo da por el que toca y, vencido, por superado; despues, "Proximamente" el brote 5.
+    expect(routeStops(['creeper', 'elkCloner', 'brain']).at(-3)).toEqual({ kind: 'outbreak', id: MORRIS, standing: 'open', current: true });
+    expect(routeStops(['creeper', 'elkCloner', 'brain', MORRIS]).slice(-3)).toEqual([
+      { kind: 'outbreak', id: MORRIS, standing: 'defeated', current: false },
+      { kind: 'soon', number: 5 },
+      { kind: 'final' },
+    ]);
   });
 
   it('en desarrollo se juega con ?brote=4', () => {
@@ -155,21 +162,24 @@ describe('brote 4 en preparacion (T-041)', () => {
     });
   });
 
-  it('su guion saca todas las tropas de los brotes anteriores, y ninguna nueva ni ningun jefe', () => {
+  it('su guion saca todas las tropas de los brotes anteriores, ninguna nueva, y de jefe solo a Morris', () => {
     const kinds = new Set(script.rounds.flatMap((round) => round.groups.map((group) => group.kind)));
     for (const outbreak of outbreaksBefore(MORRIS)) {
       const theirs = TROOPS.filter((kind) => troopHome(kind) === outbreak.id);
       expect(theirs.length, outbreak.id).toBeGreaterThan(0);
       for (const kind of theirs) expect(kinds.has(kind), `${kind} de ${outbreak.id}`).toBe(true);
     }
-    expect([...kinds].every((kind) => !isBoss(kind) && troopHome(kind) !== MORRIS)).toBe(true);
+    const troops = [...kinds].filter((kind) => kind !== 'morris');
+    expect(troops.every((kind) => !isBoss(kind) && troopHome(kind) !== MORRIS)).toBe(true);
+    expect(troopHome('morris')).toBe(MORRIS);
   });
 
-  it('ninguna tropa pasa del nivel 9 (MR-01: el 10, solo con el jefe)', () => {
-    for (const round of script.rounds) {
+  it('ninguna tropa pasa del nivel 9 (MR-01): el 10, solo la escolta de su combate', () => {
+    script.rounds.forEach((round, index) => {
       const table = round.levels ?? ENEMY_LEVELS.tables.early;
       expect(Math.max(...Object.keys(table).map(Number))).toBeLessThanOrEqual(9);
-      for (const group of round.groups) expect(group.level ?? 1).toBeLessThanOrEqual(9);
-    }
+      const bossRound = round.groups.some((group) => group.kind === 'morris');
+      for (const group of round.groups) expect(group.level ?? 1, `ronda ${index + 1}`).toBeLessThanOrEqual(bossRound ? 10 : 9);
+    });
   });
 });

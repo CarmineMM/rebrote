@@ -36,6 +36,11 @@ export const GameEvents = {
    */
   bossChanged: 'boss-changed',
   /**
+   * Phaser -> React. Payload: OverloadInfo | null. La barra de sobrecarga del brote 4 (T-042): lo llena que esta y si esta
+   * encendida. Null en un brote sin sobrecarga. Solo se manda si cambia (la barra, en pasos de un enemigo).
+   */
+  overloadChanged: 'overload-changed',
+  /**
    * Phaser -> React. Payload: RoundInfo. Ronda en curso (T-007): numero, fase, cuenta atras de la preparacion, cartas
    * de la bandeja y aviso. Solo se manda si algo cambia (en la preparacion, cada segundo).
    */
@@ -236,6 +241,22 @@ export interface BossInfo {
   poem: { sung: number; every: number; warning: boolean } | null;
   /** Brain (T-039): si esta oculto (las plantas no le apuntan) o descubierto. Null si el jefe no se oculta. */
   hidden: boolean | null;
+  /**
+   * Morris (T-042): cada cuanto suelta ahora un gusano (MR-07) y si esta mordiendo algo, a media marcha (MR-06). Null si el
+   * jefe no suelta gusanos.
+   */
+  brood: { everyMs: number; chewing: boolean } | null;
+}
+
+/**
+ * La barra de sobrecarga (T-042) del brote 4: lo llena que esta (de 0 a 1, `overloadFill`) y si esta encendida
+ * (`MatchState.overload`). Null en un brote sin sobrecarga: no hay barra.
+ */
+export interface OverloadInfo {
+  fill: number;
+  active: boolean;
+  /** Donde se apaga (MR-04), para marcarlo en la barra. */
+  offBelow: number;
 }
 
 /** Ronda en curso (T-007). Sale de `round` en el estado y de `rounds.ts` en core. */
@@ -311,6 +332,8 @@ export type InfoTone =
   | 'skipper'
   // Brain, jefe del brote 3 (T-039).
   | 'brain'
+  // Morris, jefe del brote 4 (T-042).
+  | 'morris'
   // Muro de hielo del poder (T-021).
   | 'iceWall';
 

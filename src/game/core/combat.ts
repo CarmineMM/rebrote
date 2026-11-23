@@ -1,9 +1,9 @@
-import { BOARD, BRAIN, CLONE, CREEPER, ELK_CLONER, ENEMIES, ENEMY_LEVELS, ENEMY_POWER, FIRE, HOP, ICE, MINE, SHIELD, SHOOTER, STEALTH, VERSE } from '../config/balance';
+import { BOARD, BRAIN, CLONE, CREEPER, ELK_CLONER, ENEMIES, ENEMY_LEVELS, ENEMY_POWER, FIRE, HOP, ICE, MINE, MORRIS, OVERLOAD, SHIELD, SHOOTER, STEALTH, VERSE } from '../config/balance';
 import type { BoardPoint, Cell } from './board';
 import type { MatchState, Mine, Sown } from './match';
 import { damageMultiplier, fireRateMultiplier, plantMaxHp, type MineElement, type Shooter } from './plants';
 import { compoundGrowth } from './levels';
-import type { OutbreakId } from './outbreaks';
+import { hasOverload, type OutbreakId } from './outbreaks';
 import { troopVariant } from './variants';
 
 /**
@@ -14,12 +14,12 @@ import { troopVariant } from './variants';
 export type EnemyKind = keyof typeof ENEMIES;
 
 /**
- * Jefes (T-008, T-026 y T-039): el de cada brote (`boss` en `OUTBREAKS`). No tienen nivel, si cruzan el jardin se pierde la
- * partida y, al caer, caen con ellos todos los demas, sin copias, y sus versos en vuelo se deshacen.
+ * Jefes (T-008, T-026, T-039 y T-042): el de cada brote (`boss` en `OUTBREAKS`). No tienen nivel, si cruzan el jardin se pierde
+ * la partida y, al caer, caen con ellos todos los demas, sin copias, y sus versos en vuelo se deshacen.
  */
-export type BossKind = 'creeper' | 'elkCloner' | 'brain';
+export type BossKind = 'creeper' | 'elkCloner' | 'brain' | 'morris';
 
-export const BOSS_KINDS: readonly BossKind[] = ['creeper', 'elkCloner', 'brain'];
+export const BOSS_KINDS: readonly BossKind[] = ['creeper', 'elkCloner', 'brain', 'morris'];
 
 /** ¿Es el jefe de un brote? */
 export function isBoss(kind: EnemyKind): kind is BossKind {
@@ -264,7 +264,12 @@ export type CombatEvent =
    */
   | { readonly type: 'revealed'; readonly enemyId: number; readonly cause?: RevealCause }
   /** Una tropa descubierta vuelve a ocultarse (LK-03): lejos de lo sembrado y sin dano, hielo ni fuego desde `STEALTH.holdMs`. */
-  | { readonly type: 'concealed'; readonly enemyId: number };
+  | { readonly type: 'concealed'; readonly enemyId: number }
+  /**
+   * La sobrecarga (T-042) se enciende (`active`: la barra se lleno y todos, menos el jefe, aceleran) o se apaga (bajo de
+   * `OVERLOAD.offBelow`). Ya en `MatchState.overload`.
+   */
+  | { readonly type: 'overloaded'; readonly active: boolean };
 
 /** Lo que descubre a Brain (T-039): chocar con un escudo o la explosion de una mina o de la granada (`blast`). */
 export type RevealCause = 'shield' | 'blast';
@@ -616,6 +621,36 @@ export function onLawn(enemy: Enemy): boolean {
 }
 
 /**
+ * Lo que llena la barra de sobrecarga (T-042, MR-05): los enemigos vivos que pisan el cesped, tambien las copias y los ocultos.
+ * El jefe no cuenta. Los que esperan fuera por el tope (`CROWD`) tampoco: aun no estan.
+ */
+export function overloadCount(enemies: readonly Enemy[]): number {
+  return enemies.filter((e) => e.hp > 0 && !isBoss(e.kind) && onLawn(e)).length;
+}
+
+/** Lo llena que esta la barra de sobrecarga (T-042), de 0 a 1: llena con `OVERLOAD.fullAt`. Siempre 0 en un brote sin ella. */
+export function overloadFill(state: Pick<MatchState, 'outbreak' | 'enemies'>): number {
+  if (!hasOverload(state.outbreak)) return 0;
+  return Math.min(1, overloadCount(state.enemies) / OVERLOAD.fullAt);
+}
+
+/**
+ * ¿Esta encendida la sobrecarga tras un paso con la barra en `fill`? Se enciende al llenarse y, encendida, se apaga al bajar
+ * de `OVERLOAD.offBelow` (MR-04: con ese margen no parpadea).
+ */
+export function nextOverload(active: boolean, fill: number): boolean {
+  return active ? fill >= OVERLOAD.offBelow : fill >= 1;
+}
+
+/**
+ * Lo que la sobrecarga (T-042) multiplica lo que avanza un enemigo de `kind`: `OVERLOAD.haste` si esta encendida (MR-03), salvo
+ * al jefe (MR-05); si no, 1. Se suma a su acelerado (`Enemy.haste`) multiplicando, y el hielo lo frena sobre eso.
+ */
+export function overloadHaste(overload: boolean, kind: EnemyKind): number {
+  return overload && !isBoss(kind) ? OVERLOAD.haste : 1;
+}
+
+/**
  * Avanza el combate `dtMs` milisegundos. No modifica el estado recibido. `random` (en [0, 1), como Math.random) elige
  * el carril al que salta el Creeper (T-008); se inyecta para poder testearlo.
  */
@@ -680,6 +715,8 @@ function substep(state: MatchState, dtMs: number, events: CombatEvent[], random:
     const walkMs = e.slow ? dtMs - e.slow.amount * Math.min(dtMs, e.slow.ms) : dtMs;
     if (e.slow) e.slow = e.slow.ms > dtMs ? { ...e.slow, ms: e.slow.ms - dtMs } : null;
     const attackClockMs = ICE.slowsAttacks ? walkMs : dtMs;
+    // Lo que avanza respecto a su tipo: su acelerado y, encendida, la sobrecarga (T-042). Muerde y escupe igual.
+    const pace = e.haste * overloadHaste(state.overload, e.kind);
     // Creeper (T-008): al cruzar un umbral de vida se agacha para saltar y luego vuela a otro carril. Mientras tanto
     // no avanza ni muerde. El aviso y el vuelo no van mas lentos aunque este ralentizado: el aviso es una promesa.
     if (e.kind === 'creeper') {
@@ -703,7 +740,7 @@ function substep(state: MatchState, dtMs: number, events: CombatEvent[], random:
     // Skipper (T-038): salta por encima de lo sembrado y solo se para a morder un escudo. Si cruza el borde en el aire,
     // resta una vida como cualquiera.
     if (e.hop) {
-      if (!stepHop(e, lane, dtMs, walkMs, attackClockMs, plants, events) && e.x < 0) {
+      if (!stepHop(e, lane, dtMs, walkMs, attackClockMs, pace, plants, events) && e.x < 0) {
         lives = isBoss(e.kind) ? 0 : Math.max(0, lives - 1);
         events.push({ type: 'enemyEscaped', enemyId: e.id, lane: e.lane, kind: e.kind });
         continue;
@@ -750,12 +787,21 @@ function substep(state: MatchState, dtMs: number, events: CombatEvent[], random:
           events.push({ type: 'bite', enemyId: e.id, cell });
           damageSown(plants, cell, enemyDamage(e), events);
         }
+        // Morris (T-042, MR-06): nada lo para. Mientras muerde, avanza a `MORRIS.chewPace` de su paso.
+        if (e.kind === 'morris') {
+          e.x -= (stats.speed * pace * MORRIS.chewPace * walkMs) / 1000;
+          if (e.x < 0) {
+            lives = 0;
+            events.push({ type: 'enemyEscaped', enemyId: e.id, lane: e.lane, kind: e.kind });
+            continue;
+          }
+        }
         enemies.push(e);
         continue;
       }
     }
     e.attackMs = null;
-    e.x -= (stats.speed * e.haste * walkMs) / 1000;
+    e.x -= (stats.speed * pace * walkMs) / 1000;
     if (e.x < 0) {
       // Un jefe que cruza gana la partida el solo.
       lives = isBoss(e.kind) ? 0 : Math.max(0, lives - 1);
@@ -900,6 +946,10 @@ function substep(state: MatchState, dtMs: number, events: CombatEvent[], random:
     }
   }
 
+  // Sobrecarga (T-042): la barra se mide con los que quedan; se enciende llena y se apaga al bajar de `OVERLOAD.offBelow`.
+  const overload = hasOverload(state.outbreak) && nextOverload(state.overload, overloadFill({ outbreak: state.outbreak, enemies: alive }));
+  if (overload !== state.overload) events.push({ type: 'overloaded', active: overload });
+
   // Plantas: recargan y disparan si tienen a quien, una bala por canon. Si la recarga acaba a mitad de paso,
   // lo que sobra cuenta para el siguiente disparo; una planta que esperaba lista no acumula nada.
   plants.forEach((lane, laneIndex) =>
@@ -925,7 +975,7 @@ function substep(state: MatchState, dtMs: number, events: CombatEvent[], random:
     }),
   );
 
-  return { ...state, lives, plants, enemies: alive, bullets, spits: [...spits, ...launched], verses: flying, grenades, nextId };
+  return { ...state, lives, plants, enemies: alive, bullets, spits: [...spits, ...launched], verses: flying, grenades, overload, nextId };
 }
 
 /** Los bloques del muro de hielo (T-021) pierden `dtMs` de su tiempo; el que lo acaba se derrite y deja su casilla. */
@@ -1183,8 +1233,9 @@ function rangedColumn(lane: ReadonlyArray<Sown | null>, enemy: Enemy, range: num
  * (`hop.to`, que se recalcula por si se sembro un escudo mientras volaba) y, al llegar, aterriza. En tierra, si tiene un
  * escudo a su alcance lo muerde, y su descanso no corre: si el escudo cae, descansa antes de seguir saltando (LK-07). Si
  * no, descansa (mas despacio si va frenado: el hielo le alarga la pausa) y despega hacia las casillas de su salto, o hasta
- * delante del primer escudo (`hopLanding`). Devuelve si se queda donde esta este paso (mordiendo, descansando o
- * despegando); si no, avanzo por el aire y puede haber cruzado el borde.
+ * delante del primer escudo (`hopLanding`). `pace` es lo que lo acelera (su acelerado y la sobrecarga, T-042): descansa
+ * menos y vuela mas deprisa. Devuelve si se queda donde esta este paso (mordiendo, descansando o despegando); si no, avanzo
+ * por el aire y puede haber cruzado el borde.
  */
 function stepHop(
   e: Mutable<Enemy>,
@@ -1192,6 +1243,7 @@ function stepHop(
   dtMs: number,
   walkMs: number,
   attackClockMs: number,
+  pace: number,
   plants: Array<Array<Sown | null>>,
   events: CombatEvent[],
 ): boolean {
@@ -1200,7 +1252,7 @@ function stepHop(
   const gait = hopGait(e);
   if (hop.stage === 'air') {
     const to = hopStop(lane, e.x, hop.to, reach);
-    const next = e.x - (gait.length / gait.airMs) * dtMs * e.haste;
+    const next = e.x - (gait.length / gait.airMs) * dtMs * pace;
     if (next > to) {
       e.x = next;
       e.hop = to === hop.to ? hop : { ...hop, to };
@@ -1225,7 +1277,7 @@ function stepHop(
     return true;
   }
   e.attackMs = null;
-  const ms = hop.ms - walkMs * e.haste;
+  const ms = hop.ms - walkMs * pace;
   if (ms > 0) {
     e.hop = { ...hop, ms };
     return true;
