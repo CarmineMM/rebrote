@@ -4,7 +4,7 @@ import { portraitUrl } from '../game/view/characters/portraitImage';
 
 /**
  * Retrato animado de un personaje (T-031): parpadea y, si habla, abre y cierra la boca. Lo usan la galeria de propuestas
- * (`/propuestas/personajes.html`) y el catalogo (`/catalogo/personajes.html`, T-040). Solo desarrollo.
+ * (`/proposals/personajes.html`) y el catalogo (`/catalog/personajes.html`, T-040). Solo desarrollo.
  */
 export function LivePortrait({ design, expression, talking, height, className = 'char-portrait' }: { design: CharacterDesign; expression: Expression; talking: boolean; height: number; className?: string }) {
   const [time, setTime] = useState(0);

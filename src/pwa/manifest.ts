@@ -35,7 +35,7 @@ export const MANIFEST: Partial<ManifestOptions> = {
  * Lo que se guarda al instalar para jugar sin conexion: el juego entero y los efectos de sonido (V-05: pesan poco).
  * Solo los de la carpeta `audio/`, sin subcarpetas: la musica (T-015) va en `audio/musica/`, en los dos formatos, y no se
  * guarda al instalar; la baja el juego despues de la portada, solo en el formato que usa el navegador (`MUSIC_CACHE`,
- * U-05). Las paginas de desarrollo (`pruebas/sonidos.html`, `propuestas/disparadoras.html`...) no estan: el build no las publica.
+ * U-05). Las paginas de desarrollo (`tests/sonidos.html`, `proposals/disparadoras.html`...) no estan: el build no las publica.
  */
 export const PRECACHE_GLOBS = ['**/*.{js,css,html,ico,png,svg,webmanifest}', 'audio/*.{ogg,mp3}'];
 

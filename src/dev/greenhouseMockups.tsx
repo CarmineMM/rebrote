@@ -19,7 +19,7 @@ import { useLanguage, useText } from '../ui/useText';
 import { LabBackdrop, RefugeBackdrop, StallBackdrop } from './greenhouseBackdrops';
 
 /**
- * Propuestas del Invernadero (galeria `/propuestas/invernadero.html`, `greenhouseLab.tsx`): tres pantallas de maqueta con la tienda
+ * Propuestas del Invernadero (galeria `/proposals/invernadero.html`, `greenhouseLab.tsx`): tres pantallas de maqueta con la tienda
  * ya abierta (los poderes y el nivel base de la disparadora juntos), el menu a la derecha y "Volver a la portada" abajo a
  * la izquierda. Usan las reglas de verdad (precios y compras de `core/shop.ts` y `core/baseLevel.ts`, sobre un progreso
  * de prueba), los textos de `src/i18n/` que ya existen, la disparadora de su pintor y el retrato de Patty. El decorado

@@ -9,10 +9,10 @@ import { BOSS_LAB_SCENES, BossLooksScene } from './bossLabScenes';
 import './shooterLab.css';
 
 /**
- * Propuestas de los jefes (T-026): `npm run dev` y abrir `/propuestas/jefes.html`. Pone a Creeper y a Elk Cloner lado a
+ * Propuestas de los jefes (T-026): `npm run dev` y abrir `/proposals/jefes.html`. Pone a Creeper y a Elk Cloner lado a
  * lado, Elk Cloner con cada propuesta del aro del disquete (`ELK_HUBS`), y detras las tres propuestas de Brain (T-039,
  * BR-01, `BRAIN_DESIGNS`). Usa las vistas del juego, asi que se ve como en una partida. Lo que hace cada jefe en su combate
- * ("Movimientos") esta en el catalogo, `/catalogo/jefes.html` (T-040). No la ve el jugador (`npm run build` no la
+ * ("Movimientos") esta en el catalogo, `/catalog/jefes.html` (T-040). No la ve el jugador (`npm run build` no la
  * incluye), asi que sus textos van en espanol sin `src/i18n/`.
  */
 
@@ -55,7 +55,7 @@ function BossLab() {
     <div className="lab">
       <header className="lab-bar">
         <h1>
-          Jefes <span>propuestas de aspecto, solo desarrollo · <a href="/catalogo/jefes.html">sus movimientos, en el catálogo</a></span>
+          Jefes <span>propuestas de aspecto, solo desarrollo · <a href="/catalog/jefes.html">sus movimientos, en el catálogo</a></span>
         </h1>
         <div className="lab-tools">
           <label className="lab-check">

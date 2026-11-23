@@ -15,7 +15,7 @@ import '../../styles.css';
 import './catalog.css';
 
 /**
- * Catalogo de jefes (T-040, ADR-0023): `npm run dev` y abrir `/catalogo/jefes.html`. Arriba, el jefe elegido sobre el
+ * Catalogo de jefes (T-040, ADR-0023): `npm run dev` y abrir `/catalog/jefes.html`. Arriba, el jefe elegido sobre el
  * tablero con la vista del juego y un boton por cada cosa que hace (la escena de "Movimientos" que antes estaba en la
  * galeria de propuestas). Debajo, en lista, cada jefe con su ficha del juego (y la de su fase 2, si la tiene), los grupos
  * de su ronda (escolta y refuerzos) y sus numeros de `balance.ts`. Un jefe nuevo tiene que estar en `BOSS_NUMBERS` (si
@@ -119,7 +119,7 @@ function BossCatalog() {
   const [boss, setBoss] = useState<BossKind>(bosses[0]);
   const [zoom, setZoom] = useState(false);
   const names = text().info.enemy.names;
-  // Siempre el aspecto del juego: las propuestas estan en `/propuestas/jefes.html`.
+  // Siempre el aspecto del juego: las propuestas estan en `/proposals/jefes.html`.
   const data = (next: Partial<{ boss: BossKind; zoom: boolean }> = {}) => ({ quality, zoom, boss, hub: ELK_HUB, design: BRAIN_DESIGN, ...next });
 
   useEffect(() => {
@@ -174,7 +174,7 @@ function BossCatalog() {
       </CatalogBar>
       <main className="cat-main">
         <p className="cat-intro">
-          Los jefes en el orden de sus brotes, con el aspecto del juego (las propuestas de diseño están en <a href="/propuestas/jefes.html">propuestas/jefes</a>).
+          Los jefes en el orden de sus brotes, con el aspecto del juego (las propuestas de diseño están en <a href="/proposals/jefes.html">proposals/jefes</a>).
           Arriba, cada jefe con todo lo que hace en su combate; debajo, su ficha, los grupos de su ronda y sus números.
         </p>
         <section className="cat-stage-box">

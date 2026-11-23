@@ -5,7 +5,7 @@
 ## Contexto
 El diseño del brote 4 está en `docs/specs/07-brote-4-morris.md`. Carmine decidió que no trae tropas nuevas: vuelven las de los tres brotes anteriores, con otro color y más nivel, conservando su nombre. Es la primera vez que un brote reutiliza tropas, y los brotes siguientes lo harán también (`docs/specs/03-ruta-de-brotes.md`).
 
-Hoy cada tropa pertenece a un brote (verificado en `ENEMIES` de `balance.ts`): gusano, acorazado y escupidor (brote 1); Copycat, Copycat acorazado, Copycat escupidor y Minstrel (brote 2); Lurker, Lurker escupidor, Lurker acorazado y Skipper (brote 3). El catálogo de desarrollo las enseña por brote (`/catalogo/tropas.html`, T-040, regla 16 de `CLAUDE.md`).
+Hoy cada tropa pertenece a un brote (verificado en `ENEMIES` de `balance.ts`): gusano, acorazado y escupidor (brote 1); Copycat, Copycat acorazado, Copycat escupidor y Minstrel (brote 2); Lurker, Lurker escupidor, Lurker acorazado y Skipper (brote 3). El catálogo de desarrollo las enseña por brote (`/catalog/tropas.html`, T-040, regla 16 de `CLAUDE.md`).
 
 El brote 4 no existe todavía. El patrón para crearlo está probado dos veces: un brote "en preparación" (`boss: null`, cerrado al jugador, jugable en desarrollo; ADR-0015), como hicieron T-024 y T-037.
 
@@ -27,7 +27,7 @@ El brote 4 no existe todavía. El patrón para crearlo está probado dos veces: 
 ## Decisiones pendientes
 | # | Pregunta | Opciones | Recomendación | Decide |
 |---|---|---|---|---|
-| MT-01 | ¿Cómo se elige el color de la variante? | a) Un tinte por brote, igual para todas sus tropas. b) Un color pensado para cada tropa | a: se lee como "las tropas de Morris" y cuesta mucho menos. Propuestas en `/propuestas/` antes de fijarlo | Carmine |
+| MT-01 | ¿Cómo se elige el color de la variante? | a) Un tinte por brote, igual para todas sus tropas. b) Un color pensado para cada tropa | a: se lee como "las tropas de Morris" y cuesta mucho menos. Propuestas en `/proposals/` antes de fijarlo | Carmine |
 | MT-02 | ¿La ficha dice que es una variante? | Sí o no | Sí, con una línea corta: "Reclutado por Morris" | Carmine |
 | MT-03 | ¿Cambia algo más que el color y el nivel? | Sí o no | No: mismas reglas y mismos valores base. La diferencia la pone el nivel | Carmine |
 | MT-04 | ¿Los Copycat siguen dejando copia y los Lurker siguen llegando ocultos? | Sí o no | Sí: es lo que el jugador aprendió de ellos | Carmine |

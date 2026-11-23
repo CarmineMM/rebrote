@@ -12,7 +12,7 @@ import '../../styles.css';
 import './catalog.css';
 
 /**
- * Catalogo de personajes (T-040, ADR-0023): `npm run dev` y abrir `/catalogo/personajes.html`. Cada personaje con el dibujo
+ * Catalogo de personajes (T-040, ADR-0023): `npm run dev` y abrir `/catalog/personajes.html`. Cada personaje con el dibujo
  * que usa el juego (`CAST`), sus tres expresiones, quien es, cuando sale y que presenta en cada brote, sacado del guion. Un
  * personaje nuevo tiene que estar en `PEOPLE` (si falta, no compila). No la ve el jugador: sus textos van en espanol sin
  * `src/i18n/`.
@@ -121,7 +121,7 @@ function Person({ id }: { id: CharacterId }) {
           <dd>{shows.length > 0 ? shows.join(' · ') : 'nada en los brotes de ahora'}</dd>
         </dl>
         <p className="cat-dim">
-          Sus viñetas de verdad a 1600 × 900, 812 × 375 y 568 × 320, en <a href="/propuestas/personajes.html?vista=vineta">propuestas/personajes → Viñeta</a>.
+          Sus viñetas de verdad a 1600 × 900, 812 × 375 y 568 × 320, en <a href="/proposals/personajes.html?vista=vineta">proposals/personajes → Viñeta</a>.
         </p>
       </div>
     </article>
@@ -135,7 +135,7 @@ function CharacterCatalog() {
       <CatalogBar page="characters" />
       <main className="cat-main">
         <p className="cat-intro">
-          Los personajes con el dibujo que usa el juego (las propuestas están en <a href="/propuestas/personajes.html">propuestas/personajes</a>), sus tres
+          Los personajes con el dibujo que usa el juego (las propuestas están en <a href="/proposals/personajes.html">proposals/personajes</a>), sus tres
           expresiones y cuándo salen.
         </p>
         {ids.map((id) => (

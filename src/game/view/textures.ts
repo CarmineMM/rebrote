@@ -239,12 +239,12 @@ export const shooterTexture = (cannons: ShooterCannons, element: ElementType | n
   `${TEX.shooter}-${design.id}-${shooterVariant(element)}-${cannons}`;
 
 /**
- * Cabeza de Elk Cloner con la cara `mood` y el aro `hub` (T-026): para comparar los aros en `/propuestas/jefes.html`. El juego usa las
+ * Cabeza de Elk Cloner con la cara `mood` y el aro `hub` (T-026): para comparar los aros en `/proposals/jefes.html`. El juego usa las
  * de `TEX.elkHead*`, pintadas con el elegido (`ELK_HUB`); estas se pintan con `registerElkHubTextures`.
  */
 export const elkHeadTexture = (mood: ElkMood, hub: ElkHub): string => `${TEX.elkHead}-${hub}-${mood}`;
 
-/** Pinta las cabezas de Elk Cloner con cada aro (solo la galeria `/propuestas/jefes.html`). Antes, `registerTextures`. */
+/** Pinta las cabezas de Elk Cloner con cada aro (solo la galeria `/proposals/jefes.html`). Antes, `registerTextures`. */
 export function registerElkHubTextures(scene: Phaser.Scene): void {
   const { head } = WORM_SIZE;
   for (const { id } of ELK_HUBS) {
@@ -275,7 +275,7 @@ export const BUG_TEX = {
 
 /**
  * Pinta las tropas del brote 3 (T-038) de las propuestas `lurkers` y `skippers`. `registerTextures` pinta las del juego
- * (`LURKER_DESIGN`, `SKIPPER_DESIGN`); la galeria `/propuestas/bichos.html`, todas. Llamar despues de `registerTextures`.
+ * (`LURKER_DESIGN`, `SKIPPER_DESIGN`); la galeria `/proposals/bichos.html`, todas. Llamar despues de `registerTextures`.
  */
 export function registerBugTextures(
   scene: Phaser.Scene,
@@ -317,7 +317,7 @@ export const BRAIN_TEX = {
 
 /**
  * Pinta a Brain (T-039) en las propuestas `designs`: `registerTextures` pinta la del juego (`BRAIN_DESIGN`); la galeria
- * `/propuestas/jefes.html`, todas. Llamar despues de `registerTextures`.
+ * `/proposals/jefes.html`, todas. Llamar despues de `registerTextures`.
  */
 export function registerBrainTextures(scene: Phaser.Scene, designs: readonly BrainDesign[] = [BRAIN_DESIGN]): void {
   const paint = (key: string, width: number, height: number, painter: Painter) => paintTexture(scene, artScale, key, width, height, painter);

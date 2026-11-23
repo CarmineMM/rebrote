@@ -1,7 +1,7 @@
 /**
  * Icono del juego (T-028), dibujado con codigo. Es el dibujo maestro: de aqui salen el favicon de la pestana y los
  * iconos de aplicacion (`npm run icons`, `scripts/icons/build.ts`) y lo ensena la galeria de propuestas
- * (`/propuestas/iconos.html`, `src/dev/iconLab.tsx`). Propuestas: el brote del logo de la portada (solo, en la "O" o en la tierra)
+ * (`/proposals/iconos.html`, `src/dev/iconLab.tsx`). Propuestas: el brote del logo de la portada (solo, en la "O" o en la tierra)
  * y la disparadora del juego (en color o en silueta). Carmine eligio la disparadora en color (W-03, `ICON`): sale de
  * su propio pintor (`SHOOTER.paint`) escrito en SVG con `SvgCanvas`, asi que si la disparadora cambia, el icono la
  * sigue al pasar `npm run icons`.

@@ -7,7 +7,7 @@ El diseño está en `docs/specs/07-brote-4-morris.md`. Carmine eligió la opció
 
 **El original (1988).** El primer gran gusano de internet. Su autor quería medir la red, pero un fallo hacía que el programa se copiara una y otra vez en equipos ya infectados, hasta dejarlos sin recursos.
 
-Los tres jefes anteriores sirven de modelo (verificado en las specs de los brotes 2 y 3): barra de jefe, jefe que se prepara a la derecha, escolta con grito, refuerzos mientras vive, derrota si cruza el jardín, propuestas de aspecto en `/propuestas/jefes.html`, catálogo en `/catalogo/jefes.html`, medida de dificultad por ronda (`roundThreat`), rondas aceleradas (`haste`) y simulación con bots (`npm run sim`). Lo que cuenta Boxer del virus real sale solo en cuanto existe su texto (`story.lore.<brote>`, T-032).
+Los tres jefes anteriores sirven de modelo (verificado en las specs de los brotes 2 y 3): barra de jefe, jefe que se prepara a la derecha, escolta con grito, refuerzos mientras vive, derrota si cruza el jardín, propuestas de aspecto en `/proposals/jefes.html`, catálogo en `/catalog/jefes.html`, medida de dificultad por ronda (`roundThreat`), rondas aceleradas (`haste`) y simulación con bots (`npm run sim`). Lo que cuenta Boxer del virus real sale solo en cuanto existe su texto (`story.lore.<brote>`, T-032).
 
 Tras T-041 el brote 4 existe en preparación, con sus tropas de variante y 600 monedas.
 

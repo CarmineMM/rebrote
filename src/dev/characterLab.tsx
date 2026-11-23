@@ -13,7 +13,7 @@ import '../styles.css';
 import './characterLab.css';
 
 /**
- * Galeria de personajes (T-031): `npm run dev` y abrir `/propuestas/personajes.html`. Tres propuestas de Boxer y tres de Patty (Y-01,
+ * Galeria de personajes (T-031): `npm run dev` y abrir `/proposals/personajes.html`. Tres propuestas de Boxer y tres de Patty (Y-01,
  * Y-02) con sus tres expresiones (Y-04), y la viñeta de verdad con las elegidas a 1600 x 900, 812 x 375 y 568 x 320. No la
  * ve el jugador (`npm run build` no la incluye), asi que sus textos van en espanol sin `src/i18n/`.
  */

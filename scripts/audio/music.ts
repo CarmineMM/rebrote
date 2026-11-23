@@ -7,7 +7,7 @@
  * retraso (`src/game/audio/music.ts`).
  * - La elegida, en `public/audio/musica/` con su `LICENCIAS.md`.
  * - Las alternativas cuyo original este en `audio-lab/musica/`, en `audio-lab/musica/candidatos/` con su `catalogo.json`
- *   para la pagina de prueba (`/pruebas/musica.html`). La que no este se salta (los originales no elegidos no van al repositorio).
+ *   para la pagina de prueba (`/tests/musica.html`). La que no este se salta (los originales no elegidos no van al repositorio).
  */
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, statSync, writeFileSync } from 'node:fs';

@@ -15,9 +15,9 @@ Tres carpetas en la raíz, servidas por Vite en `npm run dev` con su ruta:
 
 | Carpeta | Qué va | Páginas |
 |---|---|---|
-| `catalogo/` | Lo que hay en el juego, tal como lo ve el jugador | `tropas.html`, `jefes.html`, `personajes.html` |
-| `propuestas/` | Propuestas de diseño entre las que se eligió | `bichos`, `gusanos`, `jefes`, `personajes`, `disparadoras`, `iconos`, `invernadero` |
-| `pruebas/` | Páginas para oír o probar algo que no es un dibujo | `sonidos`, `musica` |
+| `catalog/` | Lo que hay en el juego, tal como lo ve el jugador | `tropas.html`, `jefes.html`, `personajes.html` |
+| `proposals/` | Propuestas de diseño entre las que se eligió | `bichos`, `gusanos`, `jefes`, `personajes`, `disparadoras`, `iconos`, `invernadero` |
+| `tests/` | Páginas para oír o probar algo que no es un dibujo | `sonidos`, `musica` |
 
 El catálogo (`src/dev/catalog/`):
 - **Tropas:** cada brote con las tropas que saca su guion (`roster.ts`, puro y con test). Arriba, andando en el tablero con la vista del juego (`createEnemyView`) en tres de sus niveles y con un botón por reacción; debajo, en lista, su ficha del juego (`enemyInfo` y su foto de `portrait.ts`), cuándo sale (rondas y niveles, escolta aparte) y una tabla por nivel: vida, lo que sube, ataque, daño por segundo y, si deja copia, la de su copia.
@@ -27,11 +27,11 @@ El catálogo (`src/dev/catalog/`):
 La regla para lo que venga:
 - Una tropa nueva sale sola en cuanto está en el guion de un brote; si no sale en ninguno, falla `roster.test.ts`.
 - Un jefe nuevo necesita su entrada en `BOSS_NUMBERS` y `ENRAGES` (`bosses.tsx`), y un personaje nuevo en `PEOPLE` (`characters.tsx`). Si falta, no compila.
-- Sus propuestas de diseño, si las tiene, van en una página de `propuestas/`. Una página que solo enseñe lo que ya está en el juego no se hace: eso es el catálogo.
+- Sus propuestas de diseño, si las tiene, van en una página de `proposals/`. Una página que solo enseñe lo que ya está en el juego no se hace: eso es el catálogo.
 - El build no incluye nada de esto: Vite solo empaqueta `index.html` (no hay `rollupOptions.input`), así que `dist/` no lleva ni las páginas ni su código.
 
 ## Consecuencias
 
-- Las rutas de las páginas cambian (`/jefes.html` pasa a `/propuestas/jefes.html`, `/sonidos.html` a `/pruebas/sonidos.html`...). Las tasks cerradas citan las rutas de antes: son historia y no se tocan.
+- Las rutas de las páginas cambian (`/jefes.html` pasa a `/proposals/jefes.html`, `/sonidos.html` a `/tests/sonidos.html`...). Las tasks cerradas citan las rutas de antes: son historia y no se tocan.
 - La galería de propuestas de los jefes se queda solo con el aspecto; sus movimientos, en el catálogo.
 - El catálogo usa la ficha y las vistas del juego, así que un cambio de reglas o de arte se ve allí sin tocarlo.

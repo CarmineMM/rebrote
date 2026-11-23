@@ -57,7 +57,7 @@ Las reglas, como arriba, con LK-02 a LK-09 (en `01-mecanicas.md`, "Tropas del br
 - **Vida de los Lurker:** un 25 % menos que su pareja del brote 1 (75, 105 y 300 de base). Con la misma, el bot no pasaba de la ronda 1: con las disparadoras atrás, el sigilo les quita más de la mitad del tiempo de disparo y, sin bajas al principio, no hay monedas para construir. Así se confirmó el riesgo de "Las tropas ocultas valen, en la práctica, casi el doble de vida".
 - **Ronda 1 provisional:** niveles `early`, como la ronda 1 del brote 2.
 - **Skipper:** 65 de vida y 20 monedas; 2 casillas por salto, 1 s en tierra y 0,5 s en el aire (1,33 casillas/s de media).
-- **Aspecto (LK-01, Carmine, en la galería `/propuestas/bichos.html`):** los Lurker son camaleones (el escupidor, con los colores al revés) y el Skipper, un saltamontes rosa.
+- **Aspecto (LK-01, Carmine, en la galería `/proposals/bichos.html`):** los Lurker son camaleones (el escupidor, con los colores al revés) y el Skipper, un saltamontes rosa.
 
 Simulación del guion provisional (`npm run sim`, 10 partidas por bot, con el azar fijo):
 
@@ -112,7 +112,7 @@ En las rondas del brote `brain` de `OUTBREAKS` (`balance.ts`). Cada ronda empiez
 
 ## Hecho en T-039 (22 y 23 nov 2026)
 
-Decisiones BR-02 a BR-09 cerradas por Carmine con la recomendación, y una nueva al ver el código (qué lo descubre); BR-01 (el aspecto), por Carmine en la galería `/propuestas/jefes.html` el 23 nov 2026: la cúpula. Reglas en `01-mecanicas.md` ("Jefe: Brain"); valores, como PROVISIONAL en `ENEMIES.brain` y `BRAIN` de `balance.ts`.
+Decisiones BR-02 a BR-09 cerradas por Carmine con la recomendación, y una nueva al ver el código (qué lo descubre); BR-01 (el aspecto), por Carmine en la galería `/proposals/jefes.html` el 23 nov 2026: la cúpula. Reglas en `01-mecanicas.md` ("Jefe: Brain"); valores, como PROVISIONAL en `ENEMIES.brain` y `BRAIN` de `balance.ts`.
 
 - **Salta (BR-02):** 2 casillas, 3 s en tierra (se agacha el último segundo: el aviso) y 0,8 s en el aire. Unas 0,53 casillas/s: sin escudo cruza el jardín en unos 17 s. Salta por encima de plantas y minas y solo lo para un escudo (muro, disparadora con escudo o muro de hielo), al que muerde.
 - **Qué lo descubre (decidido al empezar):** el escudo que lo para, la explosión de una mina que lo alcanza y la granada. No lo descubren la cercanía ni las balas, tampoco las de hielo o fuego: a los Lurker sí, pero a Brain una bala perdida disparada a su escolta lo dejaría al descubierto todo el carril y "las salta sin que le disparen" no se cumpliría. Una bala que ya va por el carril le da igual (LK-04): oculto también pierde vida si se pone delante de su escolta.
@@ -125,7 +125,7 @@ Decisiones BR-02 a BR-09 cerradas por Carmine con la recomendación, y una nueva
 - **Habla (BR-09)** en un bocadillo de contestador: "¿Me buscabas? Deja tu mensaje." al llegar; se burla al ocultarse, al morder el escudo y al descubrirlo una mina, y al escapar y al ganar. Las frases las escribió Claude con el teléfono y el disco limpio del Brain real; Carmine las revisa antes de cerrar la task.
 - **Se prepara** en las rondas 6 y 7 (y en la preparación de la 8) a la derecha, marcando sectores como defectuosos en un mapa de sectores (se llena de rojos tachados) y ocultándose un instante cada poco. En la 6, Boxer cuenta qué fue el Brain real (`story.lore.brain`, de T-037).
 - **Se ve siempre:** oculto, la silueta morada que tiembla de los Lurker, con los ojos en verde; descubierto, sus colores, con un destello verde al descubrirse. Su barra dice "Oculto" o "¡Descubierto!" y marca dónde entra en la fase 2; en la fase 2 se enciende un halo rojo y pone cara de enfado.
-- **Aspecto (BR-01, Carmine, 23 nov 2026):** un cerebro rosa bajo una cúpula de cristal, sobre un platillo de metal con luces y cuatro patas de muelle que se aprietan antes de cada salto; muerde con la mandíbula del platillo. Se eligió en `/propuestas/jefes.html` entre tres propuestas (las otras, un pogo con sectores tachados y un cerebro sobre cables con clavijas, se quedan como referencia). El juego usa `BRAIN_DESIGN` (`src/game/view/brainArt.ts`).
+- **Aspecto (BR-01, Carmine, 23 nov 2026):** un cerebro rosa bajo una cúpula de cristal, sobre un platillo de metal con luces y cuatro patas de muelle que se aprietan antes de cada salto; muerde con la mandíbula del platillo. Se eligió en `/proposals/jefes.html` entre tres propuestas (las otras, un pogo con sectores tachados y un cerebro sobre cables con clavijas, se quedan como referencia). El juego usa `BRAIN_DESIGN` (`src/game/view/brainArt.ts`).
 - **Sonido:** su voz de contestador (`brainTalk`), un boing de muelle grave al saltar (`brainHop`), un golpe de metal al caer (`brainLand`) y su derrota (`brainDefeated`). Al descubrirse suena como sus tropas (`reveal`).
 
 ### Simulación con bots (T-039)

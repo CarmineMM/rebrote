@@ -23,8 +23,8 @@ import { KIND_LOOK, WORM_LOOK, type KindLook } from '../game/view/wormView';
 import { text } from '../i18n';
 
 /**
- * Escenas de los jefes: "Aspecto" es la de las propuestas (`/propuestas/jefes.html`) y "Movimientos", la del catalogo
- * (`/catalogo/jefes.html`, T-040). Solo con `npm run dev`. Usan las vistas del juego (`CreeperView`,
+ * Escenas de los jefes: "Aspecto" es la de las propuestas (`/proposals/jefes.html`) y "Movimientos", la del catalogo
+ * (`/catalog/jefes.html`, T-040). Solo con `npm run dev`. Usan las vistas del juego (`CreeperView`,
  * `ElkClonerView`, `BrainView`, sus versos y el jefe que se prepara) sobre el tablero de verdad, sin partida alrededor: lo que
  * dura (el aviso del poema, el salto de Creeper, los saltos de Brain, la quemadura) se lleva aqui a mano, como lo llevaria el
  * estado. No las ve el jugador: sus textos van en espanol sin `src/i18n/` (salvo lo que dicen los jefes, que es lo del juego).

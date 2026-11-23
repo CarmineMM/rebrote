@@ -8,7 +8,7 @@ import { BUG_ACTIONS, BUG_LAB_SCENES, BugBoardScene, BugLooksScene, type BugActi
 import './shooterLab.css';
 
 /**
- * Galeria de las tropas del brote 3 (T-038): `npm run dev` y abrir `/propuestas/bichos.html`. Tres propuestas para los Lurker y tres
+ * Galeria de las tropas del brote 3 (T-038): `npm run dev` y abrir `/proposals/bichos.html`. Tres propuestas para los Lurker y tres
  * para el Skipper (LK-01), con la vista del juego (`BugView`). "Aspecto" las pone lado a lado; "Tablero" las suelta con las
  * reglas de verdad. No la ve el jugador (`npm run build` no la incluye), asi que sus textos van en espanol sin `src/i18n/`.
  */

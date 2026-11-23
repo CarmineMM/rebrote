@@ -5,7 +5,7 @@ import type { RecipeName } from './sfxr.ts';
 /**
  * De donde sale cada efecto de sonido (T-014, S-01 y S-02). `npm run audio` lo lee y escribe los archivos:
  * - `pick` es el elegido: va a `public/audio/` (una entrada por variante, como dice `variants` en `SFX`).
- * - `alternatives` son otras opciones para oir en la pagina de prueba (`/pruebas/sonidos.html`, solo en desarrollo). Para
+ * - `alternatives` son otras opciones para oir en la pagina de prueba (`/tests/sonidos.html`, solo en desarrollo). Para
  *   cambiar el elegido, se mueve una alternativa a `pick` y se vuelve a pasar `npm run audio`.
  *
  * Una fuente es una capa o varias mezcladas. Las medidas de cada candidato (duracion, volumen, brillo y melodia) se
@@ -414,7 +414,7 @@ export const MANIFEST: Readonly<Record<SfxId, SoundEntry>> = {
 /**
  * Musica de fondo (T-015, U-01 y U-02): el original de cada pista, en `audio-lab/musica/`, y como se recorta. Licencias
  * aceptadas: CC0 o CC BY (Incompetech u OpenGameArt). `pick` va a `public/audio/musica/`; las alternativas cuyo original
- * este en `audio-lab/musica/` se oyen en `/pruebas/musica.html`. Para cambiar la elegida, se mueve una alternativa a `pick`, se
+ * este en `audio-lab/musica/` se oyen en `/tests/musica.html`. Para cambiar la elegida, se mueve una alternativa a `pick`, se
  * copian su titulo, autor, licencia y `loopSeconds` a `MUSIC_TRACKS` y se pasa `npm run audio`.
  */
 export interface MusicSource {

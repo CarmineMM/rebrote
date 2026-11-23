@@ -5,7 +5,7 @@ dist
 
 
 # Musica (T-015): de los originales bajados solo van al repositorio los elegidos (MUSIC_MANIFEST); las alternativas y sus
-# bucles de prueba (/pruebas/musica.html) se quedan en este equipo.
+# bucles de prueba (/tests/musica.html) se quedan en este equipo.
 audio-lab/musica/*
 !audio-lab/musica/cozy-puzzle-in-game-3.ogg
 !audio-lab/musica/krakatoa.ogg

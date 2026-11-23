@@ -6,7 +6,7 @@ import type { Presenter, RoundGroup, RoundScript } from '../../game/core/rounds'
 /**
  * Quien sale en cada brote (T-040), sacado del guion de verdad (`OUTBREAKS` de `balance.ts`): las tropas de sus rondas, con
  * los niveles con que pueden salir en cada una, y su jefe con su escolta. Lo usan los catalogos de desarrollo
- * (`/catalogo/tropas.html` y `/catalogo/jefes.html`): una tropa o un jefe nuevo sale en ellos en cuanto esta en un guion.
+ * (`/catalog/tropas.html` y `/catalog/jefes.html`): una tropa o un jefe nuevo sale en ellos en cuanto esta en un guion.
  * Puro y sin Phaser.
  */
 

@@ -34,12 +34,12 @@ Un módulo propio en `src/game/audio/`, con Web Audio, y Phaser sin audio (`audi
 - **Primer gesto.** El contexto se crea con el primer toque, clic o tecla. Los archivos se descargan antes, cuando la portada ya se ve, y se decodifican al crear el contexto. Lo que se pide mientras se decodifica espera hasta `lateMs`; si no llega, no suena.
 - **Números en `src/game/config/audio.ts`** (volumen, voces, separación, ráfaga, variación de tono, variantes de cada efecto y la mezcla general), no en `balance.ts`: no cambian el juego.
 - **Archivos en `public/audio/`**, OGG Vorbis con respaldo en MP3, en mono, con el volumen igualado y sin silencio al principio ni al final (S-03). Los fabrica `npm run audio` (`scripts/audio/`) a partir de un manifiesto: capas de los paquetes CC0 de Kenney o recetas de jsfxr, mezcladas con ffmpeg. `public/audio/LICENCIAS.md` dice de dónde sale cada archivo y su licencia.
-- **Página de prueba** (`/pruebas/sonidos.html`, solo con `npm run dev`): cada efecto con el elegido y sus alternativas, pruebas de carga con el combate de verdad y "Copiar elecciones" para pasárselas a Claude Code. Sus textos van en español sin `src/i18n/`: no la ve el jugador.
+- **Página de prueba** (`/tests/sonidos.html`, solo con `npm run dev`): cada efecto con el elegido y sus alternativas, pruebas de carga con el combate de verdad y "Copiar elecciones" para pasárselas a Claude Code. Sus textos van en español sin `src/i18n/`: no la ve el jugador.
 - **Volumen** de 0 a 100 en Opciones y en Ajustes (`sfxVolume` en `rebrote.ajustes`), con su curva. Con 0 no se reproduce nada.
 
 ## Consecuencias
 
 - Una mecánica nueva llega con su sonido (regla de `CLAUDE.md`): su efecto en `SfxId` y `SFX`, su fuente en `scripts/audio/manifest.ts`, su regla en `cues.ts` (con test) y su archivo con `npm run audio`. La guía de gráficos tiene la lista "Sonido nuevo".
-- Cambiar un sonido no toca código del juego: se cambia el manifiesto y se vuelve a pasar `npm run audio`. Los paquetes de Kenney (`audio-lab/kenney/`, unos 10 MB) y las alternativas de la página de prueba (`audio-lab/candidatos/`) van en el repositorio: tras clonar funcionan `npm run build`, `npm run audio` y `/pruebas/sonidos.html` sin bajar nada.
+- Cambiar un sonido no toca código del juego: se cambia el manifiesto y se vuelve a pasar `npm run audio`. Los paquetes de Kenney (`audio-lab/kenney/`, unos 10 MB) y las alternativas de la página de prueba (`audio-lab/candidatos/`) van en el repositorio: tras clonar funcionan `npm run build`, `npm run audio` y `/tests/sonidos.html` sin bajar nada.
 - La música (T-015) usará el mismo módulo con un canal más y su propio volumen.
 - Pendiente de comprobar en un iPhone de verdad: que Safari decodifica el OGG (si no, el módulo usa el MP3) y que el primer toque desbloquea el audio.

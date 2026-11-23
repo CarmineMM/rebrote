@@ -78,7 +78,7 @@ export const ELK_MOODS: readonly ElkMood[] = ['idle', 'bite', 'hurt', 'inhale', 
 
 /**
  * Como va el aro del centro del disquete. Con el aro de metal (como al principio de T-026) parecia un tercer ojo, asi que
- * Carmine pidio quitarlo o dejarlo muy sutil (22 nov 2026). Las cuatro se comparan en `/propuestas/jefes.html`; Carmine eligio el mate (C), que es `ELK_HUB`.
+ * Carmine pidio quitarlo o dejarlo muy sutil (22 nov 2026). Las cuatro se comparan en `/proposals/jefes.html`; Carmine eligio el mate (C), que es `ELK_HUB`.
  */
 export type ElkHub = 'metal' | 'faint' | 'matte' | 'none';
 
@@ -94,7 +94,7 @@ export const ELK_HUBS: ReadonlyArray<{ readonly id: ElkHub; readonly letter: str
   { id: 'none', letter: 'D', name: 'Sin aro', about: 'Nada en el centro: el disquete se reconoce por la etiqueta, la muesca y la ventana de lectura (la boca).' },
 ];
 
-/** Aro que usa el juego (elegido en `/propuestas/jefes.html`). */
+/** Aro que usa el juego (elegido en `/proposals/jefes.html`). */
 export const ELK_HUB: ElkHub = 'matte';
 
 function roundRect(ctx: Ctx, x: number, y: number, w: number, h: number, r: number): void {

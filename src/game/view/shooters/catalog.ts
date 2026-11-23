@@ -6,7 +6,7 @@ import { POD_SHOOTER } from './pod';
 
 /**
  * Todas las formas de la disparadora (T-016): la de siempre y las tres propuestas. Solo lo usan la galeria de desarrollo
- * (`/propuestas/disparadoras.html`) y los tests: el juego importa solo la activa (`SHOOTER` en `shooterShape.ts`), asi que las
+ * (`/proposals/disparadoras.html`) y los tests: el juego importa solo la activa (`SHOOTER` en `shooterShape.ts`), asi que las
  * demas no entran en `npm run build`.
  */
 export const SHOOTER_DESIGNS: readonly ShooterDesign[] = [LEGACY_SHOOTER, BULB_SHOOTER, CACTUS_SHOOTER, POD_SHOOTER];

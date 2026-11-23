@@ -34,7 +34,7 @@ import {
  * Boxer (T-031, Y-01): el mentor, antes informatico. Segunda ronda de propuestas (21 nov 2026): Carmine descarto las tres
  * primeras y pidio un informatico moderno, de pelo oscuro y con una edad distinta en cada propuesta (unos 30, 40 y 50),
  * con libertad creativa en lo demas. Eligio una mezcla de a) y b) (`BOXER_MIX`); las tres quedan como referencia. Complexion normal en las tres: misma cara y medidas; cambian el pelo, la barba, la
- * ropa y lo que lleva en la mano, que dice "informatico" sin texto. Se comparan en la galeria (`/propuestas/personajes.html`).
+ * ropa y lo que lleva en la mano, que dice "informatico" sin texto. Se comparan en la galeria (`/proposals/personajes.html`).
  */
 
 /** Cara de un hombre de complexion normal: ni gordo ni flaco, con la mandibula algo cuadrada. */

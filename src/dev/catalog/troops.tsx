@@ -13,7 +13,7 @@ import '../../styles.css';
 import './catalog.css';
 
 /**
- * Catalogo de tropas (T-040, ADR-0023): `npm run dev` y abrir `/catalogo/tropas.html`. Cada brote con las tropas que saca
+ * Catalogo de tropas (T-040, ADR-0023): `npm run dev` y abrir `/catalog/tropas.html`. Cada brote con las tropas que saca
  * su guion (`roster.ts`): arriba, andando sobre el tablero con la vista del juego en tres de sus niveles; debajo, en lista,
  * su ficha del juego y una tabla con lo que tiene en cada nivel con que sale. Una tropa nueva sale sola en cuanto esta en
  * el guion de un brote. No la ve el jugador (`npm run build` no la incluye), asi que sus textos van en espanol sin
@@ -127,7 +127,7 @@ function OutbreakSection({ roster, scene }: { roster: RosterOutbreak; scene: Pha
           {roster.boss && roster.bossRound !== null && (
             <>
               {' '}
-              · el jefe sale en la {roster.bossRound} · <a href={`/catalogo/jefes.html#${roster.boss}`}>ver su ficha</a>
+              · el jefe sale en la {roster.bossRound} · <a href={`/catalog/jefes.html#${roster.boss}`}>ver su ficha</a>
             </>
           )}
         </small>

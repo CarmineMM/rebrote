@@ -252,7 +252,7 @@ export class BrainView implements EnemyView {
     enemy: Enemy,
     emerge: boolean,
     emergeDelayMs = 0,
-    /** Otra propuesta que la del juego: la galeria `/propuestas/jefes.html` compara asi las tres (BR-01). */
+    /** Otra propuesta que la del juego: la galeria `/proposals/jefes.html` compara asi las tres (BR-01). */
     design: BrainDesign = BRAIN_DESIGN,
   ) {
     this.footY = enemy.lane + BRAIN_LOOK.footY;
@@ -542,7 +542,7 @@ export class BrainView implements EnemyView {
     return lx >= box.left && lx <= box.right && ly >= box.top && ly <= box.bottom;
   }
 
-  /** Dice una frase cualquiera en su bocadillo (la galeria `/propuestas/jefes.html`). */
+  /** Dice una frase cualquiera en su bocadillo (la galeria `/proposals/jefes.html`). */
   taunt(line: string): void {
     this.say(line, 2400);
   }

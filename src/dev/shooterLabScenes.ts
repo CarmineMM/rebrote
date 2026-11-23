@@ -15,7 +15,7 @@ import { engagedX, TitleCover, type CoverCast, type PlantSpot } from '../game/vi
 import { FLAIRS, LevelFlair, flairTier, registerFlairTextures, type FlairId } from './levelFlair';
 
 /**
- * Escenas de la galeria de propuestas de la disparadora (T-016, fase 1): solo con `npm run dev`, en `/propuestas/disparadoras.html`.
+ * Escenas de la galeria de propuestas de la disparadora (T-016, fase 1): solo con `npm run dev`, en `/proposals/disparadoras.html`.
  * Usan las vistas del juego (`PlantView`, la batalla de la portada), asi que respiran, brotan, disparan, se fusionan y
  * suben de nivel como en el tablero. No las ve el jugador: sus textos van en espanol sin `src/i18n/`.
  */

@@ -5,7 +5,7 @@ import { type Ctx, circle, ellipse } from './canvasKit';
  * el tablero y cuando se prepara) y la foto de la ficha (`portrait.ts`). Brain fue el primer virus de PC: se escondia de quien
  * miraba el disco. En el juego avanza oculto y a saltos, asi que va de pie sobre algo que salta. Para no parecerse a Creeper
  * (tumbado, con un monitor por cabeza) ni a Elk Cloner (de pie, con un disquete), es un cerebro, sin pantalla ni disquete
- * (BR-01). Tres propuestas, que se comparan en `/propuestas/jefes.html`:
+ * (BR-01). Tres propuestas, que se comparan en `/proposals/jefes.html`:
  * - **Cupula** (`dome`): un cerebro rosa bajo una cupula de cristal, sobre un platillo de metal con luces y cuatro patas con
  *   muelles. Muerde con la mandibula del platillo.
  * - **Pogo** (`pogo`): un cerebro con parches de sectores tachados (los que Brain marcaba como defectuosos para esconderse)
@@ -56,7 +56,7 @@ export const BRAIN_DESIGNS: readonly BrainProposal[] = [
   },
 ];
 
-/** La que usa el juego: la cupula (BR-01, Carmine la eligio en `/propuestas/jefes.html` el 23 nov 2026). Las otras quedan como referencia. */
+/** La que usa el juego: la cupula (BR-01, Carmine la eligio en `/proposals/jefes.html` el 23 nov 2026). Las otras quedan como referencia. */
 export const BRAIN_DESIGN: BrainDesign = 'dome';
 
 // ---------------------------------------------------------------------------

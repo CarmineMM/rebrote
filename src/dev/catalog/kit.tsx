@@ -13,8 +13,8 @@ import { text } from '../../i18n';
 import { Cameo, toneStyle } from '../../ui/story/Portrait';
 
 /**
- * Piezas comunes de los catalogos de desarrollo (T-040, ADR-0023): `/catalogo/tropas.html`, `/catalogo/jefes.html` y
- * `/catalogo/personajes.html`. Ensenan lo que hay en el juego tal como lo ve el jugador (su ficha, su foto y sus vistas),
+ * Piezas comunes de los catalogos de desarrollo (T-040, ADR-0023): `/catalog/tropas.html`, `/catalog/jefes.html` y
+ * `/catalog/personajes.html`. Ensenan lo que hay en el juego tal como lo ve el jugador (su ficha, su foto y sus vistas),
  * con los numeros de las reglas de core. No los ve el jugador (`npm run build` no los incluye): sus textos propios van en
  * espanol sin `src/i18n/`; los del juego (la ficha) salen del idioma en curso.
  */
@@ -22,9 +22,9 @@ import { Cameo, toneStyle } from '../../ui/story/Portrait';
 export type CatalogPage = 'troops' | 'bosses' | 'characters';
 
 const PAGES: ReadonlyArray<readonly [CatalogPage, string, string]> = [
-  ['troops', 'Tropas', '/catalogo/tropas.html'],
-  ['bosses', 'Jefes', '/catalogo/jefes.html'],
-  ['characters', 'Personajes', '/catalogo/personajes.html'],
+  ['troops', 'Tropas', '/catalog/tropas.html'],
+  ['bosses', 'Jefes', '/catalog/jefes.html'],
+  ['characters', 'Personajes', '/catalog/personajes.html'],
 ];
 
 /** Barra de arriba: el nombre del catalogo y los enlaces a los otros dos. */

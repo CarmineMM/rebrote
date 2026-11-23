@@ -8,7 +8,7 @@ import type { WormView } from '../game/view/wormView';
 /**
  * Propuestas de adorno para los tramos de nivel de los gusanos (5, 10, 15 y 20), como el jardincito de las disparadoras
  * (T-027): algo que se vea de un vistazo sin tocar el dibujo del gusano, del acorazado ni del escupidor. Solo en la
- * galeria de desarrollo (`/propuestas/gusanos.html`). Carmine eligio el aura (21 nov 2026) y ya esta en el juego (T-030): la pinta el
+ * galeria de desarrollo (`/proposals/gusanos.html`). Carmine eligio el aura (21 nov 2026) y ya esta en el juego (T-030): la pinta el
  * propio gusano (`src/game/view/wormAura.ts`), asi que aqui no hace nada. Las otras tres se quedan como referencia, y
  * en la galeria salen combinadas con ella.
  *

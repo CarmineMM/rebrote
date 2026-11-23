@@ -13,7 +13,7 @@ import type { EnemyView } from '../../game/view/wormView';
 import { text } from '../../i18n';
 
 /**
- * Escenario del catalogo de tropas (`/catalogo/tropas.html`, T-040): las tropas de un brote, una por carril, con la vista del
+ * Escenario del catalogo de tropas (`/catalog/tropas.html`, T-040): las tropas de un brote, una por carril, con la vista del
  * juego (`createEnemyView`, la misma que usa el tablero) en tres de sus niveles, para ver la medallita y el aura de cada
  * tramo. Andan sin moverse de su sitio (el Skipper salta en el suyo) y hacen lo que se les pida. Sin reglas de combate: lo
  * que dura (el hielo, el fuego, el ataque) se lleva aqui a mano. No la ve el jugador: sus textos van en espanol.
