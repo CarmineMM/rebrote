@@ -10,6 +10,7 @@ import {
   cardCost,
   cardElement,
   cardPlay,
+  cardTap,
   createMatch,
   earn,
   fusePlants,
@@ -739,7 +740,8 @@ export class BoardScene extends Phaser.Scene {
       // Una carta bloqueada no se ve en la bandeja (T-007), pero por si acaso.
       if (!running() || !availableCards(this.match).includes(card)) return;
       this.cancelDrag();
-      this.select(card);
+      // Tomar otra vez la elegida la suelta, como los inventos del panel izquierdo (T-045, SC-03).
+      this.select(this.selected === card ? null : card);
     };
     const onCancelled = () => {
       this.cancelPower();
@@ -770,9 +772,9 @@ export class BoardScene extends Phaser.Scene {
         this.powerDropped(point);
         return;
       }
-      const cell = this.cardCellAtPage(point);
-      // Soltar fuera del tablero (o un simple clic en la carta) no cobra ni siembra: la carta sigue elegida.
-      if (cell) this.tryPlay(cell);
+      // Soltar la carta arrastrada donde se puede la juega; fuera del tablero o donde no se puede, la suelta (T-045,
+      // SC-04). Un simple toque en la carta no llega aqui (`Card.tsx`).
+      this.tryPlay(this.cardCellAtPage(point));
     };
     const onStateRequested = () => this.emitState();
     const onUnlockAccepted = (round: number) => {
@@ -1582,12 +1584,18 @@ export class BoardScene extends Phaser.Scene {
     EventBus.emit(GameEvents.cardPreview, preview);
   }
 
-  /** Juega la carta elegida en la casilla si se puede (sembrar o infundir), cobra y suelta la carta. */
+  /**
+   * Juega la carta elegida en la casilla si se puede (sembrar o infundir), cobra y suelta la carta. Fuera del tablero o
+   * donde no se puede, la suelta sin cobrar (T-045, `cardTap`): en el movil no hay Esc ni boton derecho.
+   */
   private tryPlay(cell: Cell | null): void {
     const card = this.selected;
-    if (this.defeated || this.won || !card || !cell) return;
-    const { action, blocker } = cardPlay(this.match, card, cell);
-    if (blocker) return;
+    if (this.defeated || this.won || !card) return;
+    if (!cell || cardTap(this.match, card, cell) === 'release') {
+      this.select(null);
+      return;
+    }
+    const { action } = cardPlay(this.match, card, cell);
     this.match = playCard(this.match, card, cell);
     const element = cardElement(card);
     const sown = sownAt(this.match, cell);

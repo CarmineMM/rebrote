@@ -16,10 +16,13 @@ interface CardProps {
 }
 
 const toPagePoint = (event: PointerEvent): PagePoint => ({ pageX: event.pageX, pageY: event.pageY });
+const inside = (box: DOMRect, event: PointerEvent) =>
+  event.clientX >= box.left && event.clientX <= box.right && event.clientY >= box.top && event.clientY <= box.bottom;
 
 /**
  * Carta del HUD. Al pulsarla queda elegida; se juega arrastrandola hasta una casilla
- * o haciendo clic despues en la casilla. React solo avisa a Phaser por EventBus.
+ * o haciendo clic despues en la casilla. Pulsar otra vez la elegida la suelta, y soltarla arrastrada donde no se puede
+ * jugar, tambien (T-045). React solo avisa a Phaser por EventBus.
  * Una carta de elemento sobre una disparadora de N canones muestra lo que costaria infundirla ("x3 = 225"),
  * en rojo si no alcanza (D-04).
  */
@@ -33,19 +36,28 @@ export function Card({ card, label, balance, selected, preview = null, canInfuse
   const t = useText();
 
   function onPointerDown(event: ReactPointerEvent<HTMLButtonElement>) {
-    if (disabled || event.button !== 0) return;
+    // Una carta sin moneda no se elige, pero si es la elegida se puede soltar.
+    if ((disabled && !selected) || event.button !== 0) return;
     event.preventDefault();
+    // La escena suelta la elegida al volver a pulsarla (SC-03): sin arrastre.
     EventBus.emit(GameEvents.cardPicked, card);
+    if (selected) return;
 
     // Se escucha en window para seguir el arrastre aunque el puntero salga de la carta y entre en el canvas.
+    // Solo cuenta como arrastre si el puntero sale de la carta: un toque (aunque el dedo se mueva un poco) la deja
+    // elegida, porque soltar fuera de una casilla valida la suelta (SC-04).
     const { pointerId } = event;
+    const box = event.currentTarget.getBoundingClientRect();
+    let dragged = false;
     const onMove = (e: PointerEvent) => {
-      if (e.pointerId === pointerId) EventBus.emit(GameEvents.cardDragged, toPagePoint(e));
+      if (e.pointerId !== pointerId) return;
+      if (!dragged && !inside(box, e)) dragged = true;
+      if (dragged) EventBus.emit(GameEvents.cardDragged, toPagePoint(e));
     };
     const onUp = (e: PointerEvent) => {
       if (e.pointerId !== pointerId) return;
       stop();
-      EventBus.emit(GameEvents.cardDropped, toPagePoint(e));
+      if (dragged || !inside(box, e)) EventBus.emit(GameEvents.cardDropped, toPagePoint(e));
     };
     const onCancel = (e: PointerEvent) => {
       if (e.pointerId === pointerId) stop();
