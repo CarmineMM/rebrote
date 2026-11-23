@@ -1,9 +1,10 @@
 import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type RefObject } from 'react';
 import type { RouteArt } from '../game/EventBus';
 import { outbreakNumber, outbreaksBefore, roundCount, type OutbreakId } from '../game/core/outbreaks';
-import { isPlayable, routeStops, type RouteStop } from '../game/core/route';
+import { isPlayable, reachedEnd, routeStops, type RouteStop } from '../game/core/route';
 import type { Progress } from '../game/progress';
 import type { SaveSummary } from '../game/save';
+import { SupportButtons, SupportStatus, useSupport } from './beta/SupportButtons';
 import { bossName, outbreakTitle } from './outbreakName';
 import { layoutRoute, routeSegment, type RouteBox, type RoutePoint } from './routeLayout';
 import { NO_AUTO_FULLSCREEN } from './useFullscreen';
@@ -21,8 +22,14 @@ interface RouteMapProps {
 }
 
 type OutbreakStop = Extract<RouteStop, { kind: 'outbreak' }>;
+type SoonStop = Extract<RouteStop, { kind: 'soon' }>;
+/** Un lugar que se puede elegir: un brote vencido o abierto, o el lugar por llegar (su aviso de beta, T-044). */
+type ChoiceStop = OutbreakStop | SoonStop;
+/** Como se llama cada lugar elegible: el brote, o "soon" el por llegar (solo hay uno). */
+type Choice = OutbreakId | 'soon';
 
-const isChoice = (stop: RouteStop): stop is OutbreakStop => stop.kind === 'outbreak' && isPlayable(stop.standing);
+const isChoice = (stop: RouteStop): stop is ChoiceStop => stop.kind === 'soon' || (stop.kind === 'outbreak' && isPlayable(stop.standing));
+const choiceOf = (stop: ChoiceStop): Choice => (stop.kind === 'soon' ? 'soon' : stop.id);
 
 /** Tamano de la caja del mapa, medido y al dia si cambia la ventana. */
 function useBoxSize(ref: RefObject<HTMLElement | null>): RouteBox {
@@ -49,7 +56,8 @@ function useBoxSize(ref: RefObject<HTMLElement | null>): RouteBox {
  * su jefe en color y un sello; el que toca, destacado y con la flecha encima; el siguiente, en sombra y con candado; y
  * el destino final, pequeno y a lo lejos. El suelo va sano hasta donde llego el jugador y corrupto despues, como el
  * jardin del tablero. Tocar un lugar vencido o el que toca ensena abajo su nombre, su jefe y el boton para jugarlo (o
- * para reanudar la partida a medias que haya alli). Los jefes son recortes de la escena (`routeArt`): React no los pinta.
+ * para reanudar la partida a medias que haya alli). Tocar el lugar por llegar ensena el aviso de beta y los botones para
+ * apoyar el proyecto (T-044). Los jefes son recortes de la escena (`routeArt`): React no los pinta.
  * Teclado: Tab o las flechas recorren los lugares, Enter elige y Esc vuelve (de la confirmacion a la ficha, de ahi al
  * Invernadero).
  */
@@ -58,15 +66,19 @@ export function RouteMap({ progress, summary, art, onPlay, onResume, onClose }: 
   const titleId = useId();
   const stops = useMemo(() => routeStops(progress.defeated), [progress.defeated]);
   const choices = stops.filter(isChoice);
-  // Elegido al abrir: el que toca o, si no hay, el ultimo vencido. La ruta siempre tiene al menos uno (el primer brote).
-  const [selected, setSelected] = useState<OutbreakId | null>(() => (choices.find((stop) => stop.current) ?? choices.at(-1))?.id ?? null);
+  // Elegido al abrir: el que toca o, si no hay, el ultimo vencido (nunca el por llegar). La ruta siempre tiene al menos
+  // uno (el primer brote).
+  const [selected, setSelected] = useState<Choice | null>(() => {
+    const outbreaks = choices.filter((stop): stop is OutbreakStop => stop.kind === 'outbreak');
+    return (outbreaks.find((stop) => stop.current) ?? outbreaks.at(-1))?.id ?? null;
+  });
   const [confirming, setConfirming] = useState(false);
   const mapRef = useRef<HTMLDivElement>(null);
-  const stopButtons = useRef(new Map<OutbreakId, HTMLButtonElement>());
+  const stopButtons = useRef(new Map<Choice, HTMLButtonElement>());
   const keepButton = useRef<HTMLButtonElement>(null);
   const box = useBoxSize(mapRef);
   const layout = useMemo(() => layoutRoute(stops.length, box), [stops.length, box]);
-  const chosen = choices.find((stop) => stop.id === selected) ?? null;
+  const chosen = choices.find((stop) => choiceOf(stop) === selected) ?? null;
   const measured = box.width > 0 && box.height > 0;
 
   // El foco empieza en el lugar elegido (en cuanto el mapa esta medido y sus lugares existen); en la confirmacion, en
@@ -79,13 +91,13 @@ export function RouteMap({ progress, summary, art, onPlay, onResume, onClose }: 
   // Con muchos lugares el mapa se desplaza: el elegido queda a la vista.
   useEffect(() => {
     if (!measured || !layout.scrolls || !selected) return;
-    const index = stops.findIndex((stop) => stop.kind === 'outbreak' && stop.id === selected);
+    const index = stops.findIndex((stop) => isChoice(stop) && choiceOf(stop) === selected);
     const point = layout.points[index];
     const map = mapRef.current;
     if (point && map) map.scrollTo({ left: point.x - map.clientWidth / 2, behavior: 'smooth' });
   }, [selected, measured, layout, stops]);
 
-  const choose = (id: OutbreakId) => {
+  const choose = (id: Choice) => {
     setSelected(id);
     setConfirming(false);
   };
@@ -100,12 +112,12 @@ export function RouteMap({ progress, summary, art, onPlay, onResume, onClose }: 
       }
       if (confirming || (event.key !== 'ArrowRight' && event.key !== 'ArrowLeft')) return;
       // Las flechas mueven por los lugares que se pueden elegir; el foco va con ellas.
-      const index = choices.findIndex((stop) => stop.id === selected);
+      const index = choices.findIndex((stop) => choiceOf(stop) === selected);
       const next = choices[index + (event.key === 'ArrowRight' ? 1 : -1)];
       if (!next) return;
       event.preventDefault();
-      choose(next.id);
-      stopButtons.current.get(next.id)?.focus({ preventScroll: true });
+      choose(choiceOf(next));
+      stopButtons.current.get(choiceOf(next))?.focus({ preventScroll: true });
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
@@ -156,7 +168,7 @@ export function RouteMap({ progress, summary, art, onPlay, onResume, onClose }: 
                     stop={stop}
                     point={layout.points[i]}
                     art={art}
-                    selected={stop.kind === 'outbreak' && stop.id === selected}
+                    selected={isChoice(stop) && choiceOf(stop) === selected}
                     saved={stop.kind === 'outbreak' && summary?.outbreak === stop.id}
                     buttons={stopButtons.current}
                     onChoose={choose}
@@ -168,7 +180,9 @@ export function RouteMap({ progress, summary, art, onPlay, onResume, onClose }: 
         </div>
 
         <div className="route-detail" aria-live="polite">
-          {chosen ? (
+          {chosen?.kind === 'soon' ? (
+            <SoonDetail reached={reachedEnd(progress.defeated)} />
+          ) : chosen ? (
             <StopDetail
               key={`${chosen.id}:${confirming}`}
               stop={chosen}
@@ -262,8 +276,8 @@ interface StopViewProps {
   selected: boolean;
   /** La partida a medias es de este brote. */
   saved: boolean;
-  buttons: Map<OutbreakId, HTMLButtonElement>;
-  onChoose: (id: OutbreakId) => void;
+  buttons: Map<Choice, HTMLButtonElement>;
+  onChoose: (id: Choice) => void;
 }
 
 /** Un lugar del camino: el cerco con su jefe (o su misterio) y el nombre debajo. */
@@ -272,17 +286,28 @@ function StopView({ stop, point, art, selected, saved, buttons, onChoose }: Stop
   const style = { left: point.x, top: point.y, '--size': `${point.size}px` } as CSSProperties;
 
   if (stop.kind === 'soon') {
+    // Se puede tocar: ensena el aviso de beta (T-044).
     const name = t.outbreak.number(stop.number);
     return (
-      <li className="route-stop is-soon" style={style}>
-        <div className="route-stop-body" role="img" aria-label={`${name} · ${t.common.soon}`} title={t.common.soon}>
+      <li className={`route-stop is-soon${selected ? ' is-selected' : ''}`} style={style}>
+        <button
+          ref={(button) => {
+            if (button) buttons.set('soon', button);
+            else buttons.delete('soon');
+          }}
+          type="button"
+          className="route-stop-body"
+          aria-pressed={selected}
+          aria-label={`${name} · ${t.common.soon} · ${t.beta.badge}`}
+          onClick={() => onChoose('soon')}
+        >
           <span className="route-ring">
             <span className="route-mystery" aria-hidden="true">
               ?
             </span>
           </span>
           <Caption kicker={name} name={t.common.soon} />
-        </div>
+        </button>
       </li>
     );
   }
@@ -425,6 +450,29 @@ function StopDetail({ stop, summary, confirming, keepButton, onPlay, onConfirm, 
           </button>
         )}
       </div>
+    </div>
+  );
+}
+
+/**
+ * Ficha del lugar por llegar (T-044): el aviso de beta, el mismo que sale al vencer al ultimo brote (o, si aun no se
+ * llego, que es una beta), con la linea de que el progreso puede reiniciarse y los botones para apoyar el proyecto.
+ */
+function SoonDetail({ reached }: { reached: boolean }) {
+  const t = useText();
+  const support = useSupport();
+  return (
+    <div className="route-detail-body is-beta">
+      <div className="route-detail-text">
+        <h3>
+          {reached ? t.beta.reachedTitle : t.beta.title}
+          <span className="route-badge is-beta">{t.beta.kicker(__APP_VERSION__)}</span>
+        </h3>
+        <p>{t.beta.text}</p>
+        <p className="route-detail-note">{t.beta.reset}</p>
+        <SupportStatus support={support} className="route-detail-status" />
+      </div>
+      <SupportButtons support={support} className="route-detail-actions" />
     </div>
   );
 }

@@ -87,6 +87,42 @@ export const es = {
   },
 
   /**
+   * Aviso de beta (T-044): sale una vez al vencer al ultimo brote del juego, en la ruta al tocar el lugar "por llegar" y en
+   * la portada desde la marca "Beta" junto a la version. Dice que viene mas (sin fechas) y pide apoyar el proyecto con dos
+   * botones (BT-01): compartir el juego y mandar comentarios por correo. A donde llevan esta en `src/game/config/support.ts`.
+   */
+  beta: {
+    /** La marca junto a la version de la portada (BT-05) y lo que dice al lector de pantalla. */
+    badge: 'Beta',
+    badgeLabel: 'Rebrote está en beta: qué significa y cómo apoyar el proyecto',
+    /** Encima del titulo del aviso, con la version. */
+    kicker: (version: string) => `Beta · versión ${version}`,
+    /** Titulo para quien ya vencio al ultimo brote (BT-03). */
+    reachedTitle: 'Has llegado al final de la beta',
+    /** Titulo para quien aun no llego al final (la ruta y la portada). */
+    title: 'Rebrote está en beta',
+    text: 'El viaje continúa: mantente a la espera de nuevo contenido. Si te ha gustado, apoya el proyecto.',
+    /** BT-06: mientras el juego este en desarrollo no se migran datos (ADR-0014). */
+    reset: 'Mientras sea una beta, una versión nueva puede reiniciar tu progreso.',
+    share: 'Compartir',
+    feedback: 'Comentarios',
+    /** Cierra el aviso de la victoria. */
+    continue: 'Seguir',
+    /** Lo que se manda al compartir, con la direccion del juego. */
+    shareTitle: 'Rebrote',
+    shareText: 'Solo la naturaleza puede salvarnos. ¡Prueba Rebrote!',
+    /** Asunto del correo de "Comentarios" (BT-02), con la version del juego. */
+    feedbackSubject: (version: string) => `Rebrote: comentarios de la beta (versión ${version})`,
+    offline: 'Necesitas conexión para abrirlo.',
+    copied: 'Enlace copiado: pégalo donde quieras.',
+    copyLink: 'Copia el enlace:',
+    /** Tras pulsar "Comentarios": por si el aparato no tiene aplicacion de correo. */
+    mailFallback: '¿No se abre tu correo? Escribe a',
+    copy: 'Copiar',
+    copiedAddress: 'Copiada',
+  },
+
+  /**
    * Jugadores (T-034): varios perfiles en el mismo aparato, cada uno con su progreso, su partida y sus tours vistos. Se
    * cambia, se crea y se borra desde la portada.
    */

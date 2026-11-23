@@ -47,7 +47,7 @@ Una task por archivo. El tamaño es orientativo.
 | T-041 | [Enemigos] Tropas reutilizadas con variante de color y brote 4 en preparación | Completada (23 nov 2026, 0.15.4) | M | Ninguna | Ninguna (MT-01 a MT-05 cerradas) |
 | T-042 | [Jefe] Morris, la sobrecarga y las rondas del brote 4 | Completada (23 nov 2026, 0.16.0) | L | T-041 | Ninguna (MR-01 a MR-11 cerradas) |
 | T-043 | [Historia] El giro: la historia del brote 4 | Completada (23 nov 2026, 0.16.1) | M | T-041, T-042 | Ninguna (HG-01 a HG-07 cerradas) |
-| T-044 | [Interfaz] Aviso de beta y "apoya el proyecto" | Pendiente | S | Ninguna | BT-03 a BT-06 (BT-01 y BT-02 cerradas) |
+| T-044 | [Interfaz] Aviso de beta y "apoya el proyecto" | Completada (23 nov 2026, 0.16.2) | S | Ninguna | Ninguna (BT-01 a BT-07 cerradas) |
 
 ## Estados
 
@@ -61,9 +61,9 @@ El estado se escribe en dos sitios: en esta tabla y en la cabecera de la task (`
 
 ## Orden en que se hicieron
 
-T-001, T-002, T-006, T-004, T-005, T-003, T-007, T-008, T-009, T-010, T-011, T-012, T-013. Después, T-014 a T-034; luego T-015 (música), T-035 (curva de niveles), T-036 (Invernadero refugio), T-037 (escudo en dos pasos), T-038 (tropas del brote 3) T-039 (Brain y las 8 rondas del brote 3), T-040 (catálogo de unidades), T-041 (tropas reutilizadas), T-042 (Morris y la sobrecarga) y T-043 (el giro, la historia del brote 4, 23 nov 2026), la última.
+T-001, T-002, T-006, T-004, T-005, T-003, T-007, T-008, T-009, T-010, T-011, T-012, T-013. Después, T-014 a T-034; luego T-015 (música), T-035 (curva de niveles), T-036 (Invernadero refugio), T-037 (escudo en dos pasos), T-038 (tropas del brote 3) T-039 (Brain y las 8 rondas del brote 3), T-040 (catálogo de unidades), T-041 (tropas reutilizadas), T-042 (Morris y la sobrecarga), T-043 (el giro, la historia del brote 4) y T-044 (el aviso de beta, 23 nov 2026), la última.
 
-Pendiente (23 nov 2026): T-044, el aviso de beta que sale tras el final del brote 4. El brote 4 ya está entero (T-041 a T-043): su diseño está en `../specs/07-brote-4-morris.md` y su historia en `../specs/04-historia.md`.
+Pendiente (23 nov 2026): ninguna. El aviso de beta (T-044) sale tras el final del último brote, hoy el 4, que ya está entero (T-041 a T-043): su diseño está en `../specs/07-brote-4-morris.md` y su historia en `../specs/04-historia.md`.
 
 Al cerrar una task se sube la versión del juego (ADR-0017). Mientras el juego esté en desarrollo, ninguna task migra datos guardados (ADR-0014).
 

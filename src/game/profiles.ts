@@ -7,7 +7,7 @@ import { SessionStore, browserStore, type SaveStore } from './storage';
  * (calidad, volumen, idioma, ayuda) son del aparato y no van en el perfil (PF-03).
  *
  * Lo guardado: la lista en `rebrote.perfiles` y lo de cada perfil en `rebrote.perfil.<id>.<hueco>` (`progreso`,
- * `partida`, `tours`). Cada modulo lee y escribe su hueco en el almacen del perfil activo (`profiles.store()`) sin saber
+ * `partida`, `tours` y `beta`, el aviso de beta visto, T-044). Cada modulo lee y escribe su hueco en el almacen del perfil activo (`profiles.store()`) sin saber
  * de perfiles. Todo dato permanente nuevo va en un hueco del perfil (o dentro de `Progress`), nunca suelto.
  *
  * Perfiles locales no son cuentas: no se sincronizan ni se protegen. Lo que si dejan listo, pensando en enlazarlos algun
