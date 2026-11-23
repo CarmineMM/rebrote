@@ -1,6 +1,6 @@
 # Historia y personajes
 
-Notas de la historia. Última revisión: 21 nov 2026. El arranque ya está hecho (T-031 a T-033) y Boxer y Patty ya están en el juego (T-032); lo lejano queda aquí anotado, sin tasks.
+Notas de la historia. Última revisión: 23 nov 2026. El arranque ya está hecho (T-031 a T-033), Boxer y Patty ya están en el juego (T-032) y el giro también (T-043, 0.16.1); lo lejano queda aquí anotado, sin tasks.
 
 Lo marcado como "Decidido" lo dijo Carmine. Lo marcado como "Propuesta" es una idea por aprobar.
 
@@ -115,7 +115,18 @@ Decidido por Carmine el 23 nov 2026:
 
 Para no frenar el juego, casi todo son comentarios de una línea durante la preparación, que no lo paran. Solo tres momentos son viñetas. Todo sale solo la primera vez.
 
-### Guion (borrador por aprobar)
+Hecho en T-043 (23 nov 2026), con las recomendaciones de HG-01 a HG-07 aceptadas por Carmine:
+- **Comentario (HG-01):** el retrato redondo de quien habla en la esquina de abajo a la derecha y un bocadillo con su nombre y la frase, letra a letra y con su voz. No para el juego ni la cuenta atrás; el resto del tablero se sigue usando.
+- **Solo la primera vez (HG-02):** un comentario cuenta como visto en cuanto se ve. El que no llegó a verse (la preparación se pasó entera con un tour o una viñeta encima, o se adelantó antes de que saliera) sale la próxima vez que se llegue a esa ronda.
+- **Unos 5 s (HG-03):** espera 1,2 s a salir y está en pantalla unos 5 s; un toque lo cierra antes.
+- **Se corta al empezar el ataque (HG-04).**
+- **Patty dudosa (HG-05):** cuarta expresión de los personajes, barata porque la cara sale de piezas comunes: una ceja baja y otra en arco, el párpado a media altura, la mirada de reojo y la boca torcida.
+- **No se vuelven a leer (HG-06):** en el Invernadero solo las tres secuencias de viñetas.
+- **Salen con la ayuda apagada (HG-07):** son historia, no ayuda.
+
+### Guion (T-043)
+
+El borrador se usó como estaba (decidido: "el guion vale como punto de partida"). En el juego, las caras: Boxer contento en las rondas 2 y 3; Patty dudosa en la 4 y en la viñeta de la 5, normal en la 6 y contenta en la 8; en el final, Boxer contento y Patty normal y luego contenta.
 
 | Ronda | Cómo sale | Quién | Frase |
 |---|---|---|---|
@@ -137,7 +148,9 @@ Para no frenar el juego, casi todo son comentarios de una línea durante la prep
 
 Notas:
 - La frase de Patty de la ronda 1 explica por qué el brote empieza con el doble de moneda.
-- La última frase es la que decidió Carmine. Las demás son borrador.
+- La última frase es la que decidió Carmine. Las demás son el borrador, usado tal cual.
+- En inglés, "Nos espera un largo viaje" es "We have a long journey ahead." y "¡Coge las macetas, [nombre], que nos vamos de excursión!", "Grab the flowerpots, [name], we're going on a field trip!". Sin nombre, la frase va sin él.
+- Títulos para volver a verlas en el Invernadero: "Más que nunca" (apertura), "¿Y si salimos?" (mitad) y "Un largo viaje" (final). Entre la de mitad y la del final, "El Morris de verdad".
 - Frases de Boxer que quedaron sin usar, por si sirven: "¡Se acabó esconderse! Desde hoy, los que atacan somos nosotros." y "Ahora le toca a ella tener miedo."
 
 ## Final (anotado, muy a futuro)

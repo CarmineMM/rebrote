@@ -6,10 +6,10 @@
 /** Quien habla en las viñetas. El jugador no tiene cara (H-12). */
 export type CharacterId = 'boxer' | 'patty';
 
-/** Expresiones de cada personaje (Y-04). */
-export type Expression = 'normal' | 'hurried' | 'happy';
+/** Expresiones de cada personaje (Y-04). Dudoso, desde T-043 (HG-05): la duda leve de Patty en el giro. */
+export type Expression = 'normal' | 'hurried' | 'happy' | 'doubtful';
 
-export const EXPRESSIONS: readonly Expression[] = ['normal', 'hurried', 'happy'];
+export const EXPRESSIONS: readonly Expression[] = ['normal', 'hurried', 'happy', 'doubtful'];
 
 /**
  * Lo que cambia de un fotograma a otro: la expresion, el parpadeo y la boca. La viñeta alterna la boca mientras sale el

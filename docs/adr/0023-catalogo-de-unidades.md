@@ -22,7 +22,7 @@ Tres carpetas en la raíz, servidas por Vite en `npm run dev` con su ruta:
 El catálogo (`src/dev/catalog/`):
 - **Tropas:** cada brote con las tropas que saca su guion (`roster.ts`, puro y con test). Arriba, andando en el tablero con la vista del juego (`createEnemyView`) en tres de sus niveles y con un botón por reacción; debajo, en lista, su ficha del juego (`enemyInfo` y su foto de `portrait.ts`), cuándo sale (rondas y niveles, escolta aparte) y una tabla por nivel: vida, lo que sube, ataque, daño por segundo y, si deja copia, la de su copia.
 - **Jefes:** la escena "Movimientos" que estaba en la galería (con el aspecto del juego), su ficha en sus dos fases, los grupos de su ronda (escolta y refuerzos) y sus números de `balance.ts`.
-- **Personajes:** el dibujo de `CAST` animado, sus tres expresiones, quién es, sus viñetas y qué presenta en cada brote.
+- **Personajes:** el dibujo de `CAST` animado, sus expresiones, quién es, sus viñetas, sus comentarios (T-043) y qué presenta en cada brote.
 
 La regla para lo que venga:
 - Una tropa nueva sale sola en cuanto está en el guion de un brote; si no sale en ninguno, falla `roster.test.ts`.

@@ -86,6 +86,68 @@ describe('Boxer cuenta que fue cada jefe antes de su combate (T-032, VT-04)', ()
   });
 });
 
+describe('el giro: la historia del brote 4 (T-043)', () => {
+  const at = (round: number, phase: 'prep' | 'attack' = 'prep') => ({ kind: 'match' as const, outbreak: 'morris' as const, round, phase });
+
+  it('la apertura sale al empezar el brote 4 y la de mitad en la preparacion de la ronda 5, si no se vieron', () => {
+    expect(storiesAt(at(0), [])).toEqual(['morrisOpening']);
+    expect(storiesAt(at(4), [])).toEqual(['morrisDebate']);
+    expect(storiesAt(at(0), ['morrisOpening'])).toEqual([]);
+    expect(storiesAt(at(4), ['morrisDebate'])).toEqual([]);
+  });
+
+  it('en el ataque o en otras rondas no salen: una partida cargada despues no las saca', () => {
+    expect(storiesAt(at(0, 'attack'), [])).toEqual([]);
+    expect(storiesAt(at(4, 'attack'), [])).toEqual([]);
+    expect([1, 2, 3, 5].flatMap((round) => storiesAt(at(round), []))).toEqual([]);
+  });
+
+  it('lo que cuenta Boxer del Morris real sigue saliendo en la ronda 7, cuando se prepara, sin pisarse con las demas', () => {
+    expect(storiesAt(at(6), ['morrisOpening', 'morrisDebate'])).toEqual(['lore:morris']);
+  });
+
+  it('al vencer a Morris por primera vez sale el final; la segunda vez, nada; si quedo sin ver, en el Invernadero', () => {
+    expect(storiesAt({ kind: 'victory', outbreak: 'morris' }, [])).toEqual(['morrisDown']);
+    expect(storiesAt({ kind: 'victory', outbreak: 'morris' }, ['morrisDown'])).toEqual([]);
+    const seen = ['creeperDown', 'pattyGreenhouse'];
+    expect(storiesAt({ kind: 'greenhouse', defeated: ['creeper', 'elkCloner', 'brain', 'morris'] }, seen)).toEqual(['morrisDown']);
+    expect(storiesAt({ kind: 'greenhouse', defeated: ['creeper', 'elkCloner', 'brain'] }, seen)).toEqual([]);
+  });
+
+  it('se vuelven a ver en el orden de la historia, despues de las del brote 3', () => {
+    const order = [...STORY_ORDER];
+    expect(order.slice(-4)).toEqual(['morrisOpening', 'morrisDebate', 'lore:morris', 'morrisDown']);
+    expect(order.indexOf('morrisOpening')).toBeGreaterThan(order.indexOf('lore:brain'));
+    expect(order.slice(0, 4)).toEqual(['opening', 'lore:creeper', 'creeperDown', 'pattyGreenhouse']);
+  });
+
+  it('Boxer y Patty hablan en las tres; en la de mitad Patty duda', () => {
+    expect(STORIES.morrisOpening.map((step) => step.speaker)).toEqual(['boxer', 'patty']);
+    expect(STORIES.morrisDebate.map((step) => step.speaker)).toEqual(['boxer', 'patty', 'boxer']);
+    expect(STORIES.morrisDebate.find((step) => step.speaker === 'patty')?.expression).toBe('doubtful');
+    expect(STORIES.morrisDown.map((step) => step.speaker)).toEqual(['boxer', 'patty', 'patty']);
+  });
+
+  it('el final acaba con Patty: "Nos espera un largo viaje."', () => {
+    const last = STORIES.morrisDown[STORIES.morrisDown.length - 1];
+    expect(last.speaker).toBe('patty');
+    expect(stepText(text('es'), 'morrisDown', last, 'Ana')).toBe('Nos espera un largo viaje.');
+    expect(stepText(text('en'), 'morrisDown', last, 'Ana')).toBe('We have a long journey ahead.');
+  });
+
+  it('Boxer llama al jugador por su nombre al proponer salir; sin nombre, la frase se lee igual', () => {
+    const [pots] = STORIES.morrisDown;
+    expect(stepText(text('es'), 'morrisDown', pots, 'Carmine')).toContain('¡Coge las macetas, Carmine, que nos vamos de excursión!');
+    expect(stepText(text('es'), 'morrisDown', pots, null)).toContain('¡Coge las macetas, que nos vamos de excursión!');
+    expect(stepText(text('en'), 'morrisDown', pots, 'Carmine')).toContain('Grab the flowerpots, Carmine, ');
+    expect(stepText(text('en'), 'morrisDown', pots, null)).toContain('Grab the flowerpots, we');
+  });
+
+  it('no preguntan nada', () => {
+    expect((['morrisOpening', 'morrisDebate', 'morrisDown'] as const).some(asksName)).toBe(false);
+  });
+});
+
 describe('las viñetas de cada secuencia (T-031)', () => {
   it('el guion del arranque: Boxer abre y cuenta, y Patty se presenta en el Invernadero', () => {
     expect(STORIES.opening.map((step) => step.speaker)).toEqual(['boxer']);

@@ -14,7 +14,7 @@ import { bossName } from '../outbreakName';
  */
 
 /** Las secuencias del guion, cada una con sus viñetas en `STORIES`. */
-export type ScriptedStoryId = 'opening' | 'creeperDown' | 'pattyGreenhouse';
+export type ScriptedStoryId = 'opening' | 'creeperDown' | 'pattyGreenhouse' | 'morrisOpening' | 'morrisDebate' | 'morrisDown';
 
 /**
  * Lo que cuenta Boxer del virus de verdad antes de cada jefe (T-032, VT-04): una secuencia por brote, `lore:<brote>`, con
@@ -54,6 +54,26 @@ export const STORIES = {
   ],
   /** Al llegar al Invernadero por primera vez: Patty se presenta (viñeta 6). */
   pattyGreenhouse: [{ id: 'hello', speaker: 'patty', expression: 'happy' }],
+  /**
+   * El giro (T-043): al empezar el brote 4, Boxer ve cuantos gusanos vienen y Patty explica por que el brote empieza con
+   * mas moneda.
+   */
+  morrisOpening: [
+    { id: 'howMany', speaker: 'boxer', expression: 'hurried' },
+    { id: 'prepared', speaker: 'patty', expression: 'normal' },
+  ],
+  /** En la preparacion de la ronda 5 del brote 4: Boxer y Patty discuten si salir. Patty duda, pero poco (T-043). */
+  morrisDebate: [
+    { id: 'think', speaker: 'boxer', expression: 'normal' },
+    { id: 'garden', speaker: 'patty', expression: 'doubtful' },
+    { id: 'stay', speaker: 'boxer', expression: 'hurried' },
+  ],
+  /** Al caer Morris por primera vez: deciden pasar al ataque y Patty cierra el primer acto (T-043). */
+  morrisDown: [
+    { id: 'pots', speaker: 'boxer', expression: 'happy' },
+    { id: 'convinced', speaker: 'patty', expression: 'normal' },
+    { id: 'journey', speaker: 'patty', expression: 'happy' },
+  ],
 } as const satisfies Record<ScriptedStoryId, readonly StoryStep[]>;
 
 /** La viñeta de cada `lore:<brote>`: Boxer, con prisa, en una linea (VT-04). */
@@ -74,20 +94,36 @@ export function storyScript(id: StoryId): readonly StoryStep[] {
   return loreOutbreak(id) ? LORE_STEPS : STORIES[id as ScriptedStoryId];
 }
 
-/** La secuencia que cuenta Boxer al vencer por primera vez al jefe de cada brote. */
-export const STORY_AFTER_BOSS: Readonly<Partial<Record<OutbreakId, StoryId>>> = { creeper: 'creeperDown' };
+/** La secuencia que sale al vencer por primera vez al jefe de cada brote. */
+export const STORY_AFTER_BOSS: Readonly<Partial<Record<OutbreakId, StoryId>>> = { creeper: 'creeperDown', morris: 'morrisDown' };
 
 /**
- * En el orden de la historia: asi se cuentan en el Invernadero para volver a verlas (Y-05). La apertura y, por cada brote,
- * lo que cuenta Boxer de su jefe antes del combate (T-032) y lo que cuenta al vencerlo; tras el primero, Patty.
+ * Las secuencias que salen en la preparacion de una ronda concreta de un brote (desde 0), solo en esa ronda: la apertura
+ * del brote 1 y las del giro en el brote 4 (T-043). Una partida cargada en otra ronda no las saca.
  */
-export const STORY_ORDER: readonly StoryId[] = [
-  'opening',
-  ...OUTBREAKS.flatMap(({ id }): StoryId[] => {
-    const after = STORY_AFTER_BOSS[id];
-    return [loreStory(id), ...(after ? [after] : []), ...(id === FIRST_OUTBREAK ? (['pattyGreenhouse'] as const) : [])];
-  }),
-];
+export const STORY_AT_ROUND: Readonly<Partial<Record<OutbreakId, Readonly<Record<number, StoryId>>>>> = {
+  creeper: { 0: 'opening' },
+  morris: { 0: 'morrisOpening', 4: 'morrisDebate' },
+};
+
+/** Las secuencias de `STORY_AT_ROUND` del brote, con su ronda, en orden. */
+function roundStories(outbreak: OutbreakId): { round: number; id: StoryId }[] {
+  return Object.entries(STORY_AT_ROUND[outbreak] ?? {})
+    .map(([round, id]) => ({ round: Number(round), id }))
+    .sort((a, b) => a.round - b.round);
+}
+
+/**
+ * En el orden de la historia: asi se cuentan en el Invernadero para volver a verlas (Y-05). Por cada brote, las de sus
+ * rondas y lo que cuenta Boxer de su jefe antes del combate (T-032), en el orden de sus rondas, y lo que sale al vencerlo;
+ * tras el primero, Patty.
+ */
+export const STORY_ORDER: readonly StoryId[] = OUTBREAKS.flatMap(({ id }): StoryId[] => {
+  const lore = bossFirstSeenRound(id);
+  const during = [...roundStories(id), ...(lore === null ? [] : [{ round: lore + 0.5, id: loreStory(id) }])].sort((a, b) => a.round - b.round);
+  const after = STORY_AFTER_BOSS[id];
+  return [...during.map((story) => story.id), ...(after ? [after] : []), ...(id === FIRST_OUTBREAK ? (['pattyGreenhouse'] as const) : [])];
+});
 
 /** Cuando puede salir sola una secuencia. */
 export type StoryMoment =
@@ -100,17 +136,19 @@ export type StoryMoment =
 
 /**
  * Las secuencias que salen solas en este momento, en orden, sin las ya vistas (una vista no vuelve a salir sola):
- * - al empezar el brote 1, en la preparacion de la ronda 1, la apertura (antes del primer tour);
+ * - en la preparacion de la ronda que diga `STORY_AT_ROUND`, la suya: la apertura al empezar el brote 1 (antes del primer
+ *   tour) y, en el brote 4, la de su apertura y la de la ronda 5 (T-043);
  * - en la preparacion de la ronda en que se ve por primera vez al jefe (T-032, VT-04: la 8 del brote 1, cuando Creeper se
  *   prepara), lo que cuenta Boxer del virus de verdad; si no se vio entonces (una partida guardada antes), en la
  *   preparacion de las siguientes hasta la del combate;
- * - al vencer a un jefe, lo que cuenta Boxer de el;
+ * - al vencer a un jefe, lo que sale tras el (lo que cuenta Boxer de Creeper; el final del giro con Morris, T-043);
  * - en el Invernadero, lo de Boxer que quedo sin ver (quien vencio a Creeper sin verlo, Y-06) y despues Patty.
  */
 export function storiesAt(moment: StoryMoment, seen: readonly string[]): StoryId[] {
   const due: StoryId[] = [];
   if (moment.kind === 'match') {
-    if (moment.outbreak === FIRST_OUTBREAK && moment.round === 0 && moment.phase === 'prep') due.push('opening');
+    const atRound = STORY_AT_ROUND[moment.outbreak]?.[moment.round];
+    if (atRound && moment.phase === 'prep') due.push(atRound);
     const seenFrom = bossFirstSeenRound(moment.outbreak);
     const fight = bossRoundIndex(moment.outbreak);
     if (moment.phase === 'prep' && seenFrom !== null && fight !== null && moment.round >= seenFrom && moment.round <= fight) {

@@ -5,6 +5,7 @@ import { CAST } from '../../game/view/characters/cast';
 import { EXPRESSIONS, type CharacterId, type Expression } from '../../game/view/characters/design';
 import { portraitUrl } from '../../game/view/characters/portraitImage';
 import { setLanguage, text } from '../../i18n';
+import { REMARKS } from '../../ui/story/remarks';
 import { STORIES } from '../../ui/story/stories';
 import { LivePortrait } from '../LivePortrait';
 import { CatalogBar } from './kit';
@@ -13,12 +14,12 @@ import './catalog.css';
 
 /**
  * Catalogo de personajes (T-040, ADR-0023): `npm run dev` y abrir `/catalog/personajes.html`. Cada personaje con el dibujo
- * que usa el juego (`CAST`), sus tres expresiones, quien es, cuando sale y que presenta en cada brote, sacado del guion. Un
+ * que usa el juego (`CAST`), sus expresiones, quien es, cuando sale y que presenta en cada brote, sacado del guion. Un
  * personaje nuevo tiene que estar en `PEOPLE` (si falta, no compila). No la ve el jugador: sus textos van en espanol sin
  * `src/i18n/`.
  */
 
-const EXPRESSION_NAMES: Record<Expression, string> = { normal: 'Normal', hurried: 'Apurado', happy: 'Contento' };
+const EXPRESSION_NAMES: Record<Expression, string> = { normal: 'Normal', hurried: 'Apurado', happy: 'Contento', doubtful: 'Dudoso' };
 
 /** Quien es cada personaje, en pocas lineas (de `docs/specs/04-historia.md`). Un personaje nuevo, aqui. */
 const PEOPLE: Record<CharacterId, { readonly role: string; readonly facts: readonly string[] }> = {
@@ -29,6 +30,7 @@ const PEOPLE: Record<CharacterId, { readonly role: string; readonly facts: reado
       'Es la voz de los tours de ayuda: cada cosa nueva la enseña él, con su cara, su nombre y su voz.',
       'En el brote 1 presenta cada desbloqueo ("Toma, esto te va a hacer falta").',
       'Antes de cada jefe cuenta en una línea qué fue el virus de verdad; lo completo va en la ficha del jefe.',
+      'En el brote 4, viendo cómo juega el jugador, propone dejar de esconderse e ir a por la IA (T-043).',
     ],
   },
   patty: {
@@ -37,6 +39,7 @@ const PEOPLE: Record<CharacterId, { readonly role: string; readonly facts: reado
       'Creó las plantas que disparan y cuida el Invernadero, donde asoma junto al menú y a veces dice algo.',
       'Desde el brote 2 presenta cada planta o pieza nueva ("He creado algo nuevo"); Boxer enseña a usarla.',
       'Es la cara del Laboratorio de Patty, donde se fabrican los inventos y se sube el nivel base.',
+      'En el brote 4 duda un poco de salir (el refugio es todo lo que tienen), se va convenciendo y cierra con "Nos espera un largo viaje" (T-043).',
     ],
   },
 };
@@ -47,6 +50,14 @@ function storyLines(id: CharacterId): string[] {
     .map(([story, steps]) => [story, (steps as ReadonlyArray<{ speaker: CharacterId }>).filter((s) => s.speaker === id).length] as const)
     .filter(([, count]) => count > 0)
     .map(([story, count]) => `${story} (${count === 1 ? '1 viñeta' : `${count} viñetas`})`);
+}
+
+/** Los comentarios de una linea que dice en la preparacion (T-043), por brote, con sus rondas. */
+function remarkLines(id: CharacterId): string[] {
+  return OUTBREAKS.flatMap((outbreak, i) => {
+    const rounds = (REMARKS[outbreak.id] ?? []).filter((remark) => remark.speaker === id).map((remark) => remark.round + 1);
+    return rounds.length > 0 ? [`Brote ${i + 1}: ${rounds.length === 1 ? 'ronda' : 'rondas'} ${rounds.join(', ')}`] : [];
+  });
 }
 
 /** Los brotes en que presenta lo nuevo, y las rondas sueltas en que lo hace en un brote de otro. */
@@ -67,6 +78,7 @@ function Person({ id }: { id: CharacterId }) {
   const [talking, setTalking] = useState(true);
   const person = PEOPLE[id];
   const lines = storyLines(id);
+  const remarks = remarkLines(id);
   const shows = presents(id);
   const { tone } = design;
   const voice = `voice${id[0].toUpperCase()}${id.slice(1)}`;
@@ -117,6 +129,8 @@ function Person({ id }: { id: CharacterId }) {
           </dd>
           <dt>Viñetas</dt>
           <dd>{lines.length > 0 ? lines.join(' · ') : 'ninguna guionizada'}</dd>
+          <dt>Comentarios</dt>
+          <dd>{remarks.length > 0 ? remarks.join(' · ') : 'ninguno'}</dd>
           <dt>Presenta</dt>
           <dd>{shows.length > 0 ? shows.join(' · ') : 'nada en los brotes de ahora'}</dd>
         </dl>
@@ -135,7 +149,7 @@ function CharacterCatalog() {
       <CatalogBar page="characters" />
       <main className="cat-main">
         <p className="cat-intro">
-          Los personajes con el dibujo que usa el juego (las propuestas están en <a href="/proposals/personajes.html">proposals/personajes</a>), sus tres
+          Los personajes con el dibujo que usa el juego (las propuestas están en <a href="/proposals/personajes.html">proposals/personajes</a>), sus
           expresiones y cuándo salen.
         </p>
         {ids.map((id) => (

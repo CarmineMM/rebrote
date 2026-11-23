@@ -1,6 +1,6 @@
 # Brote 4: Morris
 
-Diseño del cuarto brote, acordado con Carmine el 23 nov 2026. Lo construyen T-041 a T-044. T-041 (0.15.4) trajo las tropas con la variante de color de Morris y dejó el brote en preparación; T-042 (0.16.0) trajo la sobrecarga, a Morris y las 9 rondas, y abrió el brote (abajo, "Hecho en T-042"). Falta su historia (T-043). Lo que dice "decidido" lo decidió Carmine; los números son un punto de partida y se ajustan con `npm run sim`.
+Diseño del cuarto brote, acordado con Carmine el 23 nov 2026. Lo construyen T-041 a T-044. T-041 (0.15.4) trajo las tropas con la variante de color de Morris y dejó el brote en preparación; T-042 (0.16.0) trajo la sobrecarga, a Morris y las 9 rondas, y abrió el brote (abajo, "Hecho en T-042"). T-043 (0.16.1) trajo su historia: tres secuencias de viñetas y seis comentarios de una línea que no paran el juego. Lo que dice "decidido" lo decidió Carmine; los números son un punto de partida y se ajustan con `npm run sim`.
 
 Es el último brote de la defensa del refugio. Al vencerlo, Boxer y Patty deciden pasar al ataque.
 
@@ -80,6 +80,8 @@ El guion completo está en `04-historia.md` ("El giro"). En resumen:
 - Después sale un aviso: el juego es una beta, hay más contenido en camino y se pide apoyar el proyecto (T-044).
 
 Para no interrumpir, la mayor parte son frases de una línea durante la preparación, sin parar el juego. Solo hay tres secuencias de viñetas: al empezar, a mitad y al final. Todo sale solo la primera vez.
+
+Hecho en T-043 (0.16.1): las viñetas salen en la preparación de las rondas 1 y 5 y al caer Morris (antes de la pantalla de victoria), y los comentarios, en la esquina de abajo a la derecha en la preparación de las rondas 2, 3, 4, 6, 8 y 9 (`REMARKS` en `src/ui/story/remarks.ts`). Lo que cuenta Boxer del Morris real sigue en la ronda 7.
 
 ## Dificultad
 

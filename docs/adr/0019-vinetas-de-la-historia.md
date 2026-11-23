@@ -1,6 +1,6 @@
 # ADR-0019: Viñetas de la historia y retratos pintados con código
 
-- **Estado:** Aceptada. Ampliada el 2026-11-21 por T-032 (ver "Historial")
+- **Estado:** Aceptada. Ampliada el 2026-11-21 por T-032 y el 2026-11-23 por T-043 (ver "Historial")
 - **Fecha:** 2026-11-21
 - **Modifica:** ADR-0014 (el progreso permanente guarda también la historia vista)
 
@@ -48,9 +48,10 @@ Viñetas hechas en React encima del juego, con retratos que pinta un pintor de C
 
 ## Cuándo se revisa
 
-Si una viñeta tiene que salir dentro del lienzo (por ejemplo, un personaje que habla junto a algo del tablero), o si los retratos pasan a animarse por partes (brazos, pelo), que con imágenes enteras no se puede.
+Si los comentarios de una línea (T-043) se quedan cortos para contar algo y empiezan a pedir varias frases seguidas: entonces son viñetas. Si una viñeta tiene que salir dentro del lienzo (por ejemplo, un personaje que habla junto a algo del tablero), o si los retratos pasan a animarse por partes (brazos, pelo), que con imágenes enteras no se puede.
 
 ## Historial
 
 - **2026-11-21, versión original (T-031).**
 - **2026-11-21, ampliación (T-032):** los personajes salen también fuera de las viñetas: Boxer en el bocadillo de los tours y al pie de la ficha de un jefe, quien presenta cada desbloqueo arriba del aviso y Patty en el Invernadero. Siguen siendo imágenes del mismo pintor que React solo enseña: los fotogramas, el retrato redondo (`Cameo`) y la frase dicha letra a letra con la boca y la voz (`useSpeech`) están en `src/ui/story/Portrait.tsx`, que usa también la viñeta. Quién presenta cada desbloqueo es un dato del guion de cada brote (`presenter` en `OUTBREAKS`, `unlockPresenter` en `rounds.ts`). Lo que cuenta Boxer antes de cada jefe es una secuencia más, una por brote (`lore:<brote>`), que no se declara en `STORIES`: sale de la lista de brotes y de su texto en `story.lore`.
+- **2026-11-23, ampliación (T-043, el giro):** la historia se cuenta también **sin parar el juego**. Un brote largo (9 rondas) con una viñeta en cada ronda cansa (HG-01), así que solo tres secuencias lo paran (apertura, mitad y final del brote 4) y el resto son **comentarios de una línea**: el retrato redondo de quien habla y un bocadillo pequeño en la esquina de abajo a la derecha, durante la preparación, que se van solos en unos 5 s o con un toque y se cortan al empezar el ataque. Son otra tabla pura (`REMARKS` y `remarkAt` en `src/ui/story/remarks.ts`, textos en `story.remarks`), con su regla de qué hacer en cada momento (`remarkFate`: salir, esperar tapado debajo de lo que pare el juego o cortarse). Lo visto sigue en `Progress.story`, con claves `remark:<brote>:<frase>`: sin cambiar la forma de `Progress`, así que no se sube `PROGRESS_VERSION`. No se vuelven a ver desde el Invernadero (HG-06). Las secuencias de una ronda concreta pasan a ser un dato (`STORY_AT_ROUND`), como las de después de un jefe (`STORY_AFTER_BOSS`), y `STORY_ORDER` las ordena por ronda. Los personajes ganan una cuarta expresión, dudoso (HG-05), pintada en `kit.ts` para todos.
