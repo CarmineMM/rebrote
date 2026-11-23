@@ -312,14 +312,18 @@ export interface IcePush {
 /**
  * A donde sale el enemigo que esta en una casilla del muro (O-05): uno cuyo centro cae en la casilla sale por el lado mas
  * cercano, con el cuerpo entero fuera. Si aun no llego a la mitad, hacia atras (el hocico en el borde derecho, y se para a
- * morder el hielo); si ya la paso, hacia delante (la cola en el borde izquierdo, y sigue). Los jefes igual (O-06). Uno en
- * el aire (Creeper saltando) no esta en el suelo: no se mueve. Null si no esta dentro.
+ * morder el hielo); si ya la paso, hacia delante (la cola en el borde izquierdo, y sigue), salvo que justo detras del muro,
+ * en su carril, haya una disparadora: entonces tambien hacia atras, para no soltarlo encima de lo que el muro protege. Los
+ * jefes igual (O-06). Uno en el aire (Creeper saltando) no esta en el suelo: no se mueve. Null si no esta dentro.
  */
-export function icePushOf(enemy: Enemy, cell: Cell): number | null {
+export function icePushOf(state: MatchState, enemy: Enemy, cell: Cell): number | null {
   if (enemy.lane !== cell.lane || enemy.hp <= 0 || isAirborne(enemy)) return null;
   if (enemy.x < cell.col || enemy.x >= cell.col + 1) return null;
   const half = enemyHalfLength(enemy);
-  return enemy.x >= cell.col + 0.5 ? cell.col + 1 + half : cell.col - half;
+  const back = cell.col + 1 + half;
+  if (enemy.x >= cell.col + 0.5) return back;
+  const guarded = sownIn(state, { lane: cell.lane, col: cell.col - 1 })?.kind === 'shooter';
+  return guarded ? back : cell.col - half;
 }
 
 /** Lo que pasaria al poner el muro apuntando a `cell`: sus casillas y los enemigos que saldrian de ellas. */
@@ -327,7 +331,7 @@ export function iceWallPushes(state: MatchState, cell: Cell): IcePush[] {
   const pushes: IcePush[] = [];
   for (const wallCell of iceWallCellsIn(state, cell)) {
     for (const enemy of state.enemies) {
-      const toX = icePushOf(enemy, wallCell);
+      const toX = icePushOf(state, enemy, wallCell);
       if (toX !== null) pushes.push({ enemyId: enemy.id, fromX: enemy.x, toX });
     }
   }

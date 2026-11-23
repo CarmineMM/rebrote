@@ -364,6 +364,31 @@ describe('muro de hielo (O-05, O-09 a O-11)', () => {
     expect(enemyById(after, ahead).x).toBeLessThan(cell.col - half);
   });
 
+  it('el que paso la mitad sale hacia atras si justo detras del muro hay una disparadora', () => {
+    const half = enemyHalfLength({ kind: 'worm', clone: false });
+    const behind = { lane: 2, col: cell.col - 1 };
+    const worm = (s: MatchState) => spawnEnemy(s, 'worm', 2, cell.col + 0.3);
+    // Con una disparadora detras, hacia atras, y se para a morder el hielo.
+    const guarded = worm(put(attacking(), behind, createPlant()));
+    const id = lastEnemy(guarded).id;
+    expect(iceWallPushes(guarded, cell)).toEqual([{ enemyId: id, fromX: cell.col + 0.3, toX: cell.col + 1 + half }]);
+    expect(stepCombat(placeIceWall(guarded, cell).state, 3000).state.enemies[0].attackMs).not.toBeNull();
+    // Una mina, un muro o una disparadora en otro carril o mas lejos no cuentan: hacia delante, como siempre.
+    for (const [at, sown] of [
+      [behind, createMine('fire')],
+      [behind, createWall()],
+      [{ lane: 1, col: cell.col - 1 }, createPlant()],
+      [{ lane: 2, col: cell.col - 2 }, createPlant()],
+    ] as const) {
+      const state = worm(put(attacking(), at, sown));
+      expect(iceWallPushes(state, cell)[0].toX).toBeCloseTo(cell.col - half);
+    }
+    // En la primera columna no hay detras: hacia delante.
+    const edge = { lane: 2, col: 0 };
+    const atEdge = spawnEnemy(attacking(), 'worm', 2, 0.3);
+    expect(iceWallPushes(atEdge, edge)[0].toX).toBeCloseTo(-half);
+  });
+
   it('a los jefes, igual (O-06); a Creeper en el aire no lo mueve', () => {
     let state = attacking(createMatch(0, 9, 'creeper', false, ALL));
     state = spawnEnemy(state, 'creeper', 2, cell.col + 0.6);
