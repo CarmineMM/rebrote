@@ -9,6 +9,7 @@ Juego de defensa por carriles. Stack: Phaser 4 + React 19 + Vite + TypeScript. S
 - Si la task pinta o anima algo (enemigos, plantas, efectos, escenarios, HUD), lee `docs/guias/graficos.md` y sigue sus listas de comprobación. Si algo suena, su sección 16 y la lista "Sonido nuevo".
 - Si la task añade o cambia algún texto que ve el jugador, lee `docs/guias/idiomas.md`.
 - Si la task añade una mecánica o un gesto nuevo, lleva su tour de ayuda (regla 9) y su sonido (regla 10).
+- Las tasks tentativas (`docs/tasks/tentative/`, `TT-xxx`, ADR-0026) no se ejecutan. Para pasar una a task normal, primero se revisa el código y se corrige lo que haya cambiado; luego recibe su número `T-` y se mueve a `docs/tasks/` en el mismo commit. Pasos en `docs/tasks/tentative/README.md`.
 - Al empezar una task, pon su estado en "En curso". Al cerrarla, marca sus criterios de aceptación, sube la versión (regla 12) y pon "Completada (fecha, versión)". El estado se cambia en la cabecera de la task y en la tabla de `docs/tasks/README.md`, en el mismo commit.
 
 ## Reglas del proyecto
