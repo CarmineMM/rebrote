@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { LivePortrait } from './LivePortrait';
 import { createRoot } from 'react-dom/client';
 import { BOXER_DESIGNS, PATTY_PROPOSALS } from '../game/view/characters/catalog';
 import { CAST, CAST_CHOSEN } from '../game/view/characters/cast';
@@ -12,7 +13,7 @@ import '../styles.css';
 import './characterLab.css';
 
 /**
- * Galeria de personajes (T-031): `npm run dev` y abrir `/personajes.html`. Tres propuestas de Boxer y tres de Patty (Y-01,
+ * Galeria de personajes (T-031): `npm run dev` y abrir `/propuestas/personajes.html`. Tres propuestas de Boxer y tres de Patty (Y-01,
  * Y-02) con sus tres expresiones (Y-04), y la viñeta de verdad con las elegidas a 1600 x 900, 812 x 375 y 568 x 320. No la
  * ve el jugador (`npm run build` no la incluye), asi que sus textos van en espanol sin `src/i18n/`.
  */
@@ -20,24 +21,6 @@ import './characterLab.css';
 type Tab = 'proposals' | 'vignette';
 
 const EXPRESSION_NAMES: Record<Expression, string> = { normal: 'Normal', hurried: 'Apurado', happy: 'Contento' };
-
-/** Retrato animado: parpadea y, si habla, abre y cierra la boca. */
-function LivePortrait({ design, expression, talking, height }: { design: CharacterDesign; expression: Expression; talking: boolean; height: number }) {
-  const [time, setTime] = useState(0);
-  useEffect(() => {
-    let frame = 0;
-    const start = performance.now();
-    const tick = (now: number) => {
-      setTime(now - start);
-      frame = requestAnimationFrame(tick);
-    };
-    frame = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(frame);
-  }, []);
-  const blink = time % 3400 > 3250;
-  const open = talking && Math.floor(time / 115) % 2 === 0 && time % 1400 < 1000;
-  return <img className="char-portrait" style={{ height }} src={portraitUrl(design, { expression, blink, open })} alt="" />;
-}
 
 function ProposalCard({ design, chosen, talking }: { design: CharacterDesign; chosen: boolean; talking: boolean }) {
   const [expression, setExpression] = useState<Expression>('normal');

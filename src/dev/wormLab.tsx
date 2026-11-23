@@ -8,7 +8,7 @@ import { WORM_LAB_SCENES, WormBoardScene, WormLevelsScene, type LevelRange, type
 import './shooterLab.css';
 
 /**
- * Galeria de adornos de nivel de los gusanos: `npm run dev` y abrir `/gusanos.html`. Cuatro propuestas para marcar los
+ * Galeria de adornos de nivel de los gusanos: `npm run dev` y abrir `/propuestas/gusanos.html`. Cuatro propuestas para marcar los
  * tramos de nivel (5, 10, 15 y 20) de las tres tropas sin tocar su dibujo, como el jardincito de las disparadoras
  * (T-027). No la ve el jugador (`npm run build` no la incluye), asi que sus textos van en espanol sin `src/i18n/`.
  */

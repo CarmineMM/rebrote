@@ -7,7 +7,7 @@ import '../styles.css';
 import './greenhouseLab.css';
 
 /**
- * Galeria de propuestas del Invernadero: `npm run dev` y abrir `/invernadero.html`. Tres maquetas con la tienda ya
+ * Galeria de propuestas del Invernadero: `npm run dev` y abrir `/propuestas/invernadero.html`. Tres maquetas con la tienda ya
  * abierta (poderes y disparadora juntos), el menu a la derecha y "Volver a la portada" abajo a la izquierda, cada una a
  * 1600 x 900, 812 x 375 y 568 x 320. Cada marco es un `iframe` de ese tamano con la maqueta sola (`?solo=lab`), asi que
  * los `@media` responden como en el juego. Se puede comprar y mejorar: el progreso vive solo en la pagina. No la ve el
@@ -61,7 +61,7 @@ function Gallery() {
   const [seeds, setSeeds] = useState(startSeeds);
   const [round, setRound] = useState(0);
   const language = useLanguage();
-  const src = `/invernadero.html?solo=${tab}&semillas=${seeds}&idioma=${language}`;
+  const src = `/propuestas/invernadero.html?solo=${tab}&semillas=${seeds}&idioma=${language}`;
   return (
     <div className="ghl">
       <header className="ghl-bar">

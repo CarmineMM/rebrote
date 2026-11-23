@@ -12,7 +12,7 @@ import { WormView } from '../game/view/wormView';
 import { WORM_FLAIRS, WormFlair, registerWormFlairTextures, wormFlairTier, type WormFlairId } from './wormFlair';
 
 /**
- * Escenas de la galeria de adornos de nivel de los gusanos (`/gusanos.html`): solo con `npm run dev`. Usan la vista del
+ * Escenas de la galeria de adornos de nivel de los gusanos (`/propuestas/gusanos.html`): solo con `npm run dev`. Usan la vista del
  * juego (`WormView`) sobre el tablero de verdad, asi que andan, ondulan y llevan su medallita como en una partida. No las
  * ve el jugador: sus textos van en espanol sin `src/i18n/`.
  */

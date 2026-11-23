@@ -1,7 +1,7 @@
 import type { CSSProperties } from 'react';
 
 /**
- * Decorados de las propuestas del Invernadero (`/invernadero.html`). Un SVG de 1600 x 900 que cubre la pantalla entera
+ * Decorados de las propuestas del Invernadero (`/propuestas/invernadero.html`). Un SVG de 1600 x 900 que cubre la pantalla entera
  * (recortado, apoyado abajo): en el juego lo pintaria Phaser con el resto del decorado. Todo se mueve con CSS
  * (`greenhouseLab.css`), cada cosa a su ritmo.
  */

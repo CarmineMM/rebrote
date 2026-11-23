@@ -36,7 +36,7 @@ export function isBugKind(kind: EnemyKind): kind is BugKind {
 /** Que Lurker es cada tropa oculta: la base, la que escupe o la acorazada. */
 export const LURKER_VARIANT: Record<LurkerKind, LurkerVariant> = { lurker: 'base', lurkerSpitter: 'spitter', lurkerArmored: 'armored' };
 
-/** Las propuestas con que se pinta: las del juego, u otras en la galeria `/bichos.html`. */
+/** Las propuestas con que se pinta: las del juego, u otras en la galeria `/propuestas/bichos.html`. */
 export interface BugDesigns {
   readonly lurker: LurkerDesign;
   readonly skipper: SkipperDesign;
@@ -180,7 +180,7 @@ export class BugView implements EnemyView {
     enemy: Enemy,
     emerge: boolean,
     emergeDelayMs = 0,
-    /** Otras propuestas que las del juego: la galeria `/bichos.html` pinta asi las que compara. */
+    /** Otras propuestas que las del juego: la galeria `/propuestas/bichos.html` pinta asi las que compara. */
     designs: BugDesigns = GAME_BUGS,
   ) {
     const kind = enemy.kind as BugKind;

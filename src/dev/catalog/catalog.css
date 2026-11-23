@@ -1,0 +1,378 @@
+/* Catalogos de desarrollo (T-040): tropas, jefes y personajes. Cargan `styles.css` para la ficha del juego (`.info-card`),
+   asi que aqui se deshace lo que fija la pantalla del juego (sin scroll) y no se tocan sus clases salvo para quitarles la
+   animacion de entrada. */
+:root {
+  color-scheme: dark;
+}
+
+html,
+body,
+#root {
+  height: auto;
+  min-height: 100%;
+  overflow: auto;
+  background: #1d2b1f;
+  color: #f4ffe9;
+}
+
+.cat {
+  min-height: 100%;
+  font-family: ui-rounded, 'Nunito', system-ui, sans-serif;
+}
+
+.cat-bar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 18px;
+  padding: 10px 16px;
+  background: #24361f;
+  border-bottom: 2px solid #3f5a2f;
+}
+
+.cat-bar h1 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.cat-bar h1 span {
+  margin-left: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #b9d99a;
+}
+
+.cat-tabs,
+.cat-tools,
+.cat-pills,
+.cat-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.cat-tools {
+  margin-left: auto;
+}
+
+.cat a {
+  color: #bfe88f;
+}
+
+.cat-tabs a,
+.cat button,
+.cat select {
+  font: inherit;
+  font-size: 14px;
+  font-weight: 800;
+  color: #1d2b1f;
+  background: #e9f7d8;
+  border: 2px solid #2a6b22;
+  border-radius: 999px;
+  padding: 5px 12px;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.cat-tabs a.is-on,
+.cat button.is-on {
+  background: #80d153;
+}
+
+.cat-main {
+  display: grid;
+  gap: 22px;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 18px 16px 60px;
+}
+
+.cat-intro {
+  margin: 0;
+  max-width: 900px;
+  font-size: 15px;
+  line-height: 1.45;
+  color: #d7efc3;
+}
+
+.cat code {
+  font-size: 0.92em;
+  color: #fff3b0;
+}
+
+.cat-stage-box {
+  display: grid;
+  gap: 8px;
+}
+
+.cat-stage-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.cat-stage {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  max-height: 72vh;
+  border-radius: 16px;
+  overflow: hidden;
+  background: #1d2b1f;
+  border: 2px solid #3f5a2f;
+}
+
+.cat-index {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.cat-outbreak {
+  display: grid;
+  gap: 16px;
+  scroll-margin-top: 70px;
+}
+
+.cat-outbreak > h2 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+  margin: 12px 0 0;
+  padding-bottom: 6px;
+  font-size: 24px;
+  font-weight: 900;
+  border-bottom: 2px solid #3f5a2f;
+}
+
+.cat-outbreak > h2 small,
+.cat-detail h3 small {
+  font-size: 13px;
+  font-weight: 700;
+  color: #b9d99a;
+}
+
+/* Una unidad: su ficha del juego a la izquierda y su detalle a la derecha; en pantallas estrechas, una debajo de otra. */
+.cat-entry {
+  display: grid;
+  grid-template-columns: minmax(0, 660px) minmax(0, 1fr);
+  gap: 16px 22px;
+  align-items: start;
+  scroll-margin-top: 70px;
+}
+
+@media (max-width: 1100px) {
+  .cat-entry {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.info-card.cat-card {
+  width: 100%;
+  max-height: none;
+  animation: none;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35), 0 0 0 4px var(--tone-glow);
+}
+
+.cat-card .info-body {
+  padding-right: 0;
+}
+
+.cat-photo-wait {
+  display: block;
+  width: 200px;
+  height: 200px;
+}
+
+.cat-detail {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.cat-detail h3 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 10px;
+  margin: 4px 0 0;
+  font-size: 16px;
+  font-weight: 900;
+}
+
+.cat-when {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.cat-when .is-escort {
+  color: #ffd36a;
+}
+
+.cat-levels {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+
+.cat-levels th,
+.cat-levels td {
+  padding: 4px 8px;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.cat-levels th:first-child,
+.cat-levels td:first-child {
+  text-align: left;
+}
+
+.cat-levels th {
+  font-size: 12px;
+  font-weight: 900;
+  color: #b9d99a;
+  border-bottom: 1px solid #3f5a2f;
+}
+
+.cat-levels tbody tr {
+  cursor: pointer;
+}
+
+.cat-levels tbody tr:nth-child(odd) {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.cat-levels tbody tr:hover {
+  background: rgba(128, 209, 83, 0.14);
+}
+
+.cat-levels tbody tr.is-on {
+  background: rgba(128, 209, 83, 0.28);
+}
+
+.cat-levels td {
+  padding-block: 1px;
+}
+
+.cat-levels .medal {
+  display: inline-grid;
+  transform: scale(0.8);
+}
+
+.cat-dim {
+  color: #9fbf86;
+}
+
+.cat-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.cat-facts {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 3px 14px;
+  margin: 0;
+  font-size: 14px;
+}
+
+.cat-facts dt {
+  font-weight: 900;
+  color: #b9d99a;
+}
+
+.cat-facts dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+/* Personajes */
+.cat-person {
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr);
+  gap: 16px 24px;
+  align-items: start;
+  padding: 18px;
+  border-radius: 20px;
+  border: 2px solid var(--person, #80d153);
+  background: linear-gradient(180deg, #2a3f26 0%, #1b2a19 100%);
+  scroll-margin-top: 70px;
+}
+
+@media (max-width: 760px) {
+  .cat-person {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.cat-person-photo {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+}
+
+.cat-person-photo img {
+  max-width: 100%;
+}
+
+.cat-person h2 {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 900;
+}
+
+.cat-person h2 small {
+  margin-left: 8px;
+  font-size: 14px;
+  color: var(--person, #b9d99a);
+}
+
+.cat-person ul {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.cat-thumbs {
+  display: flex;
+  gap: 8px;
+}
+
+.cat-thumbs button {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  padding: 4px 8px 6px;
+  border-radius: 14px;
+}
+
+.cat-thumbs img {
+  height: 64px;
+}
+
+.cat-swatch {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  margin-right: 6px;
+  vertical-align: -2px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+}

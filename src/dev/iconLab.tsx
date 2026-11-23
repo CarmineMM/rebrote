@@ -4,7 +4,7 @@ import { ICON, ICON_IDS, MASKABLE_SAFE_RADIUS, ICON_SIZE, THEME_COLOR, iconDataU
 import './iconLab.css';
 
 /**
- * Galeria de propuestas del icono (T-028): `npm run dev` y abrir `/iconos.html`. Cada propuesta, en la pestana del
+ * Galeria de propuestas del icono (T-028): `npm run dev` y abrir `/propuestas/iconos.html`. Cada propuesta, en la pestana del
  * navegador (clara y oscura), a 16, 32, 180 y 512 pixeles sobre fondo claro y oscuro, recortada como la recorta Android
  * y en la pantalla de inicio de un iPhone. Los dibujos salen de `src/icons/iconArt.ts`, el mismo que usa
  * `npm run icons`. No la ve el jugador (`npm run build` no la incluye), asi que sus textos van en espanol sin

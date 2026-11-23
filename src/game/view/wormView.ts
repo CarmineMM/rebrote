@@ -415,7 +415,7 @@ export class WormView implements EnemyView {
     emerge: boolean,
     /** Sale del suelo pasado este tiempo, sin verse antes (el Creeper aterriza desde donde se preparaba, T-008). */
     emergeDelayMs = 0,
-    /** Otro aspecto que el de su tipo: la galeria de jefes (`/jefes.html`) pinta asi las propuestas. */
+    /** Otro aspecto que el de su tipo: la galeria de jefes (`/propuestas/jefes.html`) pinta asi las propuestas. */
     look: KindLook = KIND_LOOK[enemy.kind as WormKind],
   ) {
     this.look = look;
@@ -692,7 +692,7 @@ export class WormView implements EnemyView {
 
   /**
    * Punto de un anillo en pantalla (0 es la cola), en pixeles de diseno respecto a su centro: sigue la joroba al
-   * andar. Lo usa la galeria de propuestas de adornos de nivel (`/gusanos.html`) para clavar algo en la cola.
+   * andar. Lo usa la galeria de propuestas de adornos de nivel (`/propuestas/gusanos.html`) para clavar algo en la cola.
    */
   segmentPoint(index: number, dx = 0, dy = 0): { x: number; y: number } {
     const segment = this.segments[Math.max(0, Math.min(this.segments.length - 1, index))];

@@ -69,7 +69,7 @@ export class ElkClonerView implements EnemyView {
     enemy: Enemy,
     emerge: boolean,
     emergeDelayMs = 0,
-    /** Otro aspecto (la galeria `/jefes.html`, para comparar los aros del disquete). */
+    /** Otro aspecto (la galeria `/propuestas/jefes.html`, para comparar los aros del disquete). */
     look?: KindLook,
   ) {
     this.worm = new WormView(scene, fx, enemy, emerge, emergeDelayMs, look);

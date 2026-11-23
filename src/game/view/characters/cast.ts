@@ -4,7 +4,7 @@ import { PATTY_COAT } from './patty';
 
 /**
  * Que dibujo de cada personaje usa el juego (T-031), como `SHOOTER` para la disparadora: cambiar una linea cambia el
- * personaje en todas las viñetas. Las propuestas se comparan en la galeria de desarrollo (`/personajes.html`).
+ * personaje en todas las viñetas. Las propuestas se comparan en la galeria de desarrollo (`/propuestas/personajes.html`).
  *
  * Elegidos por Carmine el 21 nov 2026: Boxer, la mezcla de las propuestas a) y b) de la segunda ronda (Y-01), y Patty, la
  * de la bata con una flor en el pelo (Y-02).

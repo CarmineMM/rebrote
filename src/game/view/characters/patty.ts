@@ -30,7 +30,7 @@ import {
 
 /**
  * Patty (T-031, Y-02): la botanica que creo las plantas. Siempre con el pelo negro y un flequillo que le tapa parte de las
- * cejas (lo pidio Carmine); algo dice "botanica" sin texto. Tres propuestas para la galeria (`/personajes.html`), cada
+ * cejas (lo pidio Carmine); algo dice "botanica" sin texto. Tres propuestas para la galeria (`/propuestas/personajes.html`), cada
  * una de una edad: joven con bata, jardinera y exploradora.
  */
 

@@ -9,7 +9,7 @@ import { TEX, artInv } from '../game/view/textures';
  * Propuestas de adorno para los niveles con premio de la disparadora (5, 10, 15 y 20): algo mas vistoso que la
  * medallita, sin tocar el dibujo de la planta. Carmine eligio el jardincito (21 nov 2026), que ya esta en el juego
  * (`src/game/view/levelGarden.ts`) y lo pinta la propia planta. Las otras tres se quedan aqui, solo en la galeria de
- * desarrollo (`/disparadoras.html`, vista "Niveles"), para ver como quedarian combinadas con el.
+ * desarrollo (`/propuestas/disparadoras.html`, vista "Niveles"), para ver como quedarian combinadas con el.
  *
  * El tramo es el de la medallita (`medalTier`): 1 plata (5 a 9), 2 oro (10 a 14), 3 rubi (15 a 19) y 4 cristal (20),
  * con sus mismos colores (`MEDAL_TIERS`). Por debajo del 5 no hay adorno. Todo se mide en anchos de casilla (`w`) y
