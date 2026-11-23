@@ -20,7 +20,18 @@ import { creditRound } from './seeds';
  * en los brotes siguientes (T-018, B-01) y, si su brote ya esta vencido, tambien en los anteriores (ES-03,
  * `carriedFeatures`).
  */
-export type Feature = 'shooter' | 'levelUp' | 'fireMine' | 'fireInfuse' | 'iceMine' | 'iceInfuse' | 'fuse' | 'shield' | 'shieldInfuse';
+export type Feature =
+  | 'shooter'
+  | 'levelUp'
+  | 'fireMine'
+  | 'fireInfuse'
+  | 'iceMine'
+  | 'iceInfuse'
+  | 'fuse'
+  | 'shield'
+  | 'shieldInfuse'
+  // Arrancar una disparadora o un muro (T-046), en la ronda 4 del brote 3.
+  | 'uproot';
 
 /** Todas las `Feature`, para comprobar las que trae una partida guardada (`MatchState.carried`). Sin una, no compila. */
 const FEATURE_SET: Record<Feature, true> = {
@@ -33,6 +44,7 @@ const FEATURE_SET: Record<Feature, true> = {
   fuse: true,
   shield: true,
   shieldInfuse: true,
+  uproot: true,
 };
 
 export function isFeature(value: unknown): value is Feature {

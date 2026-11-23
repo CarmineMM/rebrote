@@ -331,6 +331,12 @@ describe('actionCue', () => {
     expect(actionCue({ type: 'pick' }, 2)).toBeNull();
   });
 
+  it('arrancar una disparadora o un muro (T-046) suena a tiron de tierra, desde su columna', () => {
+    expect(actionCue({ type: 'uproot' }, 2)).toEqual(actionCue({ type: 'uproot' }, 2));
+    expect(actionCue({ type: 'uproot' }, 2)?.id).toBe('uproot');
+    expect(actionCue({ type: 'uproot' }, 0)?.pan).not.toBe(actionCue({ type: 'uproot' }, 8)?.pan);
+  });
+
   it('subir a un nivel con premio (5, 10, 15 y 20) suena a premio', () => {
     for (const level of [5, 10, 15, 20]) expect(actionCue({ type: 'levelUp', level }, 2)?.id).toBe('unlock');
     for (const level of [2, 4, 6, 11]) expect(actionCue({ type: 'levelUp', level }, 2)?.id).toBe('levelUp');

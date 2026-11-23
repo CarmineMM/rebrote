@@ -32,9 +32,10 @@ export const SAVE_KEY = 'partida';
  * del brote 2 con una disparadora con escudo, que desde T-037 no se infunde ahi (sin migracion, ADR-0014). La 11 (T-038), el
  * salto del Skipper (`Enemy.hop`) y el sigilo de los Lurker (`Enemy.revealMs`). La 12 (T-041), la variante de color de las
  * tropas que vuelven en otro brote (`Enemy.variant`). La 13 (T-042), la sobrecarga (`MatchState.overload`), lo que espera fuera
- * por el tope de enemigos (`RoundState.waiting`) y los gusanos de Morris (`RoundState.brood`).
+ * por el tope de enemigos (`RoundState.waiting`) y los gusanos de Morris (`RoundState.brood`). La 14 (T-046), lo gastado en cada
+ * disparadora (`Plant.spent`), lo que se recupera en parte al arrancarla.
  */
-export const SAVE_VERSION = 13;
+export const SAVE_VERSION = 14;
 
 export interface SavedGame {
   readonly version: number;
@@ -175,7 +176,7 @@ function isSown(value: unknown): value is Sown {
   if (value.kind === 'mine') return isMineElement(value.element) && isNullOr(value.fuseMs, isNumber);
   if (value.kind === 'wall') return true;
   if (value.kind === 'ice') return isNumber(value.ms) && value.ms > 0 && isNumber(value.maxHp) && value.maxHp >= value.hp;
-  if (value.kind !== 'shooter' || !isNumber(value.reloadMs) || !isRecord(value.shooter)) return false;
+  if (value.kind !== 'shooter' || !isNumber(value.reloadMs) || !isInt(value.spent, 0) || !isRecord(value.shooter)) return false;
   const { shooter } = value;
   return isNullOr(shooter.element, isElement) && isInt(shooter.cannons, 1, LIMITS.maxCannons) && isInt(shooter.level, 1, LIMITS.maxLevel);
 }

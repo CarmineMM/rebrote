@@ -28,6 +28,8 @@ import {
   plantAt,
   playCard,
   sownAt,
+  uprootRefund,
+  uprootSown,
   sownElement,
   sownMaxHp,
   wallAt,
@@ -181,6 +183,8 @@ const LOOK = {
   panelBelow: 0.14,
   /** Si no cabe ni encima ni debajo, a un lado de la planta: a la altura del cuerpo, en anchos de casilla. */
   panelSide: { x: 0.5, y: 0.5 },
+  /** Al arrancar (T-046): la moneda sale cuando la planta ya asoma fuera de la tierra. */
+  uprootCoinDelayMs: 160,
   /** Empieza el ataque de una ronda (T-007): aviso junto a los agujeros, en los colores de la corrupcion. */
   attackText: { color: '#b8ffd4', stroke: '#2b2034', fontSize: 44 },
   /** Ronda superada (T-007): texto en el centro del cesped. */
@@ -719,10 +723,13 @@ export class BoardScene extends Phaser.Scene {
       const press = this.press;
       if (press?.pointerId === pointer.id) {
         this.press = null;
-        // Pulsar y soltar una planta sin arrastrarla la selecciona (otra vez, la deselecciona).
-        if (inside && press.kind === 'plant' && this.canPickPlants() && plantAt(this.match, press.cell)) {
-          this.pickPlant(sameCell(this.picked, press.cell) ? null : press.cell);
-        }
+        // Pulsar y soltar una planta sin arrastrarla la selecciona (otra vez, la deselecciona). Un muro, igual, desde que se
+        // puede arrancar (T-046, AR-08): su panel solo trae "Arrancar".
+        const pickable =
+          press.kind === 'plant'
+            ? this.canPickPlants() && plantAt(this.match, press.cell) !== null
+            : this.canPickWalls() && wallAt(this.match, press.cell) !== null;
+        if (inside && pickable) this.pickPlant(sameCell(this.picked, press.cell) ? null : press.cell);
       }
       if (this.drag?.pointerId === pointer.id) this.dropDrag(pointer);
       if (this.relocation?.pointerId === pointer.id) this.releaseRelocation(pointer);
@@ -755,6 +762,7 @@ export class BoardScene extends Phaser.Scene {
       else this.selectPower(power);
     };
     const onLevelUp = () => running() && this.tryLevelUp();
+    const onUproot = () => running() && this.tryUproot();
     const onAttack = () => {
       if (!running()) return;
       this.match = startAttack(this.match);
@@ -796,6 +804,7 @@ export class BoardScene extends Phaser.Scene {
     EventBus.on(GameEvents.powerPicked, onPowerPicked);
     EventBus.on(GameEvents.selectionCancelled, onCancelled);
     EventBus.on(GameEvents.levelUpRequested, onLevelUp);
+    EventBus.on(GameEvents.uprootRequested, onUproot);
     EventBus.on(GameEvents.attackRequested, onAttack);
     EventBus.on(GameEvents.cardDragged, onDragged);
     EventBus.on(GameEvents.cardDropped, onDropped);
@@ -812,6 +821,7 @@ export class BoardScene extends Phaser.Scene {
       EventBus.off(GameEvents.powerPicked, onPowerPicked);
       EventBus.off(GameEvents.selectionCancelled, onCancelled);
       EventBus.off(GameEvents.levelUpRequested, onLevelUp);
+      EventBus.off(GameEvents.uprootRequested, onUproot);
       EventBus.off(GameEvents.attackRequested, onAttack);
       EventBus.off(GameEvents.cardDragged, onDragged);
       EventBus.off(GameEvents.cardDropped, onDropped);
@@ -1629,7 +1639,12 @@ export class BoardScene extends Phaser.Scene {
 
   /** Seleccionar para subir de nivel, desde la ronda que lo desbloquea (T-007). */
   private canPickPlants(): boolean {
-    return this.canTouchPlants() && isUnlocked(this.match, 'levelUp');
+    return this.canTouchPlants() && (isUnlocked(this.match, 'levelUp') || isUnlocked(this.match, 'uproot'));
+  }
+
+  /** Seleccionar un muro, para arrancarlo (T-046, AR-08). */
+  private canPickWalls(): boolean {
+    return this.canTouchPlants() && isUnlocked(this.match, 'uproot');
   }
 
   /**
@@ -2380,6 +2395,7 @@ export class BoardScene extends Phaser.Scene {
     if (cell) {
       drawCell(this.pickedMark, cell, LOOK.pickedColor, 0.22, 4);
       this.plantViews.get(cellKey(cell))?.beckon();
+      this.wallViews.get(cellKey(cell))?.beckon();
     }
     this.emitPlantPanel();
     if (cell) this.emitAction({ type: 'pick' });
@@ -2398,33 +2414,63 @@ export class BoardScene extends Phaser.Scene {
     this.emitAction({ type: 'levelUp', level: plant.shooter.level }, cell);
   }
 
+  /**
+   * Arranca lo seleccionado si se puede (T-046): la regla se aplica en el acto (la casilla queda libre y la moneda vuelve
+   * al saldo), la planta o el muro salen de la tierra de un tiron y la moneda salta al marcador.
+   */
+  private tryUproot(): void {
+    const cell = this.picked;
+    if (this.defeated || this.won || !cell) return;
+    const refund = uprootRefund(this.match, cell);
+    if (refund === null) return;
+    this.match = uprootSown(this.match, cell);
+    const key = cellKey(cell);
+    this.plantViews.get(key)?.pullOut();
+    this.plantViews.delete(key);
+    this.wallViews.get(key)?.pullOut();
+    this.wallViews.delete(key);
+    this.pickPlant(null);
+    this.balanceGained();
+    this.coinsFrom(refund, { x: cell.col + 0.5, y: cell.lane + 0.5 }, LOOK.uprootCoinDelayMs);
+    this.emitAction({ type: 'uproot' }, cell);
+  }
+
   /** Avisa al HUD de como esta el panel de la planta seleccionada (o de que se cerro), solo si cambia. */
   private emitPlantPanel(): void {
     const cell = this.picked;
-    const offer = cell ? levelUpOffer(this.match, cell) : null;
-    const view = cell ? this.plantViews.get(cellKey(cell)) : undefined;
+    const key = cell ? cellKey(cell) : '';
+    const plant = cell ? plantAt(this.match, cell) : null;
+    const view = cell ? (plant ? this.plantViews.get(key) : this.wallViews.get(key)) : undefined;
+    const uproot = cell ? uprootRefund(this.match, cell) : null;
+    const offer = cell && isUnlocked(this.match, 'levelUp') ? levelUpOffer(this.match, cell) : null;
     let panel: PlantPanel | null = null;
-    if (cell && offer && view) {
+    // Una disparadora con algo que hacer, o un muro que se puede arrancar (T-046).
+    if (cell && view && (offer || uproot !== null) && (plant || wallAt(this.match, cell))) {
       const foot = view.foot();
       const { cellWidth } = plantPlacement(cell);
+      const level = plant?.shooter.level ?? 1;
       panel = {
-        id: cellKey(cell),
-        level: offer.level,
-        cap: offer.cap,
-        capRaisedAt: offer.capRaisedAt === null ? null : offer.capRaisedAt + 1,
-        cost: offer.cost,
-        multiplier: offer.multiplier,
-        affordable: offer.blocker === null,
-        medalTier: showsMedal(offer.level) ? medalTier(offer.level) : null,
+        id: key,
+        subject: plant ? 'shooter' : 'wall',
+        level,
+        medalTier: plant && showsMedal(level) ? medalTier(level) : null,
+        levelUp: offer && {
+          cap: offer.cap,
+          capRaisedAt: offer.capRaisedAt === null ? null : offer.capRaisedAt + 1,
+          cost: offer.cost,
+          multiplier: offer.multiplier,
+          affordable: offer.blocker === null,
+        },
+        uproot,
         above: this.worldToPage(foot.x, foot.y - cellWidth * LOOK.panelAbove),
         below: this.worldToPage(foot.x, foot.y + cellWidth * LOOK.panelBelow),
         right: this.worldToPage(foot.x + cellWidth * LOOK.panelSide.x, foot.y - cellWidth * LOOK.panelSide.y),
         left: this.worldToPage(foot.x - cellWidth * LOOK.panelSide.x, foot.y - cellWidth * LOOK.panelSide.y),
       };
     }
-    const key = panel ? JSON.stringify(panel) : '';
-    if (key === this.panelKey) return;
-    this.panelKey = key;
+    const shown = panel ? JSON.stringify(panel) : '';
+    if (shown === this.panelKey) return;
+    this.panelKey = shown;
     EventBus.emit(GameEvents.plantPanel, panel);
   }
 
@@ -2766,11 +2812,18 @@ export class BoardScene extends Phaser.Scene {
   private credit(amount: number, at?: BoardPoint): void {
     this.match = earn(this.match, amount);
     this.balanceGained();
-    if (at) {
+    if (at) this.coinsFrom(amount, at);
+  }
+
+  /** "+N" sobre `at` y una moneda que sale de ahi y vuela al marcador (lo cobrado ya esta en el saldo). */
+  private coinsFrom(amount: number, at: BoardPoint, delayMs = 0): void {
+    const show = () => {
       const ground = perspective.toScreen(at);
       this.fx.floatText(`+${amount}`, ground.x, ground.y - perspective.cellWidthAt(at) * 0.8);
       this.spawnAutoCoin(at);
-    }
+    };
+    if (delayMs > 0) this.time.delayedCall(delayMs, show);
+    else show();
   }
 
   /** El saldo subio (una moneda o el goteo): el HUD y lo que depende del saldo se ponen al dia. */

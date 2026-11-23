@@ -152,6 +152,44 @@ export class WallView {
     this.fadeShadow(280);
   }
 
+  /** Seleccionado para arrancarlo (T-046): un saltito corto, como la disparadora; pesa mas, asi que apenas se levanta. */
+  beckon(): void {
+    if (!this.holder.active) return;
+    this.scene.tweens.add({ targets: this.figure, y: -this.cellWidth * 0.05, duration: 120, ease: 'Quad.Out', yoyo: true });
+  }
+
+  /**
+   * Arrancado (T-046): se resiste un momento (tiembla agarrado a la tierra), sale de un tiron entre terrones y astillas y se
+   * va hacia arriba desvaneciendose. Es mas pesado que la disparadora: sube menos y no gira tanto.
+   */
+  pullOut(): void {
+    this.stop();
+    const w = this.cellWidth;
+    const { x, y } = this.base;
+    this.scene.tweens.chain({
+      targets: this.holder,
+      tweens: [
+        { x: x + w * 0.03, duration: 45, yoyo: true, ease: 'Sine.InOut' },
+        {
+          scaleX: 0.9,
+          scaleY: 1.18,
+          y: y - w * 0.35,
+          duration: 180,
+          ease: 'Back.Out',
+          onStart: () => {
+            this.fx.clods(x, y, 14);
+            this.fx.dirt(x, y, 14);
+            this.fx.bark(x, y - w * 0.3, 5);
+            this.fx.groundRing(x, y, w * 1.15, w * 0.38, 0x7a5332, this.holder.depth - 0.4, 560, 0.85);
+          },
+        },
+        { y: y - w * 0.75, angle: 12, scaleX: 0.75, scaleY: 0.9, alpha: 0, duration: 300, ease: 'Quad.In' },
+      ],
+      onComplete: () => this.holder.destroy(),
+    });
+    this.fadeShadow(360);
+  }
+
   /** Roto a mordiscos o a escupitajos: se parte en astillas y hojas y se hunde. */
   die(): void {
     this.stop();

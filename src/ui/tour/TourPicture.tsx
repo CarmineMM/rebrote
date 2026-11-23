@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
-import { ENEMIES } from '../../game/config/balance';
-import type { CardId } from '../../game/core/match';
+import { COSTS, ENEMIES } from '../../game/config/balance';
+import { refundOf, type CardId } from '../../game/core/match';
 import type { TourArt, TourArtKey } from '../../game/EventBus';
 import { CardIcon } from '../Card';
 import { HEART_PATH } from '../Lives';
@@ -206,6 +206,22 @@ export function TourPicture({ id, art }: TourPictureProps) {
           {plant('pic-center pic-swap-b', 'shooterShield')}
           {pic('wall', 'pic-slide-in is-wall', <CardIcon card="shield" />)}
           <span className="pic-glow is-shield" />
+        </>
+      );
+      break;
+    // T-046: la disparadora se agarra a su monton de tierra, sale de un tiron entre terrones y lo que devuelve vuela al saldo.
+    case 'uproot':
+      scene = (
+        <>
+          <span className="pic-mound is-center" />
+          {plant('pic-center pic-yank')}
+          <span className="pic-clod" />
+          <span className="pic-clod is-b" />
+          <span className="pic-clod is-c" />
+          <span className="coin pic-coin is-uproot" />
+          <span className="pic-balance">
+            <span className="coin coin-small" />+{refundOf(COSTS.shooter)}
+          </span>
         </>
       );
       break;

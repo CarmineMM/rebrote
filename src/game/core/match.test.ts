@@ -59,7 +59,7 @@ describe('sembrar', () => {
   it('coloca una disparadora y cobra su costo', () => {
     const match = plantShooter(createMatch(cost), { lane: 2, col: 4 });
     expect(match.balance).toBe(0);
-    expect(plantAt(match, { lane: 2, col: 4 })).toEqual({ kind: 'shooter', shooter: createShooter(), hp: SHOOTER.hp, reloadMs: 0 });
+    expect(plantAt(match, { lane: 2, col: 4 })).toEqual({ kind: 'shooter', shooter: createShooter(), hp: SHOOTER.hp, reloadMs: 0, spent: cost });
   });
 
   it('no modifica el estado anterior', () => {
@@ -177,7 +177,14 @@ describe('fusionar', () => {
     match = fusePlants(match, a, b);
     expect(fusionBlocker(match, b, c)).toBeNull();
     match = fusePlants(match, c, b);
-    expect(plantAt(match, b)).toEqual({ kind: 'shooter', shooter: shooter({ cannons: 3 }), hp: plantMaxHp(shooter({ cannons: 3 })), reloadMs: 0 });
+    expect(plantAt(match, b)).toEqual({
+      kind: 'shooter',
+      shooter: shooter({ cannons: 3 }),
+      hp: plantMaxHp(shooter({ cannons: 3 })),
+      reloadMs: 0,
+      // Lo gastado en las tres (T-046).
+      spent: 3 * cost,
+    });
     expect(match.plants.flat().filter(Boolean)).toHaveLength(1);
   });
 
@@ -257,6 +264,7 @@ describe('fuego (T-004)', () => {
       shooter: { element: 'fire', cannons: 1, level: 4 },
       hp: 120,
       reloadMs: 300,
+      spent: cost + fire,
     });
     expect(after.balance).toBe(before.balance - fire);
   });
@@ -417,6 +425,7 @@ describe('subir de nivel', () => {
       shooter: { element: 'fire', cannons: 2, level: 3 },
       hp: 410,
       reloadMs: 300,
+      spent: cost + 2 * (LEVELING.baseCost + LEVELING.costStep),
     });
   });
 

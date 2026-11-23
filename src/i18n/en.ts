@@ -344,6 +344,12 @@ export const en: Dictionary = {
     noFunds: 'Not enough coins',
     maxButton: 'Max',
     up: 'Level up',
+    uproot: 'Uproot',
+    uprootConfirm: 'Uproot?',
+    uprootTitle: (refund) => `Uproot: get ${refund} back, half of what you spent`,
+    uprootAgain: 'Tap again to uproot',
+    wall: 'Wall',
+    wallAria: 'Wall',
   },
 
   unlock: {
@@ -356,6 +362,7 @@ export const en: Dictionary = {
     },
     featureLines: {
       shieldInfuse: 'I reinforced the shield: now it holds on a shooter.',
+      uproot: 'Now you can uproot a plant: I’ll give you back half of what it cost.',
     },
     shooter: { title: 'Shooter', text: 'Plant it on a tile: it shoots the worms in its lane.' },
     levelUp: {
@@ -378,6 +385,10 @@ export const en: Dictionary = {
       title: 'Shield shooter',
       text: 'Drop the shield on a shooter, or drag a wall onto it: it lasts twice as long and stops what heads for the ones behind.',
     },
+    uproot: {
+      title: 'Uproot',
+      text: 'Tap a shooter or a wall and hit “Uproot” twice: you get back half of what it cost.',
+    },
   },
 
   tour: {
@@ -391,6 +402,7 @@ export const en: Dictionary = {
       fuse: 'Fuse',
       shield: 'Shield',
       shieldInfuse: 'Shield shooter',
+      uproot: 'Uproot',
       relocate: 'Replant',
       grenade: 'Grenade',
       iceWall: 'Ice wall',
@@ -435,6 +447,10 @@ export const en: Dictionary = {
       shieldInfuse: {
         card: 'On a shooter: double the health!',
         wall: 'Or bring it a wall you already planted',
+      },
+      uproot: {
+        pick: 'Tap a plant or wall you can spare',
+        pull: 'Hit “Uproot” twice: half comes back!',
       },
       relocate: {
         pick: 'Tap “Replant”, on the left',

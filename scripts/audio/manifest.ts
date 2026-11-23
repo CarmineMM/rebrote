@@ -139,6 +139,20 @@ export const MANIFEST: Readonly<Record<SfxId, SoundEntry>> = {
     pick: ui('maximize_005'),
     alternatives: [ui('confirmation_001'), digital('powerUp8')],
   },
+  uproot: {
+    about: 'Arrancar una disparadora o un muro (T-046): tierra que se rasga, el plop de las raices al salir y la moneda que vuelve',
+    // Elegido de oido por Carmine (23 nov 2026).
+    pick: [rpg('cloth3', { lengthMs: 250, fadeOutMs: 120 }), ui('drop_002', { delayMs: 80 }), rpg('handleCoins', { delayMs: 200, lengthMs: 450, fadeOutMs: 220, gainDb: -6 })],
+    alternatives: [
+      [impact('impactSoft_medium_002', { gainDb: -4 }), impact('footstep_grass_001', { lengthMs: 260, fadeOutMs: 150 }), rpg('handleCoins2', { delayMs: 180, lengthMs: 400, fadeOutMs: 200, gainDb: -6 })],
+      [
+        impact('footstep_grass_003', { lengthMs: 240, fadeOutMs: 130 }),
+        ui('pluck_001', { delayMs: 90, rate: 0.85 }),
+        rpg('handleCoins', { delayMs: 200, lengthMs: 450, fadeOutMs: 220, gainDb: -6 }),
+      ],
+      [impact('footstep_grass_000', { lengthMs: 300, fadeOutMs: 160 }), ui('pluck_002', { delayMs: 110, rate: 0.8 })],
+    ],
+  },
   plantDestroyed: {
     about: 'Una planta o una mina se rompen a mordiscos: golpe sordo y hojas',
     // Elegido de oido por Carmine (21 nov 2026).
@@ -359,8 +373,9 @@ export const MANIFEST: Readonly<Record<SfxId, SoundEntry>> = {
   },
   morrisBrood: {
     about: 'A Morris se le suelta un gusano (T-042, MR-07): un plop blando que se hunde en la tierra',
-    pick: [sfxr('pixelPop', { rate: 0.8, gainDb: -4 }), impact('footstep_grass_002', { lengthMs: 160, fadeOutMs: 100, gainDb: -8 })],
-    alternatives: [digital('pepSound1', { lengthMs: 260, fadeOutMs: 120, gainDb: -4 }), sfxr('womp', { rate: 1.3, gainDb: -4 })],
+    // Elegido de oido por Carmine (23 nov 2026).
+    pick: sfxr('womp', { rate: 1.3, gainDb: -4 }),
+    alternatives: [digital('pepSound1', { lengthMs: 260, fadeOutMs: 120, gainDb: -4 }), [sfxr('pixelPop', { rate: 0.8, gainDb: -4 }), impact('footstep_grass_002', { lengthMs: 160, fadeOutMs: 100, gainDb: -8 })]],
   },
   morrisDefeated: {
     about: 'Cae Morris (T-042): un parche que se instala (arpegio que sube) y el gusano que se deshace en gusanitos',
@@ -369,13 +384,15 @@ export const MANIFEST: Readonly<Record<SfxId, SoundEntry>> = {
   },
   overloadOn: {
     about: 'Se enciende la sobrecarga (T-042): la alarma de una maquina sin recursos, que sube',
-    pick: [sfxr('alarm', { gainDb: -4 }), digital('phaserUp5', { lengthMs: 500, fadeOutMs: 200, gainDb: -6 })],
-    alternatives: [sfxr('alarmLow'), scifi('forceField_002', { lengthMs: 600, fadeOutMs: 250, gainDb: -3 })],
+    // Elegido de oido por Carmine (23 nov 2026).
+    pick: sfxr('alarmLow'),
+    alternatives: [[sfxr('alarm', { gainDb: -4 }), digital('phaserUp5', { lengthMs: 500, fadeOutMs: 200, gainDb: -6 })], scifi('forceField_002', { lengthMs: 600, fadeOutMs: 250, gainDb: -3 })],
   },
   overloadOff: {
     about: 'Se apaga la sobrecarga (T-042): un respiro, un barrido que baja y se calma',
-    pick: digital('phaserDown2', { lengthMs: 420, fadeOutMs: 200, gainDb: -4 }),
-    alternatives: [scifi('forceField_000', { lengthMs: 450, fadeOutMs: 220, gainDb: -6 }), sfxr('powerDown', { rate: 1.3, gainDb: -6 })],
+    // Elegido de oido por Carmine (23 nov 2026).
+    pick: sfxr('powerDown', { rate: 1.3, gainDb: -6 }),
+    alternatives: [scifi('forceField_000', { lengthMs: 450, fadeOutMs: 220, gainDb: -6 }), digital('phaserDown2', { lengthMs: 420, fadeOutMs: 200, gainDb: -4 })],
   },
   attackStarted: {
     about: 'Empieza el ataque ("¡Ahí vienen!"): trino de 8 bits',

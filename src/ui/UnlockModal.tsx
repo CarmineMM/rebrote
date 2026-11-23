@@ -114,6 +114,21 @@ function describe(t: Dictionary['unlock'], items: readonly UnlockItem[]): Shown[
           text: t.shieldInfuse.text,
         });
         break;
+      // T-046: arrancar, en el brote 3. La disparadora sale de la tierra y suelta su moneda.
+      case 'uproot':
+        shown.push({
+          key: item.id,
+          icon: (
+            <span className="unlock-uproot">
+              <span className="unlock-uproot-soil" />
+              <CardIcon card="shooter" />
+              <span className="coin coin-small" />
+            </span>
+          ),
+          title: t.uproot.title,
+          text: t.uproot.text,
+        });
+        break;
     }
   }
   return shown;

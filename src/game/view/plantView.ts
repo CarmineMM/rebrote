@@ -415,6 +415,43 @@ export class PlantView {
     this.scene.tweens.add({ targets: this.shadow, alpha: 0, duration: 220, onComplete: () => this.shadow.destroy() });
   }
 
+  /**
+   * Arrancada (T-046): se agarra a la tierra (se aplasta un instante), sale de un tiron estirandose hacia arriba entre
+   * terrones y hojas, y se va girando y desvaneciendose. En el suelo queda un anillo de tierra. La moneda la pone la escena.
+   */
+  pullOut(): void {
+    this.aura?.remove();
+    this.flashTimer?.remove();
+    this.garden.remove();
+    this.scene.tweens.killTweensOf(this.parts());
+    this.figure.setAlpha(1).setAngle(0).setScale(1);
+    const w = this.cellWidth;
+    const { x, y } = this.base;
+    const lean = Phaser.Math.RND.sign();
+    this.scene.tweens.chain({
+      targets: this.holder,
+      tweens: [
+        { scaleX: 1.16, scaleY: 0.8, duration: 90, ease: 'Quad.Out' },
+        {
+          scaleX: 0.82,
+          scaleY: 1.32,
+          y: y - w * 0.5,
+          duration: 170,
+          ease: 'Back.Out',
+          onStart: () => {
+            this.fx.clods(x, y, 10);
+            this.fx.dirt(x, y, 12);
+            this.fx.leaves(x, y - w * 0.4, 6);
+            this.fx.groundRing(x, y, w * 1.05, w * 0.34, 0x7a5332, this.holder.depth - 0.4, 520, 0.8);
+          },
+        },
+        { y: y - w * 1.0, angle: 28 * lean, scaleX: 0.7, scaleY: 0.95, alpha: 0, duration: 300, ease: 'Quad.In' },
+      ],
+      onComplete: () => this.holder.destroy(),
+    });
+    this.scene.tweens.add({ targets: this.shadow, alpha: 0, delay: 90, duration: 220, onComplete: () => this.shadow.destroy() });
+  }
+
   /** Destruida: se aplasta contra el suelo soltando hojas y tierra. */
   die(): void {
     this.aura?.remove();

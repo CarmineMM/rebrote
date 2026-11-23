@@ -16,7 +16,7 @@ import { recruitingOutbreaks, troopHome, troopVariant } from './variants';
 
 const MORRIS: OutbreakId = 'morris';
 const TROOPS: readonly EnemyKind[] = ['worm', 'armored', 'spitter', 'copycat', 'copycatArmored', 'copycatSpitter', 'minstrel', 'lurker', 'lurkerSpitter', 'lurkerArmored', 'skipper'];
-const ALL_FEATURES: readonly Feature[] = ['shooter', 'levelUp', 'fireMine', 'fireInfuse', 'iceMine', 'iceInfuse', 'fuse', 'shield', 'shieldInfuse'];
+const ALL_FEATURES: readonly Feature[] = ['shooter', 'levelUp', 'fireMine', 'fireInfuse', 'iceMine', 'iceInfuse', 'fuse', 'shield', 'shieldInfuse', 'uproot'];
 const last = (state: MatchState): Enemy => state.enemies[state.enemies.length - 1];
 const ofType = <T extends CombatEvent['type']>(events: readonly CombatEvent[], type: T) =>
   events.filter((e): e is Extract<CombatEvent, { type: T }> => e.type === type);

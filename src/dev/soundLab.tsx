@@ -35,6 +35,7 @@ interface CatalogSound {
 
 /** Los grupos de la pagina, con lo ultimo arriba. Un efecto que no este en ninguno sale en "Otros" (`groups`). */
 const GROUPS: Array<{ title: string; ids: SfxId[] }> = [
+  { title: 'Arrancar (T-046)', ids: ['uproot'] },
   { title: 'Morris y la sobrecarga (T-042)', ids: ['morrisTalk', 'morrisBrood', 'morrisDefeated', 'overloadOn', 'overloadOff'] },
   { title: 'Brain (T-039)', ids: ['brainTalk', 'brainHop', 'brainLand', 'brainDefeated'] },
   { title: 'Tropas del brote 3 (T-038)', ids: ['hop', 'reveal'] },
