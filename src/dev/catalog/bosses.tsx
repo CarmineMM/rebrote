@@ -1,9 +1,10 @@
 import * as Phaser from 'phaser';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { BRAIN, CREEPER, ELK_CLONER, ENEMIES, OUTBREAKS } from '../../game/config/balance';
+import { BRAIN, CREEPER, ELK_CLONER, ENEMIES, MORRIS, OUTBREAKS } from '../../game/config/balance';
 import { enemyMaxHp, isBoss, type BossKind } from '../../game/core/combat';
 import { BRAIN_DESIGN } from '../../game/view/brainArt';
+import { MORRIS_DESIGN } from '../../game/view/morrisArt';
 import { ELK_HUB } from '../../game/view/elkClonerArt';
 import { viewFor } from '../../game/view/layout';
 import { QUALITY_LEVELS, QUALITY_PROFILES, type QualityLevel } from '../../game/view/quality';
@@ -29,10 +30,11 @@ const BOSS_NUMBERS: Record<BossKind, { readonly name: string; readonly values: o
   creeper: { name: 'CREEPER', values: CREEPER },
   elkCloner: { name: 'ELK_CLONER', values: ELK_CLONER },
   brain: { name: 'BRAIN', values: BRAIN },
+  morris: { name: 'MORRIS', values: MORRIS },
 };
 
 /** Los que tienen fase 2 (cara roja, mas rapidos): se ensena su ficha en las dos. */
-const ENRAGES: Record<BossKind, boolean> = { creeper: true, elkCloner: false, brain: true };
+const ENRAGES: Record<BossKind, boolean> = { creeper: true, elkCloner: false, brain: true, morris: false };
 
 /** Un valor de `balance.ts` en una linea: numeros con su separador, listas separadas por comas y objetos por partes. */
 function flatten(values: object, prefix = ''): Array<[string, string]> {
@@ -120,7 +122,7 @@ function BossCatalog() {
   const [zoom, setZoom] = useState(false);
   const names = text().info.enemy.names;
   // Siempre el aspecto del juego: las propuestas estan en `/proposals/jefes.html`.
-  const data = (next: Partial<{ boss: BossKind; zoom: boolean }> = {}) => ({ quality, zoom, boss, hub: ELK_HUB, design: BRAIN_DESIGN, ...next });
+  const data = (next: Partial<{ boss: BossKind; zoom: boolean }> = {}) => ({ quality, zoom, boss, hub: ELK_HUB, design: BRAIN_DESIGN, morrisDesign: MORRIS_DESIGN, ...next });
 
   useEffect(() => {
     const parent = host.current;

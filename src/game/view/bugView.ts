@@ -138,6 +138,8 @@ export class BugView implements EnemyView {
   private readonly eyes: Phaser.GameObjects.Image[];
   private readonly medal: Phaser.GameObjects.Image | null = null;
   private readonly streak: Phaser.GameObjects.Image;
+  /** Acelerado por su ronda (`Enemy.haste`): lleva las rayas siempre. Con la sobrecarga (T-042), tambien mientras dure. */
+  private readonly hasted: boolean;
   private readonly flames: Phaser.GameObjects.Image[];
   private readonly frost: Phaser.GameObjects.Image[];
   private readonly aura: WormAura | null = null;
@@ -265,6 +267,7 @@ export class BugView implements EnemyView {
       .setOrigin(0, 0.5)
       .setScale(BUG_LOOK.streak.scale * inv)
       .setVisible(enemy.haste > 1);
+    this.hasted = enemy.haste > 1;
     this.flames = BUG_LOOK.flames.map(() =>
       scene.add
         .image(0, 0, TEX.flame)
@@ -327,6 +330,11 @@ export class BugView implements EnemyView {
    * Lurker le suma lo que "anda" y al Skipper lo devuelve a su sitio mientras salta (se pinta en `x + stride`). En el
    * tablero, 0.
    */
+  /** La sobrecarga (T-042) encendida o apagada: con ella, las rayas del acelerado aunque su ronda no lo acelere. */
+  rush(on: boolean): void {
+    this.streak.setVisible(this.hasted || on);
+  }
+
   sync(enemy: Enemy, stride = 0): void {
     const now = this.scene.time.now;
     const drawnX = this.skipper ? enemy.x + stride : enemy.x;

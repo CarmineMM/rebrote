@@ -102,7 +102,7 @@ describe('brote 2 abierto (T-026: ya tiene a su jefe)', () => {
     expect(currentOutbreak(['creeper'])).toBe(BROTE2);
   });
 
-  it('la ruta lo da por el que toca al vencer a Creeper y por superado al vencerlo; desde T-039, luego viene el brote 3', () => {
+  it('la ruta lo da por el que toca al vencer a Creeper y por superado al vencerlo; desde T-042, luego vienen los brotes 3 y 4', () => {
     expect(routeStops(['creeper'])).toEqual([
       { kind: 'outbreak', id: 'creeper', standing: 'defeated', current: false },
       { kind: 'outbreak', id: BROTE2, standing: 'open', current: true },
@@ -113,7 +113,7 @@ describe('brote 2 abierto (T-026: ya tiene a su jefe)', () => {
       { kind: 'outbreak', id: 'creeper', standing: 'defeated', current: false },
       { kind: 'outbreak', id: BROTE2, standing: 'defeated', current: false },
       { kind: 'outbreak', id: BROTE3, standing: 'open', current: true },
-      { kind: 'soon', number: 4 },
+      { kind: 'outbreak', id: 'morris', standing: 'locked', current: false },
       { kind: 'final' },
     ]);
   });

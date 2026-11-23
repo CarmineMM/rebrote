@@ -2,9 +2,9 @@ import * as Phaser from 'phaser';
 import { actionCue, combatCues, grenadeTicks, mineTicks, roundCues } from '../audio/cues';
 import { sfx } from '../audio/sfx';
 import { panAt } from '../audio/voices';
-import { BOARD, BRAIN, CREEPER, ECONOMY, ELK_CLONER, ENEMIES, ICE_WALL, LIMITS, MINE, SHIELD } from '../config/balance';
+import { BOARD, BRAIN, CREEPER, ECONOMY, ELK_CLONER, ENEMIES, ICE_WALL, LIMITS, MINE, OVERLOAD, SHIELD } from '../config/balance';
 import { cellAt, cellCenter, type BoardPoint, type Cell } from '../core/board';
-import { enemyMaxHp, enemyReward, isBoss, isDefeated, isEnraged, isHidden, poemWarning, spawnEnemy, stepCombat, type BossKind, type CombatEvent, type Enemy, type EnemyKind } from '../core/combat';
+import { enemyMaxHp, enemyReward, isBoss, isDefeated, isEnraged, isHidden, overloadFill, poemWarning, spawnEnemy, stepCombat, type BossKind, type CombatEvent, type Enemy, type EnemyKind } from '../core/combat';
 import { rollKillReward, stepIncome } from '../core/economy';
 import {
   cardCost,
@@ -52,12 +52,13 @@ import {
   type CarriedPower,
   type PowerId,
 } from '../core/powers';
-import { FIRST_OUTBREAK, outbreakScript, roundCount, type OutbreakId } from '../core/outbreaks';
+import { FIRST_OUTBREAK, hasOverload, outbreakScript, roundCount, type OutbreakId } from '../core/outbreaks';
 import { plantMaxHp, type ElementType } from '../core/plants';
 import { settleSeeds, type SeedPayout } from '../core/seeds';
 import {
   availableCards,
   bossRoundIndex,
+  broodEveryMs,
   carriedFeatures,
   createRound,
   infusableElements,
@@ -77,6 +78,7 @@ import {
   EventBus,
   GameEvents,
   type BossInfo,
+  type OverloadInfo,
   type CardPreview,
   type LossInfo,
   type MenuPlace,
@@ -99,6 +101,7 @@ import { BoardLabel, drawArea, drawCell, type LabelLine } from '../view/boardMar
 import { BulletView } from '../view/bulletView';
 import { bossShouts, createBossOmen, createEnemyView, type BossOmen } from '../view/bossView';
 import { BrainView } from '../view/brainView';
+import { MorrisView } from '../view/morrisView';
 import { BugView } from '../view/bugView';
 import { CreeperView, OMEN_LEAP_MS, bossLoadProgress } from '../view/creeperView';
 import { ElkClonerView } from '../view/elkClonerView';
@@ -194,6 +197,9 @@ const LOOK = {
   bossEscapedText: { color: '#ffd6df', stroke: '#5a0d1a', fontSize: 40 },
   /** Elk Cloner anuncia el poema entero (T-026): en dorado, en el centro del cesped. */
   poemText: { color: '#fff3b0', stroke: '#6a3a00', fontSize: 46 },
+  /** La sobrecarga (T-042) se enciende: un rotulo rojo en el centro del cesped y un temblor corto. */
+  overloadText: { color: '#ffd0d6', stroke: '#7a0d22', fontSize: 44 },
+  overloadShake: { ms: 220, intensity: 0.004 },
   /** Copia que deja el Creeper al saltar: destello verde de "copiarse" sobre ella. */
   copyGlow: 0x39ff88,
   /** Doble clic (o doble toque) para abrir una ficha (T-010): tiempo maximo entre los dos y lo que se puede mover el puntero. */
@@ -349,6 +355,8 @@ export class BoardScene extends Phaser.Scene {
   private lostToBoss = false;
   /** Ultima barra del jefe enviada al HUD, para avisar solo cuando cambia. */
   private bossKey = '';
+  /** Ultima barra de sobrecarga mandada al HUD (T-042). */
+  private overloadKey = '';
   private lastBoss: BossInfo | null = null;
   private bulletViews = new Map<number, BulletView>();
   private mineViews = new Map<string, MineView>();
@@ -911,7 +919,12 @@ export class BoardScene extends Phaser.Scene {
     sfx.playCues(mineTicks(before, this.match));
     sfx.playCues(grenadeTicks(before, this.match));
 
-    for (const enemy of this.match.enemies) this.wormViews.get(enemy.id)?.sync(enemy);
+    for (const enemy of this.match.enemies) {
+      const view = this.wormViews.get(enemy.id);
+      view?.sync(enemy);
+      // La sobrecarga (T-042): mientras dura, las tropas llevan las rayas del acelerado.
+      view?.rush?.(this.match.overload);
+    }
     for (const bullet of this.match.bullets) this.bulletViews.get(bullet.id)?.sync(bullet);
     for (const spit of this.match.spits) this.spitViews.get(spit.id)?.sync(spit);
     for (const verse of this.match.verses) this.verseViews.get(verse.id)?.sync(verse);
@@ -936,6 +949,7 @@ export class BoardScene extends Phaser.Scene {
     this.syncOmen(true);
     this.emitRound();
     this.emitBoss();
+    this.emitOverload();
     if (isDefeated(this.match)) this.enterDefeat(LOOK.defeatDelayMs);
   }
 
@@ -996,6 +1010,10 @@ export class BoardScene extends Phaser.Scene {
       case 'shout':
         // El jefe manda a su escolta (T-009): lo grita desde donde se prepara (Creeper, ademas, la acelera).
         this.omen?.command(bossShouts(this.bossKind())[event.shout]);
+        break;
+      case 'brooded':
+        // Morris suelta un gusano (T-042, MR-07): se le desprende uno; el de verdad sale por el agujero (`showSpawned`).
+        this.morrisView()?.brooded(event.lane);
         break;
     }
   }
@@ -1161,7 +1179,7 @@ export class BoardScene extends Phaser.Scene {
         const view = this.wormViews.get(event.enemyId);
         view?.die();
         this.wormViews.delete(event.enemyId);
-        if (view instanceof CreeperView || view instanceof ElkClonerView || view instanceof BrainView) this.cameras.main.shake(380, 0.008);
+        if (view instanceof CreeperView || view instanceof ElkClonerView || view instanceof BrainView || view instanceof MorrisView) this.cameras.main.shake(380, 0.008);
         this.rewardKill(event.at, event);
         break;
       }
@@ -1227,12 +1245,29 @@ export class BoardScene extends Phaser.Scene {
         if (view instanceof BrainView) view.revealed(event.cause);
         break;
       }
+      case 'overloaded':
+        // La sobrecarga (T-042): al encenderse, su rotulo en el centro del cesped y un temblor; a Morris, si esta, le entra el
+        // apuro. Las rayas de las tropas salen del estado (`rush`).
+        if (event.active) {
+          const at = perspective.toScreen({ x: BOARD.columns / 2, y: BOARD.lanes / 2 - 0.4 });
+          this.fx.floatText(text().board.overload, at.x, at.y, LOOK.overloadText);
+          this.cameras.main.shake(LOOK.overloadShake.ms, LOOK.overloadShake.intensity);
+        }
+        this.morrisView()?.overloaded(event.active);
+        break;
       case 'concealed': {
         const view = this.wormViews.get(event.enemyId);
         if (view instanceof BrainView) view.concealed();
         break;
       }
     }
+  }
+
+  /** La vista de Morris (T-042), si esta en el tablero. */
+  private morrisView(): MorrisView | null {
+    const morris = this.match.enemies.find((enemy) => enemy.kind === 'morris');
+    const view = morris ? this.wormViews.get(morris.id) : undefined;
+    return view instanceof MorrisView ? view : null;
   }
 
   private elkView(id: number): ElkClonerView | null {
@@ -2296,7 +2331,7 @@ export class BoardScene extends Phaser.Scene {
     if (target.kind === 'enemy') {
       const enemy = this.match.enemies.find((e) => e.id === target.id);
       if (!enemy) return;
-      data = enemyInfo(enemy);
+      data = enemyInfo(enemy, this.match.overload);
       subject = { kind: 'enemy', enemy: enemy.kind, level: enemy.level, enraged: isEnraged(enemy), hasted: enemy.haste > 1, clone: enemy.clone, variant: enemy.variant };
     } else if (target.kind === 'plant') {
       const plant = plantAt(this.match, target.cell);
@@ -2793,6 +2828,9 @@ export class BoardScene extends Phaser.Scene {
         jumpAt: kind === 'creeper' ? [...CREEPER.jumpAt] : kind === 'brain' ? [BRAIN.enragedBelow] : [],
         poem: boss.recital ? { sung: Math.min(boss.recital.sung, ELK_CLONER.poemEvery), every: ELK_CLONER.poemEvery, warning: poemWarning(boss) !== null } : null,
         hidden: boss.revealMs === null ? null : isHidden(boss),
+        // Morris (T-042): cada cuanto suelta ahora un gusano (MR-07), en decimas de segundo para no avisar al HUD en cada
+        // fotograma, y si muerde algo sin pararse (MR-06).
+        brood: kind === 'morris' ? { everyMs: Math.round(broodEveryMs(this.match.round.brood?.sinceMs ?? 0) / 100) * 100, chewing: boss.attackMs !== null } : null,
       };
     } else if (this.lastBoss && !this.lostToBoss) {
       info = { ...this.lastBoss, hp: 0 };
@@ -2804,6 +2842,20 @@ export class BoardScene extends Phaser.Scene {
     EventBus.emit(GameEvents.bossChanged, info);
   }
 
+  /**
+   * Avisa al HUD de la barra de sobrecarga (T-042), solo si cambia: lo llena que esta (`overloadFill`) y si esta encendida.
+   * Null en un brote sin sobrecarga: no hay barra.
+   */
+  private emitOverload(): void {
+    const info: OverloadInfo | null = hasOverload(this.match.outbreak)
+      ? { fill: overloadFill(this.match), active: this.match.overload, offBelow: OVERLOAD.offBelow }
+      : null;
+    const key = JSON.stringify(info);
+    if (key === this.overloadKey) return;
+    this.overloadKey = key;
+    EventBus.emit(GameEvents.overloadChanged, info);
+  }
+
   private emitState(): void {
     this.emitBalance();
     this.emitLives();
@@ -2811,6 +2863,8 @@ export class BoardScene extends Phaser.Scene {
     this.emitRound();
     this.bossKey = '';
     this.emitBoss();
+    this.overloadKey = '';
+    this.emitOverload();
     EventBus.emit(GameEvents.selectionChanged, this.selected);
     // El precio de infusion que tuviera el HUD era de la escena anterior (por ejemplo, al cambiar la calidad).
     this.previewKey = '';

@@ -10,6 +10,7 @@ import {
   EventBus,
   GameEvents,
   type BossInfo,
+  type OverloadInfo,
   type CardPreview,
   type EntityInfo,
   type LossInfo,
@@ -137,6 +138,8 @@ export function App() {
   const [selectedPower, setSelectedPower] = useState<PowerId | null>(null);
   const [round, setRound] = useState<RoundInfo | null>(null);
   const [boss, setBoss] = useState<BossInfo | null>(null);
+  /** La barra de sobrecarga del brote 4 (T-042); null en los demas. */
+  const [overload, setOverload] = useState<OverloadInfo | null>(null);
   const [loss, setLoss] = useState<LossInfo | null>(null);
   /** Lo que dejo la victoria: las semillas cobradas (T-020). */
   const [win, setWin] = useState<WinInfo | null>(null);
@@ -248,6 +251,7 @@ export function App() {
     EventBus.on(GameEvents.matchWon, onWon);
     EventBus.on(GameEvents.roundChanged, setRound);
     EventBus.on(GameEvents.bossChanged, setBoss);
+    EventBus.on(GameEvents.overloadChanged, setOverload);
     EventBus.on(GameEvents.unlocked, onUnlocked);
     EventBus.on(GameEvents.entityInfo, setInfo);
     EventBus.on(GameEvents.routeArt, setRouteArt);
@@ -267,6 +271,7 @@ export function App() {
       EventBus.off(GameEvents.matchWon, onWon);
       EventBus.off(GameEvents.roundChanged, setRound);
       EventBus.off(GameEvents.bossChanged, setBoss);
+      EventBus.off(GameEvents.overloadChanged, setOverload);
       EventBus.off(GameEvents.unlocked, onUnlocked);
       EventBus.off(GameEvents.entityInfo, setInfo);
       EventBus.off(GameEvents.routeArt, setRouteArt);
@@ -319,6 +324,7 @@ export function App() {
     setSelectedPower(null);
     setRound(null);
     setBoss(null);
+    setOverload(null);
     setLoss(null);
     setWin(null);
     setUnlock(null);
@@ -547,7 +553,7 @@ export function App() {
               </span>
             ))}
           </div>
-          {round && <RoundHud round={round} boss={boss} />}
+          {round && <RoundHud round={round} boss={boss} overload={overload} />}
           {/* Poderes (T-021): a la izquierda, a media altura, fuera del cesped. Va en el HUD para que lo esquiven el panel de nivel y los tours. */}
           <PowerPanel powers={powers} selected={selectedPower} />
           <div className="hud-right">

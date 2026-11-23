@@ -418,6 +418,7 @@ Todo efecto nuevo se engancha a un ajuste del perfil (`QualityProfile`):
 ## 13. Rendimiento
 
 - **Presupuesto (T-002):** con 60 enemigos y 20 plantas, el juego sigue fluido en Medio.
+- **Tope de enemigos (T-042, ADR-0025):** nunca hay más de 60 a la vez (`CROWD` en `balance.ts`): lo que no cabe espera fuera. Un efecto por enemigo tiene que aguantar 60 a la vez en Bajo, en un móvil.
 - **Prueba de rendimiento:** en `npm run dev`, la tecla `H` siembra gratis las cuatro primeras columnas (20 disparadoras) y suelta 60 gusanos con mucha vida. Se mide con "Mostrar FPS".
 - Medido el 19 nov 2026 en un equipo sin GPU (Chromium con render por software): el JavaScript ocupa un 5 % del tiempo, igual con la prueba que sin ella. Lo que cuesta es rellenar píxeles.
 - El coste está en rellenar píxeles, no en JavaScript. Hay que evitar capas grandes transparentes: el cielo y el terreno ya se recortaron a lo que se ve.
@@ -633,7 +634,7 @@ Ejemplo: las once tropas de los brotes 1 a 3 en el brote 4 (Morris).
 ### Sonido nuevo (T-014, ADR-0013)
 - [ ] Su efecto en `SfxId` y en `SFX` (`src/game/config/audio.ts`): canal (`world` si es del jardín, `ui` si es de un menú), volumen, voces, separación, ráfaga, variación de tono y variantes. Si se repite mucho, bajo, corto y con pocas voces.
 - [ ] Su fuente en `scripts/audio/manifest.ts`, con dos o tres alternativas: capas de Kenney (CC0) o una receta nueva en `scripts/audio/sfxr.ts`. Otra fuente o licencia se anota en el manifiesto y sale en `LICENCIAS.md`.
-- [ ] `npm run audio` y, en `/tests/sonidos.html`, se oye solo y en su prueba de carga. Lo elige Carmine de oído.
+- [ ] `npm run audio` y, en `/tests/sonidos.html`, se oye solo y en su prueba de carga. Lo elige Carmine de oído. Va en su grupo de `GROUPS` (`src/dev/soundLab.tsx`; lo último, arriba): uno sin grupo sale en "Otros", al final.
 - [ ] Lo pide una regla de `cues.ts` con su test (o, si sale del estado y no de un evento, la vista con `sfx.play`). Nunca Phaser ni Web Audio directamente.
 - [ ] Suena desde su columna (`panAt`) si pasa en el tablero.
 - [ ] Con el menú de pausa abierto no suena; en la portada, solo si lo provoca un clic.
@@ -674,6 +675,15 @@ Ejemplo: las once tropas de los brotes 1 a 3 en el brote 4 (Morris).
 - [ ] Probado: la viñeta a 1600 × 900 y a 568 × 320, y su ficha con lo de Boxer al pie.
 - [ ] Sus propuestas de aspecto en `/proposals/jefes.html` (T-026), junto a los demás jefes.
 - [ ] En el catálogo `/catalog/jefes.html` (T-040, ADR-0023): sus acciones (`BOSS_ACTIONS` y `DEMO` en `bossLabScenes.ts`) y su entrada en `BOSS_NUMBERS` y `ENRAGES` (`src/dev/catalog/bosses.tsx`; si falta, no compila). Probado: su ficha en sus fases, los grupos de su ronda y sus números.
+
+- [ ] Si saca enemigos mientras vive (los gusanos de Morris, T-042), salen por los agujeros desde `stepRound`, por la cola del tope (ADR-0025), y la vista anima que se le sueltan.
+
+### Rasgo de brote (T-042: la sobrecarga, ADR-0025)
+- [ ] Su regla en `core`, puesta por un dato del guion del brote (`overload` en `OUTBREAKS`), con test: en los brotes que no lo tienen no cambia nada.
+- [ ] Lo que se puede calcular del estado no se guarda (lo llena que está la barra); lo demás va en `MatchState` y sube `SAVE_VERSION`.
+- [ ] Si cambia lo que avanzan los enemigos, por su paso (`pace` en `substep`), multiplicando con el acelerado y el hielo.
+- [ ] Se ve en el HUD (React, por `EventBus`: `OverloadBar`) y en el tablero (las rayas del acelerado y un rótulo), se oye (lista "Sonido nuevo") y se explica en una línea la primera vez (su aviso de ronda y la línea bajo la barra).
+- [ ] Probado a 1600 × 900, 812 × 375 y 568 × 320: no tapa la bandeja ni la barra del jefe.
 
 ### Secuencia de viñetas nueva (T-031)
 - [ ] Sus viñetas en `STORIES` (`src/ui/story/stories.ts`): quién habla, con qué cara y, si pide algo al jugador, su `prompt`. Pocas y cortas.

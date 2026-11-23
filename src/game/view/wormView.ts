@@ -10,8 +10,8 @@ import { WormAura, type AuraHost } from './wormAura';
 import { auraTier } from './wormAuraArt';
 import type { BugKind } from './bugView';
 
-/** Los que se pintan como gusanos: todos menos los bichos del brote 3 (T-038) y su jefe, Brain (T-039, `BrainView`). */
-export type WormKind = Exclude<EnemyKind, BugKind | 'brain'>;
+/** Los que se pintan como gusanos: todos menos los bichos del brote 3 (T-038), su jefe, Brain (T-039, `BrainView`), y Morris (T-042, `MorrisView`). */
+export type WormKind = Exclude<EnemyKind, BugKind | 'brain' | 'morris'>;
 
 /**
  * Aspecto del gusano. Las medidas locales son pixeles de diseno con 160 por casilla, como la disparadora.
@@ -317,6 +317,8 @@ export function recitePose(enemy: Enemy): { inhale: number; poem: number } {
 export interface EnemyView {
   /** `stride`: casillas que lleva andadas sin moverse de su sitio (portada del menu, T-011); en el tablero, 0. */
   sync(enemy: Enemy, stride?: number): void;
+  /** La sobrecarga (T-042): las tropas llevan las rayas del acelerado mientras dura. Los jefes no la tienen: no aceleran. */
+  rush?(on: boolean): void;
   chomp(): void;
   spat(): void;
   /** El juglar toma aire (T-025, F-04): el aviso de su verso. */
@@ -374,6 +376,8 @@ export class WormView implements EnemyView {
   private readonly shadow: Phaser.GameObjects.Image;
   /** Rayas de velocidad del acelerado (T-008): ocultas si va a su velocidad. */
   private readonly streak: Phaser.GameObjects.Image;
+  /** Acelerado por su ronda (`Enemy.haste`): lleva las rayas siempre. Con la sobrecarga (T-042), tambien mientras dure. */
+  private readonly hasted: boolean;
   /** Medallita de nivel (T-009), o null si es de nivel 1 o el Creeper. */
   private readonly medal: Phaser.GameObjects.Image | null = null;
   /** Disquete a la espalda (los copiones, T-025), o null. */
@@ -471,6 +475,7 @@ export class WormView implements EnemyView {
       .setOrigin(0, 0.5)
       .setScale(WORM_LOOK.streak.scale * artInv())
       .setVisible(enemy.haste > 1);
+    this.hasted = enemy.haste > 1;
     const { head } = WORM_SIZE;
     const headOrigin = { x: head.cx / head.width, y: head.cy / head.height };
     this.head = scene.add.image(this.pose.head.x, this.pose.head.y, this.headKey).setOrigin(headOrigin.x, headOrigin.y).setScale(artInv());
@@ -551,6 +556,11 @@ export class WormView implements EnemyView {
    * Coloca y pone en postura al gusano segun el estado. Se llama en cada fotograma mientras vive. El cuerpo ondula segun
    * lo que avanza; `stride` suma lo que "anda" sin moverse de su sitio, como en una cinta (portada del menu, T-011).
    */
+  /** La sobrecarga (T-042) encendida o apagada: con ella, las rayas del acelerado aunque su ronda no lo acelere. */
+  rush(on: boolean): void {
+    this.streak.setVisible(this.hasted || on);
+  }
+
   sync(enemy: Enemy, stride = 0): void {
     const stats = ENEMIES[enemy.kind];
     // El carril solo cambia al saltar (Creeper): entonces cambian tambien el tamano, la profundidad y el suelo.

@@ -63,6 +63,12 @@ export type SfxId =
   | 'brainHop'
   | 'brainLand'
   | 'brainDefeated'
+  // Morris (T-042): su voz en el bocadillo, un gusano que se le suelta y su derrota; la sobrecarga que se enciende y se apaga
+  | 'morrisTalk'
+  | 'morrisBrood'
+  | 'morrisDefeated'
+  | 'overloadOn'
+  | 'overloadOff'
   // Poderes (T-021): recolocar; la granada que se lanza, cae y explota; el muro de hielo que brota, lo que le da, el bloque
   // que se rompe y el que se derrite
   | 'relocate'
@@ -189,6 +195,13 @@ export const SFX: Readonly<Record<SfxId, SfxSpec>> = {
   brainHop: world(0.5, 1, 0, 0.6),
   brainLand: world(0.55, 1, 0, 0.5),
   brainDefeated: world(0.9, 1, 0, 0),
+  morrisTalk: world(0.45, 1, 300, 0.5, 1, 0),
+  // Suelta un gusano cada poco, y al final muy seguido: bajo, con pocas voces y con variacion de tono para que no canse.
+  morrisBrood: world(0.32, 2, 150, 2),
+  morrisDefeated: world(0.9, 1, 0, 0),
+  // La sobrecarga avisa al encenderse (una alarma que sube) y al apagarse (un respiro que baja). Una sola voz cada una.
+  overloadOn: world(0.7, 1, 1500, 0, 1, 0),
+  overloadOff: world(0.55, 1, 1500, 0, 1, 0),
   relocate: world(0.75, 1, 0, 0.5),
   grenadeThrow: world(0.6, 1, 0, 0.8),
   grenadeLand: world(0.6, 1, 0, 0.5),

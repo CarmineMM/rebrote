@@ -31,9 +31,10 @@ export const SAVE_KEY = 'partida';
  * (T-037), lo que la partida trae de brotes posteriores vencidos (`MatchState.carried`). Con ella se descartan tambien las
  * del brote 2 con una disparadora con escudo, que desde T-037 no se infunde ahi (sin migracion, ADR-0014). La 11 (T-038), el
  * salto del Skipper (`Enemy.hop`) y el sigilo de los Lurker (`Enemy.revealMs`). La 12 (T-041), la variante de color de las
- * tropas que vuelven en otro brote (`Enemy.variant`).
+ * tropas que vuelven en otro brote (`Enemy.variant`). La 13 (T-042), la sobrecarga (`MatchState.overload`), lo que espera fuera
+ * por el tope de enemigos (`RoundState.waiting`) y los gusanos de Morris (`RoundState.brood`).
  */
-export const SAVE_VERSION = 12;
+export const SAVE_VERSION = 13;
 
 export interface SavedGame {
   readonly version: number;
@@ -234,6 +235,19 @@ const isPowers = (value: unknown): boolean =>
   value.every((slot) => isRecord(slot) && isPowerId(slot.id) && isPowerLevel(slot.level) && isInt(slot.charges, 0, chargesAt(slot.id, slot.level))) &&
   new Set(value.map((slot: Data) => slot.id)).size === value.length;
 
+/** Lo que espera fuera a que haya sitio (T-042, `CROWD`): un enemigo de un tipo del juego, con su carril, nivel y paso. */
+const isWaiting = (value: unknown): boolean =>
+  isRecord(value) &&
+  typeof value.kind === 'string' &&
+  Object.hasOwn(ENEMIES, value.kind) &&
+  isLane(value.lane) &&
+  isInt(value.level, 1) &&
+  isNumber(value.haste) &&
+  value.haste > 0;
+
+/** Los gusanos de Morris (T-042): lo que lleva fuera, lo que falta para el siguiente y cuantos lleva. */
+const isBrood = (value: unknown): boolean => isRecord(value) && isNumber(value.sinceMs) && value.sinceMs >= 0 && isNumber(value.nextMs) && isInt(value.count, 0);
+
 /** Ronda que existe en el guion del brote de la partida (T-018: cada brote tiene sus rondas). */
 function isRound(value: unknown, outbreak: OutbreakId): boolean {
   return (
@@ -242,7 +256,10 @@ function isRound(value: unknown, outbreak: OutbreakId): boolean {
     (value.phase === 'prep' || value.phase === 'attack') &&
     isNumber(value.prepMs) &&
     isNumber(value.elapsedMs) &&
-    isInt(value.released, 0)
+    isInt(value.released, 0) &&
+    Array.isArray(value.waiting) &&
+    value.waiting.every(isWaiting) &&
+    isNullOr(value.brood, isBrood)
   );
 }
 
@@ -273,6 +290,7 @@ export function isMatchState(value: unknown): value is MatchState {
     isRound(value.round, value.outbreak) &&
     isNumber(value.incomeMs) &&
     isMatchSeeds(value.seeds, value.outbreak) &&
+    typeof value.overload === 'boolean' &&
     isInt(value.nextId, 0)
   );
 }

@@ -33,16 +33,30 @@ interface CatalogSound {
   alternatives: CatalogFile[];
 }
 
+/** Los grupos de la pagina, con lo ultimo arriba. Un efecto que no este en ninguno sale en "Otros" (`groups`). */
 const GROUPS: Array<{ title: string; ids: SfxId[] }> = [
+  { title: 'Morris y la sobrecarga (T-042)', ids: ['morrisTalk', 'morrisBrood', 'morrisDefeated', 'overloadOn', 'overloadOff'] },
+  { title: 'Brain (T-039)', ids: ['brainTalk', 'brainHop', 'brainLand', 'brainDefeated'] },
+  { title: 'Tropas del brote 3 (T-038)', ids: ['hop', 'reveal'] },
   { title: 'Plantas y jugador', ids: ['sow', 'shot', 'shotFire', 'shotIce', 'infuseFire', 'infuseIce', 'fuse', 'levelUp', 'plantDestroyed', 'coin'] },
   { title: 'Combate', ids: ['hit', 'hitFire', 'hitIce', 'hitArmor', 'bite', 'spit', 'spitHit', 'enemyKilled', 'enemyEscaped'] },
   { title: 'Minas', ids: ['mineTick', 'fireExplosion', 'iceExplosion'] },
   { title: 'Escudo (T-024)', ids: ['sowWall', 'infuseShield', 'wallHit', 'wallBreak'] },
+  { title: 'Inventos (T-021)', ids: ['relocate', 'grenadeThrow', 'grenadeLand', 'grenadeBoom', 'iceWallRise', 'iceHit', 'iceBreak', 'iceMelt'] },
   { title: 'Tropas del brote 2 (T-025)', ids: ['minstrelInhale', 'verse', 'verseHit', 'clone'] },
   { title: 'Creeper', ids: ['creeperWarn', 'creeperTakeoff', 'creeperLand', 'creeperTalk', 'creeperRage', 'creeperDefeated'] },
   { title: 'Elk Cloner (T-026)', ids: ['elkClonerTalk', 'poemWarn', 'poem', 'elkClonerDefeated'] },
+  { title: 'Laboratorio de Patty (T-022)', ids: ['purchase', 'powerUpgrade'] },
+  { title: 'Historia y tours (T-031, T-013)', ids: ['voiceBoxer', 'voicePatty', 'keystroke'] },
   { title: 'Rondas, partida y menus', ids: ['attackStarted', 'roundCleared', 'unlock', 'defeat', 'victory', 'button'] },
 ];
+
+/** Los grupos y, al final, los efectos que no estan en ninguno: asi un efecto nuevo siempre sale en la pagina. */
+function groups(): Array<{ title: string; ids: SfxId[] }> {
+  const listed = new Set(GROUPS.flatMap((group) => group.ids));
+  const rest = SFX_IDS.filter((id) => !listed.has(id));
+  return rest.length > 0 ? [...GROUPS, { title: 'Otros', ids: rest }] : GROUPS;
+}
 
 const CHOICES_KEY = 'rebrote.sonidos.elecciones';
 
@@ -194,7 +208,7 @@ function SoundLab() {
         {missing && <p className="lab-warn">No hay alternativas: pasa `npm run audio` para generarlas (necesita los paquetes de Kenney en `audio-lab/kenney/`).</p>}
       </header>
 
-      {GROUPS.map((group) => (
+      {groups().map((group) => (
         <section key={group.title} className="lab-group">
           <h2>{group.title}</h2>
           {group.ids.map((id) => {

@@ -15,6 +15,7 @@ import {
   MINE_SIZE,
   SHOOTER_SIZE,
   BRAIN_TEX,
+  MORRIS_TEX,
   BUG_TEX,
   TEX,
   WALL_SIZE,
@@ -36,6 +37,7 @@ import { KIND_LOOK, WORM_LOOK, poseOf, type WormKind } from './wormView';
 import { BUG_SIZE, LURKER_RIGS, SKIPPER_RIGS, hopLegAngles, type LegMount, type SkipperRig } from './bugArt';
 import { BUG_LOOK, GAME_BUGS, LURKER_VARIANT, isBugKind, type BugKind } from './bugView';
 import { BRAIN_DESIGN, BRAIN_RIGS, BRAIN_SIZE, brainLimbSize } from './brainArt';
+import { MORRIS_DESIGN, MORRIS_RIGS, MORRIS_SIZE } from './morrisArt';
 
 /**
  * Foto de la ficha de informacion (T-010): la planta, la mina o el enemigo en reposo sobre un fondo de jardin, como
@@ -290,6 +292,7 @@ function piecesFor(subject: PortraitSubject): Piece[] {
     return [{ key: TEX.grenade.lit, x: 0, y: 0, scale: 1, ox: footX / width, oy: footY / height, width, height }];
   }
   if (subject.enemy === 'brain') return brainPieces();
+  if (subject.enemy === 'morris') return morrisPieces();
   return isBugKind(subject.enemy) ? bugPieces(subject, subject.enemy) : wormPieces(subject, subject.enemy);
 }
 
@@ -320,6 +323,21 @@ function brainPieces(): Piece[] {
     { key: BRAIN_TEX.face(BRAIN_DESIGN, 'smug'), x: rig.body.x + rig.face.x, y: rig.body.y + rig.face.y, scale: 1, ox: face.cx / face.width, oy: face.cy / face.height, width: face.width, height: face.height },
     ...(BRAIN_DESIGN === 'dome' ? [{ key: BRAIN_TEX.glass(BRAIN_DESIGN), ...bodyPiece }] : []),
     ...rig.legs.filter((m) => !m.far).map(limbPiece),
+  ];
+}
+
+/**
+ * Morris (T-042) en reposo, con la propuesta del juego (`MORRIS_DESIGN`): sus anillos de la cola a la cabeza y la cabeza
+ * pidiendo perdon, como en el tablero. No tiene nivel ni aura.
+ */
+function morrisPieces(): Piece[] {
+  const rig = MORRIS_RIGS[MORRIS_DESIGN];
+  const { head, segment } = MORRIS_SIZE;
+  return [
+    ...rig.segments.map(
+      (s): Piece => ({ key: MORRIS_TEX.segment(MORRIS_DESIGN, s.variant), x: s.x, y: s.y, scale: s.scale, ox: 0.5, oy: 0.5, width: segment.size, height: segment.size }),
+    ),
+    { key: MORRIS_TEX.head(MORRIS_DESIGN, 'sorry'), x: rig.head.x, y: rig.head.y, scale: 1, ox: head.cx / head.width, oy: head.cy / head.height, width: head.width, height: head.height },
   ];
 }
 

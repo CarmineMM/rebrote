@@ -42,7 +42,7 @@ const atRound = (index: number, balance = 1000) => createMatch(balance, index);
 /** Ronda `index` ya en su ataque, a `elapsedMs` del principio. */
 const attacking = (index: number, elapsedMs = 0, released = 0): MatchState => ({
   ...atRound(index),
-  round: { index, phase: 'attack', prepMs: 0, elapsedMs, released },
+  round: { index, phase: 'attack', prepMs: 0, elapsedMs, released, waiting: [], brood: null },
 });
 
 const withPlantAt = (state: MatchState, cell: Cell): MatchState => ({
@@ -289,7 +289,7 @@ describe('desbloqueo', () => {
 describe('preparacion', () => {
   it('la partida empieza en la preparacion de la ronda 1', () => {
     const match = createMatch();
-    expect(match.round).toEqual({ index: 0, phase: 'prep', prepMs: PREP, elapsedMs: 0, released: 0 });
+    expect(match.round).toEqual({ index: 0, phase: 'prep', prepMs: PREP, elapsedMs: 0, released: 0, waiting: [], brood: null });
     expect(match.spits).toEqual([]);
   });
 
@@ -455,7 +455,7 @@ describe('Creeper se prepara (T-008)', () => {
   });
 
   it('al ganar ya no se le ve', () => {
-    const won: MatchState = { ...atRound(9), round: { index: 9, phase: 'won', prepMs: 0, elapsedMs: 0, released: 1 } };
+    const won: MatchState = { ...atRound(9), round: { index: 9, phase: 'won', prepMs: 0, elapsedMs: 0, released: 1, waiting: [], brood: null } };
     expect(isBossPreparing(won)).toBe(false);
   });
 });

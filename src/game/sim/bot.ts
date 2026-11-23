@@ -1,4 +1,4 @@
-import { BOARD, LIMITS } from '../config/balance';
+import { BOARD, COSTS, LIMITS } from '../config/balance';
 import type { Cell } from '../core/board';
 import { enemyReach, enemyReward, hops, isAirborne, isDefeated, isHidden, isShield, onLawn, poemWarning, stepCombat, type Enemy } from '../core/combat';
 import { MINE } from '../config/balance';
@@ -50,6 +50,13 @@ export interface BotStyle {
    * llega) donde va a caer, para descubrirlo.
    */
   readonly mines?: boolean;
+  /**
+   * Brote 4 (T-042): dano en area. Donde se junta un grupo de enemigos en tierra (los que muerden un muro, una oleada que
+   * llega a la vez por varios carriles), siembra una mina de fuego que pille a `area` o mas, tambien en los carriles de al lado.
+   */
+  readonly area?: number;
+  /** Las minas de `area` antes que montar sus columnas (si no, con lo que sobra tras montarlas). */
+  readonly areaEarly?: boolean;
 }
 
 /** Carril por el que sale el jefe del brote en su ronda (Brain, por el centro). Null si la ronda no es la del jefe. */
@@ -148,6 +155,41 @@ function brainMines(style: BotStyle): Move {
       if (canPlay(state, card, cell(brain.lane, col))) return playCard(state, card, cell(brain.lane, col));
     }
     return 'wait';
+  };
+}
+
+/**
+ * Dano en area (T-042): la casilla vacia delante de los muros donde una mina de fuego, al explotar dentro de
+ * `MINE.countdownMs`, alcanzaria a mas enemigos en tierra (en su carril y en los de al lado), contando lo que avanzan mientras
+ * tanto. La siembra si pilla a `style.area` o mas, alguien la arma ya y no hay otra mina de fuego cerca, con lo que le sobra:
+ * no ahorra para ella y guarda para reponer un muro.
+ */
+function areaMines(style: BotStyle): Move {
+  return (state) => {
+    if (!style.area || !isUnlocked(state, 'fireMine')) return null;
+    const targets = state.enemies.filter((e) => e.hp > 0 && onLawn(e) && !isAirborne(e) && !isHidden(e));
+    if (targets.length < style.area) return null;
+    /** Donde estara dentro de la cuenta de la mina: quieto si muerde o ataca; si no, lo que anda. */
+    const ahead = (e: Enemy) => (e.attackMs !== null ? e.x : e.x - (0.25 * e.haste * MINE.countdownMs) / 1000);
+    let best: { at: Cell; hits: number } | null = null;
+    // Solo delante de los muros: detras estan sus columnas y la de los muros, que tiene que poder reponer.
+    for (let lane = 0; lane < BOARD.lanes; lane++) {
+      for (let col = style.columns + 2; col < BOARD.columns; col++) {
+        const at = cell(lane, col);
+        if (sownAt(state, at)) continue;
+        const near = (e: Enemy, x: number) => Math.hypot(x - (col + 0.5), e.lane - lane);
+        const hits = targets.filter((e) => near(e, ahead(e)) <= MINE.blastRadius - 0.2).length;
+        if (hits < style.area || (best && hits <= best.hits)) continue;
+        // Que se arme ya: alguien llega a su radio de deteccion dentro de la cuenta.
+        if (!targets.some((e) => near(e, ahead(e)) <= MINE.detectRadius)) continue;
+        const counting = state.plants.some((row, l) => row.some((sown, c) => sown?.kind === 'mine' && sown.element === 'fire' && Math.hypot(c - col, l - lane) <= 1.5));
+        if (!counting) best = { at, hits };
+      }
+    }
+    if (!best) return null;
+    // Con lo que sobra: no ahorra para ella y guarda para reponer un muro.
+    if (style.shields === 'always' && state.balance < COSTS.fire + COSTS.shield) return null;
+    return canPlay(state, 'fire', best.at) ? playCard(state, 'fire', best.at) : null;
   };
 }
 
@@ -326,10 +368,12 @@ export function botAct(state: MatchState, style: BotStyle): MatchState {
     ...(shieldsReady ? [doorMove(style), ...wallMoves(style)] : []),
     brainMines(style),
     cover,
+    ...(style.areaEarly ? [areaMines(style)] : []),
     ...(shieldsReady ? [hiddenDoor(style)] : []),
     build(style),
     infuseFront(style),
     ...(shieldsReady ? [allWalls(style)] : []),
+    ...(style.areaEarly ? [] : [areaMines(style)]),
     levelLowest(reserve),
   ];
   let current = state;

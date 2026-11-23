@@ -463,3 +463,27 @@ describe('Brain (T-039)', () => {
     expect(ids(combatCues(events, state))).toEqual(['brainDefeated']);
   });
 });
+
+describe('Morris y la sobrecarga (T-042)', () => {
+  it('la sobrecarga suena al encenderse y al apagarse, sin paneo', () => {
+    const state = createMatch(0, 0, 'morris');
+    expect(combatCues([{ type: 'overloaded', active: true }], state)).toEqual([{ id: 'overloadOn', pan: 0 }]);
+    expect(combatCues([{ type: 'overloaded', active: false }], state)).toEqual([{ id: 'overloadOff', pan: 0 }]);
+  });
+
+  it('cada gusano que suelta Morris suena por el lado de los agujeros', () => {
+    expect(roundCues([{ type: 'brooded', lane: 3 }], 9)).toEqual([{ id: 'morrisBrood', pan: panAt(BOARD.columns, BOARD.columns) }]);
+  });
+
+  it('si cae, suena su derrota: no la de los suyos ni el respiro de la sobrecarga, que se apaga con el', () => {
+    let state = spawnEnemy(createMatch(0, 0, 'morris'), 'morris', 2, 6);
+    state = spawnEnemy(state, 'worm', 0, 6);
+    const [morris, worm] = state.enemies;
+    const events: CombatEvent[] = [
+      { type: 'enemyKilled', enemyId: morris.id, kind: 'morris', clone: false, at: { x: morris.x, y: 2.5 } },
+      { type: 'enemyKilled', enemyId: worm.id, kind: 'worm', clone: false, at: { x: 6, y: 0.5 } },
+      { type: 'overloaded', active: false },
+    ];
+    expect(ids(combatCues(events, state))).toEqual(['morrisDefeated']);
+  });
+});

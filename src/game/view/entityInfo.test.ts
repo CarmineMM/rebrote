@@ -273,3 +273,23 @@ describe('ficha en ingles (T-011)', () => {
     expect(enemyInfo({ ...enemy('copycat'), clone: true })).toMatchObject({ title: 'Copycat copy', subtitle: 'Small and weak' });
   });
 });
+
+describe('ficha de Morris y de lo que acelera la sobrecarga (T-042)', () => {
+  afterEach(() => setLanguage('es'));
+
+  it('Morris: el Imparable, sin nivel, que no se para a morder y suelta gusanos cada vez mas seguido', () => {
+    const info = enemyInfo(enemy('morris'));
+    expect(info).toMatchObject({ tone: 'morris', title: 'Morris', subtitle: 'El Imparable · jefe del brote 4', level: null });
+    expect(stat(info, 'Al morder')).toMatchObject({ value: 'Sigue a media marcha', note: 'nada lo para' });
+    expect(stat(info, 'Gusanos')).toMatchObject({ value: 'Uno cada 1,5 s', note: 'cada vez más seguido, hasta uno cada 0,4 s' });
+    expect(info.lore).not.toBeNull();
+    setLanguage('en');
+    expect(enemyInfo(enemy('morris'))).toMatchObject({ subtitle: 'The Unstoppable · outbreak 4 boss' });
+  });
+
+  it('con la sobrecarga encendida, la ficha de una tropa dice lo que la acelera; la de Morris no', () => {
+    expect(enemyInfo(enemy('worm'), true).tags).toContainEqual({ text: 'Sobrecarga: +25 %', tone: 'haste' });
+    expect(enemyInfo(enemy('worm'), false).tags.some((tag) => tag.text.startsWith('Sobrecarga'))).toBe(false);
+    expect(enemyInfo(enemy('morris'), true).tags.some((tag) => tag.text.startsWith('Sobrecarga'))).toBe(false);
+  });
+});
