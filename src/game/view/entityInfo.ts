@@ -20,7 +20,7 @@ import {
   type Enemy,
 } from '../core/combat';
 import type { IceBlock, Mine, Plant, Wall } from '../core/match';
-import { FIRST_OUTBREAK, outbreakNumber, outbreakOfBoss } from '../core/outbreaks';
+import { FIRST_OUTBREAK, outbreakNumber, outbreakOfBoss, outbreakScript, type OutbreakId } from '../core/outbreaks';
 import { plantMaxHp } from '../core/plants';
 import type { EntityInfo, InfoStat, InfoTag } from '../EventBus';
 import { formatNumber, formatPercent, formatSeconds, text } from '../../i18n';
@@ -251,6 +251,8 @@ export function enemyInfo(enemy: Enemy): EntityInfoData {
   }
 
   const tags: InfoTag[] = [];
+  // Una tropa que vuelve en otro brote (T-041, MT-02): su nombre es el de siempre y la pastilla dice quien la recluto.
+  if (enemy.variant) tags.push({ text: t.tags.recruited(recruiterName(enemy.variant)), tone: 'recruit' });
   // Tropas del brote 3 (T-038): si esta oculta, y el Skipper, si esta en el aire o a punto de saltar.
   if (enemy.revealMs !== null) tags.push(isHidden(enemy) ? { text: t.tags.hidden, tone: 'calm' } : { text: t.tags.revealed, tone: 'alert' });
   if (enemy.hop?.stage === 'air') tags.push({ text: t.tags.airborne, tone: 'alert' });
@@ -284,6 +286,16 @@ export function enemyInfo(enemy: Enemy): EntityInfoData {
     about: enemyAbout(enemy),
     lore: bossLore(enemy.kind),
   };
+}
+
+/**
+ * Quien recluto a una tropa de variante (T-041): el jefe del brote, o el que tendra si aun esta en preparacion
+ * (`outbreak.comingBoss`, como `bossName` de `src/ui/outbreakName.ts`).
+ */
+function recruiterName(outbreak: OutbreakId): string {
+  const { boss } = outbreakScript(outbreak);
+  if (boss) return text().info.enemy.names[boss];
+  return (text().outbreak.comingBoss as Partial<Record<OutbreakId, string>>)[outbreak] ?? text().outbreak.number(outbreakNumber(outbreak));
 }
 
 /** Lo que cuenta Boxer del virus de verdad (T-032, VT-04), completo: solo si es el jefe de un brote. */

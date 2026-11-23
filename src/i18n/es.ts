@@ -42,8 +42,8 @@ export const es = {
      * esta en `info.enemy.names`). Cuando lo sea, sale de alli y se quita de aqui. Elk Cloner, el del brote 2, llego con
      * T-026; Brain, el del brote 3, llega con T-039.
      */
-    /** T-024: el jefe de un brote en preparacion, por su `id`, mientras no es un enemigo del juego. Hoy, ninguno (Brain llego con T-039). */
-    comingBoss: {},
+    /** T-024: el jefe de un brote en preparacion, por su `id`, mientras no es un enemigo del juego. Hoy, Morris (T-041; llega con T-042). */
+    comingBoss: { morris: 'Morris' },
   },
 
   /** Menu de inicio (T-011). */
@@ -331,6 +331,12 @@ export const es = {
         'Brain casi está listo: aún más tropas y más rápidas. Cierra los cinco carriles',
         '¡Llega Brain! Salta oculto por encima de todo: solo lo para un escudo, y las minas lo descubren',
       ],
+      // T-041: el guion provisional del brote 4, en preparacion. T-042 escribe el de verdad.
+      morris: [
+        'Vuelven los gusanos, y ahora en masa. Tienen otro color: los ha reclutado Morris',
+        'Vuelven los Copycat y los Minstrel: limpia deprisa y pon escudos',
+        'Todos a la vez: Lurker ocultos, Skipper y lo que ya conoces',
+      ],
     },
   },
 
@@ -536,6 +542,11 @@ export const es = {
       brain: {
         line: '¡Que viene Brain! En 1986 fue el primer virus para PC. Se escondía de quien lo buscaba… ¡y dejó su teléfono en el código!',
         card: 'Brain (1986) fue el primer virus para PC. Lo escribieron dos hermanos de Lahore, que dejaron dentro del código su nombre, su dirección y su teléfono. Viajaba en los disquetes, en el sector de arranque, y era sigiloso: si alguien miraba el disco, le enseñaba una copia limpia. No destruía nada.',
+      },
+      // T-041: el brote 4, en preparacion. Sale cuando Morris empiece a prepararse (T-042); la historia del brote, T-043.
+      morris: {
+        line: '¡Que viene Morris! En 1988 fue el primer gran gusano de internet. No quería romper nada… pero no paraba de copiarse.',
+        card: 'Morris (1988) fue el primer gran gusano de internet. Lo escribió un estudiante que solo quería medir lo grande que era la red. Pero tenía un fallo: se volvía a copiar en equipos que ya estaban infectados, una y otra vez, hasta dejarlos sin recursos. Dejó fuera de servicio miles de equipos.',
       },
     },
     lines: {
@@ -877,6 +888,8 @@ export const es = {
       /** Skipper (T-038) en mitad de un salto, o agachado para el siguiente. */
       airborne: 'En el aire: no le dan las balas',
       crouching: '¡Va a saltar!',
+      /** Una tropa de un brote anterior que vuelve con el color del brote que la recluta (T-041, MT-02). */
+      recruited: (boss: string) => `Reclutado por ${boss}`,
     },
     shooter: {
       title: { plain: 'Disparadora', fire: 'Disparadora de fuego', ice: 'Disparadora de hielo', shield: 'Disparadora con escudo' },

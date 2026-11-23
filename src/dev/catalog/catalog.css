@@ -376,3 +376,14 @@ body,
   border-radius: 4px;
   border: 1px solid rgba(255, 255, 255, 0.4);
 }
+
+/* Tropa que vuelve en otro brote con su color (T-041). */
+.cat-variant {
+  margin: 0 0 12px;
+  padding: 6px 10px;
+  border-left: 3px solid #b9a6d6;
+  border-radius: 6px;
+  background: rgba(74, 58, 92, 0.35);
+  color: #efe6ff;
+  font-size: 13px;
+}

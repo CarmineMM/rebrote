@@ -44,7 +44,7 @@ Una task por archivo. El tamaño es orientativo.
 | T-038 | [Enemigos] Tropas del brote 3: Lurker y Skipper | Completada (22 nov 2026, 0.14.0) | L | T-037 | Ninguna (LK-01 a LK-09 cerradas) |
 | T-039 | [Jefe] Brain y rondas del brote 3 | Completada (23 nov 2026, 0.15.0) | L | T-037, T-038 | Ninguna (BR-01 a BR-09 cerradas) |
 | T-040 | [Desarrollo] Catálogo de tropas, jefes y personajes, y páginas de desarrollo por carpetas | Completada (23 nov 2026, 0.15.3) | M | T-039 | Ninguna |
-| T-041 | [Enemigos] Tropas reutilizadas con variante de color y brote 4 en preparación | Pendiente | M | Ninguna | MT-01 a MT-05 |
+| T-041 | [Enemigos] Tropas reutilizadas con variante de color y brote 4 en preparación | Completada (23 nov 2026, 0.15.4) | M | Ninguna | Ninguna (MT-01 a MT-05 cerradas) |
 | T-042 | [Jefe] Morris, la sobrecarga y las rondas del brote 4 | Pendiente | L | T-041 | MR-02 a MR-11 (MR-01 cerrada) |
 | T-043 | [Historia] El giro: la historia del brote 4 | Pendiente | M | T-041, T-042 | HG-01 a HG-07 |
 | T-044 | [Interfaz] Aviso de beta y "apoya el proyecto" | Pendiente | S | Ninguna | BT-03 a BT-06 (BT-01 y BT-02 cerradas) |

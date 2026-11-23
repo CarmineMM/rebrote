@@ -4,6 +4,7 @@ Una línea por task cerrada, lo más nuevo arriba. Cómo se numera: `docs/adr/00
 
 | Versión | Fecha | Task | Qué cambia |
 |---|---|---|---|
+| 0.15.4 | 23 nov 2026 | T-041 | Las tropas pueden volver en otro brote con el color del brote que las recluta ("Reclutado por Morris"), y el brote 4 (Morris) existe en preparación con 600 monedas y un guion provisional. Para el jugador no cambia nada todavía |
 | 0.15.3 | 23 nov 2026 | T-040 | Catálogo de desarrollo de tropas, jefes y personajes (`/catalog/`), con su ficha y sus números por nivel; las galerías pasan a `/proposals/` y `/tests/`. El build no cambia |
 | 0.15.2 | 23 nov 2026 | T-021 (ajuste) | El muro de hielo saca hacia atrás al enemigo que pasó la mitad de su casilla si justo detrás hay una disparadora |
 | 0.15.1 | 23 nov 2026 | T-039 (ajuste) | Brain tiene un 50 % más de vida (7425): sin comprar nivel base en el vivero casi no se le gana |

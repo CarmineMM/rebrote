@@ -2,6 +2,7 @@ import * as Phaser from 'phaser';
 import { BOARD, ENEMIES, HOP } from '../../game/config/balance';
 import { spawnEnemy, type Enemy, type EnemyKind } from '../../game/core/combat';
 import { createMatch } from '../../game/core/match';
+import type { OutbreakId } from '../../game/core/outbreaks';
 import { applyPostFx, fitCamera } from '../../game/scenes/sceneKit';
 import { createAmbience, type Ambience } from '../../game/view/ambience';
 import { createEnemyView } from '../../game/view/bossView';
@@ -9,14 +10,17 @@ import { Effects } from '../../game/view/effects';
 import { DEPTH, perspective } from '../../game/view/layout';
 import { QUALITY_PROFILES, type QualityLevel, type QualityProfile } from '../../game/view/quality';
 import { registerTextures } from '../../game/view/textures';
+import { tintById, type TroopTintId } from '../../game/view/troopTint';
 import type { EnemyView } from '../../game/view/wormView';
 import { text } from '../../i18n';
 
 /**
  * Escenario del catalogo de tropas (`/catalog/tropas.html`, T-040): las tropas de un brote, una por carril, con la vista del
  * juego (`createEnemyView`, la misma que usa el tablero) en tres de sus niveles, para ver la medallita y el aura de cada
- * tramo. Andan sin moverse de su sitio (el Skipper salta en el suyo) y hacen lo que se les pida. Sin reglas de combate: lo
- * que dura (el hielo, el fuego, el ataque) se lleva aqui a mano. No la ve el jugador: sus textos van en espanol.
+ * tramo, y con su variante de color si vuelven en otro brote (T-041). Andan sin moverse de su sitio (el Skipper salta en el
+ * suyo) y hacen lo que se les pida. Sin reglas de combate: lo que dura (el hielo, el fuego, el ataque) se lleva aqui a mano.
+ * Lo usa tambien la galeria de las variantes (`/proposals/variantes.html`, T-041), con una columna por tinte. No la ve el
+ * jugador: sus textos van en espanol.
  */
 
 export const TROOP_STAGE = 'catalog-troops';
@@ -33,22 +37,33 @@ export const TROOP_ACTIONS: ReadonlyArray<readonly [TroopAction, string]> = [
   ['die', 'Caer'],
 ];
 
+/** Una tropa del escenario: su nivel, su variante de color (T-041) y, en la galeria de variantes, el tinte que se prueba. */
+export interface TroopStageCell {
+  readonly level: number;
+  readonly variant: OutbreakId | null;
+  readonly tint?: TroopTintId;
+}
+
 export interface TroopStageRow {
   readonly kind: EnemyKind;
-  /** Hasta tres niveles, uno por columna. */
-  readonly levels: readonly number[];
+  /** Hasta cuatro, una por columna. */
+  readonly cells: readonly TroopStageCell[];
 }
 
 export interface TroopStageData {
   readonly quality: QualityLevel;
   readonly rows: readonly TroopStageRow[];
+  /** Titulo de cada columna. Sin el, el nivel si todas lo comparten; si no, primero o ultimo. */
+  readonly titles?: readonly string[];
 }
 
-const COLUMNS = [2.2, 5, 7.8] as const;
+/** Donde va cada columna (casillas), segun cuantas haya. */
+const COLUMNS: Record<number, readonly number[]> = { 1: [5], 2: [3, 7], 3: [2.2, 5, 7.8], 4: [1.5, 3.8, 6.1, 8.4] };
 const LABEL_STYLE = { fontFamily: 'ui-rounded, "Nunito", system-ui, sans-serif', fontStyle: '900', color: '#ffffff', stroke: '#1d2b1f', strokeThickness: 7 };
 
 interface Walker {
   enemy: Enemy;
+  cell: TroopStageCell;
   view: EnemyView;
   anchor: number;
   stride: number;
@@ -68,6 +83,7 @@ export function stageLevels(levels: readonly number[]): number[] {
 export class TroopStageScene extends Phaser.Scene {
   private quality: QualityProfile = QUALITY_PROFILES.high;
   private rows: readonly TroopStageRow[] = [];
+  private titles: readonly string[] | null = null;
   private ambience?: Ambience;
   private fx?: Effects;
   private walkers: Walker[] = [];
@@ -81,6 +97,7 @@ export class TroopStageScene extends Phaser.Scene {
   init(data: Partial<TroopStageData>): void {
     this.quality = QUALITY_PROFILES[data.quality ?? 'high'];
     this.rows = data.rows ?? [];
+    this.titles = data.titles ?? null;
     this.walkers = [];
     this.walking = true;
     this.veiled = true;
@@ -97,19 +114,22 @@ export class TroopStageScene extends Phaser.Scene {
     this.fx = new Effects(this, this.quality);
     const names = text().info.enemy.names;
     const rows = this.rows.slice(0, BOARD.lanes);
-    // Un titulo por columna, arriba: el nivel si todas lo comparten; si no, primero o ultimo (la medallita dice cual).
-    COLUMNS.forEach((x, column) => {
-      const levels = new Set(rows.map((row) => row.levels[column]).filter((level) => level !== undefined));
+    const count = Math.min(4, Math.max(1, ...rows.map((row) => row.cells.length)));
+    const columns = COLUMNS[count];
+    // Un titulo por columna, arriba: el dado o, sin el, el nivel si todas lo comparten; si no, primero o ultimo (la
+    // medallita dice cual).
+    columns.forEach((x, column) => {
+      const levels = new Set(rows.map((row) => row.cells[column]?.level).filter((level) => level !== undefined));
       if (levels.size === 0) return;
-      const title = levels.size === 1 ? `Nivel ${[...levels][0]}` : column === 0 ? 'Su primer nivel' : 'Su último nivel';
+      const title = this.titles?.[column] ?? (levels.size === 1 ? `Nivel ${[...levels][0]}` : column === 0 ? 'Su primer nivel' : 'Su último nivel');
       const top = perspective.toScreen({ x, y: -0.42 });
       this.label(top.x, top.y, title, 26, [0.5, 1]);
     });
     rows.forEach((row, lane) => {
       const at = perspective.toScreen({ x: -0.12, y: lane + 0.55 });
       this.label(at.x, at.y, names[row.kind], 24, [1, 0.5]);
-      row.levels.slice(0, COLUMNS.length).forEach((level, column) => {
-        this.walkers.push(this.spawn(row.kind, lane, COLUMNS[column], level, (lane * COLUMNS.length + column) * 120));
+      row.cells.slice(0, count).forEach((cell, column) => {
+        this.walkers.push(this.spawn(row.kind, lane, columns[column], cell, (lane * count + column) * 120));
       });
     });
   }
@@ -121,11 +141,11 @@ export class TroopStageScene extends Phaser.Scene {
       .setDepth(DEPTH.floatText);
   }
 
-  private spawn(kind: EnemyKind, lane: number, x: number, level: number, delayMs: number): Walker {
-    const state = spawnEnemy(createMatch(), kind, lane, x, undefined, 1, level);
+  private spawn(kind: EnemyKind, lane: number, x: number, cell: TroopStageCell, delayMs: number): Walker {
+    const state = spawnEnemy(createMatch(), kind, lane, x, undefined, 1, cell.level, cell.variant);
     const enemy = this.dress(state.enemies[state.enemies.length - 1]);
-    const view = createEnemyView(this, this.fx as Effects, enemy, true, delayMs);
-    return { enemy, view, anchor: x, stride: 0, attackMs: null, respawnMs: null };
+    const view = createEnemyView(this, this.fx as Effects, enemy, true, delayMs, cell.tint ? tintById(cell.tint) : null);
+    return { enemy, cell, view, anchor: x, stride: 0, attackMs: null, respawnMs: null };
   }
 
   /** Los que llegan ocultos (Lurker), ocultos o descubiertos segun el boton. */
@@ -139,7 +159,7 @@ export class TroopStageScene extends Phaser.Scene {
     for (const walker of this.walkers) {
       if (walker.respawnMs !== null) {
         walker.respawnMs -= delta;
-        if (walker.respawnMs <= 0) Object.assign(walker, this.spawn(walker.enemy.kind, walker.enemy.lane, walker.anchor, walker.enemy.level, 0));
+        if (walker.respawnMs <= 0) Object.assign(walker, this.spawn(walker.enemy.kind, walker.enemy.lane, walker.anchor, walker.cell, 0));
         continue;
       }
       walker.enemy = this.dress(this.tick(walker, delta));

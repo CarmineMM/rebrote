@@ -19,7 +19,8 @@ import {
 } from './bugArt';
 import type { Effects } from './effects';
 import { entityDepth, perspective } from './layout';
-import { BUG_TEX, FLAME_SIZE, FROST_SIZE, TEX, artInv, medalTexture } from './textures';
+import { BUG_TEX, FLAME_SIZE, FROST_SIZE, TEX, artInv, medalTexture, variantTexture } from './textures';
+import type { TroopTint } from './troopTint';
 import { WormAura } from './wormAura';
 import { auraTier } from './wormAuraArt';
 import type { EnemyView } from './wormView';
@@ -182,7 +183,12 @@ export class BugView implements EnemyView {
     emergeDelayMs = 0,
     /** Otras propuestas que las del juego: la galeria `/proposals/bichos.html` pinta asi las que compara. */
     designs: BugDesigns = GAME_BUGS,
+    /** Otro tinte que el del brote de su variante (T-041): la galeria `/proposals/variantes.html` pinta asi las propuestas. */
+    tint: TroopTint | null = null,
   ) {
+    // Variante de color (T-041): las piezas del bicho con el tinte del brote que lo recluto. Medallita, ojos de oculto,
+    // llamas y escarcha, igual. Oculto, el relleno de la silueta tapa el color: se ve igual que uno de su brote.
+    const tex = (key: string) => variantTexture(scene, key, enemy.variant, tint);
     const kind = enemy.kind as BugKind;
     this.skipper = kind === 'skipper';
     this.rig = this.skipper ? SKIPPER_RIGS[designs.skipper] : LURKER_RIGS[designs.lurker];
@@ -199,26 +205,26 @@ export class BugView implements EnemyView {
     let legKey: string;
     if (this.skipper) {
       const d = designs.skipper;
-      bodyKey = BUG_TEX.skipperBody(d);
-      legKey = BUG_TEX.skipperLeg(d);
+      bodyKey = tex(BUG_TEX.skipperBody(d));
+      legKey = tex(BUG_TEX.skipperLeg(d));
       this.faces = {
-        idle: BUG_TEX.skipperHead(d, 'idle'),
-        attack: BUG_TEX.skipperHead(d, 'bite'),
-        hurt: BUG_TEX.skipperHead(d, 'hurt'),
-        ready: BUG_TEX.skipperHead(d, 'ready'),
-        air: BUG_TEX.skipperHead(d, 'air'),
+        idle: tex(BUG_TEX.skipperHead(d, 'idle')),
+        attack: tex(BUG_TEX.skipperHead(d, 'bite')),
+        hurt: tex(BUG_TEX.skipperHead(d, 'hurt')),
+        ready: tex(BUG_TEX.skipperHead(d, 'ready')),
+        air: tex(BUG_TEX.skipperHead(d, 'air')),
       };
     } else {
       const d = designs.lurker;
       const variant = LURKER_VARIANT[kind as LurkerKind];
-      bodyKey = BUG_TEX.lurkerBody(d, variant);
-      legKey = BUG_TEX.lurkerLeg(d, variant);
-      const face = (mood: 'idle' | 'attack' | 'hurt') => BUG_TEX.lurkerHead(d, variant, mood);
+      bodyKey = tex(BUG_TEX.lurkerBody(d, variant));
+      legKey = tex(BUG_TEX.lurkerLeg(d, variant));
+      const face = (mood: 'idle' | 'attack' | 'hurt') => tex(BUG_TEX.lurkerHead(d, variant, mood));
       this.faces = { idle: face('idle'), attack: face('attack'), hurt: face('hurt'), ready: face('attack'), air: face('idle') };
       if (variant === 'armored') {
-        this.helmet = scene.add.image(0, 0, BUG_TEX.lurkerHelmet(d)).setOrigin(head.cx / head.width, head.cy / head.height).setScale(inv);
+        this.helmet = scene.add.image(0, 0, tex(BUG_TEX.lurkerHelmet(d))).setOrigin(head.cx / head.width, head.cy / head.height).setScale(inv);
         this.plates = ([1, 0] as const).map((part) =>
-          scene.add.image(this.rig.body.x, this.rig.body.y, BUG_TEX.lurkerPlate(d, part)).setOrigin(body.cx / body.width, body.cy / body.height).setScale(inv),
+          scene.add.image(this.rig.body.x, this.rig.body.y, tex(BUG_TEX.lurkerPlate(d, part))).setOrigin(body.cx / body.width, body.cy / body.height).setScale(inv),
         );
       }
     }
@@ -241,8 +247,8 @@ export class BugView implements EnemyView {
       for (const far of [true, false]) {
         this.jumpLegs.push({
           far,
-          thigh: scene.add.image(0, 0, BUG_TEX.skipperThigh(d)).setOrigin(thigh.pivotX / thigh.width, thigh.pivotY / thigh.height).setScale(inv),
-          shin: scene.add.image(0, 0, BUG_TEX.skipperShin(d)).setOrigin(shin.pivotX / shin.width, shin.pivotY / shin.height).setScale(inv),
+          thigh: scene.add.image(0, 0, tex(BUG_TEX.skipperThigh(d))).setOrigin(thigh.pivotX / thigh.width, thigh.pivotY / thigh.height).setScale(inv),
+          shin: scene.add.image(0, 0, tex(BUG_TEX.skipperShin(d))).setOrigin(shin.pivotX / shin.width, shin.pivotY / shin.height).setScale(inv),
         });
       }
     }

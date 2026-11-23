@@ -9,7 +9,10 @@ El diseño está en `docs/specs/07-brote-4-morris.md`. Carmine eligió la opció
 
 Los tres jefes anteriores sirven de modelo (verificado en las specs de los brotes 2 y 3): barra de jefe, jefe que se prepara a la derecha, escolta con grito, refuerzos mientras vive, derrota si cruza el jardín, propuestas de aspecto en `/proposals/jefes.html`, catálogo en `/catalog/jefes.html`, medida de dificultad por ronda (`roundThreat`), rondas aceleradas (`haste`) y simulación con bots (`npm run sim`). Lo que cuenta Boxer del virus real sale solo en cuanto existe su texto (`story.lore.<brote>`, T-032).
 
-Tras T-041 el brote 4 existe en preparación, con sus tropas de variante y 600 monedas.
+Tras T-041 el brote 4 existe en preparación, con sus tropas de variante y 600 monedas. Lo que deja hecho (ADR-0024):
+- El guion provisional (`MORRIS_ROUNDS` en `balance.ts`, 3 rondas) y sus avisos (`round.notices.morris`) se sustituyen por las 9 rondas de verdad. Lo que cuenta Boxer de Morris ya está en `story.lore.morris` y su nombre, en `outbreak.comingBoss.morris`, que se quita cuando Morris sea un enemigo del juego (`info.enemy.names`).
+- Las tropas del guion salen solas con la variante de Morris (`spawnEnemy` la pone según el brote de la partida). Los gusanos que saque Morris, también, si se crean con `spawnEnemy` o pasando `troopVariant(tipo, 'morris')`; las copias del Creeper se crean sin variante porque Creeper solo sale en el brote 1. Morris, como jefe, no lleva variante.
+- La escolta de nivel 10 (MR-01) lleva aura de oro sobre la variante: comprobarlo en `/proposals/variantes.html` ("Nivel 10").
 
 ## Objetivos
 1. **La sobrecarga:** el rasgo del brote, que castiga dejar que el tablero se llene.

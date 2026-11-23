@@ -3,6 +3,8 @@ import type { BoardPoint, Cell } from './board';
 import type { MatchState, Mine, Sown } from './match';
 import { damageMultiplier, fireRateMultiplier, plantMaxHp, type MineElement, type Shooter } from './plants';
 import { compoundGrowth } from './levels';
+import type { OutbreakId } from './outbreaks';
+import { troopVariant } from './variants';
 
 /**
  * Combate como simulacion pura por pasos (ADR-0008). `stepCombat` avanza la partida un trozo de tiempo
@@ -125,6 +127,12 @@ export interface Enemy {
    * (`isHidden`). Null en las que no se ocultan.
    */
   readonly revealMs: number | null;
+  /**
+   * Variante de color (T-041): el brote que la recluto, si es una tropa de un brote anterior que vuelve con otro color
+   * (`troopVariant`); null en su brote de origen. Solo cambia como se ve: sus reglas y sus numeros son los de su tipo. La
+   * copia de un Copycat la hereda.
+   */
+  readonly variant: OutbreakId | null;
 }
 
 /** Lo que deja una bala infundida al impactar, ademas de su dano: la de fuego quema y la de hielo frena. */
@@ -470,11 +478,21 @@ export function rollEnemyLevel(table: Readonly<Record<number, number>> | undefin
  * el Skipper (T-038) y Brain (T-039), su descanso antes del primer salto; y las tropas del brote 3, su sigilo: salen
  * ocultas.
  */
-function newEnemy(id: number, kind: EnemyKind, lane: number, x: number, hp: number, haste: number, level: number, clone = false): Enemy {
+function newEnemy(
+  id: number,
+  kind: EnemyKind,
+  lane: number,
+  x: number,
+  hp: number,
+  haste: number,
+  level: number,
+  variant: OutbreakId | null,
+  clone = false,
+): Enemy {
   const recital = kind === 'elkCloner' ? { ms: ENEMIES.elkCloner.firstVerseMs, sung: 0, poemMs: null } : null;
   const hop: Hop | null = hops(kind) ? { stage: 'rest', ms: hopGait({ kind, hp, level, clone }).restMs, from: x, to: x } : null;
   const revealMs = sneaks(kind) ? 0 : null;
-  return { id, kind, lane, x, hp, attackMs: null, burn: null, slow: null, haste, level, jump: null, jumpsUsed: 0, clone, recital, hop, revealMs };
+  return { id, kind, lane, x, hp, attackMs: null, burn: null, slow: null, haste, level, jump: null, jumpsUsed: 0, clone, recital, hop, revealMs, variant };
 }
 
 /** ¿Avanza a saltos (T-038, `HOP.kinds`)? El Skipper y Brain (T-039). */
@@ -512,17 +530,18 @@ export function isHidden(enemy: Pick<Enemy, 'revealMs'>): boolean {
 
 /**
  * Copia que deja un copion al caer (T-025, F-01): de su tipo, nivel y paso, en su sitio, con la vida llena de una copia.
- * No hereda la quemadura ni el frio: es otra.
+ * No hereda la quemadura ni el frio: es otra. Si la tiene, hereda su variante de color (T-041).
  */
 function cloneOf(parent: Enemy, id: number): Enemy {
-  return newEnemy(id, parent.kind, parent.lane, parent.x, enemyMaxHp(parent.kind, parent.level, true), parent.haste, parent.level, true);
+  return newEnemy(id, parent.kind, parent.lane, parent.x, enemyMaxHp(parent.kind, parent.level, true), parent.haste, parent.level, parent.variant, true);
 }
 
 /**
  * Pone un enemigo con la vida llena en `x` de su carril. Queda el ultimo de `enemies`.
  * `hp` solo cambia en pruebas (por ejemplo, la prueba de rendimiento en desarrollo); sin ella, la vida llena de su
- * nivel. `haste` es su velocidad respecto a la de su tipo (las rondas 8 y 9 sacan enemigos acelerados, T-008) y
- * `level`, su nivel (T-009; un jefe no tiene: siempre 1).
+ * nivel. `haste` es su velocidad respecto a la de su tipo (las rondas 8 y 9 sacan enemigos acelerados, T-008),
+ * `level`, su nivel (T-009; un jefe no tiene: siempre 1), y `variant`, su variante de color (T-041): sin ella, la que le toca
+ * en el brote de la partida (`troopVariant`).
  */
 export function spawnEnemy(
   state: MatchState,
@@ -532,6 +551,7 @@ export function spawnEnemy(
   hp?: number,
   haste = 1,
   level = 1,
+  variant: OutbreakId | null = troopVariant(kind, state.outbreak),
 ): MatchState {
   if (!Number.isInteger(lane) || lane < 0 || lane >= BOARD.lanes) {
     throw new Error(`Carril invalido: ${lane}`);
@@ -540,7 +560,7 @@ export function spawnEnemy(
     throw new Error(`Nivel invalido: ${level}`);
   }
   const ownLevel = isBoss(kind) ? 1 : level;
-  const enemy = newEnemy(state.nextId, kind, lane, x, hp ?? enemyMaxHp(kind, ownLevel), haste, ownLevel);
+  const enemy = newEnemy(state.nextId, kind, lane, x, hp ?? enemyMaxHp(kind, ownLevel), haste, ownLevel, variant);
   return { ...state, enemies: [...state.enemies, enemy], nextId: state.nextId + 1 };
 }
 
@@ -1102,7 +1122,8 @@ function stepJump(
     const level = CREEPER.copyLevel;
     const left = Array.from({ length: count }, (_, i) => {
       const kind = rollCopyKind(enraged, random);
-      return newEnemy(newId(), kind, jump.from, e.x + i * CREEPER.copyGap, enemyMaxHp(kind, level), CREEPER.copyHaste, level);
+      // Sin variante (T-041): Creeper solo sale en el brote 1, el de origen de sus copias.
+      return newEnemy(newId(), kind, jump.from, e.x + i * CREEPER.copyGap, enemyMaxHp(kind, level), CREEPER.copyHaste, level, null);
     });
     copies.push(...left);
     e.lane = jump.to;

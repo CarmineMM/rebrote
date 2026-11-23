@@ -25,6 +25,8 @@ import { SHOOTER_CANNONS, SHOOTER_VARIANTS } from './shooters/design';
 import { WALL_SIZE, WALL_WEARS, paintWall, type WallWear } from './wallArt';
 import { ARIL_SIZE, GRENADE_SIZE, ICE_BLOCK_SIZE, ICE_WEARS, paintAril, paintGrenade, paintIceBlock, type IceWear } from './powerArt';
 import { FLOPPY_SIZE, HAT_SIZE, NOTE_SIZE, VERSE_SIZE, paintFloppy, paintMinstrelHat, paintNote, paintVerse } from './troopArt';
+import { tintPixels, variantKey, variantTint, type TroopTint } from './troopTint';
+import type { OutbreakId } from '../core/outbreaks';
 import {
   BUG_SIZE,
   LURKER_DESIGN,
@@ -442,6 +444,31 @@ function paintTexture(scene: Phaser.Scene, scale: number, key: string, width: nu
   ctx.scale(textureScale, textureScale);
   painter(ctx, width, height, textureScale);
   texture.refresh();
+}
+
+/**
+ * Textura `key` con la variante de color del brote `variant` (T-041, `troopTint.ts`): la misma, a la misma resolucion,
+ * pasada por el tinte del brote. Se pinta la primera vez que se pide, a partir de la ya pintada, y luego se reutiliza. Sin
+ * variante, sin tinte para ese brote o sin la textura de origen, devuelve `key` tal cual. `tint` cambia el del brote (la
+ * galeria de propuestas, `/proposals/variantes.html`, pinta con cada uno): su clave lleva el tinte.
+ */
+export function variantTexture(scene: Phaser.Scene, key: string, variant: OutbreakId | null, tint: TroopTint | null = null): string {
+  if (variant === null) return key;
+  const chosen = tint ?? variantTint(variant);
+  if (!chosen || !scene.textures.exists(key)) return key;
+  const tinted = tint ? `${variantKey(key, variant)}~${tint.id}` : variantKey(key, variant);
+  if (scene.textures.exists(tinted)) return tinted;
+  const source = scene.textures.get(key).getSourceImage() as HTMLCanvasElement | HTMLImageElement;
+  const texture = scene.textures.createCanvas(tinted, source.width, source.height);
+  if (!texture) return key;
+  const ctx = texture.getContext();
+  ctx.drawImage(source, 0, 0);
+  const pixels = ctx.getImageData(0, 0, source.width, source.height);
+  tintPixels(pixels.data, chosen);
+  ctx.putImageData(pixels, 0, 0);
+  texture.refresh();
+  textureScales.set(tinted, textureScales.get(key) ?? artScale);
+  return tinted;
 }
 
 /**

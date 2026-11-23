@@ -230,6 +230,29 @@ describe('ficha de Brain (T-039)', () => {
   });
 });
 
+describe('ficha de una tropa que vuelve en otro brote (T-041, MT-02)', () => {
+  afterEach(() => setLanguage('es'));
+  const recruited = (kind: Enemy['kind'], level = 1): Enemy => spawnEnemy(createMatch(0, 0, 'morris'), kind, 1, 6, undefined, 1, level).enemies[0];
+
+  it('mismo nombre y mismos numeros, con una pastilla que dice quien la recluto', () => {
+    for (const kind of ['worm', 'copycat', 'minstrel', 'lurker', 'skipper'] as const) {
+      const original = enemyInfo(enemy(kind, 4));
+      const info = enemyInfo(recruited(kind, 4));
+      expect(info.title).toBe(original.title);
+      expect(info.subtitle).toBe(original.subtitle);
+      expect(info.stats).toEqual(original.stats);
+      expect(info.hp).toEqual(original.hp);
+      expect(info.tags[0]).toEqual({ text: 'Reclutado por Morris', tone: 'recruit' });
+      expect(original.tags.some((tag) => tag.tone === 'recruit')).toBe(false);
+    }
+  });
+
+  it('en ingles', () => {
+    setLanguage('en');
+    expect(enemyInfo(recruited('worm')).tags[0]).toEqual({ text: 'Recruited by Morris', tone: 'recruit' });
+  });
+});
+
 describe('ficha en ingles (T-011)', () => {
   afterEach(() => setLanguage('es'));
 

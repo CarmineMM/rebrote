@@ -128,7 +128,9 @@ describe('brote 2 abierto (T-026: ya tiene a su jefe)', () => {
     expect(outbreakFromParam('elkCloner')).toBe(BROTE2);
     expect(outbreakFromParam('1')).toBe('creeper');
     expect(outbreakFromParam('3')).toBe(BROTE3);
-    expect(outbreakFromParam('4')).toBeNull();
+    // T-041: el brote 4 (Morris), en preparacion, tambien se pide asi; el 5 aun no existe.
+    expect(outbreakFromParam('4')).toBe('morris');
+    expect(outbreakFromParam('5')).toBeNull();
     expect(outbreakFromParam('0')).toBeNull();
     expect(outbreakFromParam('')).toBeNull();
     expect(outbreakFromParam(null)).toBeNull();

@@ -2297,7 +2297,7 @@ export class BoardScene extends Phaser.Scene {
       const enemy = this.match.enemies.find((e) => e.id === target.id);
       if (!enemy) return;
       data = enemyInfo(enemy);
-      subject = { kind: 'enemy', enemy: enemy.kind, level: enemy.level, enraged: isEnraged(enemy), hasted: enemy.haste > 1, clone: enemy.clone };
+      subject = { kind: 'enemy', enemy: enemy.kind, level: enemy.level, enraged: isEnraged(enemy), hasted: enemy.haste > 1, clone: enemy.clone, variant: enemy.variant };
     } else if (target.kind === 'plant') {
       const plant = plantAt(this.match, target.cell);
       if (!plant) return;

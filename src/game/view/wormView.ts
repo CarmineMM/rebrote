@@ -3,7 +3,9 @@ import { CLONE, ELK_CLONER, ENEMIES } from '../config/balance';
 import { hpFraction, isBoss, isEnraged, poemWarning, type Enemy, type EnemyKind } from '../core/combat';
 import type { Effects } from './effects';
 import { entityDepth, perspective } from './layout';
-import { FEET_SIZE, FLAME_SIZE, FROST_SIZE, HAT_SIZE, RUFF_SIZE, TEX, WORM_SIZE, artInv, medalTexture } from './textures';
+import { FEET_SIZE, FLAME_SIZE, FROST_SIZE, HAT_SIZE, RUFF_SIZE, TEX, WORM_SIZE, artInv, medalTexture, variantTexture } from './textures';
+import type { TroopTint } from './troopTint';
+import type { OutbreakId } from '../core/outbreaks';
 import { WormAura, type AuraHost } from './wormAura';
 import { auraTier } from './wormAuraArt';
 import type { BugKind } from './bugView';
@@ -268,6 +270,27 @@ export const KIND_LOOK: Record<WormKind, KindLook> = {
   },
 };
 
+/**
+ * El aspecto `look` con la variante de color del brote `variant` (T-041): las mismas piezas (cabezas, anillos, armadura,
+ * disquete, gorro y adornos) con sus texturas tenidas (`variantTexture`). Sin variante, `look` tal cual. `tint` cambia el
+ * tinte del brote por otro (la galeria `/proposals/variantes.html`).
+ */
+export function variantLook(scene: Phaser.Scene, look: KindLook, variant: OutbreakId | null, tint: TroopTint | null = null): KindLook {
+  if (variant === null) return look;
+  const tex = (key: string) => variantTexture(scene, key, variant, tint);
+  const heads = (set: HeadSet): HeadSet => Object.fromEntries(Object.entries(set).map(([mood, key]) => [mood, tex(key as string)])) as unknown as HeadSet;
+  return {
+    ...look,
+    head: heads(look.head),
+    ...(look.angryHead ? { angryHead: heads(look.angryHead) } : {}),
+    segment: tex(look.segment),
+    armor: look.armor ? { helmet: tex(look.armor.helmet), plate: tex(look.armor.plate) } : null,
+    pack: look.pack ? tex(look.pack) : null,
+    hat: look.hat ? tex(look.hat) : null,
+    ...(look.trims ? { trims: look.trims.map((trim) => ({ ...trim, key: tex(trim.key) })) } : {}),
+  };
+}
+
 /** Tamano del Creeper respecto al gusano, para quien lo pinta fuera de su vista (Creeper preparandose). */
 export const CREEPER_SIZE = KIND_LOOK.creeper.size;
 
@@ -417,8 +440,11 @@ export class WormView implements EnemyView {
     emergeDelayMs = 0,
     /** Otro aspecto que el de su tipo: la galeria de jefes (`/proposals/jefes.html`) pinta asi las propuestas. */
     look: KindLook = KIND_LOOK[enemy.kind as WormKind],
+    /** Otro tinte que el del brote de su variante (T-041): la galeria `/proposals/variantes.html` pinta asi las propuestas. */
+    tint: TroopTint | null = null,
   ) {
-    this.look = look;
+    // Variante de color (T-041): la tropa reclutada por otro brote, con su tinte. Lo demas (medallita, aura, llamas), igual.
+    this.look = variantLook(scene, look, enemy.variant, tint);
     this.pose = this.look.pose ?? WORM_POSE;
     this.clone = enemy.clone;
     this.size = this.look.size * (1 + (enemy.level - 1) * WORM_LOOK.growthPerLevel) * (enemy.clone ? CLONE.size : 1);
