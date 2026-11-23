@@ -217,7 +217,10 @@ export function grenadeTicks(before: MatchState, after: MatchState): SfxCue[] {
   return cues;
 }
 
-/** Lo que suena cuando el jugador hace algo en el tablero: sembrar, infundir, fusionar, subir de nivel o usar un poder. */
+/**
+ * Lo que suena cuando el jugador hace algo en el tablero: sembrar, infundir, fusionar, subir de nivel, arrancar (T-046) o
+ * usar un poder.
+ */
 export function actionCue(action: PlayerAction, x: number): SfxCue | null {
   switch (action.type) {
     case 'sow':
@@ -226,6 +229,8 @@ export function actionCue(action: PlayerAction, x: number): SfxCue | null {
       return at(INFUSE_OF[action.element], x);
     case 'fuse':
       return at('fuse', x);
+    case 'uproot':
+      return at('uproot', x);
     case 'levelUp':
       // Llegar a un nivel con premio (5, 10, 15 y 20) suena a premio: el mismo "¡ya lo tienes!" del aviso de desbloqueo.
       return at(isMilestoneLevel(action.level) ? 'unlock' : 'levelUp', x);

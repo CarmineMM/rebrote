@@ -198,7 +198,8 @@ describe('lo desbloqueado vale hacia atras (norma ES-03, T-037)', () => {
 
   it('rejugar el brote 2 con el brote 3 vencido trae la infusion del escudo desde la ronda 1', () => {
     const carried = carriedFeatures(BROTE2, ['creeper', BROTE2, BROTE3]);
-    expect(carried).toEqual(['shieldInfuse']);
+    // Y arrancar, que llega en la ronda 4 del brote 3 (T-046).
+    expect([...carried].sort()).toEqual(['shieldInfuse', 'uproot']);
     const replay = createMatch(2000, 0, BROTE2, true, undefined, undefined, carried);
     expect(isUnlocked(replay, 'shieldInfuse')).toBe(true);
     expect(infusableElements(replay)).toEqual(['fire', 'ice', 'shield']);
@@ -216,7 +217,7 @@ describe('lo desbloqueado vale hacia atras (norma ES-03, T-037)', () => {
 
   it('rejugar el brote 1 con el 2 vencido trae el muro; con el 3, tambien la infusion', () => {
     expect(carriedFeatures('creeper', ['creeper', BROTE2])).toEqual(['shield']);
-    expect(carriedFeatures('creeper', ['creeper', BROTE2, BROTE3]).sort()).toEqual(['shield', 'shieldInfuse']);
+    expect(carriedFeatures('creeper', ['creeper', BROTE2, BROTE3]).sort()).toEqual(['shield', 'shieldInfuse', 'uproot']);
     const replay = createMatch(2000, 0, 'creeper', true, undefined, undefined, ['shield']);
     expect(availableCards(replay)).toEqual(['shooter', 'shield']);
     expect(cardPlay(replay, 'shield', cell).blocker).toBeNull();

@@ -35,6 +35,16 @@ export const COSTS = {
 } as const;
 
 /**
+ * Arrancar (T-046): quitar del tablero una disparadora o un muro y recuperar parte de lo gastado en ella (AR-02: sembrarla,
+ * sus niveles, sus infusiones y, si es una fusion, lo de las dos de origen). Siempre entero, redondeado hacia abajo (AR-03),
+ * este como este de vida (AR-06).
+ */
+export const UPROOT = {
+  /** Lo que se recupera de lo gastado. */
+  refund: 0.5,
+} as const;
+
+/**
  * Economia (D-01 cerrada): moneda por enemigo eliminado (`reward` de cada uno en `ENEMIES`, T-009) mas goteo pasivo, que
  * solo corre durante el ataque (T-010: en la preparacion no se gana moneda esperando). Al eliminar un enemigo, la moneda se cobra sola salvo en `dropChance` de los casos:
  * entonces queda en el suelo y solo se cobra si el jugador la recoge con un clic,
@@ -1120,8 +1130,9 @@ const BRAIN_ROUNDS: readonly RoundScript[] = [
     ],
   },
   {
-    // Mezcla: acorazados ocultos que piden minas y Skipper que piden escudos.
-    unlocks: [],
+    // Mezcla: acorazados ocultos que piden minas y Skipper que piden escudos. Llega arrancar (T-046): mover un escudo o
+    // cambiar de elemento cuesta la mitad de lo gastado.
+    unlocks: ['uproot'],
     levels: ENEMY_LEVELS.tables.mid,
     groups: [
       { atMs: 3_000, kind: 'lurker', lanes: [0, 2, 4] },

@@ -740,6 +740,64 @@ body {
 .level-up.is-max { background: linear-gradient(180deg, #3f6f43, #2c5030); border-color: #5fa54f; color: #ffe066; box-shadow: 0 3px 0 #142a17; cursor: default; }
 .level-up.is-max:hover, .level-up.is-max:active { transform: none; filter: none; }
 
+/*
+ * Arrancar (T-046): boton secundario, color tierra y mas bajo que "Subir", para no pulsarlo por error. El primer toque lo
+ * enciende en naranja y pregunta ("¿Arrancar? +75"); el segundo arranca.
+ */
+.uproot {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 4px 10px; border-radius: 10px; border: 2px solid #6b4a2b;
+  background: linear-gradient(180deg, #8a6440, #6a4a2c); color: #ffe9c9; box-shadow: 0 2px 0 #3d2814;
+  font: inherit; font-size: 0.82rem; font-weight: 900; cursor: pointer; white-space: nowrap;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.12s ease, background 0.15s ease;
+}
+.uproot:hover { transform: translateY(-1px); filter: brightness(1.08); }
+.uproot:active { transform: translateY(2px); box-shadow: 0 0 0 #3d2814; }
+.uproot:focus-visible { outline: 3px solid #ffe066; outline-offset: 2px; }
+.uproot-icon { flex: none; width: 18px; height: 18px; overflow: visible; }
+.uproot-icon-soil { fill: #4a3019; }
+.uproot-icon-root { fill: none; stroke: #e8cfa6; stroke-width: 1.4; stroke-linecap: round; }
+.uproot-icon-stem { fill: none; stroke: #9be36b; stroke-width: 1.8; stroke-linecap: round; }
+.uproot-icon-leaf { fill: #9be36b; stroke: #2f6b25; stroke-width: 0.8; }
+.uproot-icon-arrow { fill: none; stroke: #ffe066; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+/* El brote sube un poco al pasar por encima, y no para de tirar mientras pregunta. */
+.uproot-icon-sprout { transition: transform 0.18s ease; }
+.uproot:hover .uproot-icon-sprout { transform: translateY(-1.5px); }
+.uproot-label { display: inline-grid; }
+.uproot-label > span { grid-area: 1 / 1; text-align: center; }
+.uproot-label-ask, .uproot.is-armed .uproot-label-idle { visibility: hidden; }
+.uproot.is-armed .uproot-label-ask { visibility: visible; animation: cost-pop 0.3s cubic-bezier(0.2, 1.6, 0.4, 1); }
+.uproot-refund {
+  display: inline-flex; align-items: center; gap: 3px; padding: 1px 6px 1px 2px; border-radius: 999px;
+  background: rgba(0, 0, 0, 0.2); color: #ffe066; font-variant-numeric: tabular-nums;
+  animation: cost-pop 0.3s cubic-bezier(0.2, 1.6, 0.4, 1);
+}
+.uproot.is-armed {
+  border-color: #b8461b; background: linear-gradient(180deg, #ffb36b, #f07a32); color: #4a1800; box-shadow: 0 2px 0 #8a3510;
+  animation: uproot-ask 0.9s ease-in-out infinite;
+}
+.uproot.is-armed .uproot-refund { background: rgba(74, 24, 0, 0.18); color: #5a1d00; }
+.uproot.is-armed .uproot-icon-sprout { animation: uproot-tug 0.45s ease-in-out infinite; }
+@keyframes uproot-ask { 50% { filter: brightness(1.12); box-shadow: 0 2px 0 #8a3510, 0 0 0 4px rgba(255, 179, 107, 0.35); } }
+@keyframes uproot-tug { 50% { transform: translateY(-2.5px); } }
+/* Un muro, o una disparadora que aun no puede subir de nivel (T-046, AR-08 y AR-10): solo el titulo y "Arrancar". */
+.level-panel.is-uproot-only { min-width: 0; }
+/*
+ * En pantallas bajas (un movil en horizontal) el panel no crece: "Arrancar" va a la derecha del titulo, solo con su dibujo
+ * y lo que devuelve. Preguntando, se enciende igual. Asi sigue cabiendo a un lado de la planta sin taparla.
+ */
+@media (max-height: 560px) {
+  .level-panel:not(.is-uproot-only) { grid-template-columns: 1fr auto; column-gap: 10px; }
+  .level-panel:not(.is-uproot-only) > * { grid-column: 1 / -1; }
+  .level-panel:not(.is-uproot-only) > .level-panel-title { grid-column: 1; grid-row: 1; }
+  .level-panel:not(.is-uproot-only) > .uproot { grid-column: 2; grid-row: 1; align-self: center; padding: 4px 7px; }
+  .level-panel:not(.is-uproot-only) .uproot-label { display: none; }
+}
+.level-panel-title .card-icon { zoom: 0.8; }
+@media (prefers-reduced-motion: reduce) {
+  .uproot.is-armed, .uproot.is-armed .uproot-icon-sprout { animation: none; }
+}
+
 /* ---------- Menu de pausa ---------- */
 .pause-overlay {
   position: absolute; inset: 0; z-index: 4; display: grid; place-items: center; padding: 16px;
@@ -931,6 +989,13 @@ body {
 }
 .unlock-arrow::after { content: ''; border-left: 9px solid transparent; border-right: 9px solid transparent; border-bottom: 12px solid #6b4505; margin-top: -3px; }
 .unlock-medal { width: 32px; height: 32px; font-size: 0.95rem; }
+/* Arrancar (T-046): la disparadora sube y baja de su monton de tierra, y la moneda salta a su lado. */
+.unlock-uproot { position: relative; display: grid; place-items: end center; width: 46px; height: 44px; }
+.unlock-uproot-soil { position: absolute; left: 4px; right: 4px; bottom: 1px; height: 9px; border-radius: 50%; background: linear-gradient(180deg, #9a6a42, #6e4628); }
+.unlock-uproot .card-icon { zoom: 0.85; animation: unlock-yank 1.6s ease-in-out infinite; transform-origin: 50% 90%; }
+.unlock-uproot .coin { position: absolute; right: -4px; top: 2px; animation: unlock-refund 1.6s ease-in-out infinite; }
+@keyframes unlock-yank { 0%, 30%, 100% { transform: none; } 38% { transform: scale(1.1, 0.88); } 52% { transform: translateY(-9px) scale(0.92, 1.1); } 70% { transform: translateY(-4px); } }
+@keyframes unlock-refund { 0%, 44% { opacity: 0; transform: translateY(6px) scale(0.5); } 56% { opacity: 1; transform: translateY(-4px) scale(1.15); } 80% { opacity: 1; transform: none; } 100% { opacity: 0; } }
 .unlock-text { display: grid; gap: 2px; text-align: left; }
 .unlock-text strong { font-size: 1.1rem; font-weight: 900; color: #fff6c0; }
 .unlock-text small { font-size: 0.85rem; font-weight: 700; color: #d9f0cc; line-height: 1.3; }
@@ -2372,6 +2437,7 @@ button.route-stop-body:focus-visible .route-ring { outline-color: #ffe066; }
   52%, 100% { opacity: 0; transform: translate(64px, 36px) scale(0.3); }
 }
 .pic-mound { left: 70px; bottom: 14px; width: 46px; height: 12px; border-radius: 50%; background: linear-gradient(180deg, #9a6a42, #6e4628); }
+.pic-mound.is-center { left: 41px; }
 .pic-pop { transform-origin: 50% 85%; animation: pic-pop 2.8s ease-out infinite; }
 @keyframes pic-pop { 0%, 48% { opacity: 0; transform: scale(0); } 58% { opacity: 1; transform: scale(1.15); } 64%, 90% { opacity: 1; transform: scale(1); } 100% { opacity: 0; transform: scale(1); } }
 
@@ -2401,6 +2467,35 @@ button.route-stop-body:focus-visible .route-ring { outline-color: #ffe066; }
   animation: pic-bump 2.8s ease-in-out infinite;
 }
 @keyframes pic-bump { 0%, 76% { transform: none; } 84% { transform: scale(1.25); } 92%, 100% { transform: none; } }
+
+/* Arrancar (T-046): la disparadora se agarra, sale de un tiron entre terrones y su moneda vuela al saldo. */
+.pic-yank { transform-origin: 50% 85%; animation: pic-yank 2.8s ease-in-out infinite; }
+@keyframes pic-yank {
+  0%, 22% { opacity: 1; transform: none; }
+  30% { transform: scale(1.12, 0.84); }
+  38% { transform: translateY(-14px) scale(0.86, 1.2); }
+  52% { opacity: 1; transform: translateY(-30px) rotate(18deg) scale(0.9); }
+  62%, 90% { opacity: 0; transform: translateY(-40px) rotate(30deg) scale(0.7); }
+  91% { opacity: 0; transform: scale(0); }
+  100% { opacity: 1; transform: none; }
+}
+.pic-clod { --dx: -16px; left: 60px; bottom: 16px; width: 7px; height: 6px; border-radius: 45%; background: #7a5332; opacity: 0; animation: pic-clod 2.8s ease-out infinite; }
+.pic-clod.is-b { --dx: 4px; width: 6px; background: #8f6440; }
+.pic-clod.is-c { --dx: 18px; width: 8px; }
+@keyframes pic-clod {
+  0%, 34% { opacity: 0; transform: none; }
+  38% { opacity: 1; }
+  50% { opacity: 1; transform: translate(var(--dx), -16px) rotate(120deg); }
+  62%, 100% { opacity: 0; transform: translate(calc(var(--dx) * 1.4), 2px) rotate(220deg); }
+}
+.pic-coin.is-uproot { left: 54px; bottom: 30px; animation-name: pic-coin-up; }
+@keyframes pic-coin-up {
+  0%, 40% { opacity: 0; transform: scale(0.3); }
+  50% { opacity: 1; transform: translateY(-12px) scale(1.15); }
+  58% { transform: translateY(-6px); }
+  76% { opacity: 1; transform: translate(42px, -36px) scale(0.7) rotate(200deg); }
+  82%, 100% { opacity: 0; transform: translate(42px, -36px) scale(0.5); }
+}
 
 /* Vidas: el gusano cruza la raya del borde y se rompe un corazon. */
 .pic-edge { left: 20px; top: 40px; bottom: 6px; border-left: 3px dashed rgba(255, 90, 95, 0.9); }

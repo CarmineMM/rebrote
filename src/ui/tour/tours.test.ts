@@ -203,6 +203,8 @@ const LENGTH_BEFORE_T032: Record<Language, Record<TourId, Record<string, number>
     // T-024: pasos nuevos, con lo que miden. T-037: la infusion del escudo pasa a su tour, con lo que mide.
     shield: { wall: 33, block: 33 },
     shieldInfuse: { card: 38, wall: 29 },
+    // T-046: arrancar, con lo que mide.
+    uproot: { pick: 35, pull: 45 },
     // T-021: los poderes, con lo que miden.
     relocate: { pick: 32, move: 38 },
     grenade: { throw: 41 },
@@ -217,6 +219,7 @@ const LENGTH_BEFORE_T032: Record<Language, Record<TourId, Record<string, number>
     fuse: { drag: 34 },
     shield: { wall: 31, block: 22 },
     shieldInfuse: { card: 32, wall: 38 },
+    uproot: { pick: 33, pull: 36 },
     relocate: { pick: 26, move: 33 },
     grenade: { throw: 37 },
     iceWall: { place: 42 },

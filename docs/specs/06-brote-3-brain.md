@@ -82,7 +82,7 @@ Ocho, como el brote 2 (decidido). Un concepto por ronda.
 | 1 | Los Lurker, ocultos | Que las plantas tardan en verlos: las minas y el hielo los descubren |
 | 2 | Infundir el escudo (lo anuncia Patty y lo enseña Boxer) | Una disparadora con escudo aguanta el doble y hace de puerta |
 | 3 | Llega el Skipper, de uno en uno | Solo lo para un escudo, y en tierra es frágil |
-| 4 | Mezcla: acorazados ocultos y Skipper | Escudos para unos, minas para otros |
+| 4 | Mezcla: acorazados ocultos y Skipper. Llega arrancar (T-046: lo anuncia Patty y lo enseña Boxer) | Escudos para unos, minas para otros; arrancar lo que sobra devuelve la mitad |
 | 5 | Dos oleadas por los cinco carriles | Una puerta en cada carril |
 | 6 | Brain se prepara: tropas aceleradas | Boxer cuenta quién fue Brain |
 | 7 | Más tropas y más rápidas | Llegar con los cinco carriles cerrados |

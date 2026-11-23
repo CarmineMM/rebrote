@@ -313,7 +313,7 @@ export class BugBoardScene extends Phaser.Scene {
     const { ambience, fx } = prepare(this, this.quality);
     this.ambience = ambience;
     // Las disparadoras no disparan nunca: su recarga no se acaba.
-    const shooter = (): Sown => ({ kind: 'shooter', shooter: createShooter(), hp: 300, reloadMs: Infinity });
+    const shooter = (): Sown => ({ kind: 'shooter', shooter: createShooter(), hp: 300, reloadMs: Infinity, spent: 0 });
     const plants: Array<Array<Sown | null>> = Array.from({ length: BOARD.lanes }, () => Array.from({ length: BOARD.columns }, () => null));
     for (const lane of BOARD_STAGE.skipperLanes) {
       for (const col of BOARD_STAGE.shooterCols) plants[lane][col] = shooter();

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { LIVES } from './config/balance';
+import { COSTS, LIVES } from './config/balance';
 import { spawnEnemy, stepCombat } from './core/combat';
-import { createMatch, earn, playCard, type MatchState } from './core/match';
+import { createMatch, createPlant, earn, playCard, type MatchState } from './core/match';
 import { FIRST_OUTBREAK, roundCount } from './core/outbreaks';
 import { createRound, startAttack } from './core/rounds';
 import type { UnlockInfo } from './EventBus';
@@ -163,5 +163,36 @@ describe('partida guardada: el nivel base (T-023)', () => {
     expect(decodeSave(JSON.stringify({ version: SAVE_VERSION, savedAt: 0, match: without, pendingUnlock: null }))).toBeNull();
     const broken = { ...createMatch(), baseLevel: 6 };
     expect(decodeSave(JSON.stringify({ version: SAVE_VERSION, savedAt: 0, match: broken, pendingUnlock: null }))).toBeNull();
+  });
+});
+
+describe('partida guardada: lo gastado en cada disparadora (T-046)', () => {
+  const cell = { lane: 1, col: 2 };
+  const withPlant = (spent: unknown) => {
+    const match = createMatch(5000);
+    const plants = match.plants.map((lane, laneIndex) =>
+      laneIndex === cell.lane ? lane.map((sown, col) => (col === cell.col ? { ...createPlant(), spent } : sown)) : lane,
+    );
+    return { ...match, plants };
+  };
+
+  it('guarda lo gastado y lo recupera igual', () => {
+    // En la ronda 6 del brote 1 ya se infunde.
+    const match = playCard(playCard(createMatch(5000, 5), 'shooter', cell), 'fire', cell);
+    const loaded = decodeSave(encodeSave(match, null, 0))?.match;
+    expect(loaded?.plants[cell.lane][cell.col]).toMatchObject({ kind: 'shooter', spent: COSTS.shooter + COSTS.fire });
+  });
+
+  it('una disparadora sin lo gastado, o con algo que no es una cantidad entera, no se carga', () => {
+    const { spent: _, ...plant } = createPlant();
+    const without = withPlant(0);
+    const plants = without.plants.map((lane, laneIndex) =>
+      laneIndex === cell.lane ? lane.map((sown, col) => (col === cell.col ? plant : sown)) : lane,
+    );
+    const save = (match: unknown) => JSON.stringify({ version: SAVE_VERSION, savedAt: 0, match, pendingUnlock: null });
+    expect(decodeSave(save({ ...without, plants }))).toBeNull();
+    expect(decodeSave(save(withPlant(-1)))).toBeNull();
+    expect(decodeSave(save(withPlant(12.5)))).toBeNull();
+    expect(decodeSave(save(withPlant(150)))?.match.plants[cell.lane][cell.col]).toMatchObject({ spent: 150 });
   });
 });

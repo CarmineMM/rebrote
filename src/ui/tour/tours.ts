@@ -21,6 +21,7 @@ export type TourId =
   | 'fuse'
   | 'shield'
   | 'shieldInfuse'
+  | 'uproot'
   | 'relocate'
   | 'grenade'
   | 'iceWall';
@@ -46,6 +47,8 @@ export const TOUR_OF_FEATURE: Record<Feature, TourId> = {
   // T-037: el muro en el brote 2 y la infusion en el brote 3, cada uno con su tour.
   shield: 'shield',
   shieldInfuse: 'shieldInfuse',
+  // T-046: arrancar, en la ronda 4 del brote 3.
+  uproot: 'uproot',
 };
 
 /**
@@ -68,6 +71,8 @@ export type HudTarget =
   | 'lives'
   | 'round-go'
   | 'level-up'
+  // El boton "Arrancar" del panel de nivel (T-046).
+  | 'uproot'
   // Los poderes del panel izquierdo (T-021).
   | 'power-relocate'
   | 'power-grenade'
@@ -94,6 +99,7 @@ export type TourCue =
   | 'infuseMine'
   | 'infuseShield'
   | 'fuse'
+  | 'uproot'
   | 'info'
   | 'attack'
   // T-021: tomar recolocar del panel y recolocar una disparadora.
@@ -121,6 +127,7 @@ export type PictureId =
   | 'wallBlock'
   | 'shieldInfuse'
   | 'wallInfuse'
+  | 'uproot'
   | 'relocate'
   | 'grenade'
   | 'iceWall';
@@ -233,6 +240,12 @@ export const TOURS: Record<TourId, readonly TourStep[]> = {
       picture: 'wallInfuse',
     },
   ],
+  // T-046: tocar una disparadora y dar dos toques a "Arrancar". Arrancar de verdad completa el paso, pero no se exige: cuesta
+  // la mitad de lo gastado y el jugador puede no querer, asi que tambien se pasa con "¡Entendido!".
+  uproot: [
+    { id: 'pick', spots: [spot('shooter')], gesture: { kind: 'tap', at: spot('shooter') }, doneWhen: 'pick', picture: 'pick' },
+    { id: 'pull', spots: [hud('uproot')], gesture: { kind: 'doubleTap', at: hud('uproot') }, doneWhen: 'uproot', picture: 'uproot' },
+  ],
   // T-021: los poderes. Recolocar se puede en la preparacion y se prueba de verdad; la granada y el muro solo van en el
   // ataque (O-07), asi que su paso se pasa con "Siguiente".
   relocate: [
@@ -299,6 +312,8 @@ export function cueOf(action: PlayerAction): TourCue | null {
       return 'levelUp';
     case 'fuse':
       return 'fuse';
+    case 'uproot':
+      return 'uproot';
     // T-021: los poderes. Tomar la granada o el muro no completa nada (sus pasos se pasan con "Siguiente").
     case 'powerPicked':
       return action.power === 'relocate' ? 'pickRelocate' : null;

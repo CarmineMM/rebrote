@@ -425,6 +425,17 @@ export const es = {
     noFunds: 'Saldo insuficiente',
     maxButton: 'Máximo',
     up: 'Subir',
+    /**
+     * Arrancar (T-046): el boton del panel, lo que pregunta al primer toque y lo que dice al pasar por encima. "La mitad"
+     * es `UPROOT.refund` de `balance.ts`: si cambia, cambian estas frases, la del aviso y la del tour.
+     */
+    uproot: 'Arrancar',
+    uprootConfirm: '¿Arrancar?',
+    uprootTitle: (refund: number) => `Arrancar: recuperas ${refund}, la mitad de lo gastado`,
+    uprootAgain: 'Toca otra vez para arrancar',
+    /** Un muro seleccionado para arrancarlo (T-046): su panel solo trae "Arrancar". */
+    wall: 'Muro',
+    wallAria: 'Muro',
   },
 
   unlock: {
@@ -445,6 +456,8 @@ export const es = {
      */
     featureLines: {
       shieldInfuse: 'He reforzado el escudo: ahora aguanta sobre una disparadora.',
+      // T-046 (AR-09): arrancar no es algo que Patty cree, asi que no dice "¡He creado algo nuevo!".
+      uproot: 'Ya puedes arrancar una planta: te devuelvo la mitad de lo que costó.',
     },
     shooter: { title: 'Disparadora', text: 'Siémbrala en una casilla: dispara a los gusanos de su carril.' },
     levelUp: {
@@ -471,6 +484,11 @@ export const es = {
       title: 'Disparadora con escudo',
       text: 'Suelta el escudo sobre una disparadora, o arrástrale un muro: aguanta el doble y para lo que va a las de detrás.',
     },
+    /** T-046: arrancar, en la ronda 4 del brote 3. */
+    uproot: {
+      title: 'Arrancar',
+      text: 'Toca una disparadora o un muro y pulsa «Arrancar» dos veces: recuperas la mitad de lo que costó.',
+    },
   },
 
   /**
@@ -488,6 +506,7 @@ export const es = {
       fuse: 'Fusionar',
       shield: 'Escudo',
       shieldInfuse: 'Disparadora con escudo',
+      uproot: 'Arrancar',
       relocate: 'Recolocar',
       grenade: 'Granada',
       iceWall: 'Muro de hielo',
@@ -537,6 +556,11 @@ export const es = {
       shieldInfuse: {
         card: 'Sobre una disparadora: ¡doble de vida!',
         wall: 'O llévale un muro ya sembrado',
+      },
+      // T-046: arrancar, en el brote 3.
+      uproot: {
+        pick: 'Toca una planta o un muro que sobre',
+        pull: 'Dos toques a «Arrancar»: ¡la mitad de vuelta!',
       },
       // T-021: los poderes del panel izquierdo.
       relocate: {

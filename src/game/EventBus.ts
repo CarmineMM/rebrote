@@ -47,7 +47,8 @@ export const GameEvents = {
   roundChanged: 'round-changed',
   /**
    * Phaser -> React. Payload: PlantPanel | null. Disparadora seleccionada con un clic (T-003): su nivel, lo que cuesta
-   * el siguiente y donde esta en la pagina, para pintar el panel de subir de nivel junto a ella. Null al cerrarlo.
+   * el siguiente y donde esta en la pagina, para pintar el panel de subir de nivel junto a ella. Desde T-046, tambien lo
+   * que devuelve arrancarla, y un muro seleccionado para arrancarlo. Null al cerrarlo.
    */
   plantPanel: 'plant-panel',
   /**
@@ -83,6 +84,11 @@ export const GameEvents = {
   selectionCancelled: 'selection-cancelled',
   /** React -> Phaser. Sin payload: subir un nivel la disparadora seleccionada (boton del panel). */
   levelUpRequested: 'level-up-requested',
+  /**
+   * React -> Phaser. Sin payload: arrancar la disparadora o el muro seleccionados (T-046). El panel lo manda al segundo
+   * toque del boton, el que confirma.
+   */
+  uprootRequested: 'uproot-requested',
   /** React -> Phaser. Sin payload: adelantar el ataque de la ronda en preparacion (boton "¡Que vengan!"). */
   attackRequested: 'attack-requested',
   /** React -> Phaser. Payload: si el juego queda en pausa (boolean). El menu de pausa lo controla. */
@@ -177,13 +183,8 @@ export interface CardPreview {
   affordable: boolean;
 }
 
-/**
- * Panel de la disparadora seleccionada (T-003). Sale de `levelUpOffer` en core; la escena solo anade donde esta.
- */
-export interface PlantPanel {
-  /** Casilla de la planta ("carril:columna"): cambia al seleccionar otra. */
-  id: string;
-  level: number;
+/** Lo de subir de nivel en el panel (T-003). Sale de `levelUpOffer` en core. */
+export interface LevelUpPanel {
   /** Tope de nivel de la ronda (T-009). */
   cap: number;
   /** En el tope: ronda (desde 1) en la que sube, o null si ya no sube. */
@@ -194,8 +195,27 @@ export interface PlantPanel {
   multiplier: number;
   /** Si el saldo alcanza para subir. */
   affordable: boolean;
+}
+
+/**
+ * Panel de lo seleccionado (T-003): una disparadora o, desde T-046, un muro, que solo se puede arrancar (AR-08). Sale de
+ * `levelUpOffer` y `uprootRefund` en core; la escena solo anade donde esta.
+ */
+export interface PlantPanel {
+  /** Casilla de la planta ("carril:columna"): cambia al seleccionar otra. */
+  id: string;
+  subject: 'shooter' | 'wall';
+  /** Nivel de la disparadora; 1 en un muro, que no tiene. */
+  level: number;
   /** Tramo de color de la medallita (cambia cada 5 niveles), para pintar la misma en el panel; null en nivel 1, que no lleva. */
   medalTier: number | null;
+  /**
+   * Subir de nivel, o null si aqui no se puede: en un muro, o rejugando un brote con arrancar traido de uno posterior antes
+   * de la ronda que deja subir (T-046, AR-10). Entonces el panel solo trae "Arrancar".
+   */
+  levelUp: LevelUpPanel | null;
+  /** Lo que devuelve arrancarlo (T-046), o null si en esta partida aun no se puede arrancar. */
+  uproot: number | null;
   /**
    * Donde se apoya el panel: sobre la cabeza de la planta, o bajo sus pies si arriba no cabe; si tampoco (un movil en
    * horizontal, en las filas de abajo), a la altura de su cuerpo, a su derecha o a su izquierda.
@@ -289,7 +309,7 @@ export interface RoundInfo {
  * `levelCap` es el tope de nivel nuevo de las disparadoras.
  */
 export type UnlockItem =
-  | { id: 'shooter' | 'levelUp' | 'fireMine' | 'iceMine' | 'infuse' | 'fuse' | 'shield' | 'shieldInfuse' }
+  | { id: 'shooter' | 'levelUp' | 'fireMine' | 'iceMine' | 'infuse' | 'fuse' | 'shield' | 'shieldInfuse' | 'uproot' }
   | { id: 'levelCap'; level: number };
 
 /** Aviso de lo desbloqueado al empezar una ronda (T-009). Sale de `roundUnlocks` en core. */
@@ -469,6 +489,8 @@ export type PlayerAction =
   /** `level`: el nivel al que llega (en los que dan premio suena distinto). */
   | { type: 'levelUp'; level: number }
   | { type: 'fuse' }
+  /** Arranco una disparadora o un muro (T-046). */
+  | { type: 'uproot' }
   /** Tomo un poder del panel (T-021). */
   | { type: 'powerPicked'; power: PowerId }
   /** Uso un poder (T-021): recoloco una disparadora, lanzo la granada o puso el muro de hielo. */

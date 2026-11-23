@@ -431,6 +431,46 @@
       ]
     },
     {
+      "id": "uproot",
+      "about": "Arrancar una disparadora o un muro (T-046): tierra que se rasga, el plop de las raices al salir y la moneda que vuelve",
+      "spec": {
+        "bus": "world",
+        "volume": 0.75,
+        "maxVoices": 2,
+        "minGapMs": 0,
+        "burst": 2,
+        "pitchJitter": 0.4,
+        "variants": 1
+      },
+      "pick": [
+        {
+          "url": "audio/uproot",
+          "source": "Kenney RPG Audio: `cloth3.ogg` (recortado 0-250 ms) + Kenney Interface Sounds: `drop_002.ogg` (+80 ms) + Kenney RPG Audio: `handleCoins.ogg` (recortado 0-450 ms, -6 dB, +200 ms)",
+          "seconds": 0.539
+        }
+      ],
+      "alternatives": [
+        {
+          "url": "audio-lab/candidatos/uproot/1",
+          "source": "Kenney Impact Sounds: `impactSoft_medium_002.ogg` (-4 dB) + Kenney Impact Sounds: `footstep_grass_001.ogg` (recortado 0-260 ms) + Kenney RPG Audio: `handleCoins2.ogg` (recortado 0-400 ms, -6 dB, +180 ms)",
+          "seconds": 0.448,
+          "recipes": []
+        },
+        {
+          "url": "audio-lab/candidatos/uproot/2",
+          "source": "Kenney Impact Sounds: `footstep_grass_003.ogg` (recortado 0-240 ms) + Kenney Interface Sounds: `pluck_001.ogg` (velocidad 0.85, +90 ms) + Kenney RPG Audio: `handleCoins.ogg` (recortado 0-450 ms, -6 dB, +200 ms)",
+          "seconds": 0.539,
+          "recipes": []
+        },
+        {
+          "url": "audio-lab/candidatos/uproot/3",
+          "source": "Kenney Impact Sounds: `footstep_grass_000.ogg` (recortado 0-300 ms) + Kenney Interface Sounds: `pluck_002.ogg` (velocidad 0.8, +110 ms)",
+          "seconds": 0.281,
+          "recipes": []
+        }
+      ]
+    },
+    {
       "id": "plantDestroyed",
       "about": "Una planta o una mina se rompen a mordiscos: golpe sordo y hojas",
       "spec": {
@@ -1745,8 +1785,8 @@
       "pick": [
         {
           "url": "audio/morrisBrood",
-          "source": "jsfxr: receta `pixelPop` (velocidad 0.8, -4 dB) + Kenney Impact Sounds: `footstep_grass_002.ogg` (recortado 0-160 ms, -8 dB)",
-          "seconds": 0.146
+          "source": "jsfxr: receta `womp` (velocidad 1.3, -4 dB)",
+          "seconds": 0.313
         }
       ],
       "alternatives": [
@@ -1758,12 +1798,12 @@
         },
         {
           "url": "audio-lab/candidatos/morrisBrood/2",
-          "source": "jsfxr: receta `womp` (velocidad 1.3, -4 dB)",
-          "seconds": 0.313,
+          "source": "jsfxr: receta `pixelPop` (velocidad 0.8, -4 dB) + Kenney Impact Sounds: `footstep_grass_002.ogg` (recortado 0-160 ms, -8 dB)",
+          "seconds": 0.146,
           "recipes": [
             {
-              "name": "womp",
-              "code": "34T6PkuZgh5KamNXFEVS5cckD5Ekg5QmMKVxSdNQVXi7VZ4uCe94gUt3rgm83zLtwGTNr2eQ4LejsorTv8qdQhLJD9RVaHVaCy9Z71KFJe7DPyVazjrrCyPMH"
+              "name": "pixelPop",
+              "code": "11111BFZ5ubeaLKrbyeLhTNmAys76iHMQEJ5xMU8QWT3SMRZzG9N1mZN1hN3ef1KJy2YStPNmioMSGaKogbYGQ93H6wctYjbySCfbEGxJYKmBvddVAWVVN3R"
             }
           ]
         }
@@ -1823,19 +1863,19 @@
       "pick": [
         {
           "url": "audio/overloadOn",
-          "source": "jsfxr: receta `alarm` (-4 dB) + Kenney Digital Audio: `phaserUp5.ogg` (recortado 0-500 ms, -6 dB)",
-          "seconds": 0.6
+          "source": "jsfxr: receta `alarmLow`",
+          "seconds": 0.589
         }
       ],
       "alternatives": [
         {
           "url": "audio-lab/candidatos/overloadOn/1",
-          "source": "jsfxr: receta `alarmLow`",
-          "seconds": 0.589,
+          "source": "jsfxr: receta `alarm` (-4 dB) + Kenney Digital Audio: `phaserUp5.ogg` (recortado 0-500 ms, -6 dB)",
+          "seconds": 0.6,
           "recipes": [
             {
-              "name": "alarmLow",
-              "code": "4i1ZtnHXo6Sa1uYRzt7kfA43Fq6m64GeJjn3JU6TZk8MbmPfApWmtgVTP2qxjcQdzuZbWZBSGghJkURJvJ57B32ZLiebNavxRnUbQkZYc773UEoBjqTNW8Q6T"
+              "name": "alarm",
+              "code": "111118JWVRMC5GhGFAGieDD4kipadk1BA95NSRJHZJuYjqXLNvskaaE4ZJKeU4WyvavNDxzTivC8wToZNPVYmDjTRYcDrJxREHW6WXjfm3rcgA1wMEcR2hMH"
             }
           ]
         },
@@ -1862,8 +1902,8 @@
       "pick": [
         {
           "url": "audio/overloadOff",
-          "source": "Kenney Digital Audio: `phaserDown2.ogg` (recortado 0-420 ms, -4 dB)",
-          "seconds": 0.25
+          "source": "jsfxr: receta `powerDown` (velocidad 1.3, -6 dB)",
+          "seconds": 0.711
         }
       ],
       "alternatives": [
@@ -1875,14 +1915,9 @@
         },
         {
           "url": "audio-lab/candidatos/overloadOff/2",
-          "source": "jsfxr: receta `powerDown` (velocidad 1.3, -6 dB)",
-          "seconds": 0.711,
-          "recipes": [
-            {
-              "name": "powerDown",
-              "code": "11111Fc13SdX6aXTZbZ5RD9BTDuZmocvi5NhcTFyZM5MxbBzYnRhp6aGcP5RsBLnbktMNBTmEnyB3Wat5ruouqjqh31ZfVJ67VUxRkiE5qfYrgo78nWiK56F"
-            }
-          ]
+          "source": "Kenney Digital Audio: `phaserDown2.ogg` (recortado 0-420 ms, -4 dB)",
+          "seconds": 0.25,
+          "recipes": []
         }
       ]
     },

@@ -22,6 +22,8 @@ export type SfxId =
   | 'wallBreak'
   | 'fuse'
   | 'levelUp'
+  // Arrancar una disparadora o un muro (T-046): tiron de tierra y la moneda que vuelve
+  | 'uproot'
   | 'plantDestroyed'
   | 'coin'
   // Combate
@@ -158,6 +160,7 @@ export const SFX: Readonly<Record<SfxId, SfxSpec>> = {
   wallBreak: world(0.7, 2, 120, 0.8),
   fuse: world(0.8, 2, 0, 0),
   levelUp: world(0.7, 2, 0, 0),
+  uproot: world(0.75, 2, 0, 0.4),
   plantDestroyed: world(0.6, 2, 120, 1),
   coin: world(0.7, 3, 50, 0.6),
   hit: world(0.3, 3, 50, 1.5, 3),

@@ -36,6 +36,7 @@ export function mixColor(from: number, to: number, t: number): number {
 
 export class Effects {
   private readonly dirtBurst: Phaser.GameObjects.Particles.ParticleEmitter;
+  private readonly clodBurst: Phaser.GameObjects.Particles.ParticleEmitter;
   private readonly sparkleBurst: Phaser.GameObjects.Particles.ParticleEmitter;
   private readonly leafBurst: Phaser.GameObjects.Particles.ParticleEmitter;
   private readonly bitBurst: Phaser.GameObjects.Particles.ParticleEmitter;
@@ -69,6 +70,21 @@ export class Effects {
         lifespan: 650,
         scale: { start: artInv(), end: 0.3 * artInv() },
         alpha: { start: 1, end: 0 },
+      },
+      DEPTH.foreground - 1,
+    );
+    // Arrancar (T-046): terrones gordos que saltan mas alto que la tierra de brotar y giran al caer.
+    this.clodBurst = burst(
+      TEX.dirt,
+      {
+        speed: { min: 110, max: 250 },
+        angle: { min: -150, max: -30 },
+        gravityY: 760,
+        rotate: { min: -180, max: 180 },
+        lifespan: { min: 520, max: 820 },
+        scale: { start: 1.9 * artInv(), end: 1.1 * artInv() },
+        alpha: { start: 1, end: 0, ease: 'Quad.In' },
+        tint: [0xffffff, 0xd9b48a, 0xb08458],
       },
       DEPTH.foreground - 1,
     );
@@ -311,6 +327,11 @@ export class Effects {
 
   dirt(x: number, y: number, base: number): void {
     this.dirtBurst.explode(this.count(base), x, y);
+  }
+
+  /** Terrones que salta la tierra al arrancar una planta o un muro (T-046). */
+  clods(x: number, y: number, base: number): void {
+    this.clodBurst.explode(this.count(base), x, y);
   }
 
   sparkles(x: number, y: number, base: number): void {

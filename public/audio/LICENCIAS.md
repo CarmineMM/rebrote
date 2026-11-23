@@ -22,6 +22,7 @@ Cada efecto va en OGG Vorbis y en MP3, en mono, con el volumen igualado y sin si
 | `wallBreak` | Kenney Impact Sounds: `impactPlank_medium_004.ogg` + Kenney Impact Sounds: `impactPunch_medium_000.ogg` (-4 dB) | CC0 1.0 (Kenney, www.kenney.nl) |
 | `fuse` | Kenney Interface Sounds: `confirmation_004.ogg` + Kenney Impact Sounds: `impactSoft_medium_000.ogg` (-6 dB) | CC0 1.0 (Kenney, www.kenney.nl) |
 | `levelUp` | Kenney Interface Sounds: `maximize_005.ogg` | CC0 1.0 (Kenney, www.kenney.nl) |
+| `uproot` | Kenney RPG Audio: `cloth3.ogg` (recortado 0-250 ms) + Kenney Interface Sounds: `drop_002.ogg` (+80 ms) + Kenney RPG Audio: `handleCoins.ogg` (recortado 0-450 ms, -6 dB, +200 ms) | CC0 1.0 (Kenney, www.kenney.nl) |
 | `plantDestroyed` | Kenney Impact Sounds: `impactPunch_medium_000.ogg` | CC0 1.0 (Kenney, www.kenney.nl) |
 | `coin` | Kenney RPG Audio: `handleCoins2.ogg` | CC0 1.0 (Kenney, www.kenney.nl) |
 | `hit-1` | Kenney Impact Sounds: `impactGeneric_light_000.ogg` | CC0 1.0 (Kenney, www.kenney.nl) |
@@ -65,10 +66,10 @@ Cada efecto va en OGG Vorbis y en MP3, en mono, con el volumen igualado y sin si
 | `brainLand` | Kenney Impact Sounds: `impactMetal_light_002.ogg` (-4 dB) + jsfxr: receta `boing` (velocidad 1.2, -10 dB, +60 ms) | CC0 1.0 (Kenney, www.kenney.nl) + propio, generado con jsfxr (dominio público) |
 | `brainDefeated` | Kenney Digital Audio: `phaserDown3.ogg` + Kenney Digital Audio: `spaceTrash3.ogg` (-4 dB, +180 ms) + Kenney Impact Sounds: `impactGlass_light_001.ogg` (-6 dB, +320 ms) | CC0 1.0 (Kenney, www.kenney.nl) |
 | `morrisTalk` | jsfxr: receta `terminal` (velocidad 0.85, -2 dB) + Kenney Interface Sounds: `click_002.ogg` (-10 dB) | CC0 1.0 (Kenney, www.kenney.nl) + propio, generado con jsfxr (dominio público) |
-| `morrisBrood` | jsfxr: receta `pixelPop` (velocidad 0.8, -4 dB) + Kenney Impact Sounds: `footstep_grass_002.ogg` (recortado 0-160 ms, -8 dB) | CC0 1.0 (Kenney, www.kenney.nl) + propio, generado con jsfxr (dominio público) |
+| `morrisBrood` | jsfxr: receta `womp` (velocidad 1.3, -4 dB) | propio, generado con jsfxr (dominio público) |
 | `morrisDefeated` | Kenney Digital Audio: `phaserDown3.ogg` + Kenney Digital Audio: `powerUp4.ogg` (-4 dB, +260 ms) + Kenney Impact Sounds: `footstep_grass_001.ogg` (-6 dB, +380 ms) | CC0 1.0 (Kenney, www.kenney.nl) |
-| `overloadOn` | jsfxr: receta `alarm` (-4 dB) + Kenney Digital Audio: `phaserUp5.ogg` (recortado 0-500 ms, -6 dB) | CC0 1.0 (Kenney, www.kenney.nl) + propio, generado con jsfxr (dominio público) |
-| `overloadOff` | Kenney Digital Audio: `phaserDown2.ogg` (recortado 0-420 ms, -4 dB) | CC0 1.0 (Kenney, www.kenney.nl) |
+| `overloadOn` | jsfxr: receta `alarmLow` | propio, generado con jsfxr (dominio público) |
+| `overloadOff` | jsfxr: receta `powerDown` (velocidad 1.3, -6 dB) | propio, generado con jsfxr (dominio público) |
 | `relocate` | Kenney Impact Sounds: `footstep_grass_002.ogg` (recortado 0-240 ms, -3 dB) + Kenney Interface Sounds: `drop_002.ogg` (+140 ms) | CC0 1.0 (Kenney, www.kenney.nl) |
 | `grenadeThrow` | Kenney RPG Audio: `cloth3.ogg` (velocidad 1.15) + jsfxr: receta `jumpUp` (-10 dB, +60 ms) | CC0 1.0 (Kenney, www.kenney.nl) + propio, generado con jsfxr (dominio público) |
 | `grenadeLand` | Kenney Impact Sounds: `impactSoft_heavy_001.ogg` (-2 dB) + Kenney Sci-Fi Sounds: `thrusterFire_000.ogg` (recortado 120-540 ms, -7 dB) | CC0 1.0 (Kenney, www.kenney.nl) |
@@ -109,4 +110,7 @@ El enlace abre la receta en sfxr.me para oírla y afinarla.
 | `decloak` | Destello digital que sube con un fase: algo escondido que aparece. Un Lurker oculto se descubre (T-038) | https://sfxr.me/#12A5YhAYgvEYoK9GsPpiXbkbJHRwjifJ7aS4TVgCJnGLkCGpdkKo4mRcw8rHAbkNRNnFTXmaa5NQgVqVF8QEnx34wiEKeimnnQKR6xvYDHD9hsZosy7qcwn8SK |
 | `chirp` | Dos pitidos que suben, como el altavoz de un Apple II: Elk Cloner habla (T-026) | https://sfxr.me/#11111FbzaGcjtvgpKmeGg2qsFLLzGyc6nBcKrgsdHW89ANquxnwjcUkDroGS4pi6p2XHkrzrmCWi53PYYN4Dy1VFthGTHJ1EeJ56FNiVV5H5vt2GcjjaDVbm |
 | `swell` | Nota que se hincha despacio con vibrato y sube: Elk Cloner anuncia el poema entero (T-026) | https://sfxr.me/#6mTagprjRb3PkcgV9qv7x6WXMEQ1EhNjkmfKE7Pud4RcnJMPcHWZxYvqLsbhCAPWCdh4srQFCsVjzFtFtYonqqgmjxPao6jsEe6qPjgNZhdrpSMnP6EzckBdh |
+| `womp` | Womp triste que baja: se pierde una vida | https://sfxr.me/#34T6PkuZgh5KamNXFEVS5cckD5Ekg5QmMKVxSdNQVXi7VZ4uCe94gUt3rgm83zLtwGTNr2eQ4LejsorTv8qdQhLJD9RVaHVaCy9Z71KFJe7DPyVazjrrCyPMH |
+| `alarmLow` | Sirena grave que sube: empieza el ataque | https://sfxr.me/#4i1ZtnHXo6Sa1uYRzt7kfA43Fq6m64GeJjn3JU6TZk8MbmPfApWmtgVTP2qxjcQdzuZbWZBSGghJkURJvJ57B32ZLiebNavxRnUbQkZYc773UEoBjqTNW8Q6T |
+| `powerDown` | Apagón largo que baja: Creeper desconectado | https://sfxr.me/#11111Fc13SdX6aXTZbZ5RD9BTDuZmocvi5NhcTFyZM5MxbBzYnRhp6aGcP5RsBLnbktMNBTmEnyB3Wat5ruouqjqh31ZfVJ67VUxRkiE5qfYrgo78nWiK56F |
 | `jumpUp` | Bwoop que sube: despegue | https://sfxr.me/#1111111UE2QmoXVboXukT1QL2fZNrqfaKQawBFiCtQ3W3sZG2R8nLcHTJ9vEKX7i9L4gjfxDLno2dqetn3vxpwk71NZmtcZQxwpNkpVv1KxP5YbPmoP6MB5 |

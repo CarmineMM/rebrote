@@ -4,6 +4,7 @@ Una línea por task cerrada, lo más nuevo arriba. Cómo se numera: `docs/adr/00
 
 | Versión | Fecha | Task | Qué cambia |
 |---|---|---|---|
+| 0.17.0 | 23 nov 2026 | T-046 | Arrancar: desde la ronda 4 del brote 3 (y antes, con el brote 3 vencido) una disparadora o un muro se arrancan desde su panel con dos toques y devuelven la mitad de lo gastado en ellos. Además, Carmine eligió de oído los sonidos de arrancar, del gusano que suelta Morris y de la sobrecarga al encenderse y al apagarse |
 | 0.16.3 | 23 nov 2026 | T-045 | En el móvil se puede soltar la carta elegida: tocar fuera del tablero o donde no se puede jugar la suelta sin cobrar, igual que volver a tocar la carta o soltarla arrastrada donde no vale |
 | 0.16.2 | 23 nov 2026 | T-044 | Aviso de beta: al vencer al último brote sale una vez "Has llegado al final de la beta", con "Compartir" y "Comentarios" para apoyar el proyecto; el mismo mensaje en el lugar "por llegar" de la ruta y en la marca "Beta" junto a la versión de la portada |
 | 0.16.1 | 23 nov 2026 | T-043 | El giro: en el brote 4 Boxer propone pasar al ataque y Patty, que duda un poco (con su nueva cara de duda), se va convenciendo; tres secuencias de viñetas (al empezar, en la ronda 5 y al caer Morris, que cierra con "Nos espera un largo viaje") y seis comentarios de una línea en la esquina que no paran el juego |

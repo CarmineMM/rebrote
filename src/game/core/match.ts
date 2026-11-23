@@ -1,4 +1,4 @@
-import { BOARD, COSTS, LIVES, MINE, SHIELD } from '../config/balance';
+import { BOARD, COSTS, LIVES, MINE, SHIELD, UPROOT } from '../config/balance';
 import { isOnBoard, type Cell } from './board';
 import type { Bullet, Enemy, Grenade, Spit, Verse } from './combat';
 import {
@@ -33,6 +33,12 @@ export interface Plant {
   readonly hp: number;
   /** Milisegundos hasta que puede volver a disparar; 0 si esta lista. */
   readonly reloadMs: number;
+  /**
+   * Moneda gastada en ella (T-046, AR-02): sembrarla, sus niveles y sus infusiones (tambien la mina o el muro arrastrados
+   * para infundirla) y, si es una fusion, lo de las dos de origen. El nivel base no cuenta: es gratis (T-023). Es lo que
+   * se recupera en parte al arrancarla (`uprootRefund`); recolocarla no lo cambia.
+   */
+  readonly spent: number;
 }
 
 /**
@@ -242,9 +248,12 @@ export function sownElement(sown: Sown): ElementType | null {
   return sown.kind === 'wall' ? 'shield' : null;
 }
 
-/** Planta recien sembrada: vida llena y lista para disparar en cuanto tenga a quien. */
-export function createPlant(shooter: Shooter = createShooter()): Plant {
-  return { kind: 'shooter', shooter, hp: plantMaxHp(shooter), reloadMs: 0 };
+/**
+ * Planta recien sembrada: vida llena y lista para disparar en cuanto tenga a quien. `spent`, lo gastado en ella (T-046): sin
+ * el, lo que cuesta sembrar una disparadora.
+ */
+export function createPlant(shooter: Shooter = createShooter(), spent: number = COSTS.shooter): Plant {
+  return { kind: 'shooter', shooter, hp: plantMaxHp(shooter), reloadMs: 0, spent };
 }
 
 /** Mina recien sembrada: vida llena y esperando a un enemigo. */
@@ -265,12 +274,13 @@ export function createSownElement(element: ElementType): Mine | Wall {
 /**
  * La disparadora infundida con `element`. Conserva su nivel y su recarga. Si su vida maxima cambia (el escudo la dobla,
  * T-024), conserva la proporcion de vida que tenia: una a media vida queda a media vida. El fuego y el hielo no cambian
- * la vida.
+ * la vida. Lo gastado en ella (T-046) sube un elemento por canon (`infusionCost`), con la carta o arrastrando una mina o un
+ * muro: lo arrastrado costo un elemento al sembrarlo y se pagan los que faltan.
  */
 export function infusedPlant(plant: Plant, element: ElementType): Plant {
   const shooter = infuse(plant.shooter, element);
   const hp = (plant.hp * plantMaxHp(shooter)) / plantMaxHp(plant.shooter);
-  return { ...plant, shooter, hp };
+  return { ...plant, shooter, hp, spent: plant.spent + infusionCost(plant.shooter, element) };
 }
 
 /**
@@ -479,13 +489,20 @@ export function fusionTargets(state: MatchState, from: Cell): Cell[] {
 /**
  * Planta que queda al soltar `source` sobre `target`: suma canones y se queda con el nivel mas bajo (`fuse`).
  * La vida es la suma de la vida actual de las dos (D-02); si el balance cambia la vida maxima de las fusionadas,
- * se conserva la proporcion. Conserva la recarga del destino, que no se mueve de su casilla.
+ * se conserva la proporcion. Conserva la recarga del destino, que no se mueve de su casilla. Lo gastado es lo de las dos
+ * (T-046, AR-02), aunque se quede con el nivel mas bajo.
  */
 export function fusedPlant(source: Plant, target: Plant): Plant {
   const shooter = fuse(source.shooter, target.shooter);
   const maxHp = plantMaxHp(shooter);
   const hpRatio = (source.hp + target.hp) / (plantMaxHp(source.shooter) + plantMaxHp(target.shooter));
-  return { kind: 'shooter', shooter, hp: Math.min(maxHp, Math.round(maxHp * hpRatio)), reloadMs: target.reloadMs };
+  return {
+    kind: 'shooter',
+    shooter,
+    hp: Math.min(maxHp, Math.round(maxHp * hpRatio)),
+    reloadMs: target.reloadMs,
+    spent: source.spent + target.spent,
+  };
 }
 
 /** Fusiona la planta de `from` sobre la de `to`: la primera deja su casilla y la segunda queda con el resultado. Es gratis. */
@@ -557,11 +574,57 @@ export function levelUpPlant(state: MatchState, cell: Cell): MatchState {
   }
   const plant = plantAt(state, cell) as Plant;
   const shooter = levelUp(plant.shooter);
-  const leveled: Plant = { ...plant, shooter, hp: (plant.hp * plantMaxHp(shooter)) / plantMaxHp(plant.shooter) };
+  const leveled: Plant = {
+    ...plant,
+    shooter,
+    hp: (plant.hp * plantMaxHp(shooter)) / plantMaxHp(plant.shooter),
+    spent: plant.spent + offer.cost,
+  };
   const plants = state.plants.map((lane, laneIndex) =>
     laneIndex === cell.lane ? lane.map((sown, col) => (col === cell.col ? leveled : sown)) : lane,
   );
   return { ...state, balance: state.balance - offer.cost, plants };
+}
+
+/**
+ * Moneda gastada en lo sembrado (T-046): lo de la disparadora (`Plant.spent`) o lo que cuesta un muro, que no cambia
+ * (AR-04). Null en lo que no se arranca: las minas, que se gastan solas o se arrastran para infundir, y el muro de hielo
+ * del invento.
+ */
+export function sownSpent(sown: Sown): number | null {
+  if (sown.kind === 'shooter') return sown.spent;
+  return sown.kind === 'wall' ? COSTS.shield : null;
+}
+
+/** Lo que devuelve arrancar algo en lo que se gasto `spent` (T-046): su parte (`UPROOT.refund`), hacia abajo (AR-03). */
+export function refundOf(spent: number): number {
+  return Math.floor(spent * UPROOT.refund);
+}
+
+/**
+ * Lo que devolveria arrancar lo sembrado en `cell` (T-046), o null si no se puede: arrancar aun no esta desbloqueado (ni
+ * lo trae un brote posterior vencido, regla 15), en la casilla no hay nada o lo que hay no se arranca (`sownSpent`). Se
+ * puede siempre, tambien en el ataque (AR-05), y devuelve lo mismo este como este de vida (AR-06).
+ */
+export function uprootRefund(state: MatchState, cell: Cell): number | null {
+  if (!isUnlocked(state, 'uproot')) return null;
+  const sown = sownAt(state, cell);
+  const spent = sown ? sownSpent(sown) : null;
+  return spent === null ? null : refundOf(spent);
+}
+
+/**
+ * Arranca lo sembrado en `cell` (T-046): deja la casilla libre para sembrar en el acto y suma al saldo lo que devuelve
+ * (`uprootRefund`). Los enemigos que lo mordian siguen andando en el siguiente paso, como cuando muere. No modifica el
+ * estado recibido.
+ */
+export function uprootSown(state: MatchState, cell: Cell): MatchState {
+  const refund = uprootRefund(state, cell);
+  if (refund === null) throw new Error('No se puede arrancar lo de esta casilla');
+  const plants = state.plants.map((lane, laneIndex) =>
+    laneIndex === cell.lane ? lane.map((sown, col) => (col === cell.col ? null : sown)) : lane,
+  );
+  return earn({ ...state, plants }, refund);
 }
 
 /** Suma moneda al saldo. Solo enteros no negativos: el juego no usa decimales. */
