@@ -3,6 +3,7 @@ import { useEffect, useState, type CSSProperties, type ReactNode } from 'react';
 import { BOARD, BRAIN, CREEPER } from '../../game/config/balance';
 import { enemyMaxHp, isEnraged, jumpsCrossed, spawnEnemy, type Enemy, type EnemyKind } from '../../game/core/combat';
 import { createMatch } from '../../game/core/match';
+import type { OutbreakId } from '../../game/core/outbreaks';
 import type { EntityInfo } from '../../game/EventBus';
 import { CAST } from '../../game/view/characters/cast';
 import { enemyInfo } from '../../game/view/entityInfo';
@@ -80,11 +81,13 @@ export function usePhotoScene(): Phaser.Scene | null {
 export interface SampleOptions {
   readonly clone?: boolean;
   readonly enraged?: boolean;
+  /** Variante de color (T-041): la tropa como sale en el brote que la recluta. */
+  readonly variant?: OutbreakId | null;
 }
 
 /** Un enemigo de muestra recien salido por la derecha del carril del centro, como lo crea la partida (`spawnEnemy`). */
-export function sampleEnemy(kind: EnemyKind, level: number, { clone = false, enraged = false }: SampleOptions = {}): Enemy {
-  const state = spawnEnemy(createMatch(), kind, Math.floor(BOARD.lanes / 2), BOARD.columns - 0.5, undefined, 1, level);
+export function sampleEnemy(kind: EnemyKind, level: number, { clone = false, enraged = false, variant = null }: SampleOptions = {}): Enemy {
+  const state = spawnEnemy(createMatch(), kind, Math.floor(BOARD.lanes / 2), BOARD.columns - 0.5, undefined, 1, level, variant);
   let enemy = state.enemies[state.enemies.length - 1];
   if (clone) enemy = { ...enemy, clone: true, hp: enemyMaxHp(kind, level, true) };
   if (enraged && (kind === 'creeper' || kind === 'brain')) {
@@ -98,7 +101,7 @@ export function sampleEnemy(kind: EnemyKind, level: number, { clone = false, enr
 /** La ficha del juego (T-010) de un enemigo de muestra, con su foto. */
 export function enemyCard(scene: Phaser.Scene | null, enemy: Enemy): EntityInfo {
   const photo = scene
-    ? portraitUrl(scene, { kind: 'enemy', enemy: enemy.kind, level: enemy.level, enraged: isEnraged(enemy), hasted: enemy.haste > 1, clone: enemy.clone })
+    ? portraitUrl(scene, { kind: 'enemy', enemy: enemy.kind, level: enemy.level, enraged: isEnraged(enemy), hasted: enemy.haste > 1, clone: enemy.clone, variant: enemy.variant })
     : '';
   return { ...enemyInfo(enemy), portrait: photo };
 }

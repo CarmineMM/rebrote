@@ -30,7 +30,7 @@ export const en: Dictionary = {
   outbreak: {
     title: (number, boss) => `Outbreak ${number}: ${boss}`,
     number: (number) => `Outbreak ${number}`,
-    comingBoss: {},
+    comingBoss: { morris: 'Morris' },
   },
 
   title: {
@@ -274,6 +274,11 @@ export const en: Dictionary = {
         'Brain is almost ready: even more troops, and even faster. Close all five lanes',
         'Brain is here! It hops over everything, hidden: only a shield stops it, and mines give it away',
       ],
+      morris: [
+        "The worms are back, and in swarms. They've changed color: Morris recruited them",
+        'Copycats and Minstrels are back: clear them fast and put up shields',
+        "All at once: hidden Lurkers, Skippers and everything you've met",
+      ],
     },
   },
 
@@ -437,6 +442,10 @@ export const en: Dictionary = {
       brain: {
         line: "Brain's coming! In 1986 it was the first PC virus. It hid from anyone looking for it… and left its phone number in the code!",
         card: 'Brain (1986) was the first PC virus. Two brothers from Lahore wrote it and left their names, address and phone number inside the code. It traveled on floppy disks, in the boot sector, and it was stealthy: if someone looked at the disk, it showed them a clean copy. It destroyed nothing.',
+      },
+      morris: {
+        line: "Morris is coming! In 1988 it was the internet's first big worm. It didn't mean to break anything… but it just kept copying itself.",
+        card: "Morris (1988) was the internet's first big worm. A student wrote it just to measure how big the network was. But it had a bug: it kept copying itself onto machines that were already infected, over and over, until they ran out of resources. It knocked thousands of computers offline.",
       },
     },
     lines: {
@@ -709,6 +718,7 @@ export const en: Dictionary = {
       revealed: 'Spotted',
       airborne: 'In the air: shots miss it',
       crouching: 'About to hop!',
+      recruited: (boss: string) => `Recruited by ${boss}`,
     },
     shooter: {
       title: { plain: 'Shooter', fire: 'Fire shooter', ice: 'Ice shooter', shield: 'Shield shooter' },

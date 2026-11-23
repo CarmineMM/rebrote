@@ -129,3 +129,42 @@ body,
   gap: 6px;
   width: 100%;
 }
+
+/* Galeria de las variantes de color (T-041): las fotos de la ficha de las once tropas, una fila por propuesta. */
+.variant-sheet {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 2px;
+  overflow-x: auto;
+}
+
+.variant-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.variant-row span {
+  width: 56px;
+  flex: none;
+  font-weight: 900;
+}
+
+.variant-row img,
+.variant-wait {
+  width: 72px;
+  height: 72px;
+  border-radius: 10px;
+  background: #2b2034;
+}
+
+/* La galeria de variantes tiene mucho debajo del escenario: la pagina baja y el escenario guarda su alto. */
+.variant-lab {
+  height: auto;
+  min-height: 100%;
+}
+
+.variant-lab .lab-stage {
+  flex: none;
+  height: 64vh;
+}

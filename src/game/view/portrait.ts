@@ -24,9 +24,11 @@ import {
   medalTexture,
   mineTexture,
   shooterTexture,
+  variantTexture,
   wallTexture,
   type IceWear,
 } from './textures';
+import { tintById, type TroopTintId } from './troopTint';
 import type { WallWear } from './wallArt';
 import { AURA_LOOK, auraTier, veilSize, veilStrength } from './wormAuraArt';
 import { isBoss } from '../core/combat';
@@ -65,6 +67,10 @@ export type PortraitSubject =
       readonly hasted: boolean;
       /** Copia de un copion (T-025): sin su disquete. Sin decir, no lo es. */
       readonly clone?: boolean;
+      /** Variante de color (T-041, `Enemy.variant`): la tropa con el tinte del brote que la recluto. Sin decir, ninguna. */
+      readonly variant?: OutbreakId | null;
+      /** Otro tinte que el del brote: la galeria de propuestas (`/proposals/variantes.html`). */
+      readonly tint?: TroopTintId;
     };
 
 /** Lado de la foto en pixeles CSS; el lienzo va al doble para que se vea nitida en pantallas densas. */
@@ -104,6 +110,16 @@ interface Piece {
   alpha?: number;
   /** Giro en grados alrededor de su origen (el disquete de los copiones, T-025). */
   angle?: number;
+  /**
+   * Es el dibujo de la tropa (cuerpo, cabeza, patas, armadura...): con variante de color (T-041), se tine. La medallita, el
+   * aura y las rayas de velocidad no.
+   */
+  own?: boolean;
+}
+
+/** Marca como dibujo de la tropa (`Piece.own`) las piezas de `pieces` desde `from`. */
+function markOwn(pieces: Piece[], from: number): void {
+  for (let i = from; i < pieces.length; i++) pieces[i] = { ...pieces[i], own: true };
 }
 
 /**
@@ -132,7 +148,9 @@ export function portraitUrl(scene: Phaser.Scene, subject: PortraitSubject, { bac
   const pieces = piecesFor(subject);
   placeInFrame(pieces);
   paintGroundShadow(ctx, pieces);
-  for (const piece of pieces) drawPiece(ctx, scene, piece);
+  const variant = subject.kind === 'enemy' ? (subject.variant ?? null) : null;
+  const tint = subject.kind === 'enemy' && subject.tint ? tintById(subject.tint) : null;
+  for (const piece of pieces) drawPiece(ctx, scene, piece.own && variant ? { ...piece, key: variantTexture(scene, piece.key, variant, tint) } : piece);
   const url = canvas.toDataURL('image/png');
   cache.set(key, url);
   return url;
@@ -344,6 +362,7 @@ function bugPieces(subject: Extract<PortraitSubject, { kind: 'enemy' }>, kind: B
   const legKey = skipper ? BUG_TEX.skipperLeg(GAME_BUGS.skipper) : BUG_TEX.lurkerLeg(GAME_BUGS.lurker, variant);
   const headKey = skipper ? BUG_TEX.skipperHead(GAME_BUGS.skipper, 'idle') : BUG_TEX.lurkerHead(GAME_BUGS.lurker, variant, 'idle');
   const pieces = enemyBackdrop(subject, BUG_LOOK.streak);
+  const backdrop = pieces.length;
   const legPiece = (mount: LegMount): Piece => ({
     key: legKey,
     x: mount.x,
@@ -376,6 +395,7 @@ function bugPieces(subject: Extract<PortraitSubject, { kind: 'enemy' }>, kind: B
   const headPiece = { x: rig.head.x, y: rig.head.y, scale: 1, ox: head.cx / head.width, oy: head.cy / head.height, width: head.width, height: head.height };
   pieces.push({ key: headKey, ...headPiece });
   if (variant === 'armored') pieces.push({ key: BUG_TEX.lurkerHelmet(GAME_BUGS.lurker), ...headPiece });
+  markOwn(pieces, backdrop);
   if (subject.level > 1) {
     pieces.push({
       key: medalTexture(subject.level),
@@ -402,6 +422,7 @@ function wormPieces(subject: Extract<PortraitSubject, { kind: 'enemy' }>, kind: 
   const pose = poseOf(kind);
   const { head, segment } = WORM_SIZE;
   const pieces = enemyBackdrop(subject, WORM_LOOK.streak);
+  const backdrop = pieces.length;
   const trim = (behind: boolean) =>
     (art.trims ?? [])
       .filter((t) => t.behind === behind)
@@ -438,6 +459,7 @@ function wormPieces(subject: Extract<PortraitSubject, { kind: 'enemy' }>, kind: 
     const { width, height, cx, cy } = HAT_SIZE;
     pieces.push({ key: art.hat, x: headPiece.x, y: headPiece.y, scale: 1, ox: cx / width, oy: cy / height, width, height });
   }
+  markOwn(pieces, backdrop);
   if (!isBoss(subject.enemy) && subject.level > 1) {
     const { medal } = WORM_LOOK;
     pieces.push({

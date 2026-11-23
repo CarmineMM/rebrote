@@ -325,8 +325,11 @@ export interface InfoStat {
 /** Estado del momento en la ficha (quemado, frenado, acelerado, contando...). */
 export interface InfoTag {
   text: string;
-  /** `nursery`: lo que viene del Invernadero, como el nivel base (T-023). */
-  tone: 'fire' | 'ice' | 'haste' | 'alert' | 'calm' | 'nursery';
+  /**
+   * `nursery`: lo que viene del Invernadero, como el nivel base (T-023). `recruit`: una tropa que vuelve en otro brote con su
+   * color (T-041, "Reclutado por Morris").
+   */
+  tone: 'fire' | 'ice' | 'haste' | 'alert' | 'calm' | 'nursery' | 'recruit';
 }
 
 /**

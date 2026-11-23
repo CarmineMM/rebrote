@@ -1048,6 +1048,8 @@ body {
 .info-tag.is-alert { background: rgba(255, 90, 95, 0.24); border-color: #ff8a8a; color: #ffe0e0; }
 .info-tag.is-nursery { background: rgba(128, 209, 83, 0.24); border-color: #9be36a; color: #e4ffd2; }
 .info-tag.is-calm { background: rgba(255, 255, 255, 0.1); border-color: rgba(255, 255, 255, 0.35); color: #e6f2de; }
+/* Tropa que vuelve en otro brote con su color (T-041): el morado hondo de la sombra de Morris. */
+.info-tag.is-recruit { background: rgba(74, 58, 92, 0.6); border-color: #b9a6d6; color: #efe6ff; }
 @keyframes tag-in { from { opacity: 0; transform: scale(0.6); } to { opacity: 1; transform: none; } }
 
 /* Etiquetas y valores en dos columnas alineadas entre filas; la aclaracion, en pequeno bajo el valor. */

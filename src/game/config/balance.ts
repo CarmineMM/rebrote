@@ -1172,6 +1172,73 @@ const BRAIN_ROUNDS: readonly RoundScript[] = [
 ];
 
 /**
+ * Las rondas del brote 4, el de Morris (T-041), en preparacion: un guion PROVISIONAL de 3 rondas para probar las tropas
+ * reutilizadas, hasta que T-042 escriba las 9 de verdad con la sobrecarga y el jefe (`docs/specs/07-brote-4-morris.md`). No
+ * trae tropas nuevas: vuelven las de los tres brotes anteriores, con su nombre y el color de Morris (`recruits`, MT-01 a
+ * MT-04). Cada ronda repasa un brote, ya en cantidad, y la ultima los junta. No desbloquea nada: todo llega de los brotes
+ * anteriores (B-01), tambien la infusion del escudo. Niveles hasta el 9 (MR-01): el 10, solo con el jefe.
+ */
+const MORRIS_ROUNDS: readonly RoundScript[] = [
+  {
+    // Brote 1 en masa: gusanos, acorazados y escupidores.
+    unlocks: [],
+    quiet: true,
+    levels: ENEMY_LEVELS.tables.mid,
+    groups: [
+      { atMs: 3_000, kind: 'worm', lanes: [1, 2, 3] },
+      { atMs: 7_000, kind: 'worm', lanes: ALL },
+      { atMs: 12_000, kind: 'armored', lanes: [0, 4] },
+      { atMs: 16_000, kind: 'spitter', lanes: [1, 3] },
+      { atMs: 21_000, kind: 'worm', lanes: ALL },
+      { atMs: 23_000, kind: 'worm', lanes: ALL },
+      { atMs: 30_000, kind: 'armored', lanes: [1, 2, 3] },
+      { atMs: 35_000, kind: 'spitter', lanes: [0, 2, 4] },
+      { atMs: 42_000, kind: 'worm', lanes: ALL },
+      { atMs: 44_000, kind: 'worm', lanes: ALL },
+      { atMs: 50_000, kind: 'armored', lanes: ALL },
+    ],
+  },
+  {
+    // Brote 2: los tres Copycat, que dejan su copia, y el Minstrel, que pide escudos.
+    unlocks: [],
+    levels: ENEMY_LEVELS.tables.mid,
+    groups: [
+      { atMs: 3_000, kind: 'copycat', lanes: ALL },
+      { atMs: 8_000, kind: 'copycatSpitter', lanes: [1, 3] },
+      { atMs: 13_000, kind: 'minstrel', lanes: [2] },
+      { atMs: 18_000, kind: 'copycatArmored', lanes: [0, 4] },
+      { atMs: 24_000, kind: 'copycat', lanes: ALL },
+      { atMs: 28_000, kind: 'minstrel', lanes: [0, 4] },
+      { atMs: 34_000, kind: 'copycatSpitter', lanes: [0, 2, 4] },
+      { atMs: 40_000, kind: 'copycatArmored', lanes: [1, 2, 3] },
+      { atMs: 46_000, kind: 'copycat', lanes: ALL },
+      { atMs: 48_000, kind: 'copycat', lanes: ALL },
+    ],
+  },
+  {
+    // Brote 3, y luego todos juntos: Lurker ocultos, el Skipper y lo de los dos brotes de antes.
+    unlocks: [],
+    levels: ENEMY_LEVELS.tables.late,
+    groups: [
+      { atMs: 3_000, kind: 'lurker', lanes: ALL },
+      { atMs: 8_000, kind: 'skipper', lanes: [1, 3] },
+      { atMs: 13_000, kind: 'lurkerSpitter', lanes: [0, 4] },
+      { atMs: 18_000, kind: 'lurkerArmored', lanes: [2] },
+      { atMs: 24_000, kind: 'worm', lanes: ALL },
+      { atMs: 28_000, kind: 'copycat', lanes: [0, 2, 4] },
+      { atMs: 32_000, kind: 'skipper', lanes: [0, 4] },
+      { atMs: 36_000, kind: 'minstrel', lanes: [1, 3] },
+      { atMs: 42_000, kind: 'lurker', lanes: ALL },
+      { atMs: 46_000, kind: 'armored', lanes: [0, 4] },
+      { atMs: 50_000, kind: 'copycatArmored', lanes: [2] },
+      { atMs: 56_000, kind: 'spitter', lanes: [1, 3] },
+      { atMs: 60_000, kind: 'lurkerArmored', lanes: [0, 2, 4] },
+      { atMs: 66_000, kind: 'skipper', lanes: ALL },
+    ],
+  },
+];
+
+/**
  * Brotes (T-018, ADR-0015), en orden: cada uno es una campana que acaba en su jefe ("Brote 1: Creeper"), con su guion de
  * rondas (`rounds`, como el de arriba) y el saldo con el que se empieza (`startingBalance`). Lo que desbloquearon los
  * brotes anteriores llega desbloqueado desde la ronda 1 (B-01), asi que las rondas de un brote nuevo solo desbloquean lo
@@ -1207,6 +1274,18 @@ export const OUTBREAKS: readonly OutbreakScript[] = [
     rounds: BRAIN_ROUNDS,
     // Patty no crea nada nuevo: avisa de que el escudo ya se puede infundir (ES-01, `unlock.featureLines` de src/i18n/).
     presenter: 'patty',
+  },
+  {
+    id: 'morris',
+    // T-041: en preparacion (`boss: null`) hasta que T-042 traiga a Morris, el Imparable.
+    boss: null,
+    // Decidido el 23 nov 2026: el doble que el brote 3. En la historia, lo deja preparado Patty.
+    startingBalance: 600,
+    rounds: MORRIS_ROUNDS,
+    // No trae nada nuevo (decidido): si algo lo presentara, seria Patty, como en los brotes 2 y 3.
+    presenter: 'patty',
+    // Sus tropas son las de los brotes 1 a 3, con el color de Morris (T-041).
+    recruits: true,
   },
 ];
 

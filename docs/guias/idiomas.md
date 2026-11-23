@@ -54,6 +54,7 @@ Cómo se escriben los textos de Rebrote para que salgan en español y en inglés
   | Elk Cloner, el Poeta; poema entero (T-026) | Elk Cloner, the Poet; whole poem |
   | Lurker, Skipper (T-038); oculto, descubierto | Lurker, Skipper; hidden, spotted |
   | Brain, el Cerebro (T-039); formateado | Brain, the Mastermind; formatted |
+  | Reclutado por Morris (T-041: una tropa que vuelve en otro brote) | Recruited by Morris |
   | Moneda | Coin |
   | Semillas (T-020) | Seeds |
   | Vidas | Lives |
@@ -91,6 +92,7 @@ Cómo se escriben los textos de Rebrote para que salgan en español y en inglés
 - [ ] Lo que cuenta Boxer de su jefe (T-032) está en `story.lore.<brote>` en los dos idiomas: `line`, una línea que avisa de que llega y dice qué fue el virus de verdad; `card`, lo completo para su ficha (el test comprueba que cada brote los tiene).
 - [ ] Su jefe tiene nombre en `info.enemy.names`: de ahí sale "Brote N: jefe" (`outbreak.title`, compuesto en `src/ui/outbreakName.ts` con `bossName`). No se escribe a mano. Si el brote está en preparación y su jefe aún no es un enemigo del juego (T-024), el nombre va en `outbreak.comingBoss.<brote>` hasta que lo sea.
 - [ ] Los textos que van con cada jefe (T-026) tienen el suyo, con su clave: `victory.title` y `victory.hint`, `defeat.bossTitle`, `bossText` y `bossHint`, `board.bossDown`, `boss.caught`, y lo que dice en su bocadillo (`creeper`, `elkCloner`), con su grito al mandar a la escolta en `shouts`.
+- [ ] Si recluta tropas de brotes anteriores (T-041), no hacen falta nombres nuevos: vuelven con el suyo y la ficha dice quién las reclutó (`info.tags.recruited`, con el nombre de su jefe o el de `outbreak.comingBoss`).
 - [ ] Ningún texto dice "mundo": esa palabra queda para el futuro (el test lo comprueba).
 
 ### Paso de un tour de ayuda (T-013)

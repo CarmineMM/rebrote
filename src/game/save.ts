@@ -30,9 +30,10 @@ export const SAVE_KEY = 'partida';
  * vida entera de cada bloque de hielo (`IceBlock.maxHp`); la 9 (T-023), el nivel base de la partida (`MatchState.baseLevel`); la 10
  * (T-037), lo que la partida trae de brotes posteriores vencidos (`MatchState.carried`). Con ella se descartan tambien las
  * del brote 2 con una disparadora con escudo, que desde T-037 no se infunde ahi (sin migracion, ADR-0014). La 11 (T-038), el
- * salto del Skipper (`Enemy.hop`) y el sigilo de los Lurker (`Enemy.revealMs`).
+ * salto del Skipper (`Enemy.hop`) y el sigilo de los Lurker (`Enemy.revealMs`). La 12 (T-041), la variante de color de las
+ * tropas que vuelven en otro brote (`Enemy.variant`).
  */
-export const SAVE_VERSION = 11;
+export const SAVE_VERSION = 12;
 
 export interface SavedGame {
   readonly version: number;
@@ -198,7 +199,8 @@ function isEnemy(value: unknown): value is Enemy {
     typeof value.clone === 'boolean' &&
     isNullOr(value.recital, isRecital) &&
     isNullOr(value.hop, isHop) &&
-    isNullOr(value.revealMs, (ms) => isNumber(ms) && ms >= 0)
+    isNullOr(value.revealMs, (ms) => isNumber(ms) && ms >= 0) &&
+    isNullOr(value.variant, isOutbreakId)
   );
 }
 

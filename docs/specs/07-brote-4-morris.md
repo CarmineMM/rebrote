@@ -1,6 +1,6 @@
 # Brote 4: Morris
 
-Diseño del cuarto brote, acordado con Carmine el 23 nov 2026. Todavía no está hecho: lo construyen T-041 a T-044. Lo que dice "decidido" lo decidió Carmine; los números son un punto de partida y se ajustan con `npm run sim`.
+Diseño del cuarto brote, acordado con Carmine el 23 nov 2026. Todavía no está hecho: lo construyen T-041 a T-044. T-041 ya está (23 nov 2026, 0.15.4): las tropas vuelven con la variante de color de Morris y el brote existe en preparación, con un guion provisional de 3 rondas y sus 600 monedas. Lo que dice "decidido" lo decidió Carmine; los números son un punto de partida y se ajustan con `npm run sim`.
 
 Es el último brote de la defensa del refugio. Al vencerlo, Boxer y Patty deciden pasar al ataque.
 
@@ -18,7 +18,7 @@ Morris fue el primer gran gusano de internet. Su autor, un estudiante, quería m
 
 ## Tropas: todas las que ya existen (decidido)
 
-No hay tropas nuevas. Vuelven las de los tres brotes anteriores, con otro color y más nivel, y conservan su nombre.
+No hay tropas nuevas. Vuelven las de los tres brotes anteriores, con otro color y más nivel, y conservan su nombre. El color es un tinte de Morris, igual para todas (T-041, MT-01): propuestas en `/proposals/variantes.html`; el juego usa Sombra mientras Carmine no elija otra. La ficha dice "Reclutado por Morris" (MT-02).
 
 | Tropas | De dónde vienen | Qué piden al jugador |
 |---|---|---|

@@ -7,6 +7,7 @@ import { ElkClonerOmen, ElkClonerView } from './elkClonerView';
 import { BugView, isBugKind } from './bugView';
 import { BrainOmen, BrainView } from './brainView';
 import { WormView, type EnemyView } from './wormView';
+import type { TroopTint } from './troopTint';
 import { text } from '../../i18n';
 
 /**
@@ -36,12 +37,13 @@ export function createBossOmen(boss: BossKind, scene: Phaser.Scene, fx: Effects,
  * La vista de un enemigo: la del jefe si lo es (Creeper o Elk Cloner, que envuelven un `WormView`; Brain, T-039, la suya), la
  * de un bicho del brote 3 (T-038, `BugView`) o la de un gusano.
  */
-export function createEnemyView(scene: Phaser.Scene, fx: Effects, enemy: Enemy, emerge: boolean, emergeDelayMs = 0): EnemyView {
+export function createEnemyView(scene: Phaser.Scene, fx: Effects, enemy: Enemy, emerge: boolean, emergeDelayMs = 0, tint: TroopTint | null = null): EnemyView {
   if (enemy.kind === 'creeper') return new CreeperView(scene, fx, enemy, emerge, emergeDelayMs);
   if (enemy.kind === 'elkCloner') return new ElkClonerView(scene, fx, enemy, emerge, emergeDelayMs);
   if (enemy.kind === 'brain') return new BrainView(scene, fx, enemy, emerge, emergeDelayMs);
-  if (isBugKind(enemy.kind)) return new BugView(scene, fx, enemy, emerge, emergeDelayMs);
-  return new WormView(scene, fx, enemy, emerge, emergeDelayMs);
+  // `tint`: otro tinte que el de la variante de la tropa (T-041), solo para la galeria `/proposals/variantes.html`.
+  if (isBugKind(enemy.kind)) return new BugView(scene, fx, enemy, emerge, emergeDelayMs, undefined, tint);
+  return new WormView(scene, fx, enemy, emerge, emergeDelayMs, undefined, tint);
 }
 
 /** Lo que grita cada jefe al mandar a su escolta (`shouts` de `creeper`, `elkCloner` y `brain` en `src/i18n/`). */

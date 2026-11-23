@@ -16,10 +16,10 @@ import type { Presenter, RoundScript } from './rounds';
 
 /**
  * Nombre de cada brote: el de su jefe. Al anadir un brote, su nombre va aqui. El brote 2, de Elk Cloner, existio desde
- * T-024 en preparacion (sin jefe) hasta que T-026 trajo a su jefe y su guion de verdad. El 3, de Brain, lo esta desde
- * T-037 hasta T-039.
+ * T-024 en preparacion (sin jefe) hasta que T-026 trajo a su jefe y su guion de verdad. El 3, de Brain, lo estuvo desde
+ * T-037 hasta T-039. El 4, de Morris, lo esta desde T-041 hasta que T-042 traiga a su jefe.
  */
-export type OutbreakId = 'creeper' | 'elkCloner' | 'brain';
+export type OutbreakId = 'creeper' | 'elkCloner' | 'brain' | 'morris';
 
 export interface OutbreakScript {
   /**
@@ -43,6 +43,11 @@ export interface OutbreakScript {
    * lo cuenta siempre Boxer.
    */
   readonly presenter?: Presenter;
+  /**
+   * Recluta tropas de los brotes anteriores (T-041): las que su guion saca de un brote de antes salen con la variante de
+   * color de este brote (`troopVariant` en `variants.ts`), con su nombre, sus reglas y sus valores base. Desde el brote 4.
+   */
+  readonly recruits?: boolean;
 }
 
 /** Brote con el que empieza el juego: el primero de la lista. */
