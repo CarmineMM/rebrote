@@ -73,6 +73,7 @@ Cómo se escriben los textos de Rebrote para que salgan en español y en inglés
 - No se traducen: "Rebrote", Creeper, Elk Cloner (T-026), Copycat y Minstrel (T-025), Lurker y Skipper (T-038), Brain (T-039), Morris (T-042), Boxer, Patty, los nombres de tecnologías, el nombre de cada idioma en el selector y el apodo que pone Boxer, "Rookie" (T-033, NJ-03), que vive en `src/game/playerName.ts` porque se guarda en el perfil como un nombre más.
 - El nombre del jugador (T-033) es un dato: nunca se traduce y siempre va como argumento dentro de la frase (`story.lines`, `greenhouse.hello`, `name.saved`).
 - La IA de la historia es "ella" en español y "she" en inglés (T-031).
+- **El giro (T-043).** En el brote 4 Boxer anima y propone salir; Patty duda, pero poco, sin drama, y se va convenciendo. Su última frase es "Nos espera un largo viaje." / "We have a long journey ahead."
 - **Quién habla (T-032).** Las frases de los tours las dice Boxer: de tú, con prisa y algo de gracia, pero cortas e igual de claras. Lo que presenta un desbloqueo lo dice Boxer en el brote 1 y Patty desde el brote 2 (`unlock.presenters`: Patty siempre empieza por "¡He creado algo nuevo!"). Patty en el Invernadero (`greenhouse.patty`): frases cortas que puedan salir en cualquier momento, sin contar nada del juego.
 - Un texto en inglés puede ser más largo: hay que comprobar que cabe donde va (cartas de tamaño fijo, botones del menú, rótulos del tablero) en los dos idiomas.
 
@@ -106,6 +107,12 @@ Cómo se escriben los textos de Rebrote para que salgan en español y en inglés
 - [ ] Es corta: dos o tres frases como mucho. Cabe en el bocadillo a 568 × 320 sin desplazarse.
 - [ ] Si nombra al jugador, es una función que recibe su nombre o null, y sin nombre se lee bien (trato neutro).
 - [ ] Los nombres de los personajes (Boxer, Patty) no se traducen.
+
+### Comentario nuevo (T-043)
+- [ ] Su frase está en `story.remarks.<brote>.<frase>` en los dos idiomas, con la misma clave que en `REMARKS` (el test lo comprueba).
+- [ ] Es una sola frase corta, de 80 caracteres como mucho (el test lo comprueba): se lee en unos 5 s y cabe en la esquina a 568 × 320 en tres líneas.
+- [ ] Si nombra al jugador, es una función que recibe su nombre o null, como las viñetas.
+- [ ] Cuenta la historia: nunca explica controles (eso es de los tours).
 
 ### Idioma nuevo
 - [ ] `src/i18n/xx.ts` declarado como `Dictionary`, con su `locale` y `decimalComma`.

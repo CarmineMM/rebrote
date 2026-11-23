@@ -56,8 +56,10 @@ import { VictoryScreen } from './ui/VictoryScreen';
 import { CoinHint } from './ui/tour/CoinHint';
 import { TourOverlay } from './ui/tour/TourOverlay';
 import { useTours } from './ui/tour/useTours';
+import { RemarkBubble } from './ui/story/RemarkBubble';
 import { nameAfterStory, type StoryId } from './ui/story/stories';
 import { StoryOverlay } from './ui/story/StoryOverlay';
+import { useRemark } from './ui/story/useRemark';
 import { useStory } from './ui/story/useStory';
 
 /** Cartas de la bandeja, en orden. Solo se ven las que la ronda ya desbloqueo (T-007). */
@@ -100,7 +102,8 @@ const SCENE_OF: Record<GameScreen, string> = { title: SCENES.title, board: SCENE
  * En la de Creeper, Boxer pregunta el nombre del jugador (T-033), que va en su perfil y se cambia en Opciones; quien no lo
  * dice o salta las viñetas se queda con el apodo de Boxer. Boxer da los tours y cuenta que fue cada jefe antes de su
  * combate; lo nuevo lo presenta quien diga el brote (Boxer o Patty), y Patty esta en el Invernadero (T-032). Con el teclado en pantalla abierto, la viñeta y el panel del
- * menu se meten en lo que se ve (`useKeyboardArea`).
+ * menu se meten en lo que se ve (`useKeyboardArea`). En el brote 4 (T-043, el giro) hay ademas viñetas al empezar, en la
+ * ronda 5 y al caer Morris, y comentarios de una linea en la preparacion que no paran el juego (`useRemark`).
  */
 export function App() {
   const t = useText();
@@ -207,6 +210,15 @@ export function App() {
   const needsLandscape = useNeedsLandscape();
   // Tours de ayuda (T-013): esperan debajo de cualquier cosa que tape el juego.
   const tours = useTours({ player: playerList.active, onBoard, round, help: settings.help, covered: halted || needsLandscape, over });
+  // Comentarios de la historia (T-043): una frase en la preparacion, sin parar el juego. Esperan a que no haya nada encima,
+  // tampoco un tour, y salen aunque la ayuda este apagada (HG-07).
+  const remark = useRemark({
+    player: playerList.active,
+    onBoard,
+    round,
+    over,
+    covered: halted || needsLandscape || tours.tour !== null || !ready,
+  });
 
   // Version nueva del juego instalado (T-029, V-03): sola y en la portada, nunca en mitad de una partida ni de una viñeta.
   useUpdateWhenIdle(screen === 'title', storyOn);
@@ -591,6 +603,20 @@ export function App() {
       )}
 
       {tours.hintCoin && <CoinHint key={tours.hintCoin.id} coin={tours.hintCoin} />}
+
+      {onBoard && remark.remark && remark.outbreak && (
+        <RemarkBubble
+          key={`${remark.outbreak}:${remark.remark.id}`}
+          outbreak={remark.outbreak}
+          remark={remark.remark}
+          name={player.name}
+          hidden={remark.hidden}
+          leaving={remark.leaving}
+          onShown={remark.shown}
+          onDismiss={remark.dismiss}
+          onGone={remark.gone}
+        />
+      )}
 
       {story.story && story.step && (
         <StoryOverlay

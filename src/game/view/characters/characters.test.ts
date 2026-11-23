@@ -4,7 +4,7 @@ import { CAST } from './cast';
 import { BOXER_PROPOSALS, CHARACTER_PROPOSALS, PATTY_PROPOSALS } from './catalog';
 import { type CharacterDesign, EXPRESSIONS, PORTRAIT_SIZE, type Pose } from './design';
 
-/** Todas las poses que pinta la viñeta: tres expresiones, con los ojos abiertos o cerrados y la boca abierta o cerrada. */
+/** Todas las poses que pinta la viñeta: las cuatro expresiones, con los ojos abiertos o cerrados y la boca abierta o cerrada. */
 const POSES: Pose[] = EXPRESSIONS.flatMap((expression) =>
   [false, true].flatMap((blink) => [false, true].map((open) => ({ expression, blink, open }))),
 );

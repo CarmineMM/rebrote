@@ -442,6 +442,9 @@ export const en: Dictionary = {
       opening: 'The rescue',
       creeperDown: 'What happened',
       pattyGreenhouse: 'Patty, the botanist',
+      morrisOpening: 'More than ever',
+      morrisDebate: 'What if we go?',
+      morrisDown: 'A long journey',
     },
     loreTitle: (boss) => `The real ${boss}`,
     lore: {
@@ -478,7 +481,32 @@ export const en: Dictionary = {
         hello: (name) =>
           `So you're the one who stopped Creeper${name ? `, ${name}` : ''}? I'm Patty. The plants are my thing. Come back anytime: I'm always making something new.`,
       },
+      morrisOpening: {
+        howMany: 'Worms again. But look how many.',
+        prepared: "I've set you up with more than usual. You're going to need it.",
+      },
+      morrisDebate: {
+        think: 'Think about it, Patty. Three bosses, and not one got through.',
+        garden: 'And what if we go out there and lose the garden?',
+        stay: 'And what if we stay, and one day they do get through?',
+      },
+      morrisDown: {
+        pots: (name) => `We've spent too long watering and waiting. Grab the flowerpots${name ? `, ${name}` : ''}, we're going on a field trip!`,
+        convinced: "All right. You've both convinced me.",
+        journey: 'We have a long journey ahead.',
+      },
     },
+    remarks: {
+      morris: {
+        untouched: "Nice. They didn't even get close.",
+        tooGood: "Hey, you're good at this. Too good to keep hiding.",
+        noIdeas: "Don't put ideas in their head, Boxer. The shelter is all we have.",
+        maybe: "Okay. Maybe you've got a point.",
+        promise: "If we stop this one, we'll talk. I promise.",
+        lastOne: "Let's make this the last one that catches us waiting.",
+      },
+    },
+    closeRemark: 'Close the comment',
   },
 
   defeat: {

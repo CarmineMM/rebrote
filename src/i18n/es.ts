@@ -538,6 +538,10 @@ export const es = {
       opening: 'El rescate',
       creeperDown: 'Lo que pasó',
       pattyGreenhouse: 'Patty, la botánica',
+      // T-043: el giro, en el brote 4.
+      morrisOpening: 'Más que nunca',
+      morrisDebate: '¿Y si salimos?',
+      morrisDown: 'Un largo viaje',
     },
     /** Titulo de lo que cuenta Boxer de cada jefe (T-032), para volver a verlo. */
     loreTitle: (boss: string) => `El ${boss} de verdad`,
@@ -583,7 +587,40 @@ export const es = {
         hello: (name: string | null) =>
           `¿Así que tú eres quien ha parado a Creeper${name ? `, ${name}` : ''}? Soy Patty. Las plantas son cosa mía. Vuelve cuando quieras: siempre estoy creando algo nuevo.`,
       },
+      // El giro (T-043): al empezar el brote 4, en la ronda 5 y al caer Morris. `pots` recibe el nombre del jugador o null.
+      morrisOpening: {
+        howMany: 'Otra vez gusanos. Pero mira cuántos.',
+        prepared: 'Te he dejado preparado más de lo habitual. Lo vas a necesitar.',
+      },
+      morrisDebate: {
+        think: 'Piénsalo, Patty. Tres jefes, y ninguno ha pasado.',
+        garden: '¿Y si salimos y perdemos el jardín?',
+        stay: '¿Y si nos quedamos y un día sí pasan?',
+      },
+      morrisDown: {
+        pots: (name: string | null) =>
+          `Llevamos demasiado tiempo regando y esperando. ¡Coge las macetas${name ? `, ${name}` : ''}, que nos vamos de excursión!`,
+        convinced: 'Está bien. Me habéis convencido los dos.',
+        journey: 'Nos espera un largo viaje.',
+      },
     },
+    /**
+     * Comentarios de una línea (T-043): un personaje en la preparación de una ronda, sin parar el juego, en un bocadillo
+     * que se va solo. Uno por clave de `REMARKS` (`src/ui/story/remarks.ts`), por brote. Cortos: caben en una esquina a
+     * 568 × 320.
+     */
+    remarks: {
+      morris: {
+        untouched: 'Bien. Ni se han acercado.',
+        tooGood: 'Oye, esto se te da bien. Demasiado bien para seguir escondidos.',
+        noIdeas: 'No le des ideas, Boxer. El refugio es todo lo que tenemos.',
+        maybe: 'Vale. Puede que tengas algo de razón.',
+        promise: 'Si paramos a este, hablamos. Te lo prometo.',
+        lastOne: 'Que sea el último que nos pilla esperando.',
+      },
+    },
+    /** Para cerrar un comentario antes de tiempo (lectores de pantalla). */
+    closeRemark: 'Cerrar el comentario',
   },
 
   defeat: {

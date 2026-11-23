@@ -14,13 +14,13 @@ import './characterLab.css';
 
 /**
  * Galeria de personajes (T-031): `npm run dev` y abrir `/proposals/personajes.html`. Tres propuestas de Boxer y tres de Patty (Y-01,
- * Y-02) con sus tres expresiones (Y-04), y la viñeta de verdad con las elegidas a 1600 x 900, 812 x 375 y 568 x 320. No la
+ * Y-02) con sus expresiones (Y-04; la cuarta, dudoso, de T-043), y la viñeta de verdad con las elegidas a 1600 x 900, 812 x 375 y 568 x 320. No la
  * ve el jugador (`npm run build` no la incluye), asi que sus textos van en espanol sin `src/i18n/`.
  */
 
 type Tab = 'proposals' | 'vignette';
 
-const EXPRESSION_NAMES: Record<Expression, string> = { normal: 'Normal', hurried: 'Apurado', happy: 'Contento' };
+const EXPRESSION_NAMES: Record<Expression, string> = { normal: 'Normal', hurried: 'Apurado', happy: 'Contento', doubtful: 'Dudoso' };
 
 function ProposalCard({ design, chosen, talking }: { design: CharacterDesign; chosen: boolean; talking: boolean }) {
   const [expression, setExpression] = useState<Expression>('normal');

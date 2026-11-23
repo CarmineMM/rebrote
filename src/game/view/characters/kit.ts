@@ -176,7 +176,8 @@ export interface Eyes {
 }
 
 /** Ojos grandes con brillo que miran un poco a la derecha. Apurado: mas abiertos y con la pupila pequena. Contento: el
- * parpado de abajo sube. Parpadeando: una raya (contento, en arco hacia arriba). */
+ * parpado de abajo sube. Dudoso (T-043): el parpado de arriba a media altura y la mirada de reojo, hacia arriba.
+ * Parpadeando: una raya (contento, en arco hacia arriba). */
 export function paintEyes(ctx: Ctx, cx: number, eyes: Eyes, pose: Pose): void {
   const { expression } = pose;
   for (const side of [-1, 1]) {
@@ -197,8 +198,9 @@ export function paintEyes(ctx: Ctx, cx: number, eyes: Eyes, pose: Pose): void {
     // Sombra del parpado sobre el blanco.
     ellipse(ctx, x, y - ry * 0.95, rx * 1.2, ry * 0.5, 'rgba(120, 90, 80, 0.16)');
     const ir = rx * (expression === 'hurried' ? 0.5 : 0.62);
-    const ix = x + rx * 0.24;
-    const iy = y + ry * 0.06;
+    const doubtful = expression === 'doubtful';
+    const ix = x + rx * (doubtful ? 0.34 : 0.24);
+    const iy = y + ry * (doubtful ? -0.08 : 0.06);
     const g = ctx.createRadialGradient(ix - ir * 0.3, iy - ir * 0.4, ir * 0.1, ix, iy, ir);
     g.addColorStop(0, eyes.iris[0]);
     g.addColorStop(1, eyes.iris[1]);
@@ -209,6 +211,10 @@ export function paintEyes(ctx: Ctx, cx: number, eyes: Eyes, pose: Pose): void {
     if (expression === 'happy') {
       // El parpado de abajo sube con la sonrisa.
       ellipse(ctx, x, y + ry * 1.28, rx * 1.4, ry * 0.72, eyes.skin.mid);
+    }
+    if (doubtful) {
+      // El parpado de arriba baja: mira de reojo, sin acabar de creerselo.
+      ellipse(ctx, x, y - ry * 1.18, rx * 1.4, ry * 0.7, eyes.skin.mid);
     }
     ctx.restore();
     // Contorno, con el parpado de arriba mas grueso.
@@ -222,6 +228,13 @@ export function paintEyes(ctx: Ctx, cx: number, eyes: Eyes, pose: Pose): void {
     ctx.lineWidth = 4.2;
     ctx.lineCap = 'round';
     ctx.stroke();
+    if (doubtful) {
+      ctx.beginPath();
+      ctx.moveTo(x - rx * 0.95, y - ry * 0.67);
+      ctx.quadraticCurveTo(x, y - ry * 0.29, x + rx * 0.95, y - ry * 0.67);
+      ctx.lineWidth = 3.6;
+      ctx.stroke();
+    }
     if (expression === 'happy') {
       ctx.beginPath();
       ctx.moveTo(x - rx * 0.95, y + ry * 0.62);
@@ -296,13 +309,17 @@ export interface Brows {
   readonly color: string;
 }
 
-/** Cejas: normal, casi rectas; apurado, con lo de dentro levantado (preocupado y con prisa); contento, en arco y altas. */
+/**
+ * Cejas: normal, casi rectas; apurado, con lo de dentro levantado (preocupado y con prisa); contento, en arco y altas;
+ * dudoso (T-043), una baja y la otra levantada en arco, la del lado al que mira.
+ */
 export function paintBrows(ctx: Ctx, cx: number, brows: Brows, expression: Expression): void {
-  const lift = { normal: [0, -2, -5], hurried: [-10, 1, -3], happy: [-6, -7, -9] }[expression];
+  const lifts = { normal: [0, -2, -5], hurried: [-10, 1, -3], happy: [-6, -7, -9], doubtful: [3, 2, -3] };
   ctx.strokeStyle = brows.color;
   ctx.lineWidth = brows.thick;
   ctx.lineCap = 'round';
   for (const side of [-1, 1]) {
+    const lift = expression === 'doubtful' && side === 1 ? [-7, -9, -10] : lifts[expression];
     const inner = cx + side * (brows.dx - brows.length * 0.45);
     const outer = cx + side * (brows.dx + brows.length * 0.55);
     const innerY = brows.y + lift[0];
@@ -349,7 +366,8 @@ export interface Mouth {
 
 /**
  * Boca segun la expresion, cerrada o abierta (hablando). Normal: sonrisa tranquila. Apurado: boca tensa y, abierta,
- * gritando. Contento: sonrisa grande y, abierta, riendo con la lengua.
+ * gritando. Contento: sonrisa grande y, abierta, riendo con la lengua. Dudoso (T-043): torcida hacia un lado y, abierta,
+ * pequena y corrida.
  */
 export function paintMouth(ctx: Ctx, m: Mouth, pose: Pose): void {
   const { x, y, w, outline } = m;
@@ -364,6 +382,9 @@ export function paintMouth(ctx: Ctx, m: Mouth, pose: Pose): void {
     } else if (pose.expression === 'happy') {
       ctx.moveTo(x - w * 0.62, y - 6);
       ctx.quadraticCurveTo(x, y + w * 0.5, x + w * 0.62, y - 7);
+    } else if (pose.expression === 'doubtful') {
+      ctx.moveTo(x - w * 0.34, y + 1);
+      ctx.quadraticCurveTo(x + w * 0.06, y + 4, x + w * 0.42, y - 6);
     } else {
       ctx.moveTo(x - w * 0.5, y - 3);
       ctx.quadraticCurveTo(x, y + w * 0.32, x + w * 0.5, y - 4);
@@ -396,6 +417,8 @@ export function paintMouth(ctx: Ctx, m: Mouth, pose: Pose): void {
     ctx.moveTo(x - w * 0.62, y - 6);
     ctx.quadraticCurveTo(x, y - 1, x + w * 0.62, y - 7);
     ctx.bezierCurveTo(x + w * 0.52, y + w * 0.62, x - w * 0.52, y + w * 0.62, x - w * 0.62, y - 6);
+  } else if (pose.expression === 'doubtful') {
+    ctx.ellipse(x + w * 0.1, y + w * 0.08, w * 0.22, w * 0.2, -0.25, 0, Math.PI * 2);
   } else {
     ctx.moveTo(x - w * 0.42, y - 3);
     ctx.quadraticCurveTo(x, y + 1, x + w * 0.42, y - 4);
@@ -407,9 +430,10 @@ export function paintMouth(ctx: Ctx, m: Mouth, pose: Pose): void {
   ctx.save();
   ctx.clip();
   // Dientes arriba y lengua abajo.
-  const top = pose.expression === 'hurried' ? y + w * 0.16 - w * 0.4 : y - 8;
+  const top = pose.expression === 'hurried' ? y + w * 0.16 - w * 0.4 : pose.expression === 'doubtful' ? y - w * 0.16 : y - 8;
   ellipse(ctx, x, top, w * 0.7, w * (pose.expression === 'hurried' ? 0.14 : 0.13), '#ffffff');
-  ellipse(ctx, x + w * 0.05, y + w * (pose.expression === 'hurried' ? 0.52 : 0.5), w * 0.34, w * 0.2, '#f07a7e');
+  const tongue = pose.expression === 'hurried' ? 0.52 : pose.expression === 'doubtful' ? 0.3 : 0.5;
+  ellipse(ctx, x + w * 0.05, y + w * tongue, w * 0.34, w * 0.2, '#f07a7e');
   ctx.restore();
   ctx.lineWidth = 3.2;
   ctx.strokeStyle = outline;
