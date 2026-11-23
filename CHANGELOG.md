@@ -4,6 +4,7 @@ Una línea por task cerrada, lo más nuevo arriba. Cómo se numera: `docs/adr/00
 
 | Versión | Fecha | Task | Qué cambia |
 |---|---|---|---|
+| 0.15.1 | 23 nov 2026 | T-039 (ajuste) | Brain tiene un 50 % más de vida (7425): sin comprar nivel base en el vivero casi no se le gana |
 | 0.15.0 | 23 nov 2026 | T-039 | El brote 3 se juega entero: 8 rondas y su jefe, Brain, un cerebro bajo una cúpula de cristal sobre patas de muelle que avanza oculto y a saltos por encima de las plantas; solo lo para un escudo, y las minas y la granada lo descubren un rato |
 | 0.14.0 | 22 nov 2026 | T-038 | Tropas del brote 3 (Brain), aún en preparación: los Lurker, camaleones que llegan ocultos y que las plantas no ven hasta tenerlos a 4 casillas (los descubren el daño, el hielo y el fuego), y el Skipper, un saltamontes que salta por encima de todo lo que no sea escudo |
 | 0.13.0 | 22 nov 2026 | T-037 | El escudo llega en dos pasos: en el brote 2 solo se siembra como muro y la disparadora con escudo se estrena en el brote 3 (Brain), que queda en preparación. Lo desbloqueado en un brote vencido se puede usar también al rejugar los anteriores |

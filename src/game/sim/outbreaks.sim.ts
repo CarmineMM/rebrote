@@ -109,7 +109,7 @@ describe('brote 1 con nivel base (T-023)', () => {
 const DOORS_STRONG: BotStyle = { name: 'con disparadoras con escudo y 3 canones', shields: 'always', columns: 3, cannons: 3, door: 'shooter' };
 const MINES_STRONG: BotStyle = { name: 'solo minas contra Brain y 3 canones', shields: 'always', columns: 3, cannons: 3, mines: true };
 
-describe('brote 3: Brain (T-039)', () => {
+describe('brote 3: Brain (T-039; vida +50 % en 0.15.1)', () => {
   it('sin escudos ni minas se pierde casi siempre, tambien con 3 canones', () => {
     for (const style of [SHIELDLESS, SHIELDLESS_STRONG]) {
       const results = play('brain', style);
@@ -118,40 +118,35 @@ describe('brote 3: Brain (T-039)', () => {
     }
   });
 
-  it('con muros bien puestos y disparadoras de 3 canones se gana la mayoria', () => {
-    const results = play('brain', SHIELDED_STRONG);
-    report('brain', SHIELDED_STRONG, results);
-    expect(results.filter((r) => r.outcome === 'won').length).toBeGreaterThan(RUNS / 2);
-  });
-
-  it('con disparadoras con escudo como puerta, tambien', () => {
-    const results = play('brain', DOORS_STRONG);
-    report('brain', DOORS_STRONG, results);
-    expect(results.filter((r) => r.outcome === 'won').length).toBeGreaterThan(RUNS / 2);
-  });
-
-  it('con escudos y 2 canones hace falta nivel base: sin el se pierde, con el 3 se gana la mayoria', () => {
-    const bare = play('brain', SHIELDED);
-    report('brain', SHIELDED, bare);
+  it('sin mejoras casi no se le gana; con muros, 3 canones y nivel base 3, la mayoria', () => {
+    const bare = play('brain', SHIELDED_STRONG);
+    report('brain', SHIELDED_STRONG, bare);
     expect(bare.filter((r) => r.outcome === 'won').length).toBeLessThanOrEqual(RUNS * 0.2);
-    const bought = play('brain', SHIELDED, 3);
-    report('brain', SHIELDED, bought, 3);
+    const bought = play('brain', SHIELDED_STRONG, 3);
+    report('brain', SHIELDED_STRONG, bought, 3);
     expect(bought.filter((r) => r.outcome === 'won').length).toBeGreaterThan(RUNS / 2);
   });
 
-  it('sin escudo en su carril, solo con minas (BR-05): sin mejoras no basta; con nivel base 3, si', () => {
-    const bare = play('brain', MINES_STRONG);
-    report('brain', MINES_STRONG, bare);
-    const bought = play('brain', MINES_STRONG, 3);
-    report('brain', MINES_STRONG, bought, 3);
-    expect(bought.filter((r) => r.outcome === 'won').length).toBeGreaterThan(0);
+  it('con disparadoras con escudo como puerta y nivel base 3, tambien la mayoria', () => {
+    const results = play('brain', DOORS_STRONG, 3);
+    report('brain', DOORS_STRONG, results, 3);
+    expect(results.filter((r) => r.outcome === 'won').length).toBeGreaterThan(RUNS / 2);
   });
 
-  for (const baseLevel of [1, 3, 5]) {
-    it(`con muros y 3 canones, nivel base ${baseLevel} (se anota)`, () => {
-      const results = play('brain', SHIELDED_STRONG, baseLevel);
-      report('brain', SHIELDED_STRONG, results, baseLevel);
-      expect(results.filter((r) => r.outcome === 'won').length).toBeGreaterThan(RUNS / 2);
-    });
-  }
+  it('con escudos y 2 canones hace falta el nivel base 5', () => {
+    const three = play('brain', SHIELDED, 3);
+    report('brain', SHIELDED, three, 3);
+    expect(three.filter((r) => r.outcome === 'won').length).toBeLessThanOrEqual(RUNS * 0.2);
+    const five = play('brain', SHIELDED, 5);
+    report('brain', SHIELDED, five, 5);
+    expect(five.filter((r) => r.outcome === 'won').length).toBeGreaterThan(RUNS / 2);
+  });
+
+  it('sin escudo en su carril, solo con minas (BR-05): hace falta el nivel base 5', () => {
+    const three = play('brain', MINES_STRONG, 3);
+    report('brain', MINES_STRONG, three, 3);
+    const five = play('brain', MINES_STRONG, 5);
+    report('brain', MINES_STRONG, five, 5);
+    expect(five.filter((r) => r.outcome === 'won').length).toBeGreaterThan(0);
+  });
 });

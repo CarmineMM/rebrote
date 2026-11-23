@@ -121,7 +121,7 @@ Decisiones BR-02 a BR-09 cerradas por Carmine con la recomendación, y una nueva
 - **En el aire no le dan las balas ni las minas (BR-08).**
 - **Escolta (BR-07):** un Lurker acorazado de nivel 10 por carril y dos Skipper de nivel 10, antes que él, con su grito; luego, refuerzos mientras vive.
 - **Grande y con la boca pegada al escudo:** su hocico queda por delante del de cualquier tropa que muerda el mismo escudo, así que descubierto se lleva él los disparos. Con el hocico del acorazado por delante, su escolta se comía las balas y descubierto apenas recibía 113 de daño por segundo.
-- **Vida 4500 de base (4950 con la fuerza de todos) y mordisco de 80 (88) cada 1,2 s,** ajustados con la simulación (abajo). Con 8000 no se le ganaba ni con muros y 3 cañones (3 de 10); con 5000, 9 de 10, pero solo con minas hacía falta el nivel base 5.
+- **Vida 6750 de base (7425 con la fuerza de todos) y mordisco de 80 (88) cada 1,2 s.** T-039 la dejó en 4500 con la simulación (abajo); en 0.15.1 Carmine la subió un 50 % al probarlo. Con 8000 no se le ganaba ni con muros y 3 cañones (3 de 10); con 5000, 9 de 10, pero solo con minas hacía falta el nivel base 5.
 - **Habla (BR-09)** en un bocadillo de contestador: "¿Me buscabas? Deja tu mensaje." al llegar; se burla al ocultarse, al morder el escudo y al descubrirlo una mina, y al escapar y al ganar. Las frases las escribió Claude con el teléfono y el disco limpio del Brain real; Carmine las revisa antes de cerrar la task.
 - **Se prepara** en las rondas 6 y 7 (y en la preparación de la 8) a la derecha, marcando sectores como defectuosos en un mapa de sectores (se llena de rojos tachados) y ocultándose un instante cada poco. En la 6, Boxer cuenta qué fue el Brain real (`story.lore.brain`, de T-037).
 - **Se ve siempre:** oculto, la silueta morada que tiembla de los Lurker, con los ojos en verde; descubierto, sus colores, con un destello verde al descubrirse. Su barra dice "Oculto" o "¡Descubierto!" y marca dónde entra en la fase 2; en la fase 2 se enciende un halo rojo y pone cara de enfado.
@@ -181,3 +181,21 @@ En qué se distingue de los anteriores: Creeper cambia de carril; Elk Cloner ata
 - Hasta el brote 4, cada brote trae las suyas, para que el jugador siempre note algo nuevo.
 - Hacia el brote 10 vuelven a entrar tropas nuevas.
 - El Minstrel queda exclusivo del brote 2 por ahora; se guarda para otro jefe más adelante.
+
+### Vida +50 % (0.15.1, 23 nov 2026)
+
+Al probar el combate, Carmine subió la vida de Brain un 50 % (de 4500 a 6750 de base). Con `npm run sim`, 10 partidas por bot:
+
+| Bot | Sin mejoras | Nivel base 3 | Nivel base 5 |
+|---|---|---|---|
+| Sin escudos ni minas (2 o 3 cañones) | 0 de 10 | 0 de 10 | 0 de 10 |
+| Muros, 3 cañones | 1 de 10 (jefe en 61 s) | 9 de 10 (47 s) | 10 de 10 (33 s) |
+| Muros, 2 cañones | 0 de 10 | 0 de 10 | 10 de 10 (50 s) |
+| Disparadoras con escudo, 3 cañones | 0 de 10 | 7 de 10 (46 s), sin perder vidas | 10 de 10 (33 s) |
+| Disparadoras con escudo, 2 cañones | 0 de 10 | 1 de 10 | 4 de 10 |
+| Solo minas contra Brain, 3 cañones (BR-05) | 0 de 10 | 0 de 10 | 7 de 10 (34 s) |
+| Solo minas contra Brain, 2 cañones | 0 de 10 | 0 de 10 | 0 de 10 |
+
+- **Sin comprar nivel base, a Brain casi no se le gana:** el brote 3 pide pasar por el vivero (el nivel base 3 cuesta 4500 semillas). En el brote 2, sin mejoras, con escudos y 3 cañones se ganaba siempre.
+- **BR-05 sigue siendo posible, pero solo con el nivel base 5** (el vivero entero).
+- **La disparadora con escudo sigue sirviendo** con nivel base: gana algo menos que el muro, pero sin perder vidas.

@@ -381,8 +381,11 @@ export const ENEMIES = {
    */
   brain: {
     reward: 0,
-    /** PROVISIONAL (docs/specs/06-brote-3-brain.md): solo se le dispara mientras esta descubierto. */
-    hp: 4500,
+    /**
+     * Solo se le dispara mientras esta descubierto. 0.15.1 (Carmine, 23 nov 2026): un 50 % mas que en T-039 (4500); 7425 con la
+     * fuerza de todos. PROVISIONAL (docs/specs/06-brote-3-brain.md).
+     */
+    hp: 6750,
     /** Casillas por segundo, de media en la fase 1: `BRAIN.hopLength` cada descanso y vuelo. */
     speed: BRAIN.hopLength / ((BRAIN.calm.restMs + BRAIN.airMs) / 1000),
     attack: 'bite',
