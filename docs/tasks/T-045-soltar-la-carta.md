@@ -1,6 +1,6 @@
 # [Interfaz] Soltar la carta elegida tocando donde no se puede jugar
 
-**Estado:** Pendiente · **Prioridad:** Alta · **Tamaño estimado:** S (orientativo) · **Depende de:** ninguna · **Bloquea a:** ninguna · **Origen:** conversación de diseño del 23 nov 2026
+**Estado:** Completada (23 nov 2026, 0.16.3) · **Prioridad:** Alta · **Tamaño estimado:** S (orientativo) · **Depende de:** ninguna · **Bloquea a:** ninguna · **Origen:** conversación de diseño del 23 nov 2026
 
 ## Contexto
 Carmine, jugando en el móvil: al tocar una carta de la bandeja de arriba (disparadora, mina de fuego, mina de hielo, escudo), la carta queda elegida y no hay forma de soltarla. Al final obliga a sembrarla en algún sitio.
@@ -22,34 +22,43 @@ El panel de nivel de las disparadoras ya funciona como pide Carmine: "Un clic fu
 **Incluye:** soltar la carta con un toque donde no se puede jugar (en el tablero o fuera de él) y al tocar otra vez la carta elegida, en táctil y con ratón; tests de la regla si sale a `core`; guías al día.
 **No incluye:** cambiar las reglas de dónde se puede sembrar o infundir, los inventos (ya se sueltan bien), el arrastre de plantas para fusionar.
 
-## Decisiones pendientes
-| # | Pregunta | Opciones | Recomendación | Decide |
-|---|---|---|---|---|
-| SC-01 | ¿Qué toques sueltan la carta? | a) Solo fuera del tablero. b) Fuera del tablero y en una casilla donde no se puede jugar (ocupada, infusión bloqueada, el elemento ya puesto). c) b, salvo "sin moneda" | b): es lo que pidió Carmine y lo que hace el panel de nivel. "Sin moneda" también la suelta: la casilla ya avisa en rojo antes del toque | Carmine |
-| SC-02 | Con una carta elegida, tocar una disparadora donde no se puede jugar (por ejemplo, la carta de disparadora sobre otra disparadora), ¿además abre su panel de nivel? | a) Solo suelta la carta. b) Suelta la carta y abre el panel de esa planta | a): un toque, una cosa. El siguiente toque ya abre el panel | Carmine |
-| SC-03 | ¿Tocar otra vez la carta elegida en la bandeja la suelta? | a) Sí, como los inventos del panel izquierdo. b) No, se queda como hoy | a) | Carmine |
-| SC-04 | Arrastrar la carta y soltarla fuera del tablero o en una casilla que no vale, ¿la suelta? | a) Sí, igual que un toque. b) No, como hoy: la carta sigue elegida | a): quien arrastra a un sitio que no vale casi siempre quiere echarse atrás. Hay que cuidar que el toque corto sobre la carta (que hoy dispara `cardDropped` sobre la propia carta) no la suelte justo después de elegirla | Carmine |
-| SC-05 | ¿Suena algo al soltarla? ¿Lleva tour? | a) Sin sonido nuevo ni tour: no es una mecánica, es lo que ya hace el panel de nivel. b) Un sonido suave de "soltar" | a) | Carmine |
+## Decisiones
+Cerradas por Carmine el 23 nov 2026, todas con la recomendación.
+
+| # | Pregunta | Decisión |
+|---|---|---|
+| SC-01 | ¿Qué toques sueltan la carta? | Fuera del tablero y en cualquier casilla donde no se puede jugar (ocupada, aún bloqueada, el elemento ya puesto), también sin moneda: la casilla ya avisa en rojo |
+| SC-02 | Con una carta elegida, tocar una disparadora donde no se puede jugar, ¿abre su panel de nivel? | No: solo suelta la carta. El siguiente toque ya abre el panel |
+| SC-03 | ¿Tocar otra vez la carta elegida la suelta? | Sí, como los inventos del panel izquierdo |
+| SC-04 | Arrastrar la carta y soltarla donde no se puede, ¿la suelta? | Sí, igual que un toque. Un toque corto en la carta no cuenta como soltarla |
+| SC-05 | ¿Sonido o tour? | Ninguno de los dos: no es una mecánica nueva |
 
 ## Criterios de aceptación
 ### Soltar la carta
-- [ ] Con una carta elegida, un toque fuera del tablero (en el decorado, sin tocar el HUD) la suelta sin cobrar.
-- [ ] Con una carta elegida, un toque en una casilla donde no se puede jugar la suelta según SC-01, sin cobrar ni sembrar.
-- [ ] Un toque en una casilla donde sí se puede sigue jugando la carta, como hoy.
-- [ ] Tocar otra vez la carta elegida se comporta según SC-03.
-- [ ] Arrastrar y soltar la carta se comporta según SC-04.
-- [ ] Tocar una disparadora con una carta elegida se comporta según SC-02.
-- [ ] Al soltarse, la bandeja deja de marcar la carta, se borran el resaltado, el fantasma y el rótulo del tablero, y el HUD deja de enseñar el precio de infundir.
-- [ ] Tocar una moneda con una carta elegida la recoge y no suelta la carta (hoy, un toque sobre una moneda no llega al tablero).
-- [ ] Un doble toque sobre una planta con una carta elegida no abre su ficha (como hoy) ni deja el juego en un estado raro.
+- [x] Con una carta elegida, un toque fuera del tablero (en el decorado, sin tocar el HUD) la suelta sin cobrar.
+- [x] Con una carta elegida, un toque en una casilla donde no se puede jugar la suelta según SC-01, sin cobrar ni sembrar.
+- [x] Un toque en una casilla donde sí se puede sigue jugando la carta, como hoy.
+- [x] Tocar otra vez la carta elegida se comporta según SC-03.
+- [x] Arrastrar y soltar la carta se comporta según SC-04.
+- [x] Tocar una disparadora con una carta elegida se comporta según SC-02.
+- [x] Al soltarse, la bandeja deja de marcar la carta, se borran el resaltado, el fantasma y el rótulo del tablero, y el HUD deja de enseñar el precio de infundir.
+- [x] Tocar una moneda con una carta elegida la recoge y no suelta la carta (hoy, un toque sobre una moneda no llega al tablero).
+- [x] Un doble toque sobre una planta con una carta elegida no abre su ficha (como hoy) ni deja el juego en un estado raro.
 
 ### Calidad
-- [ ] Esc y el botón derecho siguen soltando la carta.
-- [ ] Los tours que piden sembrar (disparadora, minas, muro) siguen funcionando: si el jugador suelta la carta a mitad del tour, la mano vuelve a señalar la carta.
-- [ ] Si la regla de "qué toque suelta la carta" sale de la escena, va en `core` con test (regla 1).
-- [ ] `docs/specs/01-mecanicas.md` (cómo se juega una carta) al día.
-- [ ] Probado en táctil a 812 × 375 y 568 × 320, y con ratón a 1600 × 900.
-- [ ] `npm test` y `npm run build` pasan.
+- [x] Esc y el botón derecho siguen soltando la carta.
+- [x] Los tours que piden sembrar (disparadora, minas, muro) siguen funcionando: si el jugador suelta la carta a mitad del tour, la mano vuelve a señalar la carta.
+- [x] Si la regla de "qué toque suelta la carta" sale de la escena, va en `core` con test (regla 1).
+- [x] `docs/specs/01-mecanicas.md` (cómo se juega una carta) al día.
+- [x] Probado en táctil a 812 × 375 y 568 × 320, y con ratón a 1600 × 900.
+- [x] `npm test` y `npm run build` pasan.
+
+## Cómo quedó (23 nov 2026, 0.16.3)
+- **Regla:** `cardTap(state, card, cell)` en `src/game/core/match.ts` dice si el toque juega la carta (`'play'`) o la suelta (`'release'`): fuera del tablero (`cell` null) o con cualquier `blocker` de `cardPlay`. Tests en `match.test.ts` (sembrar, infundir, fuera, ocupada, el elemento ya puesto, sin moneda, antes de su ronda).
+- **Escena:** `tryPlay` (`BoardScene.ts`) suelta la carta con `select(null)` cuando `cardTap` dice `'release'`. Lo usan el toque en el lienzo y `cardDropped`, que ya no se salta los toques fuera del tablero. El toque usa la misma casilla que el resaltado (`cardCellAt`). Tomar la carta elegida la suelta (`onPicked`, SC-03).
+- **Carta (`Card.tsx`):** pulsar la carta elegida solo avisa a la escena, sin arrastre. Con una sin elegir, solo se manda `cardDropped` si el puntero llega a salir de la carta: un toque, aunque el dedo se mueva un poco, la deja elegida. La elegida se puede soltar aunque ya no alcance la moneda.
+- **Lo que no cambia:** tocar una moneda la recoge sin soltar la carta (el toque no llega al tablero, `over.length > 0`). Esc y el clic derecho siguen igual. El doble toque sobre una planta con una carta elegida: el primero suelta la carta y el segundo, ya sin carta, selecciona la planta, sin ficha.
+- **Probado** en Chromium sin GPU con toques de pantalla táctil a 812 × 375 y 568 × 320 (elegir y tocar fuera, tocar la carta dos veces, sembrar tocando y arrastrando, tocar y arrastrar a una disparadora, toque movido dentro de la carta, tour de la ronda 1 tras soltar la carta: la mano sigue señalando la carta) y con ratón a 1600 × 900 (clic fuera, Esc, clic derecho y dos clics en la carta). Queda para Carmine, en un móvil de verdad: el toque con el dedo entre dos casillas.
 
 ## Casos límite y riesgos
 - El HUD de arriba tapa la fila del fondo en pantalla pequeña: un toque sobre el HUD no llega al lienzo y no debe soltar la carta por pasar "fuera del tablero".

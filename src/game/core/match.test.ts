@@ -21,6 +21,7 @@ import {
   plantAt,
   playCard,
   cardPlay,
+  cardTap,
   sownAt,
   sownMaxHp,
   type MatchState,
@@ -545,5 +546,44 @@ describe('infundir con una mina sembrada (T-009)', () => {
     const other = { lane: 0, col: 2 };
     const state = withPlants(board(), [other, { shooter: shooter({ element: 'fire' }) }]);
     expect(elementInfusionTargets(state, mineCell)).toEqual([plantCell]);
+  });
+});
+
+describe('toque con una carta elegida (T-045)', () => {
+  const empty = { lane: 2, col: 3 };
+  const plantCell = { lane: 1, col: 5 };
+
+  it('donde se puede jugar, la juega: sembrar en una casilla vacia o infundir una disparadora sin elemento', () => {
+    const match = withPlants(unlocked(), [plantCell, {}]);
+    expect(cardTap(match, 'shooter', empty)).toBe('play');
+    expect(cardTap(match, 'fire', empty)).toBe('play');
+    expect(cardTap(match, 'ice', plantCell)).toBe('play');
+  });
+
+  it('fuera del tablero la suelta (SC-01)', () => {
+    expect(cardTap(unlocked(), 'shooter', null)).toBe('release');
+    expect(cardTap(unlocked(), 'shooter', { lane: -1, col: 3 })).toBe('release');
+  });
+
+  it('en una casilla ocupada la suelta, sin abrir nada mas (SC-01, SC-02)', () => {
+    const match = withPlants(unlocked(), [plantCell, {}]);
+    expect(cardTap(match, 'shooter', plantCell)).toBe('release');
+    const mined = playCard(unlocked(), 'fire', empty);
+    expect(cardTap(mined, 'ice', empty)).toBe('release');
+  });
+
+  it('sobre una disparadora que ya tiene elemento la suelta', () => {
+    const match = withPlants(unlocked(), [plantCell, { shooter: shooter({ element: 'ice' }) }]);
+    expect(cardTap(match, 'fire', plantCell)).toBe('release');
+  });
+
+  it('sin moneda tambien la suelta: la casilla ya se ve en rojo (SC-01)', () => {
+    const match = withPlants(unlocked(0), [plantCell, { shooter: shooter({ cannons: 3 }) }]);
+    expect(cardTap(match, 'shooter', empty)).toBe('release');
+    expect(cardTap(match, 'fire', plantCell)).toBe('release');
+  });
+
+  it('antes de su ronda la suelta', () => {
+    expect(cardTap(createMatch(), 'fire', empty)).toBe('release');
   });
 });

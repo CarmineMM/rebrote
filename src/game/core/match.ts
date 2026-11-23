@@ -318,6 +318,18 @@ export function cardPlay(state: MatchState, card: CardId, cell: Cell): CardPlay 
   return { action: 'infuse', cost, multiplier: shooter.cannons, blocker };
 }
 
+/** Lo que hace un toque (o soltar la carta arrastrada) con una carta elegida: jugarla o soltarla sin jugar. */
+export type CardTap = 'play' | 'release';
+
+/**
+ * Toque con `card` elegida en `cell` (T-045, SC-01): donde se puede jugar, la juega; fuera del tablero (`cell` null) o donde
+ * no se puede por cualquier motivo (ocupada, aun bloqueada, el elemento ya puesto, sin moneda), la suelta sin cobrar,
+ * como el panel de nivel se cierra al tocar fuera de las plantas.
+ */
+export function cardTap(state: MatchState, card: CardId, cell: Cell | null): CardTap {
+  return cell && cardPlay(state, card, cell).blocker === null ? 'play' : 'release';
+}
+
 /**
  * Juega la carta en la casilla (siembra o infunde) y cobra su costo. La disparadora nace en el nivel base de la partida
  * (T-023) y cuesta lo mismo. No modifica el estado recibido.
