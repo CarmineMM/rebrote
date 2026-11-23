@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { currentOutbreak, isGreenhouseOpen, isPlayable, outbreakStanding, ownedSoFar, routeStops, type RouteStop } from './route';
+import { currentOutbreak, isGreenhouseOpen, isPlayable, lastOutbreak, outbreakStanding, ownedSoFar, reachedEnd, readyOutbreaks, routeStops, type RouteStop } from './route';
 import type { OutbreakId } from './outbreaks';
 
 /**
@@ -130,3 +130,38 @@ describe('ruta de brotes (T-019, R-03)', () => {
     }
   });
 });
+
+describe('el ultimo brote del juego: el final de la beta (T-044)', () => {
+  it('es el ultimo de la lista', () => {
+    expect(readyOutbreaks()).toEqual([ALPHA, BETA, GAMMA]);
+    expect(lastOutbreak()).toBe(GAMMA);
+  });
+
+  it('al anadir un brote terminado, el final pasa solo a el', () => {
+    outbreaks.push({ id: 'delta', boss: 'worm', startingBalance: 250, rounds: [{ unlocks: [], groups: [] }] });
+    expect(lastOutbreak()).toBe('delta');
+    expect(reachedEnd(['alpha', 'beta', 'gamma'])).toBe(false);
+    expect(reachedEnd(['alpha', 'beta', 'gamma', 'delta'])).toBe(true);
+  });
+
+  it('uno en preparacion (sin jefe) no cuenta: el final es el de antes, y lo que va detras tampoco', () => {
+    outbreaks.splice(2, 0, { id: 'prep', boss: null, startingBalance: 250, rounds: [{ unlocks: [], groups: [] }] });
+    expect(readyOutbreaks()).toEqual([ALPHA, BETA]);
+    expect(lastOutbreak()).toBe(BETA);
+    expect(reachedEnd(['alpha', 'beta'])).toBe(true);
+    expect(sketch(routeStops(['alpha', 'beta']))).toEqual(['alpha:defeated', 'beta:defeated', 'soon:3', 'final']);
+  });
+
+  it('con un solo brote, el final es el primero', () => {
+    outbreaks.splice(1);
+    expect(lastOutbreak()).toBe(ALPHA);
+  });
+
+  it('se llega al final al vencer al ultimo, no a otro, en cualquier orden', () => {
+    expect(reachedEnd([])).toBe(false);
+    expect(reachedEnd(['alpha', 'beta'])).toBe(false);
+    expect(reachedEnd(['gamma'])).toBe(true);
+    expect(reachedEnd(['beta', 'gamma', 'alpha'])).toBe(true);
+  });
+});
+

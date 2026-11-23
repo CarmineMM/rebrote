@@ -1,12 +1,13 @@
 import { useEffect, useId, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { FIRST_OUTBREAK } from '../game/core/outbreaks';
-import { isGreenhouseOpen } from '../game/core/route';
+import { isGreenhouseOpen, reachedEnd } from '../game/core/route';
 import type { Progress } from '../game/progress';
 import { summarizeSave, type SavedGame } from '../game/save';
 import type { QualityLevel } from '../game/view/quality';
 import { formatSavedAt, type Dictionary } from '../i18n';
 import { pwaInstall } from '../pwa/install';
 import type { InstallOffer } from '../pwa/policy';
+import { BetaPanel } from './beta/BetaNotice';
 import { Credits } from './Credits';
 import { InstallHelp } from './InstallHelp';
 import { outbreakTitle } from './outbreakName';
@@ -44,7 +45,7 @@ interface TitleMenuProps {
   onRenamePlayer: (name: string) => void;
 }
 
-type View = 'main' | 'options' | 'credits' | 'confirm' | 'players' | 'remove' | 'install';
+type View = 'main' | 'options' | 'credits' | 'confirm' | 'players' | 'remove' | 'install' | 'beta';
 
 /** Brote que sale de la "O" del titulo: tallo y dos hojas con el contorno oscuro de las plantas del juego. */
 function Sprout() {
@@ -106,7 +107,8 @@ export function TitleScreen({ greenhouse = false, player, inert = false, childre
  * mismo panel. Esc vuelve atras: al menu, o a los jugadores desde la confirmacion de borrar. Con nombre (T-033),
  * "Continuar" lo lleva al lado ("Continuar · Carmine") y Opciones empieza por el campo para cambiarlo. Donde el navegador
  * deja instalar y el juego no esta instalado (T-029), "Instalar" va al final: abre el dialogo del navegador o, en iPhone
- * y iPad o tras cancelarlo, la ayuda con los pasos.
+ * y iPad o tras cancelarlo, la ayuda con los pasos. En el pie, junto a la version, la marca "Beta" (T-044): abre en el
+ * mismo panel el aviso de beta, con la linea de que el progreso puede reiniciarse y los botones para apoyar el proyecto.
  */
 export function TitleMenu({
   saved,
@@ -249,7 +251,13 @@ export function TitleMenu({
           )}
           <footer className="title-footer">
             <LanguagePicker compact value={settings.language} onChange={(next) => onChange({ language: next })} />
-            <span className="title-version">{t.title.version(__APP_VERSION__)}</span>
+            {/* La marca de beta (T-044, BT-05) abre el aviso en el panel: que es una beta y como apoyar el proyecto. */}
+            <span className="title-meta">
+              <button type="button" className="beta-badge" aria-label={t.beta.badgeLabel} title={t.beta.badgeLabel} onClick={() => setView('beta')}>
+                {t.beta.badge}
+              </button>
+              <span className="title-version">{t.title.version(__APP_VERSION__)}</span>
+            </span>
           </footer>
         </>
       )}
@@ -273,6 +281,8 @@ export function TitleMenu({
       {view === 'install' && <InstallHelp titleId={titleId} firstButton={firstButton} variant={installHelp} onBack={() => setView('main')} />}
 
       {view === 'credits' && <Credits titleId={titleId} firstButton={firstButton} onBack={() => setView('main')} />}
+
+      {view === 'beta' && <BetaPanel titleId={titleId} firstButton={firstButton} reached={reachedEnd(progress.defeated)} onBack={() => setView('main')} />}
 
       {view === 'confirm' && summary && (
         <div className="title-confirm" role="alertdialog" aria-labelledby={titleId}>

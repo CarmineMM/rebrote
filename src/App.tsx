@@ -61,6 +61,8 @@ import { nameAfterStory, type StoryId } from './ui/story/stories';
 import { StoryOverlay } from './ui/story/StoryOverlay';
 import { useRemark } from './ui/story/useRemark';
 import { useStory } from './ui/story/useStory';
+import { BetaNotice } from './ui/beta/BetaNotice';
+import { useBetaNotice } from './ui/beta/useBetaNotice';
 
 /** Cartas de la bandeja, en orden. Solo se ven las que la ronda ya desbloqueo (T-007). */
 const CARDS: readonly CardId[] = ['shooter', 'fire', 'ice', 'shield'];
@@ -103,7 +105,9 @@ const SCENE_OF: Record<GameScreen, string> = { title: SCENES.title, board: SCENE
  * dice o salta las viñetas se queda con el apodo de Boxer. Boxer da los tours y cuenta que fue cada jefe antes de su
  * combate; lo nuevo lo presenta quien diga el brote (Boxer o Patty), y Patty esta en el Invernadero (T-032). Con el teclado en pantalla abierto, la viñeta y el panel del
  * menu se meten en lo que se ve (`useKeyboardArea`). En el brote 4 (T-043, el giro) hay ademas viñetas al empezar, en la
- * ronda 5 y al caer Morris, y comentarios de una linea en la preparacion que no paran el juego (`useRemark`).
+ * ronda 5 y al caer Morris, y comentarios de una linea en la preparacion que no paran el juego (`useRemark`). Al vencer
+ * al ultimo brote del juego sale una vez el aviso de beta (T-044), tras las viñetas y antes de la victoria; quien ya lo
+ * habia vencido lo ve al entrar al Invernadero.
  */
 export function App() {
   const t = useText();
@@ -192,6 +196,23 @@ export function App() {
   /** El trozo que se ve con el teclado en pantalla abierto, o null (T-033). */
   const keyboard = useKeyboardArea();
   const storyOn = story.story !== null;
+  // Aviso de beta (T-044): una vez por jugador al llegar al final; espera a que acaben las viñetas y a que cargue la escena.
+  const beta = useBetaNotice({
+    player: playerList.active,
+    wonOutbreak,
+    greenhouse: screen === 'title' && inGreenhouse,
+    defeated: progress.defeated,
+  });
+  const betaOn = beta.open && !storyOn && ready;
+  const closeBeta = beta.close;
+  /** Cierra el aviso. En el Invernadero el foco vuelve a su panel (en la victoria lo coge su tarjeta). */
+  const dismissBeta = useCallback(() => {
+    closeBeta();
+    requestAnimationFrame(() => {
+      if (document.activeElement && document.activeElement !== document.body) return;
+      document.querySelector<HTMLElement>('.greenhouse-panel .btn:not(.is-locked)')?.focus({ preventScroll: true });
+    });
+  }, [closeBeta]);
   /** El juego espera: menu de pausa, aviso de lo desbloqueado, ficha o una viñeta de la historia. */
   const halted = onBoard && (paused || unlock !== null || info !== null || storyOn);
   /** Con la partida en marcha (ni en el menu ni acabada) se puede pausar. */
@@ -509,7 +530,7 @@ export function App() {
       <GameCanvas quality={level} language={settings.language} screen={screen} place={scenePlace} paused={halted} asleep={needsLandscape} />
 
       {screen === 'title' && (
-        <TitleScreen greenhouse={inGreenhouse} player={playerName(t, player)} inert={storyOn}>
+        <TitleScreen greenhouse={inGreenhouse} player={playerName(t, player)} inert={storyOn || betaOn}>
           {inGreenhouse ? (
             <Greenhouse
               saved={saved}
@@ -524,7 +545,7 @@ export function App() {
               onToggleCarried={toggleCarried}
               onReplay={story.replay}
               onBack={() => setPlace('cover')}
-              quiet={storyOn}
+              quiet={storyOn || betaOn}
               name={player.name}
             />
           ) : (
@@ -645,7 +666,9 @@ export function App() {
 
       {onBoard && lost && <DefeatScreen round={round} loss={loss} onRestart={restart} onMenu={exitToCover} />}
 
-      {onBoard && won && !lost && !storyOn && (
+      {betaOn && <BetaNotice onShown={beta.shown} onClose={dismissBeta} />}
+
+      {onBoard && won && !lost && !storyOn && !beta.open && (
         <VictoryScreen
           outbreak={round?.outbreak ?? FIRST_OUTBREAK}
           rounds={round?.total ?? 0}

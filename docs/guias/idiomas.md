@@ -64,6 +64,7 @@ Cómo se escriben los textos de Rebrote para que salgan en español y en inglés
   | Invento, carga (T-021, T-036: antes "poder") | Gadget, charge |
   | Recolocar, granada, muro de hielo (T-021) | Replant, grenade, ice wall |
   | Laboratorio de Patty, fabricar, mejorar, inventos del brote, vivero (T-022, T-036: antes "tienda", "comprar" y "plantas") | Patty's Lab, build, upgrade, outbreak gadgets, nursery |
+  | Beta; compartir, comentarios; apoyar el proyecto (T-044) | Beta; share, feedback; support the project |
 
 - Creeper habla en mayúsculas, como en su terminal. En inglés su frase de entrada es la del original de 1971: "I'M THE CREEPER: CATCH ME IF YOU CAN!".
 - Elk Cloner (T-026) habla siempre rimando, en español y en inglés: cada frase rima en su idioma (no se traduce palabra por palabra). Sus versos se inventan para el juego: no se reproduce el poema del virus de verdad.
@@ -75,6 +76,7 @@ Cómo se escriben los textos de Rebrote para que salgan en español y en inglés
 - La IA de la historia es "ella" en español y "she" en inglés (T-031).
 - **El giro (T-043).** En el brote 4 Boxer anima y propone salir; Patty duda, pero poco, sin drama, y se va convenciendo. Su última frase es "Nos espera un largo viaje." / "We have a long journey ahead."
 - **Quién habla (T-032).** Las frases de los tours las dice Boxer: de tú, con prisa y algo de gracia, pero cortas e igual de claras. Lo que presenta un desbloqueo lo dice Boxer en el brote 1 y Patty desde el brote 2 (`unlock.presenters`: Patty siempre empieza por "¡He creado algo nuevo!"). Patty en el Invernadero (`greenhouse.patty`): frases cortas que puedan salir en cualquier momento, sin contar nada del juego.
+- **El aviso de beta (T-044)** dice que viene más, nunca cuándo: sin fechas ni promesas. Sus textos están en `beta` de `src/i18n/`; el asunto del correo de "Comentarios" va en el idioma del jugador y lleva la versión del juego.
 - Un texto en inglés puede ser más largo: hay que comprobar que cabe donde va (cartas de tamaño fijo, botones del menú, rótulos del tablero) en los dos idiomas.
 
 ## 5. Lista de comprobación

@@ -24,7 +24,10 @@ export type RouteStop =
       /** Es el brote que toca jugar (`currentOutbreak`): el lugar que destaca. */
       readonly current: boolean;
     }
-  /** El siguiente brote aun no esta en el juego: un lugar en sombra, "Proximamente". `number` es el que tendra. */
+  /**
+   * El siguiente brote aun no esta en el juego: un lugar en sombra, "Proximamente". `number` es el que tendra. Al tocarlo
+   * ensena el aviso de beta y los botones para apoyar el proyecto (T-044).
+   */
   | { readonly kind: 'soon'; readonly number: number }
   /** El destino final, a lo lejos: el jefe que recrea a todos los anteriores, aun sin nombre. */
   | { readonly kind: 'final' };
@@ -72,6 +75,32 @@ export function currentOutbreak(defeated: readonly string[]): OutbreakId | null 
 }
 
 /**
+ * Brotes que ya estan en el juego, en orden: los de la lista hasta el primero en preparacion (T-024, sin jefe aun), que
+ * corta la ruta aunque detras haya otros. El primero siempre esta.
+ */
+export function readyOutbreaks(): OutbreakId[] {
+  const ready: OutbreakId[] = [];
+  for (const { id } of OUTBREAKS) {
+    if (!isOutbreakReady(id)) break;
+    ready.push(id);
+  }
+  return ready;
+}
+
+/**
+ * Ultimo brote del juego (T-044): el ultimo de `readyOutbreaks`. Vencerlo es llegar al final de la beta. Sale de la lista
+ * de brotes: al anadir uno terminado, el final pasa solo a el; uno en preparacion no cuenta.
+ */
+export function lastOutbreak(): OutbreakId {
+  return readyOutbreaks().at(-1) ?? FIRST_OUTBREAK;
+}
+
+/** Ya vencio al ultimo brote del juego: llego al final de lo que hay (T-044). */
+export function reachedEnd(defeated: readonly string[]): boolean {
+  return defeated.includes(lastOutbreak());
+}
+
+/**
  * Lugares de la ruta, en orden (R-03): los brotes vencidos y los abiertos; despues, el primero cerrado en sombra (los
  * siguientes no se ensenan) o, si ya no queda ninguno en el juego, uno por llegar ("Proximamente"); y al final, el
  * destino final. Un brote en preparacion (T-024, sin jefe aun) cuenta como uno que aun no esta en el juego. Nunca esta
@@ -82,9 +111,8 @@ export function routeStops(defeated: readonly string[]): RouteStop[] {
   const stops: RouteStop[] = [];
   let shadowed = false;
   let number = 1;
-  for (const { id } of OUTBREAKS) {
-    // Un brote en preparacion corta la ruta: es el que viene, aunque ya tenga rondas (y aunque se venciera en desarrollo).
-    if (!isOutbreakReady(id)) break;
+  // Un brote en preparacion corta la ruta: es el que viene, aunque ya tenga rondas (y aunque se venciera en desarrollo).
+  for (const id of readyOutbreaks()) {
     number++;
     const standing = outbreakStanding(id, defeated);
     stops.push({ kind: 'outbreak', id, standing, current: id === current });

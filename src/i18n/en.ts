@@ -66,6 +66,28 @@ export const en: Dictionary = {
     menuPick: 'Choose "Install Rebrote" or "Add to Home screen".',
   },
 
+  beta: {
+    badge: 'Beta',
+    badgeLabel: 'Rebrote is in beta: what that means and how to support the project',
+    kicker: (version) => `Beta · version ${version}`,
+    reachedTitle: "You've reached the end of the beta",
+    title: 'Rebrote is in beta',
+    text: 'The journey continues: stay tuned for new content. If you enjoyed it, support the project.',
+    reset: 'While in beta, a new version may reset your progress.',
+    share: 'Share',
+    feedback: 'Feedback',
+    continue: 'Continue',
+    shareTitle: 'Rebrote',
+    shareText: 'Only nature can save us. Give Rebrote a try!',
+    feedbackSubject: (version) => `Rebrote: beta feedback (version ${version})`,
+    offline: 'You need a connection to open it.',
+    copied: 'Link copied: paste it anywhere.',
+    copyLink: 'Copy the link:',
+    mailFallback: "Mail app didn't open? Write to",
+    copy: 'Copy',
+    copiedAddress: 'Copied',
+  },
+
   players: {
     title: 'Players',
     defaultName: (number) => `Player ${number}`,

@@ -4,6 +4,7 @@ Una línea por task cerrada, lo más nuevo arriba. Cómo se numera: `docs/adr/00
 
 | Versión | Fecha | Task | Qué cambia |
 |---|---|---|---|
+| 0.16.2 | 23 nov 2026 | T-044 | Aviso de beta: al vencer al último brote sale una vez "Has llegado al final de la beta", con "Compartir" y "Comentarios" para apoyar el proyecto; el mismo mensaje en el lugar "por llegar" de la ruta y en la marca "Beta" junto a la versión de la portada |
 | 0.16.1 | 23 nov 2026 | T-043 | El giro: en el brote 4 Boxer propone pasar al ataque y Patty, que duda un poco (con su nueva cara de duda), se va convenciendo; tres secuencias de viñetas (al empezar, en la ronda 5 y al caer Morris, que cierra con "Nos espera un largo viaje") y seis comentarios de una línea en la esquina que no paran el juego |
 | 0.16.0 | 23 nov 2026 | T-042 | Morris, jefe del brote 4, que nada para y no deja de soltar gusanos; la sobrecarga, que acelera a todos si se llena el césped; las 9 rondas del brote, un tope de 60 enemigos a la vez y el brote 4 abierto en la ruta |
 | 0.15.4 | 23 nov 2026 | T-041 | Las tropas pueden volver en otro brote con el color del brote que las recluta ("Reclutado por Morris"), y el brote 4 (Morris) existe en preparación con 600 monedas y un guion provisional. Para el jugador no cambia nada todavía |
