@@ -59,6 +59,10 @@ Una task por archivo. El tamaño es orientativo.
 
 El estado se escribe en dos sitios: en esta tabla y en la cabecera de la task (`**Estado:**`). Al empezar o cerrar una task se cambian los dos en el mismo commit.
 
+## Tasks tentativas
+
+Las ideas que aún no se han confirmado contra el código van en `tentative/`, con numeración `TT-xxx`, el mismo formato y estado "Tentativa" (ADR-0026). No se ejecutan: antes de pasar a esta tabla, con su número `T-`, hay que revisar el código. El paso a paso está en `tentative/README.md`.
+
 ## Orden en que se hicieron
 
 T-001, T-002, T-006, T-004, T-005, T-003, T-007, T-008, T-009, T-010, T-011, T-012, T-013. Después, T-014 a T-034; luego T-015 (música), T-035 (curva de niveles), T-036 (Invernadero refugio), T-037 (escudo en dos pasos), T-038 (tropas del brote 3) T-039 (Brain y las 8 rondas del brote 3), T-040 (catálogo de unidades), T-041 (tropas reutilizadas), T-042 (Morris y la sobrecarga), T-043 (el giro, la historia del brote 4) y T-044 (el aviso de beta, 23 nov 2026), la última.
