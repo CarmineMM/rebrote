@@ -103,15 +103,42 @@ Notas:
 - Las viñetas 4 y 6 son nuevas respecto al borrador aprobado: una pide el nombre y la otra presenta a Patty.
 - T-033 añadió el nombre al final de la pregunta de Patty, para que las viñetas que siguen a la 4 llamen al jugador por su nombre. Sin nombre (quien vio la historia antes de T-033), la frase va sin él.
 
-## El giro, tras el cuarto brote (anotado, sin task)
+## El giro: la historia del brote 4 (T-043)
 
-Decidido: el giro llega después del cuarto brote. Así los cuatro primeros sirven para presentar piezas, y el cuarto es el decisivo: Boxer anuncia que ya no se defienden.
+Decidido por Carmine el 23 nov 2026:
+- El giro llega con el cuarto brote, el de Morris.
+- La confianza crece durante el brote. Boxer lo propone al ver cómo juega el jugador.
+- Patty duda, pero poco, y se va convenciendo con el paso de las rondas.
+- Al vencer a Morris deciden pasar al ataque.
+- Patty cierra con "Nos espera un largo viaje".
+- Después sale el aviso de beta (T-044). Lo que Patty enseñará en el Invernadero para empezar el ataque se decide con el brote 5.
 
-La idea de Carmine: "Tenemos lo necesario para ir a luchar, ya no nos defenderemos", en un tono algo más caricaturesco. Borradores:
+Para no frenar el juego, casi todo son comentarios de una línea durante la preparación, que no lo paran. Solo tres momentos son viñetas. Todo sale solo la primera vez.
 
-- "¡Se acabó esconderse! Ya tenemos todo lo que hace falta. Desde hoy, los que atacan somos nosotros."
-- "Llevamos demasiado tiempo regando y esperando. ¡Coge las macetas, [nombre], que nos vamos de excursión!"
-- "Cuatro de cuatro. ¿Sabes qué significa eso? Que ahora le toca a ella tener miedo."
+### Guion (borrador por aprobar)
+
+| Ronda | Cómo sale | Quién | Frase |
+|---|---|---|---|
+| 1 | Viñeta | Boxer | "Otra vez gusanos. Pero mira cuántos." |
+| 1 | Viñeta | Patty | "Te he dejado preparado más de lo habitual. Lo vas a necesitar." |
+| 2 | Comentario | Boxer | "Bien. Ni se han acercado." |
+| 3 | Comentario | Boxer | "Oye, esto se te da bien. Demasiado bien para seguir escondidos." |
+| 4 | Comentario | Patty | "No le des ideas, Boxer. El refugio es todo lo que tenemos." |
+| 5 | Viñeta | Boxer | "Piénsalo, Patty. Tres jefes, y ninguno ha pasado." |
+| 5 | Viñeta | Patty | "¿Y si salimos y perdemos el jardín?" |
+| 5 | Viñeta | Boxer | "¿Y si nos quedamos y un día sí pasan?" |
+| 6 | Comentario | Patty | "Vale. Puede que tengas algo de razón." |
+| 7 | Viñeta (la del virus real, ya existe) | Boxer | Lo que fue el Morris de verdad |
+| 8 | Comentario | Patty | "Si paramos a este, hablamos. Te lo prometo." |
+| 9 | Comentario | Boxer | "Que sea el último que nos pilla esperando." |
+| Final | Viñeta | Boxer | "Llevamos demasiado tiempo regando y esperando. ¡Coge las macetas, [nombre], que nos vamos de excursión!" |
+| Final | Viñeta | Patty | "Está bien. Me habéis convencido los dos." |
+| Final | Viñeta | Patty | "Nos espera un largo viaje." |
+
+Notas:
+- La frase de Patty de la ronda 1 explica por qué el brote empieza con el doble de moneda.
+- La última frase es la que decidió Carmine. Las demás son borrador.
+- Frases de Boxer que quedaron sin usar, por si sirven: "¡Se acabó esconderse! Desde hoy, los que atacan somos nosotros." y "Ahora le toca a ella tener miedo."
 
 ## Final (anotado, muy a futuro)
 

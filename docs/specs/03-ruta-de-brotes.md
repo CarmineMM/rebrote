@@ -50,7 +50,7 @@ De menos a más daño, mezclando dos cosas: lo que le hizo a los equipos y lo qu
 | 1 | Creeper, el Escurridizo | Hecho | Disparadora, fuego, hielo, infundir, fusionar y subir de nivel |
 | 2 | Elk Cloner, el Poeta | Hecho (T-024 a T-026; `05-brote-2-elk-cloner.md`) | Escudo. Sus versos son ondas que cruzan el carril y solo un escudo las para; cada pocos versos, el poema entero por los cinco carriles |
 | 3 | Brain, el Cerebro | Hecho (T-037 a T-039; `06-brote-3-brain.md`) | Infundir el escudo, que en el brote 2 solo se siembra como muro. Tropas ocultas, el Skipper que salta y un jefe que avanza oculto y a saltos: solo lo para un escudo |
-| 4 | Morris, el Imparable | Sin diseñar | Idea suelta: el Morris real se copiaba tantas veces que tumbaba las máquinas. Enemigos en masa |
+| 4 | Morris, el Imparable | Planificado (T-041 a T-043; `07-brote-4-morris.md`) | Nada nuevo para el jugador. Vuelven las tropas de los brotes 1 a 3 en masa y con otro color, la sobrecarga castiga el tablero lleno y el jefe no para de copiarse. Cierra la defensa: aquí se decide pasar al ataque |
 
 Después de estos cuatro brotes, la historia pasa de la defensa al ataque y cambia el escenario (decidido el 21 nov 2026, ver `04-historia.md`). Por eso los cuatro tienen que dejar al jugador con todas las piezas básicas en la mano.
 
@@ -64,12 +64,13 @@ Las ideas de los brotes 3 y 4 no están decididas: son un punto de partida para 
 
 Lo que el jugador desbloqueó en un brote vencido lo puede usar al rejugar los brotes anteriores, desde su ronda 1 (ES-03, T-037). Así, al rejugar el brote 1 con el brote 2 vencido hay escudo, y al rejugar el brote 2 con el brote 3 vencido se puede infundir el escudo. Cada brote nuevo se diseña sabiendo que sus piezas llegarán también a los de antes: sus jefes y sus tropas tienen que portarse bien con ellas. Detalle en "Brotes (T-018)" de `01-mecanicas.md`.
 
-## Reutilizar tropas (decidido el 22 nov 2026)
+## Reutilizar tropas (decidido el 22 nov 2026, cambiado el 23)
 
-- **Brotes 1 a 4:** cada brote trae tropas propias, para que el jugador siempre note algo nuevo. Siguen el mismo guion: una base, una de distancia, un tanque y una especial.
-- **Desde el brote 5:** se reutilizan tropas de brotes anteriores, con más nivel y un cambio de color. Conservan su nombre, para que la ficha no confunda.
+- **Brotes 1 a 3:** cada brote trae tropas propias, para que el jugador siempre note algo nuevo. Siguen el mismo guion: una base, una de distancia, un tanque y una especial.
+- **Desde el brote 4:** se reutilizan tropas de brotes anteriores, con más nivel y un cambio de color (T-041). Conservan su nombre, para que la ficha no confunda. El brote 4 iba a traer las suyas, pero ya lleva mucha historia y Carmine prefirió no cargarlo más (23 nov 2026).
+- **El brote 5** es donde se innova: es el primero del ataque.
 - **Hacia el brote 10:** vuelven a entrar tropas nuevas.
-- **El Minstrel** queda exclusivo del brote 2 por ahora y se guarda para otro jefe.
+- **El Minstrel** fue exclusivo del brote 2 hasta el brote 4, donde vuelve con todas las demás.
 - **Si el virus no es un gusano, sus tropas tampoco lo son.** Brain y Elk Cloner son virus de sector de arranque: bichos propios.
 
 Recomendación para los brotes que reutilicen: que cada uno junte tropas que nunca coincidieron (por ejemplo, Copycat con Skipper). Así el problema es nuevo aunque las piezas no lo sean.
