@@ -7,6 +7,7 @@ Una task tentativa no se ejecuta: primero se pasa a normal.
 | # | Task | Estado | Tamaño | Depende de | Bloqueada por decisión |
 |---|---|---|---|---|---|
 | TT-001 | [Rondas] Brote 1 en 9 rondas: Creeper se prepara desde la 7 | Tentativa | S | Ninguna | R9-03 a R9-05 |
+| TT-002 | [Interfaz] Velocidad del juego: ×1,5 y ×2 | Tentativa | S | Ninguna | VJ-01 a VJ-07 |
 
 ## Cómo se escribe
 - Archivo en esta carpeta: `TT-<número>-<nombre>.md`. La numeración `TT-` es propia y no gasta números `T-`.
