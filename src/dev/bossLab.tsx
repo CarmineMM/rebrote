@@ -1,42 +1,27 @@
 import * as Phaser from 'phaser';
 import { useEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import type { BossKind } from '../game/core/combat';
-import { ELK_HUB, ELK_HUBS, type ElkHub } from '../game/view/elkClonerArt';
-import { BRAIN_DESIGN, BRAIN_DESIGNS, type BrainDesign } from '../game/view/brainArt';
+import { ELK_HUB, ELK_HUBS } from '../game/view/elkClonerArt';
+import { BRAIN_DESIGN, BRAIN_DESIGNS } from '../game/view/brainArt';
 import { viewFor } from '../game/view/layout';
 import { QUALITY_LEVELS, QUALITY_PROFILES, type QualityLevel } from '../game/view/quality';
-import { BOSS_ACTIONS, BOSS_LAB_SCENES, BossLooksScene, BossMovesScene, type BossAction, type BossLabView } from './bossLabScenes';
+import { BOSS_LAB_SCENES, BossLooksScene } from './bossLabScenes';
 import './shooterLab.css';
 
 /**
- * Galeria de los jefes (T-026): `npm run dev` y abrir `/jefes.html`. "Aspecto" pone a Creeper y a Elk Cloner lado a lado,
- * Elk Cloner con cada propuesta del aro del disquete (`ELK_HUBS`), y detras las tres propuestas de Brain (T-039, BR-01,
- * `BRAIN_DESIGNS`); "Movimientos", un jefe con un boton por cada cosa que hace, o todas seguidas. Usa las vistas del juego, asi que se ve como en una partida. No la ve el jugador (`npm run build`
- * no la incluye), asi que sus textos van en espanol sin `src/i18n/`.
+ * Propuestas de los jefes (T-026): `npm run dev` y abrir `/propuestas/jefes.html`. Pone a Creeper y a Elk Cloner lado a
+ * lado, Elk Cloner con cada propuesta del aro del disquete (`ELK_HUBS`), y detras las tres propuestas de Brain (T-039,
+ * BR-01, `BRAIN_DESIGNS`). Usa las vistas del juego, asi que se ve como en una partida. Lo que hace cada jefe en su combate
+ * ("Movimientos") esta en el catalogo, `/catalogo/jefes.html` (T-040). No la ve el jugador (`npm run build` no la
+ * incluye), asi que sus textos van en espanol sin `src/i18n/`.
  */
 
 const QUALITY_NAMES: Record<QualityLevel, string> = { low: 'Bajo', medium: 'Medio', high: 'Alto', ultra: 'Ultra' };
 
-const TABS: ReadonlyArray<readonly [BossLabView, string]> = [
-  ['looks', 'Aspecto'],
-  ['moves', 'Movimientos'],
-];
-
-const BOSSES: ReadonlyArray<readonly [BossKind, string]> = [
-  ['brain', 'Brain'],
-  ['elkCloner', 'Elk Cloner'],
-  ['creeper', 'Creeper'],
-];
-
 function BossLab() {
   const host = useRef<HTMLDivElement>(null);
   const game = useRef<Phaser.Game | null>(null);
-  const [view, setView] = useState<BossLabView>('looks');
   const [quality, setQuality] = useState<QualityLevel>('high');
-  const [boss, setBoss] = useState<BossKind>('brain');
-  const [hub, setHub] = useState<ElkHub>(ELK_HUB);
-  const [design, setDesign] = useState<BrainDesign>(BRAIN_DESIGN);
   const [zoom, setZoom] = useState(false);
 
   // El juego se crea con su nivel grafico; cambiarlo lo vuelve a crear, como en el juego.
@@ -56,109 +41,30 @@ function BossLab() {
       render: { powerPreference: 'high-performance' },
       audio: { noAudio: true },
     });
-    created.scene.add(BOSS_LAB_SCENES.looks, BossLooksScene, view === 'looks', { quality, zoom });
-    created.scene.add(BOSS_LAB_SCENES.moves, BossMovesScene, view === 'moves', { quality, zoom, boss, hub, design });
+    created.scene.add(BOSS_LAB_SCENES.looks, BossLooksScene, true, { quality, zoom });
     game.current = created;
     (window as unknown as { __bossLab?: Phaser.Game }).__bossLab = created;
     return () => {
       created.destroy(true);
       game.current = null;
     };
-    // Solo al cambiar la calidad: lo demas cambia de escena sin recrear el juego.
+    // Solo al cambiar la calidad: acercar reinicia la escena sin recrear el juego.
   }, [quality]);
-
-  const start = (next: BossLabView, data: { boss?: BossKind; hub?: ElkHub; design?: BrainDesign; zoom?: boolean } = {}) => {
-    const g = game.current;
-    if (!g) return;
-    for (const key of Object.values(BOSS_LAB_SCENES)) if (g.scene.isActive(key)) g.scene.stop(key);
-    g.scene.start(BOSS_LAB_SCENES[next], { quality, zoom, boss, hub, design, ...data });
-  };
-
-  const act = (action: BossAction) => {
-    const scene = game.current?.scene.getScene(BOSS_LAB_SCENES.moves) as BossMovesScene | undefined;
-    scene?.act(action);
-  };
 
   return (
     <div className="lab">
       <header className="lab-bar">
         <h1>
-          Jefes <span>aspecto y movimientos, solo desarrollo</span>
+          Jefes <span>propuestas de aspecto, solo desarrollo · <a href="/catalogo/jefes.html">sus movimientos, en el catálogo</a></span>
         </h1>
-        <nav className="lab-tabs">
-          {TABS.map(([id, label]) => (
-            <button
-              key={id}
-              className={view === id ? 'is-on' : ''}
-              onClick={() => {
-                setView(id);
-                start(id);
-              }}
-            >
-              {label}
-            </button>
-          ))}
-        </nav>
         <div className="lab-tools">
-          {view === 'moves' && (
-            <>
-              <select
-                value={boss}
-                onChange={(event) => {
-                  const next = event.target.value as BossKind;
-                  setBoss(next);
-                  start('moves', { boss: next });
-                }}
-              >
-                {BOSSES.map(([id, label]) => (
-                  <option key={id} value={id}>
-                    {label}
-                  </option>
-                ))}
-              </select>
-              {boss === 'brain' && (
-                <select
-                  value={design}
-                  title="Propuesta de Brain"
-                  onChange={(event) => {
-                    const next = event.target.value as BrainDesign;
-                    setDesign(next);
-                    start('moves', { design: next });
-                  }}
-                >
-                  {BRAIN_DESIGNS.map((option) => (
-                    <option key={option.id} value={option.id}>
-                      {option.letter} · {option.name}
-                    </option>
-                  ))}
-                </select>
-              )}
-              {boss === 'elkCloner' && (
-                <select
-                  value={hub}
-                  title="Aro del disquete"
-                  onChange={(event) => {
-                    const next = event.target.value as ElkHub;
-                    setHub(next);
-                    start('moves', { hub: next });
-                  }}
-                >
-                  {ELK_HUBS.map((option) => (
-                    <option key={option.id} value={option.id}>
-                      {option.letter} · {option.name}
-                    </option>
-                  ))}
-                </select>
-              )}
-            </>
-          )}
           <label className="lab-check">
             <input
               type="checkbox"
               checked={zoom}
               onChange={(event) => {
                 setZoom(event.target.checked);
-                start(view, { zoom: event.target.checked });
+                game.current?.scene.getScene(BOSS_LAB_SCENES.looks)?.scene.restart({ quality, zoom: event.target.checked });
               }}
             />
             Acercar
@@ -171,18 +77,6 @@ function BossLab() {
             ))}
           </select>
         </div>
-        {view === 'moves' && (
-          <div className="lab-actions">
-            <button className="is-on" onClick={() => act('demo')}>
-              ▶ Ver todo seguido
-            </button>
-            {BOSS_ACTIONS[boss].map(([id, label]) => (
-              <button key={id} onClick={() => act(id)}>
-                {label}
-              </button>
-            ))}
-          </div>
-        )}
       </header>
       <div className="lab-stage" ref={host} />
       <footer className="lab-notes">
@@ -197,8 +91,8 @@ function BossLab() {
         ))}
         <p className="lab-ask">
           BR-01 (T-039): las tres van de pie y sin disquete, para no parecerse a Creeper ni a Elk Cloner. Carmine eligió la cúpula (A, 23 nov 2026); las otras se
-          quedan como referencia. En "Aspecto" botan en su sitio y se ocultan a la vez cada poco (la silueta morada de los Lurker); en "Movimientos", Brain hace todo
-          lo de su combate. El juego usa la que diga `BRAIN_DESIGN` en `src/game/view/brainArt.ts`.
+          quedan como referencia. Botan en su sitio y se ocultan a la vez cada poco (la silueta morada de los Lurker); lo que hace en su combate está en el
+          catálogo. El juego usa la que diga `BRAIN_DESIGN` en `src/game/view/brainArt.ts`.
         </p>
         {ELK_HUBS.map((option) => (
           <p key={option.id}>

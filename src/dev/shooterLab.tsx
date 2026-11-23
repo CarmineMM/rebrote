@@ -20,7 +20,7 @@ import {
 import './shooterLab.css';
 
 /**
- * Galeria de propuestas de la disparadora (T-016, fase 1): `npm run dev` y abrir `/disparadoras.html`. No la ve el
+ * Galeria de propuestas de la disparadora (T-016, fase 1): `npm run dev` y abrir `/propuestas/disparadoras.html`. No la ve el
  * jugador (`npm run build` no la incluye), asi que sus textos van en espanol sin pasar por `src/i18n/`, y los botones
  * llaman directamente a sus escenas (no es el juego: no hace falta el `EventBus`).
  *

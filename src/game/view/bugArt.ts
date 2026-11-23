@@ -3,7 +3,7 @@ import { type Ctx, circle, ellipse } from './canvasKit';
 /**
  * Arte de las tropas del brote 3, el de Brain (T-038), sin Phaser. Brain era un virus de sector de arranque, no un gusano:
  * sus tropas son bichos nuevos. Hay tres propuestas para los Lurker (`LURKER_DESIGNS`) y tres para el Skipper
- * (`SKIPPER_DESIGNS`), que compara la galeria `/bichos.html` antes de elegir (LK-01).
+ * (`SKIPPER_DESIGNS`), que compara la galeria `/propuestas/bichos.html` antes de elegir (LK-01).
  *
  * Cada bicho va en piezas, como el gusano, para que se mueva: el cuerpo, la cabeza (una textura por cara), las patas (una
  * textura que se repite, mas oscura en el lado de atras) y, el acorazado, su armadura de sectores (un casco y dos placas

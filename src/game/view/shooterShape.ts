@@ -8,7 +8,7 @@ import type { ShooterDesign } from './shooters/design';
  *
  * Desde el 21 nov 2026 es "Brote" (`bulb`), la que eligio Carmine en el rediseno (T-016, X-03). La de antes queda
  * guardada entera como `legacy` (`shooters/legacy.ts`): para volver a ella basta con ponerla aqui. Las demas propuestas
- * siguen en `shooters/` y se comparan en la galeria de desarrollo (`/disparadoras.html`).
+ * siguen en `shooters/` y se comparan en la galeria de desarrollo (`/propuestas/disparadoras.html`).
  */
 export const SHOOTER: ShooterDesign = BULB_SHOOTER;
 

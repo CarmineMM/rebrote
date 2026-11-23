@@ -5,7 +5,7 @@ import { MEDAL_TIERS, medalTier } from './levelMedal';
 /**
  * Aura de los gusanos de nivel alto (T-030): una luz muy suave del color de su medallita que sube del suelo por detras
  * del gusano en velos que se elevan y se apagan un poco por encima de su cabeza, con un halo tenue a los pies, alguna
- * mota que sube y un velo casi invisible por delante. La eligio Carmine en la galeria `/gusanos.html` (21 nov 2026).
+ * mota que sube y un velo casi invisible por delante. La eligio Carmine en la galeria `/propuestas/gusanos.html` (21 nov 2026).
  *
  * Decidido (Z-01 a Z-04): sale desde el nivel 5, el primero con premio (`LEVEL_MILESTONES`, T-035); la
  * llevan todas las tropas con nivel (tambien las copias de Creeper), pero no Creeper; sale en el tablero, la portada y

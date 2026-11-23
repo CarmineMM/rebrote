@@ -11,7 +11,7 @@ import { createShooter } from '../game/core/plants';
 import './soundLab.css';
 
 /**
- * Pagina de prueba de los efectos de sonido (T-014, S-02): `npm run dev` y abrir `/sonidos.html`. No la ve el jugador
+ * Pagina de prueba de los efectos de sonido (T-014, S-02): `npm run dev` y abrir `/pruebas/sonidos.html`. No la ve el jugador
  * (`npm run build` no la incluye), asi que sus textos van en espanol sin pasar por `src/i18n/`.
  *
  * Lista cada efecto con el elegido y sus alternativas para oirlos uno a uno, deja marcar con cual quedarse (se guarda

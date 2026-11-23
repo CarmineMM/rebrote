@@ -7,7 +7,7 @@ export const BOXER_DESIGNS: readonly CharacterDesign[] = [BOXER_MIX, ...BOXER_PR
 
 /**
  * Todos los dibujos de personajes (T-031): Boxer y las propuestas de los dos. Solo lo usan la galeria de desarrollo
- * (`/personajes.html`) y los tests: el juego importa solo los elegidos (`CAST` en `cast.ts`).
+ * (`/propuestas/personajes.html`) y los tests: el juego importa solo los elegidos (`CAST` en `cast.ts`).
  */
 export const CHARACTER_PROPOSALS: readonly CharacterDesign[] = [...BOXER_DESIGNS, ...PATTY_PROPOSALS];
 

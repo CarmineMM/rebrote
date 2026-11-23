@@ -15,7 +15,7 @@ import { registerBugTextures, registerTextures } from '../game/view/textures';
 import { WallView } from '../game/view/wallView';
 
 /**
- * Escenas de la galeria de las tropas del brote 3 (`/bichos.html`, T-038): solo con `npm run dev`. Usan la vista del juego
+ * Escenas de la galeria de las tropas del brote 3 (`/propuestas/bichos.html`, T-038): solo con `npm run dev`. Usan la vista del juego
  * (`BugView`) con cada propuesta (LK-01) sobre el tablero de verdad. "Aspecto" pone las tres propuestas lado a lado, andando
  * y saltando sin moverse de su sitio; "Tablero" las suelta con las reglas de verdad (`stepCombat`): el Skipper salta las
  * plantas y lo para un muro, y el Lurker se descubre al acercarse a lo sembrado. No las ve el jugador: sus textos van en

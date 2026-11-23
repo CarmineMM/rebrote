@@ -6,7 +6,7 @@
  * OGG y MP3 en mono:
  * - El elegido, en `public/audio/` (lo que carga el juego), con `public/audio/LICENCIAS.md` (origen y licencia de cada
  *   archivo).
- * - Las alternativas, en `audio-lab/candidatos/` con su `catalogo.json`, para la pagina de prueba (`/sonidos.html`,
+ * - Las alternativas, en `audio-lab/candidatos/` con su `catalogo.json`, para la pagina de prueba (`/pruebas/sonidos.html`,
  *   solo en desarrollo).
  *
  * Necesita ffmpeg y unzip. Los paquetes de Kenney (CC0) se bajan de https://kenney.nl/assets/<paquete> (ver

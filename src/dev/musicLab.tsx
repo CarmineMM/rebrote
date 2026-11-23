@@ -8,7 +8,7 @@ import { MUSIC, MUSIC_TRACK_IDS, type MusicTrackId } from '../game/config/music'
 import './soundLab.css';
 
 /**
- * Pagina de prueba de la musica (T-015, U-02): `npm run dev` y abrir `/musica.html`. No la ve el jugador (`npm run build`
+ * Pagina de prueba de la musica (T-015, U-02): `npm run dev` y abrir `/pruebas/musica.html`. No la ve el jugador (`npm run build`
  * no la incluye), asi que sus textos van en espanol sin pasar por `src/i18n/`.
  *
  * Cada ambiente con la elegida y sus alternativas, ya recortadas en bucle como las oye el juego: se oyen enteras o justo

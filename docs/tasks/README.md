@@ -43,6 +43,7 @@ Una task por archivo. El tamaño es orientativo.
 | T-037 | [Plantas] Escudo en dos pasos: muro en el brote 2, infusión en el brote 3 | Completada (22 nov 2026, 0.13.0) | M | Ninguna | Ninguna (ES-01 a ES-04 cerradas) |
 | T-038 | [Enemigos] Tropas del brote 3: Lurker y Skipper | Completada (22 nov 2026, 0.14.0) | L | T-037 | Ninguna (LK-01 a LK-09 cerradas) |
 | T-039 | [Jefe] Brain y rondas del brote 3 | Completada (23 nov 2026, 0.15.0) | L | T-037, T-038 | Ninguna (BR-01 a BR-09 cerradas) |
+| T-040 | [Desarrollo] Catálogo de tropas, jefes y personajes, y páginas de desarrollo por carpetas | Completada (23 nov 2026, 0.15.3) | M | T-039 | Ninguna |
 
 ## Estados
 
@@ -56,7 +57,7 @@ El estado se escribe en dos sitios: en esta tabla y en la cabecera de la task (`
 
 ## Orden en que se hicieron
 
-T-001, T-002, T-006, T-004, T-005, T-003, T-007, T-008, T-009, T-010, T-011, T-012, T-013. Después, T-014 a T-034; luego T-015 (música), T-035 (curva de niveles), T-036 (Invernadero refugio), T-037 (escudo en dos pasos), T-038 (tropas del brote 3) y T-039 (Brain y las 8 rondas del brote 3, 23 nov 2026), la última.
+T-001, T-002, T-006, T-004, T-005, T-003, T-007, T-008, T-009, T-010, T-011, T-012, T-013. Después, T-014 a T-034; luego T-015 (música), T-035 (curva de niveles), T-036 (Invernadero refugio), T-037 (escudo en dos pasos), T-038 (tropas del brote 3) T-039 (Brain y las 8 rondas del brote 3) y T-040 (catálogo de unidades, 23 nov 2026), la última.
 
 Pendiente (23 nov 2026): el brote 3 ya se juega entero (T-037 a T-039, `../specs/06-brote-3-brain.md`). Después viene el brote 4 (Morris), que cierra la defensa del refugio; su idea está en `../specs/03-ruta-de-brotes.md` y la historia en `../specs/04-historia.md`.
 
