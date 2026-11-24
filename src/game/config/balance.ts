@@ -1781,8 +1781,8 @@ export const ICE_WALL = {
   span: 3,
   /** Vida de cada bloque en el nivel 1 (O-05, O-10): la de una disparadora de nivel 1. */
   hp: SHOOTER.hp,
-  /** Lo que dura cada bloque antes de derretirse (O-05: "unos 10 s"). PROVISIONAL. */
-  durationMs: 10_000,
+  /** Lo que dura cada bloque antes de derretirse (O-05 pedia "unos 10 s"; subido a 30 s el 24 nov 2026). PROVISIONAL. */
+  durationMs: 30_000,
   /** Vida que suma cada nivel, en fraccion de la de nivel 1 (T-01: un 20 %). */
   hpPerLevel: 0.2,
   /** Lo que suman los niveles 5 y 10 en vez de eso (T-01: un 35 %). */
