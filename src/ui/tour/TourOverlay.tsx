@@ -72,10 +72,13 @@ function measureHud(names: readonly HudTarget[]): Partial<Record<HudTarget, Box>
   return boxes;
 }
 
-/** Lo que el bocadillo no debe tapar si puede: cada pieza del HUD (bandeja, ronda y su aviso, marcadores) y el panel de nivel. */
+/**
+ * Lo que el bocadillo no debe tapar si puede: cada pieza del HUD (bandeja, ronda y su aviso, marcadores) y el panel de nivel.
+ * Las piezas de la ronda se miden una a una: en el movil van sueltas por el HUD (`.round-info` sin caja propia).
+ */
 function measureObstacles(): Box[] {
   const hud = document.querySelector('.hud');
-  const elements = [...(hud ? hud.querySelectorAll(':scope > *, .round-notice') : []), ...document.querySelectorAll('.level-panel')];
+  const elements = [...(hud ? hud.querySelectorAll(':scope > *, .round-info > *') : []), ...document.querySelectorAll('.level-panel')];
   return elements.map(boxOf).filter((box): box is Box => box !== null);
 }
 

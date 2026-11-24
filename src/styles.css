@@ -35,7 +35,7 @@ body {
  * las que se llevan sin que la bandeja baile. Las ranuras vacias no se pintan.
  */
 .seed-tray {
-  --card-w: 148px; --card-h: 46px; --card-icon-zoom: 0.85;
+  --card-w: 141px; --card-h: 44px; --card-icon-zoom: 0.81;
   display: flex; gap: 8px; padding: 7px;
   border-radius: 18px; border: 2px solid rgba(255, 220, 160, 0.35);
   background: linear-gradient(180deg, rgba(110, 72, 40, 0.92), rgba(72, 45, 24, 0.92));
@@ -221,8 +221,8 @@ body {
 .card-icon-shooter { position: absolute; inset: 0; display: block; overflow: visible; }
 .card[aria-pressed='true'] .card-icon { animation: icon-wiggle 0.9s ease-in-out infinite; }
 @keyframes icon-wiggle { 0%, 100% { transform: rotate(-4deg); } 50% { transform: rotate(4deg); } }
-.card-label { font-size: 0.78rem; font-weight: 700; line-height: 1.15; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.card-cost { font-size: 0.92rem; line-height: 1.15; font-weight: 900; color: #ffe066; font-variant-numeric: tabular-nums; text-shadow: 0 1px 0 #5a3d00; white-space: nowrap; }
+.card-label { font-size: 0.74rem; font-weight: 700; line-height: 1.15; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.card-cost { font-size: 0.875rem; line-height: 1.15; font-weight: 900; color: #ffe066; font-variant-numeric: tabular-nums; text-shadow: 0 1px 0 #5a3d00; white-space: nowrap; }
 /* Infundir una planta de N canones (D-04): el precio salta a "x3 = 225"; en rojo si no alcanza. */
 .card-cost.is-multiplied { animation: cost-pop 0.3s cubic-bezier(0.2, 1.6, 0.4, 1); }
 .card-cost.is-short { color: #ff8a8a; text-shadow: 0 1px 0 #5a0d1a; }
@@ -346,6 +346,8 @@ body {
   background: linear-gradient(180deg, rgba(43, 32, 52, 0.94), rgba(25, 17, 33, 0.94));
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35), 0 0 14px color-mix(in srgb, var(--boss-edge) 30%, transparent);
   animation: boss-in 0.55s cubic-bezier(0.2, 1.4, 0.4, 1) both;
+  /* Solo se mira: si alguna vez cae sobre el cesped, el toque pasa a la planta de debajo. */
+  pointer-events: none;
 }
 .boss-bar.is-enraged { --boss-edge: #ff5a7a; --boss-light: #ffe0e7; --boss-mid: #ff5a7a; --boss-dark: #b3173e; animation: boss-in 0.55s cubic-bezier(0.2, 1.4, 0.4, 1) both, boss-rage 0.9s ease-in-out infinite; }
 .boss-bar.is-down { --boss-edge: #ffe066; animation: boss-down 0.6s ease both; }
@@ -1260,14 +1262,17 @@ body {
   .boss-bar { flex-basis: 100%; max-width: min(380px, calc(100vw - 32px)); }
 }
 
-/* HUD compacto: con tres cartas (T-005), en un movil en horizontal no cabian bandeja, vidas, saldo y pausa. */
-@media (max-width: 860px) {
+/*
+ * HUD compacto: con tres cartas (T-005), en un movil en horizontal no cabian bandeja, vidas, saldo y pausa. Tambien en
+ * pantallas bajas: en un movil grande en horizontal (932 x 430) la bandeja con nombres se salia por la derecha.
+ */
+@media (max-width: 860px), (max-height: 560px) {
   .card-label { display: none; }
-  .seed-tray { --card-w: 86px; --card-h: 44px; --card-icon-zoom: 0.8; gap: 6px; padding: 6px; }
+  .seed-tray { --card-w: 82px; --card-h: 42px; --card-icon-zoom: 0.76; gap: 6px; padding: 6px; }
   .card { column-gap: 5px; padding: 3px 6px 3px 5px; }
   /* Sin nombre, el precio ocupa las dos filas; el de infundir ("×3 = 225") baja de tamano y parte en dos lineas. */
   .card-cost { grid-row: 1 / span 2; grid-column: 2; white-space: normal; text-align: center; }
-  .card-cost.is-multiplied { font-size: 0.74rem; }
+  .card-cost.is-multiplied { font-size: 0.7rem; }
   .hud { gap: 8px; }
   .hud-right { gap: 6px; }
   .hud-balance { font-size: 1.2rem; padding: 5px 12px 5px 8px; gap: 6px; }
@@ -1285,16 +1290,49 @@ body {
 }
 @media (max-width: 600px) {
   /* zoom y no transform: la carta elegida anima el transform del icono. */
-  .seed-tray { --card-w: 80px; --card-icon-zoom: 0.72; }
+  .seed-tray { --card-w: 76px; --card-icon-zoom: 0.68; }
   .hud-balance-value { min-width: 0; }
   /* Cuatro cartas (T-024, el escudo): a 568 px no cabian con vidas, saldo y pausa. Solo cuando hay cuatro: con tres no cambia. */
-  .seed-tray:has(> .card-slot:nth-child(4)) { --card-w: 62px; --card-icon-zoom: 0.6; gap: 4px; padding: 5px; }
+  .seed-tray:has(> .card-slot:nth-child(4)) { --card-w: 59px; --card-icon-zoom: 0.57; gap: 4px; padding: 5px; }
   .seed-tray:has(> .card-slot:nth-child(4)) .card { column-gap: 3px; padding: 3px 4px 3px 3px; }
-  .seed-tray:has(> .card-slot:nth-child(4)) .card-cost { font-size: 0.82rem; }
+  .seed-tray:has(> .card-slot:nth-child(4)) .card-cost { font-size: 0.78rem; }
 }
 /* Pantalla pequena (movil en horizontal): la ronda dice solo en cual se esta ("Ronda 3 de 10"), sin la fila de semillitas. */
 @media (max-width: 860px), (max-height: 560px) {
   .round-progress { display: none; }
+}
+
+/*
+ * HUD del movil en horizontal: arriba, la bandeja a la izquierda y la ronda al lado de los corazones; debajo de la pausa,
+ * pegada a la derecha, la sobrecarga (T-042); en la segunda fila, a su izquierda, la cuenta atras o la barra del jefe, sin
+ * bajar al cesped (812 x 375 y 568 x 320). `.round-info` se deshace (`display: contents`) para que sus piezas se coloquen
+ * en la rejilla del HUD. Si la ronda no cabe al lado de los corazones (`is-tight`, lo mide `useHudFit`), va debajo de
+ * ellos y la sobrecarga, debajo de la ronda.
+ */
+@media (max-width: 860px), (max-height: 560px) {
+  .hud { grid-template-columns: auto minmax(0, 1fr) auto auto; grid-template-areas: none; }
+  .seed-tray { grid-area: 1 / 1; }
+  .hud-right { grid-area: 1 / 4; }
+  .round-info { display: contents; }
+  /* Alto de la pastilla de los corazones, para que vayan en linea. */
+  .round-badge { grid-area: 1 / 3; align-self: start; box-sizing: border-box; height: 36px; margin-top: 3px; padding: 0 12px; animation: drop-in 0.5s 0.05s cubic-bezier(0.2, 1.4, 0.4, 1) both; }
+  .round-prep, .boss-bar { grid-row: 2; grid-column: 1 / 4; justify-self: center; align-self: start; }
+  .round-prep { gap: 6px; padding: 3px 3px 3px 10px; }
+  .round-countdown { font-size: 0.85rem; }
+  .round-seconds { font-size: 1rem; }
+  .round-go { padding: 4px 11px; font-size: 0.85rem; }
+  .boss-bar { width: min(360px, 100%); max-width: none; gap: 8px; padding: 4px 10px 5px 6px; border-radius: 14px; }
+  .boss-face { zoom: 0.85; }
+  .boss-body { gap: 3px; }
+  .boss-label strong { font-size: 0.9rem; }
+  .boss-phase, .boss-bar.is-elkCloner .boss-phase, .boss-bar.is-brain .boss-phase { font-size: 0.72rem; }
+  .boss-track { height: 11px; }
+  /* Pegada bajo la pausa: sube lo que la bandeja es mas alta que los marcadores. */
+  .overload-bar { grid-area: 2 / 4; justify-self: end; align-self: start; position: relative; margin-top: -14px; pointer-events: none; }
+  /* La linea de ayuda cuelga sin ensanchar la columna de los marcadores. */
+  .overload-hint { position: absolute; top: calc(100% + 4px); right: 0; width: max-content; max-width: min(300px, 50vw); }
+  .hud.is-tight .round-badge { grid-area: 2 / 4; justify-self: end; height: 30px; margin-top: -14px; }
+  .hud.is-tight .overload-bar { margin-top: 20px; }
 }
 
 /* ---------- Menu de inicio (T-011): titulo arriba a la izquierda, portada (Phaser) debajo y menu a la derecha ---------- */

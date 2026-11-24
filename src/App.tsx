@@ -44,6 +44,7 @@ import { RoundHud } from './ui/RoundHud';
 import { TitleMenu, TitleScreen } from './ui/TitleScreen';
 import { UnlockModal } from './ui/UnlockModal';
 import { NO_AUTO_FULLSCREEN, useFullscreen } from './ui/useFullscreen';
+import { useHudFit } from './ui/useHudFit';
 import { useKeyboardArea } from './ui/useKeyboardArea';
 import { useNeedsLandscape } from './ui/useLandscapeOnly';
 import { useUpdateWhenIdle } from './ui/usePwa';
@@ -161,6 +162,8 @@ export function App() {
   const [lost, setLost] = useState(false);
   const [won, setWon] = useState(false);
   const onBoard = screen === 'board';
+  // En el movil, si la ronda no cabe al lado de los corazones, baja debajo de ellos.
+  const hudTight = useHudFit(hudRef, onBoard && round !== null);
   /** Partida acabada (perdida o ganada): solo queda jugar otra vez o volver al menu. */
   const over = lost || won;
   /** Se vencio al jefe del brote: lo que Boxer cuenta de el sale antes de la victoria (T-031). */
@@ -570,7 +573,7 @@ export function App() {
       )}
 
       {onBoard && (
-        <header ref={hudRef} className="hud" aria-hidden={halted || over} inert={storyOn}>
+        <header ref={hudRef} className={`hud${hudTight ? ' is-tight' : ''}`} aria-hidden={halted || over} inert={storyOn}>
           <div className="seed-tray" aria-label={t.hud.cards} data-silent>
             {CARDS.filter((id) => (round?.cards ?? ['shooter']).includes(id)).map((id) => (
               // Cada carta nueva entra en la bandeja con un salto al desbloquearse.

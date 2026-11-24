@@ -45,7 +45,10 @@ export function LevelPanel({ panel, avoid }: LevelPanelProps) {
     const element = ref.current;
     if (!element) return;
     const hud = avoid.current;
-    const obstacles = hud ? [...hud.querySelectorAll(':scope > *, .round-notice')].map((node) => node.getBoundingClientRect()) : [];
+    // Las piezas de la ronda van sueltas en el movil (`.round-info` con `display: contents`, sin caja propia): se miden una a una.
+    const obstacles = hud
+      ? [...hud.querySelectorAll(':scope > *, .round-info > *')].map((node) => node.getBoundingClientRect()).filter((rect) => rect.width > 0 && rect.height > 0)
+      : [];
     setPlace(
       placeLevelPanel(
         { width: element.offsetWidth, height: element.offsetHeight },
