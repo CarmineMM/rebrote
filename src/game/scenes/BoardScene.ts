@@ -196,6 +196,10 @@ const LOOK = {
   seedsText: { color: '#b9f27c', stroke: '#2f4a12', fontSize: 34 },
   seedsBelow: 58,
   seedsDelayMs: 260,
+  /** El premio de estreno de la ronda 1 del brote 1 (T-047): otra linea debajo, algo despues y con destellos. */
+  bonusBelow: 116,
+  bonusDelayMs: 620,
+  bonusSparkles: 10,
   /** Partida ganada (T-007): tiempo de celebracion antes de que React muestre la victoria. */
   victoryDelayMs: 1600,
   /** Creeper (T-008): se escapa (en el camino) o lo derrotan (en el centro del cesped). */
@@ -1007,7 +1011,7 @@ export class BoardScene extends Phaser.Scene {
         this.announceAttack();
         break;
       case 'roundCleared':
-        if (event.index + 1 < roundCount(this.match.outbreak)) this.celebrate(text().board.roundCleared(event.index + 1), event.seeds);
+        if (event.index + 1 < roundCount(this.match.outbreak)) this.celebrate(text().board.roundCleared(event.index + 1), event.seeds, event.bonus);
         break;
       case 'won':
         this.enterVictory(LOOK.victoryDelayMs);
@@ -1068,7 +1072,7 @@ export class BoardScene extends Phaser.Scene {
   }
 
   /** Ronda superada: las plantas dan un saltito una tras otra, con destellos, y sale el texto en el centro. */
-  private celebrate(label: string, seeds = 0): void {
+  private celebrate(label: string, seeds = 0, bonus = 0): void {
     this.plantViews.forEach((view, key) => {
       const { col } = keyCell(key);
       // Si muere antes de su turno, ya no salta.
@@ -1080,6 +1084,14 @@ export class BoardScene extends Phaser.Scene {
     // Lo que la ronda sumo a la partida (T-020), debajo y un poco despues, en el color de las semillas.
     if (seeds > 0) {
       this.time.delayedCall(LOOK.seedsDelayMs, () => this.fx.floatText(text().board.seedsEarned(formatAmount(seeds), seeds), center.x, center.y + LOOK.seedsBelow, LOOK.seedsText));
+    }
+    // El premio de estreno (T-047), en otra linea: se ve que es aparte de lo de la ronda.
+    if (bonus > 0) {
+      this.time.delayedCall(LOOK.bonusDelayMs, () => {
+        const y = center.y + LOOK.bonusBelow;
+        this.fx.floatText(text().board.openingBonus(formatAmount(bonus)), center.x, y, LOOK.seedsText);
+        this.fx.sparkles(center.x, y, LOOK.bonusSparkles);
+      });
     }
   }
 

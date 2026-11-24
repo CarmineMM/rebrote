@@ -161,9 +161,10 @@ export type RoundEvent =
   | { readonly type: 'attackStarted'; readonly index: number }
   /**
    * No quedan enemigos por salir ni vivos. Tras la ultima ronda del brote le sigue `won`; si no, `roundStarted`. `seeds`
-   * es lo que sumo a la partida (T-020): 0 en la ultima, que da las del jefe al cobrar.
+   * es lo que sumo a la partida (T-020): 0 en la ultima, que da las del jefe al cobrar. `bonus`, lo que sumo ademas el
+   * premio de estreno (T-047): solo en la ronda 1 de un brote con `openingBonus`; si no, 0.
    */
-  | { readonly type: 'roundCleared'; readonly index: number; readonly seeds: number }
+  | { readonly type: 'roundCleared'; readonly index: number; readonly seeds: number; readonly bonus: number }
   /** Empieza la preparacion de la ronda `index`, con lo que desbloquea y su aviso. */
   | { readonly type: 'roundStarted'; readonly index: number }
   /** Superada la ultima ronda del brote (vencido su jefe): partida ganada. */
@@ -562,11 +563,11 @@ export function stepRound(state: MatchState, dtMs: number, spawnX: number, rando
       // T-020: la ronda superada suma sus semillas a la partida; la ultima no, que da las del jefe al cobrar.
       const credit = creditRound(current, random);
       current = credit.state;
-      events.push({ type: 'roundCleared', index: round.index, seeds: credit.seeds });
+      events.push({ type: 'roundCleared', index: round.index, seeds: credit.seeds, bonus: credit.bonus });
       round = createRound(outbreak, round.index + 1);
       events.push({ type: 'roundStarted', index: round.index });
     } else {
-      events.push({ type: 'roundCleared', index: round.index, seeds: 0 });
+      events.push({ type: 'roundCleared', index: round.index, seeds: 0, bonus: 0 });
       round = { ...round, phase: 'won', brood: null };
       events.push({ type: 'won' });
     }

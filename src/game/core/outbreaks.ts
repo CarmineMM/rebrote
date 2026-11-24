@@ -53,6 +53,11 @@ export interface OutbreakScript {
    * al jefe. El rasgo del brote 4, desde su ronda 1 (MR-02).
    */
   readonly overload?: boolean;
+  /**
+   * Premio de estreno (T-047, R9-05): al superar la ronda 1 suma, ademas de lo de la ronda, este % del tope de una ronda,
+   * con su azar (`creditRound`). Cuenta como lo de las rondas. Solo el brote 1, que perdio su ronda de repaso: 100, el doble.
+   */
+  readonly openingBonus?: number;
 }
 
 /** Brote con el que empieza el juego: el primero de la lista. */

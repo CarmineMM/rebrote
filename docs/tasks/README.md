@@ -50,6 +50,7 @@ Una task por archivo. El tamaño es orientativo.
 | T-044 | [Interfaz] Aviso de beta y "apoya el proyecto" | Completada (23 nov 2026, 0.16.2) | S | Ninguna | Ninguna (BT-01 a BT-07 cerradas) |
 | T-045 | [Interfaz] Soltar la carta elegida tocando donde no se puede jugar | Completada (23 nov 2026, 0.16.3) | S | Ninguna | Ninguna (SC-01 a SC-05 cerradas) |
 | T-046 | [Plantas] Arrancar: quitar una planta y recuperar la mitad de lo que costó | Completada (23 nov 2026, 0.17.0) | M | Ninguna (mejor después de T-045) | Ninguna (AR-01 a AR-10 cerradas) |
+| T-047 | [Rondas] Brote 1 en 9 rondas: Creeper se prepara desde la 7 | Completada (24 nov 2026, 0.17.1) | S | Ninguna | Ninguna (R9-01 a R9-05 cerradas) |
 
 ## Estados
 
@@ -67,9 +68,9 @@ Las ideas que aún no se han confirmado contra el código van en `tentative/`, c
 
 ## Orden en que se hicieron
 
-T-001, T-002, T-006, T-004, T-005, T-003, T-007, T-008, T-009, T-010, T-011, T-012, T-013. Después, T-014 a T-034; luego T-015 (música), T-035 (curva de niveles), T-036 (Invernadero refugio), T-037 (escudo en dos pasos), T-038 (tropas del brote 3) T-039 (Brain y las 8 rondas del brote 3), T-040 (catálogo de unidades), T-041 (tropas reutilizadas), T-042 (Morris y la sobrecarga), T-043 (el giro, la historia del brote 4), T-044 (el aviso de beta), T-045 (soltar la carta en el móvil) y T-046 (arrancar plantas, 23 nov 2026), la última.
+T-001, T-002, T-006, T-004, T-005, T-003, T-007, T-008, T-009, T-010, T-011, T-012, T-013. Después, T-014 a T-034; luego T-015 (música), T-035 (curva de niveles), T-036 (Invernadero refugio), T-037 (escudo en dos pasos), T-038 (tropas del brote 3) T-039 (Brain y las 8 rondas del brote 3), T-040 (catálogo de unidades), T-041 (tropas reutilizadas), T-042 (Morris y la sobrecarga), T-043 (el giro, la historia del brote 4), T-044 (el aviso de beta), T-045 (soltar la carta en el móvil), T-046 (arrancar plantas, 23 nov 2026) y T-047 (el brote 1 en 9 rondas, 24 nov 2026), la última.
 
-Ninguna pendiente (23 nov 2026). El aviso de beta (T-044) sale tras el final del último brote, hoy el 4, que ya está entero (T-041 a T-043): su diseño está en `../specs/07-brote-4-morris.md` y su historia en `../specs/04-historia.md`.
+Ninguna pendiente (24 nov 2026). El aviso de beta (T-044) sale tras el final del último brote, hoy el 4, que ya está entero (T-041 a T-043): su diseño está en `../specs/07-brote-4-morris.md` y su historia en `../specs/04-historia.md`.
 
 Al cerrar una task se sube la versión del juego (ADR-0017). Mientras el juego esté en desarrollo, ninguna task migra datos guardados (ADR-0014).
 

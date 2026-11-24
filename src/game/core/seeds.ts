@@ -1,7 +1,7 @@
 import { SEEDS } from '../config/balance';
 import { isDefeated } from './combat';
 import type { MatchState } from './match';
-import { outbreakIndex, type OutbreakId } from './outbreaks';
+import { outbreakIndex, outbreakScript, type OutbreakId } from './outbreaks';
 
 /**
  * Semillas (T-020): la moneda que el jugador se lleva de la partida, aparte de la de la partida (`MatchState.balance`).
@@ -62,6 +62,8 @@ export interface RoundCredit {
   readonly state: MatchState;
   /** Lo que dio la ronda (0 si la partida ya estaba cobrada). */
   readonly seeds: number;
+  /** Lo que dio ademas el premio de estreno (T-047): solo la ronda 1 de un brote con `openingBonus`; si no, 0. */
+  readonly bonus: number;
 }
 
 /** Semillas de una partida que empieza: nada sumado ni cobrado. */
@@ -97,14 +99,25 @@ export function heartBonusPercent(hearts: number): number {
 }
 
 /**
- * Suma a la partida lo que da la ronda recien superada (la llama `stepRound` al superar una que no es la ultima). Una
- * partida ya cobrada no suma nada. No modifica el estado recibido.
+ * Tope del premio de estreno del brote (T-047, R9-05): `openingBonus` % del tope de una ronda, o 0 si el brote no lo tiene.
+ */
+export function openingBonusCap(outbreak: OutbreakId): number {
+  return Math.floor((seedCaps(outbreak).round * (outbreakScript(outbreak).openingBonus ?? 0)) / 100);
+}
+
+/**
+ * Suma a la partida lo que da la ronda recien superada, la ronda en curso de `state` (la llama `stepRound` al superar una
+ * que no es la ultima). Si es la ronda 1 de un brote con premio de estreno (T-047), suma tambien el premio, con su propio
+ * azar: cuenta como lo de las rondas. Una partida ya cobrada no suma nada. No modifica el estado recibido.
  */
 export function creditRound(state: MatchState, random: () => number = Math.random): RoundCredit {
-  if (state.seeds.payout) return { state, seeds: 0 };
-  const seeds = rollSeeds(seedCaps(state.outbreak).round, state.seeds.replay, random);
-  const next: MatchSeeds = { ...state.seeds, rounds: state.seeds.rounds + 1, earned: state.seeds.earned + seeds };
-  return { state: { ...state, seeds: next }, seeds };
+  if (state.seeds.payout) return { state, seeds: 0, bonus: 0 };
+  const { replay } = state.seeds;
+  const seeds = rollSeeds(seedCaps(state.outbreak).round, replay, random);
+  const bonusCap = state.round.index === 0 ? openingBonusCap(state.outbreak) : 0;
+  const bonus = bonusCap > 0 ? rollSeeds(bonusCap, replay, random) : 0;
+  const next: MatchSeeds = { ...state.seeds, rounds: state.seeds.rounds + 1, earned: state.seeds.earned + seeds + bonus };
+  return { state: { ...state, seeds: next }, seeds, bonus };
 }
 
 /**

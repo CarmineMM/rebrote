@@ -621,15 +621,15 @@ export const ROUND_PREP = {
 } as const;
 
 /**
- * Las rondas del brote 1, el de Creeper (T-007; de 7 a 10 en T-008; progresion de T-009 y T-010), en orden. Cada una desbloquea lo suyo
+ * Las rondas del brote 1, el de Creeper (T-007; de 7 a 10 en T-008; progresion de T-009 y T-010; de 10 a 9 en T-047, sin la de repaso), en orden. Cada una desbloquea lo suyo
  * al empezar su preparacion (`unlocks`, y el tope de nivel de las disparadoras en `levelCap`), avisa con una linea
  * (su texto, en `round.notices.creeper` de `src/i18n/`, T-011) y, si trae algo nuevo, con el aviso que hay que aceptar (salvo `quiet`: la ronda 1, T-010). Saca sus grupos de enemigos: cada grupo, un enemigo por carril de `lanes` a la vez, `atMs` milisegundos
  * despues de que empiece el ataque (en orden). La ronda acaba cuando no quedan enemigos por salir ni vivos. Los
  * carriles van de 0 (el del fondo) a 4 (el de delante).
  * Los enemigos salen con un nivel al azar segun `levels` (tablas de `ENEMY_LEVELS`; sin ella, nivel 1), salvo los
  * grupos que fijan el suyo (`level`).
- * En las rondas 8 y 9 Creeper se prepara (`bossPreparing`, se le ve a la derecha) y acelera a sus enemigos (`haste`:
- * velocidad respecto a la normal). La 10 es el combate contra Creeper: primero manda a su escolta (un grupo con su
+ * En las rondas 7 y 8 Creeper se prepara (`bossPreparing`, se le ve a la derecha) y acelera a sus enemigos (`haste`:
+ * velocidad respecto a la normal). La 9 es el combate contra Creeper: primero manda a su escolta (un grupo con su
  * propio `level` y `haste`, y un grito, `shout`, cuyo texto esta en `creeper.shouts` de `src/i18n/`) y sale detras. PROVISIONAL: se ajusta jugando.
  */
 const CREEPER_ROUNDS: readonly RoundScript[] = [
@@ -738,27 +738,6 @@ const CREEPER_ROUNDS: readonly RoundScript[] = [
       { atMs: 66_000, kind: 'spitter', lanes: [0, 3] },
       { atMs: 74_000, kind: 'worm', lanes: [0, 1, 2, 3, 4] },
       { atMs: 82_000, kind: 'armored', lanes: [1] },
-    ],
-  },
-  {
-    unlocks: [],
-    levels: ENEMY_LEVELS.tables.mid,
-    groups: [
-      { atMs: 3_000, kind: 'worm', lanes: [0, 2, 4] },
-      { atMs: 10_000, kind: 'armored', lanes: [1, 3] },
-      { atMs: 18_000, kind: 'spitter', lanes: [2] },
-      { atMs: 22_000, kind: 'worm', lanes: [0, 1, 3, 4] },
-      { atMs: 32_000, kind: 'spitter', lanes: [0, 4] },
-      { atMs: 36_000, kind: 'armored', lanes: [2] },
-      { atMs: 42_000, kind: 'worm', lanes: [1, 2, 3] },
-      { atMs: 44_000, kind: 'worm', lanes: [1, 2, 3] },
-      { atMs: 54_000, kind: 'armored', lanes: [0, 4] },
-      { atMs: 58_000, kind: 'spitter', lanes: [1, 3] },
-      { atMs: 66_000, kind: 'worm', lanes: [0, 1, 2, 3, 4] },
-      { atMs: 76_000, kind: 'armored', lanes: [1, 2, 3] },
-      { atMs: 80_000, kind: 'spitter', lanes: [0, 4] },
-      { atMs: 84_000, kind: 'worm', lanes: [0, 1, 2, 3, 4] },
-      { atMs: 87_000, kind: 'worm', lanes: [0, 1, 2, 3, 4] },
     ],
   },
   {
@@ -1577,6 +1556,8 @@ export const OUTBREAKS: readonly OutbreakScript[] = [
     rounds: CREEPER_ROUNDS,
     // Lo del brote 1 lo da Boxer (T-032, VT-02).
     presenter: 'boxer',
+    // T-047 (R9-05): la ronda 1 da el doble de semillas, para compensar la ronda de repaso que se quito.
+    openingBonus: 100,
   },
   {
     id: 'elkCloner',

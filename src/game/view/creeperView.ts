@@ -19,7 +19,7 @@ import { text } from '../../i18n';
  * Creeper (T-008), jefe del brote 1. Su cuerpo es un `WormView` grande con cabeza de monitor; aqui va lo suyo: el
  * aviso del salto (diana en el carril de destino y la curva que hara), sus frases en un bocadillo de terminal, la luz
  * de la antena, el enfado de la fase 2, el aterrizaje y la derrota. Tambien `CreeperOmen`: Creeper preparandose a la
- * derecha en las rondas 8 y 9 (y en la preparacion de la 10), que acelera a los gusanos. No decide nada (ADR-0008).
+ * derecha en las rondas 7 y 8 (y en la preparacion de la 9), que acelera a los gusanos. No decide nada (ADR-0008).
  */
 const CREEPER_LOOK = {
   /** Diana del carril de destino: roja como la luz de su antena; en la fase 2, mas encendida. */
@@ -356,7 +356,7 @@ export class CreeperView implements EnemyView {
 }
 
 /**
- * Creeper preparandose (T-008): en las rondas 8 y 9, y en la preparacion de la 10, espera enroscado sobre el suelo
+ * Creeper preparandose (T-008): en las rondas 7 y 8, y en la preparacion de la 9, espera enroscado sobre el suelo
  * corrupto, a la derecha. Respira, suelta pixeles y en su pantalla se llena una barra de "CARGANDO". Cada gusano
  * acelerado que sale recibe un chispazo suyo. Al empezar el combate salta al agujero de su carril.
  */
@@ -452,7 +452,7 @@ export class CreeperOmen {
     }
   }
 
-  /** Acelera a un gusano que sale (rondas 8 y 9): un chispazo de pixeles vuela de su cabeza al agujero del carril. */
+  /** Acelera a un gusano que sale (rondas 7 y 8): un chispazo de pixeles vuela de su cabeza al agujero del carril. */
   zap(lane: number): void {
     if (this.done) return;
     const from = this.facePoint(-20, -30);

@@ -475,7 +475,7 @@ describe('subir de nivel', () => {
     const inRound = (round: number, level: number) => withPlants(createMatch(100_000, round), [at, { shooter: shooter({ level }) }]);
     expect(levelUpOffer(inRound(1, 4), at)).toMatchObject({ cap: 5, blocker: null });
     expect(levelUpOffer(inRound(1, 5), at)).toMatchObject({ cap: 5, capRaisedAt: null, cost: null, blocker: 'max-level' });
-    for (const round of [5, 6, 9]) {
+    for (const round of [5, 6, 8]) {
       expect(levelUpOffer(inRound(round, 5), at)).toMatchObject({ cap: 5, capRaisedAt: null, blocker: 'max-level' });
     }
   });

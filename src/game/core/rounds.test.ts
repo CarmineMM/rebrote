@@ -79,65 +79,63 @@ describe('brotes (datos, T-018)', () => {
 });
 
 describe('guion de las rondas (datos)', () => {
-  it('el brote 1 tiene 10 rondas: la ultima es el combate contra Creeper (T-008)', () => {
-    expect(ROUND_COUNT).toBe(10);
-    expect(bossRoundIndex(OUTBREAK_1)).toBe(9);
-    expect(ROUNDS.map((_, i) => isBossRound(OUTBREAK_1, i))).toEqual([false, false, false, false, false, false, false, false, false, true]);
+  it('el brote 1 tiene 9 rondas (10 hasta T-047): la ultima es el combate contra Creeper (T-008)', () => {
+    expect(ROUND_COUNT).toBe(9);
+    expect(bossRoundIndex(OUTBREAK_1)).toBe(8);
+    expect(ROUNDS.map((_, i) => isBossRound(OUTBREAK_1, i))).toEqual([false, false, false, false, false, false, false, false, true]);
   });
 
-  it('en la ronda 10 sale Creeper por el carril del centro, detras de su escolta (T-009)', () => {
-    const [escort, boss] = ROUNDS[9].groups;
-    expect(ROUNDS[9].groups).toHaveLength(2);
+  it('en la ronda 9 sale Creeper por el carril del centro, detras de su escolta (T-009)', () => {
+    const [escort, boss] = ROUNDS[8].groups;
+    expect(ROUNDS[8].groups).toHaveLength(2);
     expect(boss).toEqual({ atMs: expect.any(Number), kind: 'creeper', lanes: [2] });
     // Un acorazado de nivel 10 (T-010) por carril, antes que el y a su paso, con su grito.
     expect(escort).toMatchObject({ kind: 'armored', lanes: [0, 1, 2, 3, 4], level: 10, shout: 'escort' });
     expect(escort.atMs).toBeLessThan(boss.atMs);
     expect(ENEMIES.armored.speed * (escort.haste ?? 1)).toBeCloseTo(ENEMIES.creeper.speed, 9);
-    const others = ROUNDS.slice(0, 9).flatMap((round) => round.groups.map((group) => group.kind));
+    const others = ROUNDS.slice(0, 8).flatMap((round) => round.groups.map((group) => group.kind));
     expect(others).not.toContain('creeper');
   });
 
-  it('en las rondas 8 y 9 Creeper se prepara y acelera a sus tropas un 25 % y un 35 %; las demas van a su velocidad', () => {
-    expect(ROUNDS.map((_, i) => roundHaste(OUTBREAK_1, i))).toEqual([1, 1, 1, 1, 1, 1, 1, 1.25, 1.35, 1]);
-    expect(ROUNDS.map((round) => round.bossPreparing ?? false)).toEqual([false, false, false, false, false, false, false, true, true, false]);
+  it('en las rondas 7 y 8 Creeper se prepara y acelera a sus tropas un 25 % y un 35 %; las demas van a su velocidad', () => {
+    expect(ROUNDS.map((_, i) => roundHaste(OUTBREAK_1, i))).toEqual([1, 1, 1, 1, 1, 1, 1.25, 1.35, 1]);
+    expect(ROUNDS.map((round) => round.bossPreparing ?? false)).toEqual([false, false, false, false, false, false, true, true, false]);
   });
 
-  it('las rondas 8 y 9 sacan mas enemigos que la 7, y la 9 mas que la 8', () => {
+  it('las rondas 7 y 8 sacan mas enemigos que la 6, y la 8 mas que la 7', () => {
     const count = (index: number) => ROUNDS[index].groups.reduce((sum, group) => sum + group.lanes.length, 0);
+    expect(count(6)).toBeGreaterThan(count(5));
     expect(count(7)).toBeGreaterThan(count(6));
-    expect(count(8)).toBeGreaterThan(count(7));
   });
 
   /** Enemigos de cada tipo que saca la ronda `index`. */
   const tally = (index: number) =>
     ROUNDS[index].groups.reduce<Record<string, number>>((sum, g) => ({ ...sum, [g.kind]: (sum[g.kind] ?? 0) + g.lanes.length }), {});
 
-  it('rondas 8 y 9: un 50 % mas de cada tipo que antes de T-009 (redondeando hacia arriba)', () => {
+  it('rondas 7 y 8 (8 y 9 hasta T-047): un 50 % mas de cada tipo que antes de T-009 (redondeando hacia arriba)', () => {
     const before = [
       { worm: 33, armored: 8, spitter: 8 },
       { worm: 39, armored: 13, spitter: 10 },
     ];
     before.forEach((counts, i) => {
       const expected = Object.fromEntries(Object.entries(counts).map(([kind, n]) => [kind, Math.ceil(n * 1.5)]));
-      expect(tally(7 + i)).toEqual(expected);
+      expect(tally(6 + i)).toEqual(expected);
     });
   });
 
-  it('ronda 3 con un acorazado y ronda 4 con dos escupidores (T-009); las rondas 5 a 7, como estaban', () => {
+  it('ronda 3 con un acorazado y ronda 4 con dos escupidores (T-009); las rondas 5 y 6, como estaban (T-047 quito la 7 de repaso)', () => {
     expect(tally(2)).toEqual({ worm: 19, armored: 1 });
     expect(tally(3)).toEqual({ worm: 12, armored: 5, spitter: 2 });
     expect(tally(4)).toEqual({ worm: 22, armored: 5 });
     expect(tally(5)).toEqual({ worm: 13, armored: 5, spitter: 5 });
-    expect(tally(6)).toEqual({ worm: 28, armored: 8, spitter: 7 });
   });
 
-  it('niveles de los enemigos (T-009): rondas 1 y 2 de nivel 1; 3-4, 5-7 y 8-10 con su tabla', () => {
+  it('niveles de los enemigos (T-009): rondas 1 y 2 de nivel 1; 3-4, 5-6 y 7-9 con su tabla', () => {
     expect(ROUNDS.map((round) => round.levels ?? null)).toEqual([
       null,
       null,
       ENEMY_LEVELS.tables.early,
       ENEMY_LEVELS.tables.early,
-      ENEMY_LEVELS.tables.mid,
       ENEMY_LEVELS.tables.mid,
       ENEMY_LEVELS.tables.mid,
       ENEMY_LEVELS.tables.late,
@@ -192,7 +190,7 @@ describe('guion de las rondas (datos)', () => {
   });
 
   it('un concepto por ronda, en el orden de la spec (T-009)', () => {
-    const unlocks: Feature[][] = [['shooter'], ['levelUp'], ['fireMine'], ['iceMine'], ['fireInfuse', 'iceInfuse'], ['fuse'], [], [], [], []];
+    const unlocks: Feature[][] = [['shooter'], ['levelUp'], ['fireMine'], ['iceMine'], ['fireInfuse', 'iceInfuse'], ['fuse'], [], [], []];
     expect(ROUNDS.map((round) => [...round.unlocks])).toEqual(unlocks);
   });
 
@@ -247,13 +245,13 @@ describe('desbloqueo', () => {
   });
 
   it('el tope de nivel es 5 desde la ronda 2 hasta el final del brote 1 (T-010)', () => {
-    expect(ROUNDS.map((_, i) => levelCapAt(OUTBREAK_1, i))).toEqual([LIMITS.maxLevel, 5, 5, 5, 5, 5, 5, 5, 5, 5]);
+    expect(ROUNDS.map((_, i) => levelCapAt(OUTBREAK_1, i))).toEqual([LIMITS.maxLevel, 5, 5, 5, 5, 5, 5, 5, 5]);
     expect(levelCapRaisedAfter(OUTBREAK_1, 1, 5)).toBeNull();
     expect(levelCapRaisedAfter(OUTBREAK_1, 6, 5)).toBeNull();
     expect(levelCapRaisedAfter(OUTBREAK_1, 1, 3)).toBe(2);
   });
 
-  it('lo nuevo de cada ronda para el aviso que hay que aceptar (T-009); la ronda 1 y la 7 no avisan (T-010)', () => {
+  it('lo nuevo de cada ronda para el aviso que hay que aceptar (T-009); la ronda 1 y las de despues de fusionar no avisan (T-010)', () => {
     expect(ROUNDS[0].quiet).toBe(true);
     expect(ROUNDS.map((_, i) => roundUnlocks(OUTBREAK_1, i))).toEqual([
       [],
@@ -268,7 +266,6 @@ describe('desbloqueo', () => {
         { kind: 'feature', feature: 'iceInfuse' },
       ],
       [{ kind: 'feature', feature: 'fuse' }],
-      [],
       [],
       [],
       [],
@@ -339,8 +336,8 @@ describe('ataque', () => {
   });
 
   it('la escolta de Creeper sale de nivel 10 (T-010) y a su paso, con su grito, y despues sale el (T-009)', () => {
-    const [escort, boss] = ROUNDS[9].groups;
-    const out = stepRound(attacking(9), escort.atMs, HOLE_X, () => 0.01);
+    const [escort, boss] = ROUNDS[8].groups;
+    const out = stepRound(attacking(8), escort.atMs, HOLE_X, () => 0.01);
     expect(out.events).toEqual([{ type: 'shout', shout: 'escort' }]);
     expect(out.spawned.map((e) => [e.kind, e.lane, e.level, e.haste, e.hp])).toEqual(
       escort.lanes.map((lane) => ['armored', lane, 10, escort.haste, enemyMaxHp('armored', 10)]),
@@ -349,8 +346,8 @@ describe('ataque', () => {
     expect(later.spawned.map((e) => e.kind)).toEqual(['creeper']);
   });
 
-  it('en las rondas 8 y 9 los enemigos salen acelerados (T-008)', () => {
-    for (const index of [7, 8]) {
+  it('en las rondas 7 y 8 los enemigos salen acelerados (T-008)', () => {
+    for (const index of [6, 7]) {
       const [first] = ROUNDS[index].groups;
       const { spawned } = stepRound(attacking(index), first.atMs, HOLE_X);
       expect(spawned.length).toBeGreaterThan(0);
@@ -359,8 +356,8 @@ describe('ataque', () => {
   });
 
   it('el Creeper sale con la vida llena, sin nivel y sin saltos gastados', () => {
-    const group = ROUNDS[9].groups[1];
-    const { spawned } = stepRound(attacking(9, group.atMs - 1, 1), 1, HOLE_X);
+    const group = ROUNDS[8].groups[1];
+    const { spawned } = stepRound(attacking(8, group.atMs - 1, 1), 1, HOLE_X);
     expect(spawned).toEqual([expect.objectContaining({ kind: 'creeper', lane: 2, x: HOLE_X, hp: enemyMaxHp('creeper'), haste: 1, level: 1, jump: null, jumpsUsed: 0 })]);
   });
 
@@ -392,18 +389,21 @@ describe('fin de ronda', () => {
     const { state, events } = stepRound(lastGroupOut(2), 16, HOLE_X, () => 0);
     const seeds = Math.floor((SEEDS.round * SEEDS.firstPercent.min) / 100);
     expect(events).toEqual([
-      { type: 'roundCleared', index: 2, seeds },
+      { type: 'roundCleared', index: 2, seeds, bonus: 0 },
       { type: 'roundStarted', index: 3 },
     ]);
     expect(state.round).toEqual(createRound(OUTBREAK_1, 3));
     expect(state.seeds).toEqual({ replay: false, rounds: 1, earned: seeds, payout: null });
   });
 
-  it('cada ronda superada suma sus semillas a la partida, sin cobrarlas (T-020)', () => {
-    const cleared = stepRound(lastGroupOut(0), 16, HOLE_X, () => 0.999).state;
-    expect(cleared.seeds).toEqual({ replay: false, rounds: 1, earned: SEEDS.round, payout: null });
-    const next = stepRound({ ...lastGroupOut(1), seeds: cleared.seeds }, 16, HOLE_X, () => 0.999).state;
-    expect(next.seeds).toEqual({ replay: false, rounds: 2, earned: 2 * SEEDS.round, payout: null });
+  it('cada ronda superada suma sus semillas a la partida, sin cobrarlas (T-020); la 1, con el premio de estreno (T-047)', () => {
+    const cleared = stepRound(lastGroupOut(0), 16, HOLE_X, () => 0.999);
+    // T-047 (R9-05): la ronda 1 del brote 1 da ademas otra tirada del tope de una ronda.
+    expect(cleared.events[0]).toEqual({ type: 'roundCleared', index: 0, seeds: SEEDS.round, bonus: SEEDS.round });
+    expect(cleared.state.seeds).toEqual({ replay: false, rounds: 1, earned: 2 * SEEDS.round, payout: null });
+    const next = stepRound({ ...lastGroupOut(1), seeds: cleared.state.seeds }, 16, HOLE_X, () => 0.999);
+    expect(next.events[0]).toEqual({ type: 'roundCleared', index: 1, seeds: SEEDS.round, bonus: 0 });
+    expect(next.state.seeds).toEqual({ replay: false, rounds: 2, earned: 3 * SEEDS.round, payout: null });
   });
 
   it('plantas, saldo y vidas se conservan de una ronda a la siguiente', () => {
@@ -419,7 +419,7 @@ describe('fin de ronda', () => {
   it('tras la ultima ronda la partida esta ganada y ya no pasa nada mas', () => {
     const { state, events } = stepRound(lastGroupOut(ROUND_COUNT - 1), 16, HOLE_X);
     // La ultima ronda no suma semillas de ronda: da las del jefe al cobrar (T-020).
-    expect(events).toEqual([{ type: 'roundCleared', index: ROUND_COUNT - 1, seeds: 0 }, { type: 'won' }]);
+    expect(events).toEqual([{ type: 'roundCleared', index: ROUND_COUNT - 1, seeds: 0, bonus: 0 }, { type: 'won' }]);
     expect(state.seeds).toEqual(lastGroupOut(ROUND_COUNT - 1).seeds);
     expect(isWon(state)).toBe(true);
     const later = stepRound(state, 60_000, HOLE_X);
@@ -443,19 +443,19 @@ describe('fin de ronda', () => {
 });
 
 describe('Creeper se prepara (T-008)', () => {
-  it('se le ve desde la ronda 8 hasta que sale en la 10; antes, no', () => {
-    expect([0, 3, 6].map((i) => isBossPreparing(atRound(i)))).toEqual([false, false, false]);
-    expect(isBossPreparing(atRound(7))).toBe(true);
-    expect(isBossPreparing(attacking(8, 40_000, 5))).toBe(true);
-    expect(isBossPreparing(atRound(9))).toBe(true);
-    expect(isBossPreparing(attacking(9, 0, 0))).toBe(true);
+  it('se le ve desde la ronda 7 hasta que sale en la 9 (T-047; antes, de la 8 a la 10); antes, no', () => {
+    expect([0, 3, 5].map((i) => isBossPreparing(atRound(i)))).toEqual([false, false, false]);
+    expect(isBossPreparing(atRound(6))).toBe(true);
+    expect(isBossPreparing(attacking(7, 40_000, 5))).toBe(true);
+    expect(isBossPreparing(atRound(8))).toBe(true);
+    expect(isBossPreparing(attacking(8, 0, 0))).toBe(true);
     // Sigue preparandose mientras sale su escolta (T-009); deja de verse al salir el.
-    expect(isBossPreparing(attacking(9, 3_000, 1))).toBe(true);
-    expect(isBossPreparing(attacking(9, 6_000, 2))).toBe(false);
+    expect(isBossPreparing(attacking(8, 3_000, 1))).toBe(true);
+    expect(isBossPreparing(attacking(8, 6_000, 2))).toBe(false);
   });
 
   it('al ganar ya no se le ve', () => {
-    const won: MatchState = { ...atRound(9), round: { index: 9, phase: 'won', prepMs: 0, elapsedMs: 0, released: 1, waiting: [], brood: null } };
+    const won: MatchState = { ...atRound(8), round: { index: 8, phase: 'won', prepMs: 0, elapsedMs: 0, released: 1, waiting: [], brood: null } };
     expect(isBossPreparing(won)).toBe(false);
   });
 });
@@ -490,7 +490,7 @@ describe('Boxer y Patty en el brote 1 (T-032)', () => {
     for (let i = 0; i < roundCount(OUTBREAK_1); i++) expect(unlockPresenter(OUTBREAK_1, i), `ronda ${i + 1}`).toBe('boxer');
   });
 
-  it('Creeper se ve por primera vez en la ronda 8, cuando empieza a prepararse (VT-04)', () => {
-    expect(bossFirstSeenRound(OUTBREAK_1)).toBe(7);
+  it('Creeper se ve por primera vez en la ronda 7, cuando empieza a prepararse (VT-04; la 8 hasta T-047)', () => {
+    expect(bossFirstSeenRound(OUTBREAK_1)).toBe(6);
   });
 });

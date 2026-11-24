@@ -1,6 +1,6 @@
 # [Rondas] Brote 1 en 9 rondas: Creeper se prepara desde la 7
 
-**Estado:** En curso · **Prioridad:** Media · **Tamaño estimado:** S (orientativo) · **Depende de:** ninguna · **Bloquea a:** ninguna · **Origen:** conversación de diseño del 23 nov 2026; tentativa TT-001, revisada el 24 nov 2026
+**Estado:** Completada (24 nov 2026, 0.17.1) · **Prioridad:** Media · **Tamaño estimado:** S (orientativo) · **Depende de:** ninguna · **Bloquea a:** ninguna · **Origen:** conversación de diseño del 23 nov 2026; tentativa TT-001, revisada el 24 nov 2026
 
 ## Contexto
 Carmine quiere acortar el brote 1 de 10 a 9 rondas, sin tocar el saldo inicial (`startingBalance`, 250) ni la escolta de Creeper (5 acorazados de nivel 10).
@@ -36,35 +36,35 @@ Hoy (comprobado el 24 nov 2026, en 0.17.0):
 
 ## Criterios de aceptación
 ### Guion
-- [ ] `CREEPER_ROUNDS` tiene 9 rondas: la 1 a la 6 sin cambios, la 7 y la 8 son las antiguas 8 y 9 (con `bossPreparing`, su `haste` y sus niveles) y la 9 es el combate contra Creeper.
-- [ ] El saldo inicial sigue en 250 y la escolta, en cinco acorazados de nivel 10.
-- [ ] Creeper se ve preparándose en las rondas 7 y 8 y en la preparación de la 9.
-- [ ] Tras ganar la ronda 9 la partida queda ganada, Creeper queda vencido y se abre el brote 2.
+- [x] `CREEPER_ROUNDS` tiene 9 rondas: la 1 a la 6 sin cambios, la 7 y la 8 son las antiguas 8 y 9 (con `bossPreparing`, su `haste` y sus niveles) y la 9 es el combate contra Creeper.
+- [x] El saldo inicial sigue en 250 y la escolta, en cinco acorazados de nivel 10.
+- [x] Creeper se ve preparándose en las rondas 7 y 8 y en la preparación de la 9.
+- [x] Tras ganar la ronda 9 la partida queda ganada, Creeper queda vencido y se abre el brote 2.
 
 ### Premio de estreno (R9-05)
-- [ ] Al superar la ronda 1 del brote 1 se suma a la partida, además de lo de la ronda, un premio del 100 % del tope de una ronda (`openingBonus` en `OUTBREAKS`, `balance.ts`), con el mismo azar: entre el 75 y el 100 % la primera vez y entre el 15 y el 25 % en un brote ya vencido.
-- [ ] Se cobra como lo de las rondas: al ganar, entero y con lo de las vidas; al perder, su 25 %.
-- [ ] Los brotes 2 a 4 no lo tienen, y ninguna otra ronda lo da.
-- [ ] Bajo "¡Ronda 1 superada!" y "+N semillas" sale una línea propia, "¡Premio de estreno! +M", en el color de las semillas, en español y en inglés.
-- [ ] Perder a propósito sigue sin dar más que volver a ganar un brote ya vencido (el test de `seeds.test.ts`).
+- [x] Al superar la ronda 1 del brote 1 se suma a la partida, además de lo de la ronda, un premio del 100 % del tope de una ronda (`openingBonus` en `OUTBREAKS`, `balance.ts`), con el mismo azar: entre el 75 y el 100 % la primera vez y entre el 15 y el 25 % en un brote ya vencido.
+- [x] Se cobra como lo de las rondas: al ganar, entero y con lo de las vidas; al perder, su 25 %.
+- [x] Los brotes 2 a 4 no lo tienen, y ninguna otra ronda lo da.
+- [x] Bajo "¡Ronda 1 superada!" y "+N semillas" sale una línea propia, "¡Premio de estreno! +M", en el color de las semillas, en español y en inglés.
+- [x] Perder a propósito sigue sin dar más que volver a ganar un brote ya vencido (el test de `seeds.test.ts`).
 
 ### Textos
-- [ ] `round.notices.creeper` tiene 9 avisos en español y en inglés: sin "Llegan todos a la vez…" y en el mismo orden que el guion.
-- [ ] El texto de "¡Ronda N superada!" y el contador de rondas enseñan 9 en total.
+- [x] `round.notices.creeper` tiene 9 avisos en español y en inglés: sin "Llegan todos a la vez…" y en el mismo orden que el guion.
+- [x] El texto de "¡Ronda N superada!" y el contador de rondas enseñan 9 en total.
 
 ### Partida guardada
-- [ ] Una partida guardada del brote 1 con la forma anterior no rompe el juego ni carga en una ronda distinta de la que era: se sube `SAVE_VERSION` (regla 8) y las guardadas de antes se ignoran.
+- [x] Una partida guardada del brote 1 con la forma anterior no rompe el juego ni carga en una ronda distinta de la que era: se sube `SAVE_VERSION` (regla 8) y las guardadas de antes se ignoran.
 
 ### Balance
-- [ ] Se pasa `npm run sim` y el resultado del brote 1 se anota en `02-brote-1-creeper.md`, comparado con el anterior.
-- [ ] Si sale mucho más difícil, se aplica lo que decide R9-03.
+- [x] Se pasa `npm run sim` y el resultado del brote 1 se anota en `02-brote-1-creeper.md`, comparado con el anterior.
+- [x] Si sale mucho más difícil, se aplica lo que decide R9-03. No hizo falta: 9 de 10 ganadas, como antes (detalle en `02-brote-1-creeper.md`).
 
 ### Calidad
-- [ ] Los tests que daban por hecho 10 rondas en el brote 1 se ajustan, y el premio de estreno tiene los suyos.
-- [ ] El catálogo de jefes (`/catalog/jefes.html`) enseña los grupos de la ronda del combate.
-- [ ] Docs: `02-brote-1-creeper.md` (tablas de rondas y del guion, jefe en la 9), `01-mecanicas.md` (rondas en las líneas 78, 85, 86, 87, 95, 176 y 188, y las semillas: el premio, la tabla y la nota de "brotes de 10 rondas") y la tabla de `docs/tasks/README.md`.
-- [ ] Versión de parche (regla 12) y línea en `CHANGELOG.md`.
-- [ ] `npm test` y `npm run build` pasan.
+- [x] Los tests que daban por hecho 10 rondas en el brote 1 se ajustan, y el premio de estreno tiene los suyos.
+- [x] El catálogo de jefes (`/catalog/jefes.html`) enseña los grupos de la ronda del combate.
+- [x] Docs: `02-brote-1-creeper.md` (tablas de rondas y del guion, jefe en la 9), `01-mecanicas.md` (rondas en las líneas 78, 82, 86, 87, 95, 176 y 188, y las semillas: el premio, la tabla y la nota de "brotes de 10 rondas") y la tabla de `docs/tasks/README.md`.
+- [x] Versión de parche (regla 12) y línea en `CHANGELOG.md`.
+- [x] `npm test` y `npm run build` pasan.
 
 ## Casos límite y riesgos
 - **Riesgo: el jugador llega más pobre a Creeper.** La ronda de repaso da unas 760 monedas (28 × 15 + 8 × 25 + 7 × 20). Sin ella, se llega al combate con menos disparadoras fusionadas y subidas.
