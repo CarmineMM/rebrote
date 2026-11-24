@@ -1089,8 +1089,8 @@ const BRAIN_ROUNDS: readonly RoundScript[] = [
     ],
   },
   {
-    // T-037: infundir el escudo. Muchos escupidores: una disparadora con escudo les para los escupitajos.
-    unlocks: ['shieldInfuse'],
+    // Muchos escupidores: el muro les para los escupitajos antes de que lleguen a las disparadoras.
+    unlocks: [],
     levels: ENEMY_LEVELS.tables.early,
     groups: [
       { atMs: 3_000, kind: 'lurkerSpitter', lanes: [2] },
@@ -1176,8 +1176,9 @@ const BRAIN_ROUNDS: readonly RoundScript[] = [
     ],
   },
   {
-    // Brain se prepara: todo un 15 % mas rapido. Boxer cuenta quien fue Brain.
-    unlocks: [],
+    // Brain se prepara: todo un 15 % mas rapido. Boxer cuenta quien fue Brain. T-037: infundir el escudo (desde el
+    // 24 nov 2026 en esta ronda; antes, en la 2).
+    unlocks: ['shieldInfuse'],
     haste: 1.15,
     bossPreparing: true,
     levels: ENEMY_LEVELS.tables.late,

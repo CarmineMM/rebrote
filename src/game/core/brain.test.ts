@@ -292,10 +292,10 @@ describe('las 8 rondas del brote 3', () => {
     expect(roundHaste(BROTE3, 6)).toBeGreaterThan(roundHaste(BROTE3, 5));
   });
 
-  it('un concepto por ronda: Lurker en la 1, infundir el escudo en la 2, Skipper en la 3', () => {
+  it('un concepto por ronda: Lurker en la 1, Skipper en la 3, infundir el escudo en la 6', () => {
     expect(kindsOf(0).has('skipper')).toBe(false);
     expect([...kindsOf(0)].every((kind) => sneaks(kind))).toBe(true);
-    expect(roundScript(BROTE3, 1).unlocks).toEqual(['shieldInfuse']);
+    expect(roundScript(BROTE3, 5).unlocks).toEqual(['shieldInfuse']);
     expect(kindsOf(1).has('skipper')).toBe(false);
     expect(kindsOf(2).has('skipper')).toBe(true);
     for (let i = 3; i < BOSS_ROUND; i++) expect(kindsOf(i).has('skipper') && kindsOf(i).has('lurkerArmored'), `ronda ${i + 1}`).toBe(true);

@@ -51,7 +51,7 @@ const BROTE3 = 'brain' as const;
 /** Ronda (desde 0) del brote 2 que trae el muro. */
 const SHIELD_ROUND = 1;
 /** Ronda (desde 0) del brote 3 que trae infundir el escudo (T-037). */
-const INFUSE_ROUND = 1;
+const INFUSE_ROUND = 5;
 
 /** Partida del brote 2 en la preparacion de la ronda del escudo, con `balance` de saldo. */
 const shieldMatch = (balance = 2000): MatchState => createMatch(balance, SHIELD_ROUND, BROTE2);
