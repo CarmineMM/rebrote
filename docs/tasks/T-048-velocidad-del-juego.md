@@ -1,26 +1,25 @@
 # [Interfaz] Velocidad del juego: ×1,5 y ×2
 
-**Estado:** Tentativa · **Prioridad:** Media · **Tamaño estimado:** S (orientativo) · **Depende de:** ninguna · **Bloquea a:** ninguna · **Origen:** petición de Carmine del 23 nov 2026
-
-> Task tentativa (ADR-0026): antes de pasarla a `docs/tasks/` con su número T-xxx, hay que revisar el código y comprobar que el contexto, las rutas y las líneas citadas siguen siendo ciertos.
+**Estado:** Pendiente · **Prioridad:** Media · **Tamaño estimado:** S (orientativo) · **Depende de:** ninguna · **Bloquea a:** ninguna · **Origen:** petición de Carmine del 23 nov 2026. Tentativa TT-002, revisada el 24 nov 2026
 
 ## Contexto
 Carmine quiere poder acelerar el tiempo del juego durante la partida, a ×1,5 y a ×2, para que las rondas largas o ya conocidas se hagan menos pesadas. Quiere saber también si se puede hacer con lo que ya existe, sin cambios exagerados ni profundos (ver "Factibilidad técnica").
 
-Hoy (verificado el 23 nov 2026, en 0.17.0):
-- El tablero avanza en `BoardScene.update` (`src/game/scenes/BoardScene.ts:574`), que llama a `advance(delta)` (`:910`) con el `delta` de Phaser. `advance` pasa ese `delta` a las tres reglas que cuentan el tiempo: `stepRound` (`:914`, preparación y salida de los grupos), `stepIncome` (`:920`, goteo) y `stepCombat` (`:926`). Ninguna otra regla mira el reloj.
+Hoy (verificado el 24 nov 2026, en 0.17.3):
+- El tablero avanza en `BoardScene.update` (`src/game/scenes/BoardScene.ts:578`), que llama a `advance(delta)` (`:914`) con el `delta` de Phaser. `advance` pasa ese `delta` a las tres reglas que cuentan el tiempo: `stepRound` (`:918`, preparación y salida de los grupos), `stepIncome` (`:924`, goteo) y `stepCombat` (`:930`). Ninguna otra regla mira el reloj.
 - `stepCombat` (`src/game/core/combat.ts:657`) reparte cualquier `dtMs` en pasos de 50 ms como mucho (`MAX_STEP_MS`, `combat.ts:283`). Un test ya comprueba que un fotograma largo da lo mismo que varios cortos (`combat.test.ts:365`).
-- `stepRound` (`src/game/core/rounds.ts:489`) y `stepIncome` (`src/game/core/economy.ts:38`) solo suman `dtMs` a sus relojes. El tiempo que sobra al acabar la preparación ya cuenta para el ataque.
-- Los tours solo salen en la preparación, y mientras hay uno la preparación no descuenta (`holding`, `BoardScene.ts:913`; `useTours.ts:92`). La pausa para la escena entera con `this.sys.pause()` (`applyPause`, `BoardScene.ts:543`): `update` no corre. El aviso de desbloqueo, la ficha y las viñetas también pausan (`halted`, `App.tsx:217`).
+- `stepRound` (`src/game/core/rounds.ts:490`) y `stepIncome` (`src/game/core/economy.ts:38`) solo suman `dtMs` a sus relojes. El tiempo que sobra al acabar la preparación ya cuenta para el ataque.
+- Los tours solo salen en la preparación, y mientras hay uno la preparación no descuenta (`holding`, `BoardScene.ts:917`; `useTours.ts:91` y `:136`). La pausa para la escena entera con `this.sys.pause()` (`applyPause`, `BoardScene.ts:547`): `update` no corre. El aviso de desbloqueo, la ficha y las viñetas también pausan (`halted`, `src/App.tsx:220`).
 - Lo que dura y es una regla se pinta desde el estado. El paso de los gusanos sale de `enemy.x` (`wormView.ts:578`), la cuenta de la mina de `mine.fuseMs` (`mineView.ts:177`), la granada de `flightMs` y `fuseMs` (`grenadeView.ts:111` y `:226`), el salto del Skipper de `hop.ms` (`bugView.ts:368`) y el aviso del poema de Elk Cloner de `recital.ms` (`wormView.ts:312`).
 - Otras cosas van con el reloj y los tweens de la escena (`this.time`, `this.tweens`), no con el estado:
   - las animaciones de cada evento: el mordisco dura 300 ms (`wormView.ts:690`) y el retroceso al disparar, 200 ms (`plantView.ts:213`);
   - el decorado (`ambience.ts`: pájaros, mariposas, viento) y los bocadillos de los jefes;
-  - las monedas que quedan en el suelo (`spawnDroppedCoin`, `BoardScene.ts:2682`), que se van a los `ECONOMY.dropLifetimeMs` (8 s, `balance.ts:61`);
-  - el retraso de la pantalla de derrota y la espera del jefe que salta desde donde se preparaba (`OMEN_LEAP_MS`, 520 ms, `creeperView.ts:44`, usada en `BoardScene.ts:977`).
+  - las monedas que quedan en el suelo (`spawnDroppedCoin`, `BoardScene.ts:2694`), que se van a los `ECONOMY.dropLifetimeMs` (8 s, `balance.ts:61`);
+  - el retraso de la pantalla de derrota y la espera del jefe que salta desde donde se preparaba (`OMEN_LEAP_MS`, 520 ms, `creeperView.ts:44`, usada en `BoardScene.ts:981`).
 - Dos animaciones fijas dependen de una duración de las reglas. El bocadillo del poema de Elk Cloner dura `ELK_CLONER.poemWarnMs` (5 s, `elkClonerView.ts:144`), y el jefe se ve a los `OMEN_LEAP_MS` de salir.
 - Phaser 4.2.1 tiene `timeScale` en el reloj (`this.time.timeScale`) y en los tweens (`this.tweens.timeScale`) de cada escena. Hoy el juego no los usa.
-- El HUD de la derecha (`hud-right`, `App.tsx:592`) lleva las vidas, el saldo y el botón de pausa. Las teclas P y Esc se leen en `App.tsx:492`. H, N, M, J, K, L y S son atajos solo de desarrollo (`bindDebugKeys`, `BoardScene.ts:841`).
+- El HUD de la derecha (`hud-right`, `src/App.tsx:595`) lleva las vidas, el saldo y el botón de pausa. Las teclas P y Esc se leen en `src/App.tsx:495` y `:501`. H, N, M, J, K, L y S son atajos solo de desarrollo (`bindDebugKeys`, `BoardScene.ts:845`).
+- Desde 0.17.2 (HUD del móvil) la ronda va al lado de los corazones si cabe y, si no, debajo (`useHudFit`, `src/ui/useHudFit.ts`, que mide el ancho de `hud-right`; CSS en `src/styles.css:1315` y `:1334`). La barra de la sobrecarga va debajo de la pausa. Un botón más en `hud-right` lo ensancha: en el móvil la ronda bajará debajo de los corazones más a menudo.
 - El sonido ya recorta los efectos que se repiten (`minGapMs`, `maxVoices` y `burst`, `src/game/audio/voices.ts:28`).
 - Los bots de `npm run sim` usan su propio paso fijo (`STEP_MS`, `src/game/sim/bot.ts:448` y `:459`), sin la escena.
 - Los ajustes del aparato van en `rebrote.ajustes` (`src/ui/useSettings.ts:46`). La partida guardada es el `MatchState` (ADR-0010).
@@ -46,7 +45,7 @@ Lo que hay que tocar (estimado):
 | `BoardScene.ts` | Guarda la velocidad, escucha el evento y la aplica en `advance` | ~10 líneas |
 | HUD (React) | El botón junto al de pausa, con su estilo en el móvil | componente pequeño |
 | `src/i18n/es.ts` y `en.ts` | Nombre, ayuda y etiqueta del botón | 3 o 4 claves |
-| `elkClonerView.ts:144` y `BoardScene.ts:977` | El bocadillo del poema y la espera del jefe, divididos por la velocidad | 2 líneas |
+| `elkClonerView.ts:144` y `BoardScene.ts:981` | El bocadillo del poema y la espera del jefe, divididos por la velocidad | 2 líneas |
 
 No hace falta tocar: las reglas de `core` (salvo la función nueva), el guion de los brotes, los números de balance, la partida guardada, el progreso, los perfiles, los bots ni el catálogo.
 
@@ -101,6 +100,7 @@ La otra forma, acelerarlo todo con `this.time.timeScale` y `this.tweens.timeScal
 
 ### Móvil
 - [ ] Probado en horizontal a 812 × 375 y 568 × 320: el botón cabe en `hud-right` sin tapar el saldo, las vidas, la pausa ni lo que se juega (lista "HUD o menú nuevo" de `graficos.md`).
+- [ ] Con el botón nuevo, `useHudFit` sigue decidiendo bien: la ronda va al lado de los corazones o debajo sin solaparse, y la barra de la sobrecarga (Morris, brote 4) y la del jefe siguen sin tapar el césped.
 
 ### Calidad
 - [ ] Tests: el de la función de velocidad, y el combate a ×2 con fotogramas de 33 y 67 ms da lo mismo que en pasos de 50 ms (como `combat.test.ts:365`). La ronda y el goteo, a ×2, acaban en la mitad de fotogramas.

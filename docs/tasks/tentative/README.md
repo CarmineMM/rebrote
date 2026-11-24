@@ -6,7 +6,6 @@ Una task tentativa no se ejecuta: primero se pasa a normal.
 
 | # | Task | Estado | Tamaño | Depende de | Bloqueada por decisión |
 |---|---|---|---|---|---|
-| TT-002 | [Interfaz] Velocidad del juego: ×1,5 y ×2 | Tentativa | S | Ninguna | VJ-01 a VJ-07 |
 
 ## Cómo se escribe
 - Archivo en esta carpeta: `TT-<número>-<nombre>.md`. La numeración `TT-` es propia y no gasta números `T-`.
