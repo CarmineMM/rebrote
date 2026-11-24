@@ -1,6 +1,6 @@
 # [Interfaz] Velocidad del juego: ×1,5 y ×2
 
-**Estado:** En curso · **Prioridad:** Media · **Tamaño estimado:** S (orientativo) · **Depende de:** ninguna · **Bloquea a:** ninguna · **Origen:** petición de Carmine del 23 nov 2026. Tentativa TT-002, revisada el 24 nov 2026
+**Estado:** Completada (24 nov 2026, 0.17.4) · **Prioridad:** Media · **Tamaño estimado:** S (orientativo) · **Depende de:** ninguna · **Bloquea a:** ninguna · **Origen:** petición de Carmine del 23 nov 2026. Tentativa TT-002, revisada el 24 nov 2026
 
 ## Contexto
 Carmine quiere poder acelerar el tiempo del juego durante la partida, a ×1,5 y a ×2, para que las rondas largas o ya conocidas se hagan menos pesadas. Quiere saber también si se puede hacer con lo que ya existe, sin cambios exagerados ni profundos (ver "Factibilidad técnica").
@@ -81,34 +81,34 @@ La otra forma, acelerarlo todo con `this.time.timeScale` y `this.tweens.timeScal
 
 ## Criterios de aceptación
 ### Velocidad
-- [ ] Las velocidades (1, 1,5 y 2) están en `balance.ts`, y ningún otro archivo las escribe a mano.
-- [ ] Una función pura de `src/game/core/` da la velocidad siguiente y descarta una velocidad que no está en la lista, con test.
-- [ ] `advance` recibe el `delta` multiplicado por la velocidad, y con él avanzan `stepRound`, `stepIncome` y `stepCombat`. La preparación, según VJ-02.
-- [ ] Con un tour en pantalla, la preparación sigue sin descontar a cualquier velocidad.
-- [ ] La pausa, el aviso de desbloqueo, la ficha y las viñetas siguen parando el juego a cualquier velocidad. Al volver, sigue la velocidad que había.
-- [ ] El decorado, el arrastre y la recolocación siguen con el `delta` real (salvo que VJ-01 diga b).
-- [ ] El bocadillo del poema de Elk Cloner y la espera del jefe que salta duran lo mismo en tiempo de juego a cualquier velocidad.
-- [ ] Las monedas del suelo se comportan según VJ-01.
+- [x] Las velocidades (1, 1,5 y 2) están en `balance.ts`, y ningún otro archivo las escribe a mano.
+- [x] Una función pura de `src/game/core/` da la velocidad siguiente y descarta una velocidad que no está en la lista, con test.
+- [x] `advance` recibe el `delta` multiplicado por la velocidad, y con él avanzan `stepRound`, `stepIncome` y `stepCombat`. La preparación, según VJ-02.
+- [x] Con un tour en pantalla, la preparación sigue sin descontar a cualquier velocidad (`holding` sigue dando 0 a `stepRound`; comprobado en el código, no con un tour en pantalla).
+- [x] La pausa, el aviso de desbloqueo, la ficha y las viñetas siguen parando el juego a cualquier velocidad. Al volver, sigue la velocidad que había.
+- [x] El decorado, el arrastre y la recolocación siguen con el `delta` real (salvo que VJ-01 diga b).
+- [x] El bocadillo del poema de Elk Cloner y la espera del jefe que salta duran lo mismo en tiempo de juego a cualquier velocidad: `poemWarn(warnMs / speed)` y `leapTo(foot, OMEN_LEAP_MS / speed)` en los cuatro jefes, con la misma espera para su vista (en el código; no mirado en pantalla).
+- [x] Las monedas del suelo se comportan según VJ-01.
 
 ### Control
-- [ ] El control de VJ-03 está en el HUD durante la partida y enseña la velocidad actual ("×1", "×1,5", "×2"; en inglés, "×1.5"), con el número formateado con el idioma.
-- [ ] La velocidad la guarda React y se la manda a la escena por `EventBus`, también cuando la escena arranca (`sceneReady`), como `tourHold`. Así sobrevive al cambio de calidad o de idioma.
-- [ ] Si VJ-04 lo pide, la tecla hace lo mismo que el botón, y no hace nada con un menú abierto o mientras se escribe.
-- [ ] La velocidad se recuerda (o no) según VJ-05.
-- [ ] La velocidad no va en `MatchState`: `SAVE_VERSION` no cambia.
-- [ ] Textos en `src/i18n/es.ts` y `en.ts` (`docs/guias/idiomas.md`): nombre y ayuda del botón. Sin "poder", "tienda" ni "comprar".
+- [x] El control de VJ-03 está en el HUD durante la partida y enseña la velocidad actual ("×1", "×1,5", "×2"; en inglés, "×1.5"), con el número formateado con el idioma.
+- [x] La velocidad la guarda React y se la manda a la escena por `EventBus`, también cuando la escena arranca (`sceneReady`), como `tourHold`. Así sobrevive al cambio de calidad o de idioma.
+- [x] Si VJ-04 lo pide, la tecla hace lo mismo que el botón, y no hace nada con un menú abierto o mientras se escribe.
+- [x] La velocidad se recuerda (o no) según VJ-05.
+- [x] La velocidad no va en `MatchState`: `SAVE_VERSION` no cambia.
+- [x] Textos en `src/i18n/es.ts` y `en.ts` (`docs/guias/idiomas.md`): nombre y ayuda del botón. Sin "poder", "tienda" ni "comprar".
 
 ### Móvil
-- [ ] Probado en horizontal a 812 × 375 y 568 × 320: el botón cabe en `hud-right` sin tapar el saldo, las vidas, la pausa ni lo que se juega (lista "HUD o menú nuevo" de `graficos.md`).
-- [ ] Con el botón nuevo, `useHudFit` sigue decidiendo bien: la ronda va al lado de los corazones o debajo sin solaparse, y la barra de la sobrecarga (Morris, brote 4) y la del jefe siguen sin tapar el césped.
+- [x] Probado en horizontal a 812 × 375 y 568 × 320: el botón cabe en `hud-right` sin tapar el saldo, las vidas, la pausa ni lo que se juega (lista "HUD o menú nuevo" de `graficos.md`). A 568 px con cuatro cartas la pausa se salía 7 px (23 con un saldo de cinco cifras): por debajo de 600 px el HUD junta sus columnas y encoge un poco corazones, moneda y botones (`styles.css`).
+- [x] Con el botón nuevo, `useHudFit` sigue decidiendo bien: la ronda va al lado de los corazones o debajo sin solaparse, y la barra de la sobrecarga (Morris, brote 4) y la del jefe siguen sin tapar el césped.
 
 ### Calidad
-- [ ] Tests: el de la función de velocidad, y el combate a ×2 con fotogramas de 33 y 67 ms da lo mismo que en pasos de 50 ms (como `combat.test.ts:365`). La ronda y el goteo, a ×2, acaban en la mitad de fotogramas.
-- [ ] Prueba de rendimiento (tecla H) a ×2 en Bajo, mirada con "Mostrar FPS": sigue fluido.
-- [ ] Se escucha a ×2 con muchas plantas: los disparos no saturan.
-- [ ] Docs: `01-mecanicas.md` (la velocidad y que no cambia las reglas), `graficos.md` (las animaciones atadas a una regla se dividen por la velocidad) y una consecuencia en ADR-0008.
-- [ ] Versión de parche (regla 12): es un ajuste de comodidad, como T-045. Línea en `CHANGELOG.md`.
-- [ ] `npm test` y `npm run build` pasan.
+- [x] Tests (`speed.test.ts`): el de la función de velocidad; a ×2 con fotogramas que dan pasos de 50 ms, el combate es idéntico al de pasos de 50 ms; con fotogramas de 33 y 67 ms el resultado es el mismo (el gusano cae, sin vidas perdidas, a menos de dos pasos de cuando cae a ×1: los cortes de los pasos no coinciden, así que el estado no es idéntico al milisegundo). La ronda y el goteo, a ×2, acaban en la mitad de fotogramas.
+- [x] Prueba de rendimiento (tecla H) a ×2 en Bajo y en Ultra: 60 FPS con 15 plantas, 72 gusanos y la sobrecarga encendida (Chrome sin ventana en la RTX 4060; en un móvil no se ha medido).
+- [ ] Se escucha a ×2 con muchas plantas: los disparos no saturan. **Sin escuchar:** lo recortan `minGapMs`, `maxVoices` y `burst` (`voices.ts`), pero falta oírlo.
+- [x] Docs: `01-mecanicas.md` (la velocidad y que no cambia las reglas), `graficos.md` (las animaciones atadas a una regla se dividen por la velocidad) y una consecuencia en ADR-0008.
+- [x] Versión de parche (regla 12): es un ajuste de comodidad, como T-045. 0.17.4, con su línea en `CHANGELOG.md`.
+- [x] `npm test` y `npm run build` pasan.
 
 ## Casos límite y riesgos
 - **Un fotograma muy largo a ×2** (equipo lento o pestaña que vuelve): el `delta` ya viene recortado por Phaser (ADR-0008) y `stepCombat` lo reparte en pasos de 50 ms. No hay saltos de balas.

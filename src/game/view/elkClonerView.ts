@@ -138,10 +138,11 @@ export class ElkClonerView implements EnemyView {
   /**
    * Empieza a anunciar el poema entero (L-03): lo dice en su bocadillo mientras dura el aviso, con notas doradas y un
    * anillo. Se hincha, echa la cabeza atras y le brillan los ojos (lo hace `sync`, del estado), y los pentagramas se llenan.
+   * El bocadillo dura `durationMs` reales: lo que dura el aviso a la velocidad del juego (T-048).
    */
-  poemWarn(): void {
+  poemWarn(durationMs: number = ELK_CLONER.poemWarnMs): void {
     const lines = text().elkCloner.poem;
-    this.say(lines[this.poems++ % lines.length], ELK_CLONER.poemWarnMs);
+    this.say(lines[this.poems++ % lines.length], durationMs);
     const head = this.worm.headPoint(0, -10);
     const { cellWidth } = this.worm.ground();
     this.fx.notes(head.x, head.y, 6);
@@ -444,7 +445,7 @@ export class ElkClonerOmen {
   }
 
   /** Empieza el combate: enrolla el pergamino, salta en curva hasta los pies de `foot` (el agujero de su carril) y desaparece al caer. */
-  leapTo(foot: BoardPoint): void {
+  leapTo(foot: BoardPoint, durationMs = OMEN_LEAP_MS): void {
     if (this.done) return;
     this.done = true;
     this.stopIdle();
@@ -459,7 +460,7 @@ export class ElkClonerOmen {
     this.scene.tweens.add({
       targets: path,
       t: 1,
-      duration: OMEN_LEAP_MS,
+      duration: durationMs,
       ease: 'Sine.InOut',
       onUpdate: () => {
         const u = path.t;

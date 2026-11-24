@@ -58,6 +58,7 @@ import {
 import { FIRST_OUTBREAK, hasOverload, outbreakScript, roundCount, type OutbreakId } from '../core/outbreaks';
 import { plantMaxHp, type ElementType } from '../core/plants';
 import { settleSeeds, type SeedPayout } from '../core/seeds';
+import { NORMAL_SPEED, gameDelta, validSpeed, type GameSpeed } from '../core/speed';
 import {
   availableCards,
   bossRoundIndex,
@@ -426,6 +427,11 @@ export class BoardScene extends Phaser.Scene {
    * senalar. Lo dice React con `tourHold`, tambien al arrancar la escena (responde a `sceneReady`).
    */
   private tourHold = false;
+  /**
+   * Velocidad del juego (T-048): cuanto tiempo de juego trae cada fotograma a la ronda, al goteo y al combate. La guarda
+   * React y la manda con `speedChanged`, tambien al arrancar la escena (responde a `sceneReady`), como `tourHold`.
+   */
+  private speed: GameSpeed = NORMAL_SPEED;
   /** Ultimo `tourBoard` enviado, para avisar solo cuando cambia. */
   private tourBoardKey = '';
   /** Monedas del suelo que ya se pueden recoger (T-013, pista de la moneda), por id: donde estan en el mundo y su tamano. */
@@ -492,6 +498,7 @@ export class BoardScene extends Phaser.Scene {
     this.lastBoss = null;
     this.pendingUnlock = null;
     this.tourHold = false;
+    this.speed = NORMAL_SPEED;
     this.tourBoardKey = '';
     this.coinSpots = new Map();
 
@@ -794,6 +801,9 @@ export class BoardScene extends Phaser.Scene {
     };
     const onPause = (paused: boolean) => this.applyPause(paused);
     const onTourHold = (hold: boolean) => this.setTourHold(hold);
+    const onSpeed = (speed: unknown) => {
+      this.speed = validSpeed(speed);
+    };
     // Partida nueva desde cero, del mismo brote: no continua la anterior (sin `resume`) y arranca sin pausa.
     const onRestart = () => this.scene.restart({ quality: this.level, outbreak: this.match.outbreak, loadout: this.loadout, baseLevel: this.match.baseLevel } satisfies BoardSceneData);
     // T-011: se guarda al ocultar o cerrar la pestana, y al salir al menu de inicio, que pasa a la portada.
@@ -816,6 +826,7 @@ export class BoardScene extends Phaser.Scene {
     EventBus.on(GameEvents.unlockAccepted, onUnlockAccepted);
     EventBus.on(GameEvents.pauseChanged, onPause);
     EventBus.on(GameEvents.tourHold, onTourHold);
+    EventBus.on(GameEvents.speedChanged, onSpeed);
     EventBus.on(GameEvents.restartRequested, onRestart);
     EventBus.on(GameEvents.saveRequested, onSave);
     EventBus.on(GameEvents.exitRequested, onExit);
@@ -833,6 +844,7 @@ export class BoardScene extends Phaser.Scene {
       EventBus.off(GameEvents.unlockAccepted, onUnlockAccepted);
       EventBus.off(GameEvents.pauseChanged, onPause);
       EventBus.off(GameEvents.tourHold, onTourHold);
+      EventBus.off(GameEvents.speedChanged, onSpeed);
       EventBus.off(GameEvents.restartRequested, onRestart);
       EventBus.off(GameEvents.saveRequested, onSave);
       EventBus.off(GameEvents.exitRequested, onExit);
@@ -911,7 +923,10 @@ export class BoardScene extends Phaser.Scene {
    * Avanza la partida: la ronda cuenta su preparacion y saca sus enemigos (T-007), cae el goteo de moneda (solo durante el
    * ataque, T-010), se mueve el combate, se animan los eventos y se recolocan las vistas.
    */
-  private advance(delta: number): void {
+  private advance(realDelta: number): void {
+    // A la velocidad elegida (T-048), cada fotograma trae mas tiempo de juego. Solo a las reglas (VJ-01): la preparacion
+    // tambien (VJ-02), pero las animaciones de cada evento, el decorado y las monedas del suelo siguen en tiempo real.
+    const delta = gameDelta(realDelta, this.speed);
     // Con un tour de ayuda en pantalla (T-013) la preparacion no descuenta: en ella no hay enemigos, asi que no hay nada
     // mas que parar. "¡Que vengan!" sigue adelantando el ataque.
     const holding = this.tourHold && this.match.round.phase === 'prep';
@@ -976,9 +991,11 @@ export class BoardScene extends Phaser.Scene {
   private showSpawned(spawned: readonly Enemy[]): void {
     for (const enemy of spawned) {
       if (isBoss(enemy.kind) && this.omen) {
-        this.omen.leapTo({ x: enemy.x, y: enemy.lane + 0.64 });
+        // El salto dura lo mismo en tiempo de juego (T-048): a mas velocidad, el jefe anda mas deprisa y tiene que caer antes.
+        const leapMs = OMEN_LEAP_MS / this.speed;
+        this.omen.leapTo({ x: enemy.x, y: enemy.lane + 0.64 }, leapMs);
         this.omen = null;
-        this.addWormView(enemy, true, OMEN_LEAP_MS);
+        this.addWormView(enemy, true, leapMs);
       } else {
         this.addWormView(enemy, true);
       }
@@ -1227,7 +1244,8 @@ export class BoardScene extends Phaser.Scene {
         break;
       case 'poemWarned':
         // Elk Cloner anuncia el poema entero (T-026, L-03): lo dice el, y sale el aviso en el centro del cesped.
-        this.elkView(event.enemyId)?.poemWarn();
+        // El bocadillo dura lo que el aviso en tiempo de juego (T-048), a la velocidad de cuando empieza.
+        this.elkView(event.enemyId)?.poemWarn(event.warnMs / this.speed);
         this.announcePoem();
         break;
       case 'poemRecited':

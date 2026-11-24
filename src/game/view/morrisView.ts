@@ -724,7 +724,7 @@ export class MorrisOmen {
   }
 
   /** Empieza el combate: salta en curva hasta los pies de `foot` (el agujero de su carril) y desaparece al caer. */
-  leapTo(foot: BoardPoint): void {
+  leapTo(foot: BoardPoint, durationMs = OMEN_LEAP_MS): void {
     if (this.done) return;
     this.done = true;
     this.stopIdle();
@@ -740,7 +740,7 @@ export class MorrisOmen {
     this.scene.tweens.add({
       targets: path,
       t: 1,
-      duration: OMEN_LEAP_MS,
+      duration: durationMs,
       ease: 'Sine.InOut',
       onUpdate: () => {
         const u = path.t;
