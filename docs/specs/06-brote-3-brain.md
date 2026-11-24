@@ -16,7 +16,7 @@ Brain fue el primer virus para PC. Lo escribieron dos hermanos de Lahore, que de
 
 ## Lo que aporta al jugador
 
-- **Infundir el escudo (decidido).** En el brote 2 el escudo solo se siembra como muro. La disparadora con escudo llega en este brote, en la ronda 2. Patty no crea nada nuevo: avisa de que el escudo ya se puede infundir, y Boxer enseña a hacerlo. Es T-037. Hecho en T-037 (ES-01 a ES-04): Patty dice "He reforzado el escudo: ahora aguanta sobre una disparadora"; el saldo inicial es 300, como el brote 2; el brote está en preparación (`boss: null`, `?brote=3`) con un guion provisional de 3 rondas y las tropas del brote 2 sin el Minstrel, que T-038 ya cambió por las suyas (abajo) y T-039 cambiará por sus 8 rondas.
+- **Infundir el escudo (decidido).** En el brote 2 el escudo solo se siembra como muro. La disparadora con escudo llega en este brote, en la ronda 6 (en la 2 hasta el 24 nov 2026). Patty no crea nada nuevo: avisa de que el escudo ya se puede infundir, y Boxer enseña a hacerlo. Es T-037. Hecho en T-037 (ES-01 a ES-04): Patty dice "He reforzado el escudo: ahora aguanta sobre una disparadora"; el saldo inicial es 300, como el brote 2; el brote está en preparación (`boss: null`, `?brote=3`) con un guion provisional de 3 rondas y las tropas del brote 2 sin el Minstrel, que T-038 ya cambió por las suyas (abajo) y T-039 cambiará por sus 8 rondas.
 - **Lo de este brote llega hacia atrás (norma ES-03):** quien vence a Brain puede infundir el escudo también al rejugar los brotes 1 y 2, desde su ronda 1. Las tropas y el jefe de este brote no cambian por eso, pero lo que traigan T-038 y T-039 (el Skipper que salta, el sigilo) tiene que funcionar también contra lo que el jugador ya lleva.
 - **Un segundo uso del escudo:** parar lo que salta.
 - **Un uso nuevo de las minas y del hielo:** descubren lo que está oculto.
@@ -80,11 +80,11 @@ Ocho, como el brote 2 (decidido). Un concepto por ronda.
 | Ronda | Concepto nuevo | Qué aprende el jugador |
 |---|---|---|
 | 1 | Los Lurker, ocultos | Que las plantas tardan en verlos: las minas y el hielo los descubren |
-| 2 | Infundir el escudo (lo anuncia Patty y lo enseña Boxer) | Una disparadora con escudo aguanta el doble y hace de puerta |
+| 2 | Muchos escupidores | El muro les para los escupitajos |
 | 3 | Llega el Skipper, de uno en uno | Solo lo para un escudo, y en tierra es frágil |
 | 4 | Mezcla: acorazados ocultos y Skipper. Llega arrancar (T-046: lo anuncia Patty y lo enseña Boxer) | Escudos para unos, minas para otros; arrancar lo que sobra devuelve la mitad |
 | 5 | Dos oleadas por los cinco carriles | Una puerta en cada carril |
-| 6 | Brain se prepara: tropas aceleradas | Boxer cuenta quién fue Brain |
+| 6 | Brain se prepara: tropas aceleradas. Infundir el escudo (lo anuncia Patty y lo enseña Boxer; en la 2 hasta el 24 nov 2026) | Boxer cuenta quién fue Brain; una disparadora con escudo aguanta el doble y hace de puerta |
 | 7 | Más tropas y más rápidas | Llegar con los cinco carriles cerrados |
 | 8 | Combate contra Brain y su escolta | Mantener las puertas y descubrirlo |
 

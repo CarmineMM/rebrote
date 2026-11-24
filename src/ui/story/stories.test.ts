@@ -52,16 +52,16 @@ describe('cuando salen las viñetas (T-031)', () => {
 describe('Boxer cuenta que fue cada jefe antes de su combate (T-032, VT-04)', () => {
   const at = (round: number, phase: 'prep' | 'attack' = 'prep') => ({ kind: 'match' as const, outbreak: 'creeper' as const, round, phase });
 
-  it('sale en la preparacion de la ronda 8 del brote 1, cuando Creeper empieza a prepararse', () => {
-    expect(storiesAt(at(7), ['opening'])).toEqual(['lore:creeper']);
-    expect(storiesAt(at(7), ['opening', 'lore:creeper'])).toEqual([]);
+  it('sale en la preparacion de la ronda 7 del brote 1, cuando Creeper empieza a prepararse (la 8 hasta T-047)', () => {
+    expect(storiesAt(at(6), ['opening'])).toEqual(['lore:creeper']);
+    expect(storiesAt(at(6), ['opening', 'lore:creeper'])).toEqual([]);
   });
 
   it('antes no, en pleno ataque tampoco; si no se vio, en la preparacion de las siguientes hasta la del combate', () => {
-    expect([0, 3, 6].flatMap((round) => storiesAt(at(round), ['opening']))).toEqual([]);
-    expect(storiesAt(at(7, 'attack'), [])).toEqual([]);
+    expect([0, 3, 5].flatMap((round) => storiesAt(at(round), ['opening']))).toEqual([]);
+    expect(storiesAt(at(6, 'attack'), [])).toEqual([]);
+    expect(storiesAt(at(7), [])).toEqual(['lore:creeper']);
     expect(storiesAt(at(8), [])).toEqual(['lore:creeper']);
-    expect(storiesAt(at(9), [])).toEqual(['lore:creeper']);
   });
 
   it('es una sola viñeta de Boxer con su texto de cada brote, y se vuelve a ver antes de lo que cuenta al vencerlo', () => {

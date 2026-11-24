@@ -16,6 +16,7 @@ import {
   type CombatEvent,
   type Enemy,
 } from './combat';
+import { FIRST_OUTBREAK, roundCount } from './outbreaks';
 import { createMatch, createMine, createPlant, createWall, sownAt, type MatchState } from './match';
 import { createShooter, type Shooter } from './plants';
 
@@ -40,9 +41,9 @@ function withMine(state: MatchState, cell: Cell): MatchState {
   return { ...state, plants };
 }
 
-/** Partida con un Creeper en `x` del carril `lane`, con `hpFraction` de su vida, en la ronda 10. */
+/** Partida con un Creeper en `x` del carril `lane`, con `hpFraction` de su vida, en la ronda de su combate (la 9, T-047). */
 function withCreeper(lane = 2, x = 6, hpFraction = 1, over: Partial<Enemy> = {}): MatchState {
-  const state = spawnEnemy(createMatch(1000, 9), 'creeper', lane, x, bossHp * hpFraction);
+  const state = spawnEnemy(createMatch(1000, roundCount(FIRST_OUTBREAK) - 1), 'creeper', lane, x, bossHp * hpFraction);
   const [creeper] = state.enemies;
   return { ...state, enemies: [{ ...creeper, ...over }] };
 }

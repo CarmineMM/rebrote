@@ -10,7 +10,7 @@ const sow = (state: MatchState, card: CardId, ...cells: Cell[]) => cells.reduce(
 /** Ronda del escudo (T-024): la 2 del brote 2, con saldo de sobra. */
 const shieldRound = () => earn(createMatch(undefined, 1, 'elkCloner'), 10_000);
 /** Ronda de infundir el escudo (T-037): la 2 del brote 3, con saldo de sobra. */
-const infuseRound = () => earn(createMatch(undefined, 1, 'brain'), 10_000);
+const infuseRound = () => earn(createMatch(undefined, 5, 'brain'), 10_000);
 
 describe('lo que senala un tour de ayuda (T-013)', () => {
   it('los carriles van del centro hacia fuera', () => {

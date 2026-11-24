@@ -254,7 +254,7 @@ describe('granada (O-04)', () => {
   });
 
   it('a los jefes, el dano entero (O-06); a Creeper en el aire, nada', () => {
-    let state = attacking(createMatch(0, 9, 'creeper', false, ALL));
+    let state = attacking(createMatch(0, 8, 'creeper', false, ALL));
     state = spawnEnemy(state, 'creeper', cell.lane, center);
     const creeper = lastEnemy(state);
     const hit = stepCombat(throwGrenade(state, cell), GRENADE.flightMs + GRENADE.fuseMs).state;
@@ -390,7 +390,7 @@ describe('muro de hielo (O-05, O-09 a O-11)', () => {
   });
 
   it('a los jefes, igual (O-06); a Creeper en el aire no lo mueve', () => {
-    let state = attacking(createMatch(0, 9, 'creeper', false, ALL));
+    let state = attacking(createMatch(0, 8, 'creeper', false, ALL));
     state = spawnEnemy(state, 'creeper', 2, cell.col + 0.6);
     const creeper = lastEnemy(state);
     const half = enemyHalfLength(creeper);
@@ -470,7 +470,7 @@ describe('niveles de los poderes (T-022, T-01)', () => {
   it('la granada de nivel 10 dana mas y alcanza dos carriles mas alla', () => {
     const cell = { lane: 2, col: 5 };
     // Dos carriles por debajo y casi en la misma columna: a 2,06 casillas, fuera del alcance del nivel 1 (1,8).
-    const place = (level: number) => spawnEnemy(attacking(createMatch(0, 9, 'creeper', false, all(level))), 'creeper', 4, cell.col + 1);
+    const place = (level: number) => spawnEnemy(attacking(createMatch(0, 8, 'creeper', false, all(level))), 'creeper', 4, cell.col + 1);
     const hp = lastEnemy(place(1)).hp;
     const missed = stepCombat(throwGrenade(place(1), cell), GRENADE.flightMs + GRENADE.fuseMs).state;
     expect(lastEnemy(missed).hp).toBe(hp);

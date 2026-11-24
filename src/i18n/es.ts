@@ -349,7 +349,6 @@ export const es = {
         'Siembra hielo solo y frena en área. ¡Llega el escupidor!',
         'Suelta fuego o hielo sobre una disparadora (o arrastra una mina hasta ella) para infundirla',
         'Arrastra una disparadora sobre otra igual para fusionarlas',
-        'Llegan todos a la vez: gusanos, acorazados y escupidores. ¡Aguanta!',
         '¡Creeper se prepara! Sus tropas llegan más rápido y en mayor número',
         'Creeper casi está listo: aún más tropas y más rápidas',
         '¡Llega Creeper con su escolta! Salta de carril: reparte tus defensas',
@@ -815,6 +814,8 @@ export const es = {
     roundCleared: (round: number) => `¡Ronda ${round} superada!`,
     /** Bajo "¡Ronda N superada!": lo que sumo a la partida (T-020). */
     seedsEarned: (amount: string, count: number) => `+${count === 1 ? '1 semilla' : `${amount} semillas`}`,
+    /** Debajo, el premio de estreno de la ronda 1 del brote 1 (T-047): sus semillas, aparte de las de la ronda. */
+    openingBonus: (amount: string) => `¡Premio de estreno! +${amount}`,
     bossDown: { creeper: '¡Creeper atrapado!', elkCloner: '¡Elk Cloner, silenciado!', brain: '¡Brain, formateado!', morris: '¡Morris, parcheado!' },
     /** La sobrecarga (T-042) se enciende sobre el tablero. */
     overload: '¡Sobrecarga!',

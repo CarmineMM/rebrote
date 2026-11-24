@@ -33,9 +33,10 @@ export const SAVE_KEY = 'partida';
  * salto del Skipper (`Enemy.hop`) y el sigilo de los Lurker (`Enemy.revealMs`). La 12 (T-041), la variante de color de las
  * tropas que vuelven en otro brote (`Enemy.variant`). La 13 (T-042), la sobrecarga (`MatchState.overload`), lo que espera fuera
  * por el tope de enemigos (`RoundState.waiting`) y los gusanos de Morris (`RoundState.brood`). La 14 (T-046), lo gastado en cada
- * disparadora (`Plant.spent`), lo que se recupera en parte al arrancarla.
+ * disparadora (`Plant.spent`), lo que se recupera en parte al arrancarla. La 15 (T-047) no cambia la forma: el brote 1 pasa
+ * de 10 rondas a 9, y una guardada de antes cargaria en otra ronda (la 7 o la 8) con otros grupos.
  */
-export const SAVE_VERSION = 14;
+export const SAVE_VERSION = 15;
 
 export interface SavedGame {
   readonly version: number;

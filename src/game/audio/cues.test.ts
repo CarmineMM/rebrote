@@ -127,13 +127,13 @@ describe('roundCues', () => {
   it('suena el inicio del ataque y la ronda superada, pero no tras la ultima: ahi suena la victoria', () => {
     const rounds = roundCount(FIRST_OUTBREAK);
     expect(ids(roundCues([{ type: 'attackStarted', index: 0 }], rounds))).toEqual(['attackStarted']);
-    expect(ids(roundCues([{ type: 'roundCleared', index: 0, seeds: 0 }, { type: 'roundStarted', index: 1 }], rounds))).toEqual(['roundCleared']);
-    expect(ids(roundCues([{ type: 'roundCleared', index: rounds - 1, seeds: 0 }, { type: 'won' }], rounds))).toEqual([]);
+    expect(ids(roundCues([{ type: 'roundCleared', index: 0, seeds: 0, bonus: 0 }, { type: 'roundStarted', index: 1 }], rounds))).toEqual(['roundCleared']);
+    expect(ids(roundCues([{ type: 'roundCleared', index: rounds - 1, seeds: 0, bonus: 0 }, { type: 'won' }], rounds))).toEqual([]);
   });
 
   it('la ultima ronda es la del brote en curso: en uno de 3, la tercera ya no suena como ronda superada (T-018)', () => {
-    expect(ids(roundCues([{ type: 'roundCleared', index: 1, seeds: 0 }], 3))).toEqual(['roundCleared']);
-    expect(ids(roundCues([{ type: 'roundCleared', index: 2, seeds: 0 }, { type: 'won' }], 3))).toEqual([]);
+    expect(ids(roundCues([{ type: 'roundCleared', index: 1, seeds: 0, bonus: 0 }], 3))).toEqual(['roundCleared']);
+    expect(ids(roundCues([{ type: 'roundCleared', index: 2, seeds: 0, bonus: 0 }, { type: 'won' }], 3))).toEqual([]);
   });
 });
 

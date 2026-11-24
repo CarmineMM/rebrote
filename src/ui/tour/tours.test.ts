@@ -81,7 +81,7 @@ describe('tours de ayuda (T-013)', () => {
     expect(TOURS.shield.some((step) => step.doneWhen === 'infuseShield')).toBe(false);
     expect(TOUR_OF_FEATURE.shieldInfuse).toBe('shieldInfuse');
     expect(toursOfRound('brain', 0)).toEqual([]);
-    expect(toursOfRound('brain', 1)).toEqual(['shieldInfuse']);
+    expect(toursOfRound('brain', 5)).toEqual(['shieldInfuse']);
     // Con la carta o arrastrando un muro, el primer paso queda hecho; el del muro se ensena sin exigirlo.
     expect(TOURS.shieldInfuse.map((step) => step.doneWhen)).toEqual(['infuseShield', null]);
     expect(cueOf({ type: 'infuse', element: 'shield', dragged: true })).toBe('infuseShield');

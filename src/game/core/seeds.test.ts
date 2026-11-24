@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BOARD, LIVES, SEEDS } from '../config/balance';
+import { BOARD, LIVES, OUTBREAKS, SEEDS } from '../config/balance';
 import { createMatch, type MatchState } from './match';
 import { FIRST_OUTBREAK, roundCount } from './outbreaks';
 import { roundScript, stepRound } from './rounds';
@@ -8,6 +8,7 @@ import {
   creditRound,
   heartBonusPercent,
   newMatchSeeds,
+  openingBonusCap,
   rollSeedPercent,
   rollSeeds,
   seedCaps,
@@ -82,11 +83,13 @@ describe('semillas: lo que llevan las rondas de la partida (T-020)', () => {
     expect(createMatch(undefined, 0, FIRST_OUTBREAK, true).seeds).toEqual({ replay: true, rounds: 0, earned: 0, payout: null });
   });
 
-  it('cada ronda superada suma lo suyo y cuenta una ronda mas', () => {
+  it('cada ronda superada suma lo suyo y cuenta una ronda mas; la 1 del brote 1, tambien el premio de estreno (T-047)', () => {
     const first = creditRound(createMatch(), HIGH);
     expect(first.seeds).toBe(SEEDS.round);
-    const second = creditRound(first.state, LOW);
-    expect(second.state.seeds).toEqual({ replay: false, rounds: 2, earned: SEEDS.round + 37, payout: null });
+    expect(first.bonus).toBe(SEEDS.round);
+    const second = creditRound({ ...first.state, round: createMatch(undefined, 1).round }, LOW);
+    expect(second.bonus).toBe(0);
+    expect(second.state.seeds).toEqual({ replay: false, rounds: 2, earned: 2 * SEEDS.round + 37, payout: null });
   });
 
   it('no modifica el estado recibido', () => {
@@ -97,7 +100,7 @@ describe('semillas: lo que llevan las rondas de la partida (T-020)', () => {
 
   it('una partida ya cobrada no suma mas', () => {
     const paid = play(HIGH);
-    expect(creditRound(paid, HIGH)).toEqual({ state: paid, seeds: 0 });
+    expect(creditRound(paid, HIGH)).toEqual({ state: paid, seeds: 0, bonus: 0 });
   });
 });
 
@@ -105,12 +108,14 @@ describe('semillas: lo que se cobra al acabar (T-020, C-04 y C-05)', () => {
   it('al ganar: las rondas, el jefe y un 10 % de eso por cada vida que queda', () => {
     const won = play(HIGH);
     const rounds = roundCount(FIRST_OUTBREAK) - 1;
-    const subtotal = rounds * SEEDS.round + SEEDS.boss;
+    // T-047: con el premio de estreno de la ronda 1, una tirada mas.
+    const roundSeeds = rounds * SEEDS.round + openingBonusCap(FIRST_OUTBREAK);
+    const subtotal = roundSeeds + SEEDS.boss;
     expect(won.seeds.payout).toEqual({
       won: true,
       replay: false,
       rounds,
-      roundSeeds: rounds * SEEDS.round,
+      roundSeeds,
       bossSeeds: SEEDS.boss,
       hearts: LIVES.start,
       heartSeeds: Math.floor((subtotal * LIVES.start * SEEDS.heartPercent) / 100),
@@ -133,12 +138,12 @@ describe('semillas: lo que se cobra al acabar (T-020, C-04 y C-05)', () => {
       won: false,
       replay: false,
       rounds: 6,
-      roundSeeds: 6 * SEEDS.round,
+      roundSeeds: 7 * SEEDS.round,
       bossSeeds: 0,
       hearts: 0,
       heartSeeds: 0,
       keptPercent: SEEDS.defeatPercent,
-      total: Math.floor((6 * SEEDS.round * SEEDS.defeatPercent) / 100),
+      total: Math.floor((7 * SEEDS.round * SEEDS.defeatPercent) / 100),
     });
   });
 
@@ -156,7 +161,7 @@ describe('semillas: lo que se cobra al acabar (T-020, C-04 y C-05)', () => {
   it('siempre en enteros', () => {
     for (let i = 0; i < 50; i++) {
       const random = () => (i * 0.37) % 1;
-      for (const options of [{}, { replay: true }, { lives: 1 }, { loseAt: 4 }, { replay: true, loseAt: 9 }]) {
+      for (const options of [{}, { replay: true }, { lives: 1 }, { loseAt: 4 }, { replay: true, loseAt: 8 }]) {
         const payout = play(random, options).seeds.payout;
         expect(payout && Object.values(payout).every((value) => typeof value === 'boolean' || Number.isInteger(value))).toBe(true);
       }
@@ -180,8 +185,16 @@ describe('semillas: los ejemplos de la task (T-020)', () => {
     expect(range({ replay: true })).toEqual([179, 302]);
   });
 
-  it('perder en la ronda 7 sin haberlo vencido da poco (de 55 a 75)', () => {
-    expect(range({ loseAt: 6 })).toEqual([55, 75]);
+  it('perder en la ronda 7 sin haberlo vencido da poco (de 64 a 87; de 55 a 75 hasta el premio de estreno, T-047)', () => {
+    expect(range({ loseAt: 6 })).toEqual([64, 87]);
+  });
+
+  it('perder en el combate final sin haberlo vencido (de 83 a 112)', () => {
+    expect(range({ loseAt: roundCount(FIRST_OUTBREAK) - 1 })).toEqual([83, 112]);
+  });
+
+  it('perder en la ronda 7 de un brote ya vencido', () => {
+    expect(range({ replay: true, loseAt: 6 })).toEqual([12, 21]);
   });
 
   it('perder a proposito en el combate final nunca da mas que volver a ganar el brote', () => {
@@ -202,5 +215,52 @@ describe('semillas: el saldo (T-020)', () => {
   it('lo de una partida perdida tambien suma, por poco que sea', () => {
     const payout = seedPayout(play(HIGH, { loseAt: 3 }));
     expect(addSeeds(1000, payout.total)).toBe(1000 + payout.total);
+  });
+});
+
+describe('semillas: el premio de estreno (T-047, R9-05)', () => {
+  /** La ronda 1 del brote `outbreak`, recien superada, con el brote ya vencido o no. */
+  const firstRound = (outbreak: (typeof OUTBREAKS)[number]['id'], replay = false) => createMatch(undefined, 0, outbreak, replay);
+
+  it('solo lo tiene el brote 1, que perdio su ronda de repaso: el 100 % del tope de una ronda', () => {
+    expect(OUTBREAKS.filter((outbreak) => outbreak.openingBonus !== undefined).map((outbreak) => [outbreak.id, outbreak.openingBonus])).toEqual([['creeper', 100]]);
+    expect(openingBonusCap(FIRST_OUTBREAK)).toBe(SEEDS.round);
+    for (const outbreak of OUTBREAKS.slice(1)) expect(openingBonusCap(outbreak.id), outbreak.id).toBe(0);
+  });
+
+  it('sale al superar la ronda 1, con el azar de una ronda: entre el 75 y el 100 % la primera vez', () => {
+    expect(creditRound(firstRound(FIRST_OUTBREAK), LOW).bonus).toBe(37);
+    expect(creditRound(firstRound(FIRST_OUTBREAK), HIGH).bonus).toBe(SEEDS.round);
+  });
+
+  it('en un brote ya vencido da lo de repetir, entre el 15 y el 25 %', () => {
+    expect(creditRound(firstRound(FIRST_OUTBREAK, true), LOW).bonus).toBe(7);
+    expect(creditRound(firstRound(FIRST_OUTBREAK, true), HIGH).bonus).toBe(12);
+  });
+
+  it('tiene su propio azar: no tiene por que dar lo mismo que la ronda', () => {
+    const rolls = [0, 0.999];
+    const credit = creditRound(firstRound(FIRST_OUTBREAK), () => rolls.shift() ?? 0);
+    expect([credit.seeds, credit.bonus]).toEqual([37, SEEDS.round]);
+    expect(credit.state.seeds.earned).toBe(37 + SEEDS.round);
+  });
+
+  it('ninguna otra ronda lo da, ni la ronda 1 de los demas brotes', () => {
+    for (let index = 1; index < roundCount(FIRST_OUTBREAK) - 1; index++) {
+      expect(creditRound(createMatch(undefined, index), HIGH).bonus, `ronda ${index + 1}`).toBe(0);
+    }
+    for (const outbreak of OUTBREAKS.slice(1)) expect(creditRound(firstRound(outbreak.id), HIGH).bonus, outbreak.id).toBe(0);
+  });
+
+  it('compensa la ronda quitada: ganar el brote 1 da lo mismo que con las 10 rondas de antes', () => {
+    // Con 10 rondas: 9 superadas dando semillas y el jefe. Con 9: 8 superadas, el premio y el jefe.
+    expect(play(LOW).seeds.payout?.roundSeeds).toBe(9 * 37);
+    expect(play(HIGH).seeds.payout?.roundSeeds).toBe(9 * SEEDS.round);
+  });
+
+  it('al perder se cobra su 25 %, como lo de las rondas; perder en la ronda 1 sigue sin dar nada', () => {
+    const lostIn2 = play(HIGH, { loseAt: 1 }).seeds.payout;
+    expect(lostIn2).toMatchObject({ rounds: 1, roundSeeds: 2 * SEEDS.round, total: Math.floor((2 * SEEDS.round * SEEDS.defeatPercent) / 100) });
+    expect(play(HIGH, { loseAt: 0 }).seeds.payout?.total).toBe(0);
   });
 });

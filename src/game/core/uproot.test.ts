@@ -72,7 +72,9 @@ describe('lo gastado en cada disparadora (AR-02)', () => {
 
   it('infundir arrastrando una mina o un muro cuenta lo que costo sembrarlo', () => {
     const wallCell = { lane: 2, col: 5 };
-    let state = put(put(uprootMatch(), cell, createPlant({ element: null, cannons: 2, level: 1 }, COSTS.shooter * 2)), wallCell, createWall());
+    // En la ronda 6 del brote 3, donde ya se puede infundir el escudo.
+    const shieldMatch = createMatch(5000, 5, 'brain');
+    let state = put(put(shieldMatch, cell, createPlant({ element: null, cannons: 2, level: 1 }, COSTS.shooter * 2)), wallCell, createWall());
     state = infuseWithElement(state, wallCell, cell);
     // El muro (un escudo) y el que faltaba para el segundo canon: lo mismo que con la carta.
     expect(plantAt(state, cell)?.spent).toBe(COSTS.shooter * 2 + COSTS.shield * 2);
