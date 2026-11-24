@@ -1,6 +1,6 @@
 # [Interfaz] Velocidad del juego: ×1,5 y ×2
 
-**Estado:** Pendiente · **Prioridad:** Media · **Tamaño estimado:** S (orientativo) · **Depende de:** ninguna · **Bloquea a:** ninguna · **Origen:** petición de Carmine del 23 nov 2026. Tentativa TT-002, revisada el 24 nov 2026
+**Estado:** En curso · **Prioridad:** Media · **Tamaño estimado:** S (orientativo) · **Depende de:** ninguna · **Bloquea a:** ninguna · **Origen:** petición de Carmine del 23 nov 2026. Tentativa TT-002, revisada el 24 nov 2026
 
 ## Contexto
 Carmine quiere poder acelerar el tiempo del juego durante la partida, a ×1,5 y a ×2, para que las rondas largas o ya conocidas se hagan menos pesadas. Quiere saber también si se puede hacer con lo que ya existe, sin cambios exagerados ni profundos (ver "Factibilidad técnica").
@@ -71,13 +71,13 @@ La otra forma, acelerarlo todo con `this.time.timeScale` y `this.tweens.timeScal
 ## Decisiones pendientes
 | # | Pregunta | Opciones | Recomendación | Decide |
 |---|---|---|---|---|
-| VJ-01 | ¿Qué se acelera? | a) Solo las reglas (ronda, goteo y combate). Las animaciones de cada golpe, el decorado, los bocadillos y la vida de las monedas del suelo van en tiempo real · b) Toda la escena del tablero (`this.time.timeScale` y `this.tweens.timeScale`), también el decorado; a ×2, las monedas del suelo se van en 4 s | a | Carmine |
-| VJ-02 | ¿Se acelera también la preparación? | a) Sí: la cuenta atrás va a la misma velocidad · b) No: va siempre a ×1 (para acortarla ya está "¡Que vengan!") | a | Carmine |
-| VJ-03 | ¿Cómo es el control? | a) Un botón redondo junto al de pausa que pasa de ×1 a ×1,5, a ×2 y otra vez a ×1, y enseña la velocidad actual · b) Dos botones, ×1,5 y ×2, que se encienden y se apagan · c) Solo en el menú de pausa | a | Carmine |
-| VJ-04 | ¿Lleva atajo de teclado? | a) No · b) La V (de velocidad), que hace lo mismo que el botón · c) La F (de *fast*; en muchos reproductores es la pantalla completa) | b | Carmine |
-| VJ-05 | ¿Se recuerda la velocidad? | a) No: toda partida, nueva o continuada, empieza a ×1; dentro de la partida se mantiene (rondas, pausa, cambio de calidad o de idioma) · b) Sí, en los ajustes del aparato (`rebrote.ajustes`) · c) Sí, en el perfil (`profiles.store()`, regla 13) | a | Carmine |
-| VJ-06 | ¿Desde cuándo se puede usar? | a) Desde la ronda 1 del brote 1 · b) Desde que se vence a Creeper la primera vez | a | Carmine |
-| VJ-07 | ¿Lleva tour y sonido propios? | a) No: no es una mecánica ni un gesto (reglas 9 y 10). El botón lleva su ayuda (`title`, `aria-label`) y suena el clic de los botones de siempre · b) Un tour de un paso la primera vez y un sonido propio al cambiar de velocidad | a | Carmine |
+| VJ-01 | ¿Qué se acelera? | **Cerrada (24 nov 2026):** a) solo las reglas (ronda, goteo y combate). Las animaciones de cada golpe, el decorado, los bocadillos y la vida de las monedas del suelo van en tiempo real | Cerrada | Carmine |
+| VJ-02 | ¿Se acelera también la preparación? | **Cerrada (24 nov 2026):** a) sí: la cuenta atrás va a la misma velocidad (con un tour en pantalla sigue sin descontar) | Cerrada | Carmine |
+| VJ-03 | ¿Cómo es el control? | **Cerrada (24 nov 2026):** a) un botón redondo junto al de pausa que pasa de ×1 a ×1,5, a ×2 y otra vez a ×1, y enseña la velocidad actual | Cerrada | Carmine |
+| VJ-04 | ¿Lleva atajo de teclado? | **Cerrada (24 nov 2026):** b) la V, que hace lo mismo que el botón | Cerrada | Carmine |
+| VJ-05 | ¿Se recuerda la velocidad? | **Cerrada (24 nov 2026):** a) no: toda partida, nueva o continuada, empieza a ×1; dentro de la partida se mantiene (rondas, pausa, cambio de calidad o de idioma) | Cerrada | Carmine |
+| VJ-06 | ¿Desde cuándo se puede usar? | **Cerrada (24 nov 2026):** a) desde la ronda 1 del brote 1 | Cerrada | Carmine |
+| VJ-07 | ¿Lleva tour y sonido propios? | **Cerrada (24 nov 2026):** a) no: no es una mecánica ni un gesto (reglas 9 y 10). El botón lleva su ayuda (`title`, `aria-label`) y suena el clic de los botones de siempre | Cerrada | Carmine |
 
 ## Criterios de aceptación
 ### Velocidad

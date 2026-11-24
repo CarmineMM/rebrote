@@ -51,7 +51,7 @@ Una task por archivo. El tamaño es orientativo.
 | T-045 | [Interfaz] Soltar la carta elegida tocando donde no se puede jugar | Completada (23 nov 2026, 0.16.3) | S | Ninguna | Ninguna (SC-01 a SC-05 cerradas) |
 | T-046 | [Plantas] Arrancar: quitar una planta y recuperar la mitad de lo que costó | Completada (23 nov 2026, 0.17.0) | M | Ninguna (mejor después de T-045) | Ninguna (AR-01 a AR-10 cerradas) |
 | T-047 | [Rondas] Brote 1 en 9 rondas: Creeper se prepara desde la 7 | Completada (24 nov 2026, 0.17.1) | S | Ninguna | Ninguna (R9-01 a R9-05 cerradas) |
-| T-048 | [Interfaz] Velocidad del juego: ×1,5 y ×2 | Pendiente | S | Ninguna | VJ-01 a VJ-07 |
+| T-048 | [Interfaz] Velocidad del juego: ×1,5 y ×2 | En curso | S | Ninguna | Ninguna (VJ-01 a VJ-07 cerradas) |
 
 ## Estados
 
