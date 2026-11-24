@@ -61,6 +61,15 @@ export const ECONOMY = {
   dropLifetimeMs: 8_000,
 } as const;
 
+/**
+ * Velocidad del juego (T-048): cuanto tiempo de juego pasa por cada milisegundo real. El boton del HUD (y la V) pasa de
+ * una a la siguiente y despues de la ultima vuelve a la primera, que es la de siempre. Solo acelera las reglas (ronda,
+ * goteo y combate, VJ-01): lo que pasa en 1 s de juego es lo mismo a cualquier velocidad.
+ */
+export const GAME_SPEED = {
+  steps: [1, 1.5, 2],
+} as const;
+
 /** Vidas de la partida: cada enemigo que cruza el borde izquierdo resta una. PROVISIONAL mientras D-07 siga abierta. */
 export const LIVES = {
   start: 3,

@@ -103,6 +103,9 @@ body {
 .round-button:hover { transform: translateY(-2px) scale(1.05); border-color: #ffe066; }
 .round-button:active { transform: translateY(2px) scale(0.96); }
 .pause-icon { width: 16px; height: 18px; border-left: 5px solid currentColor; border-right: 5px solid currentColor; }
+/* Velocidad del juego (T-048): el numero en el boton; acelerado, en amarillo con el borde encendido. */
+.speed-value { font: inherit; font-size: 1.05rem; font-weight: 900; line-height: 1; letter-spacing: -0.03em; white-space: nowrap; }
+.speed-button.is-fast { border-color: #ffe066; color: #ffe066; background: linear-gradient(180deg, #4f7d3a, #2c4d24); }
 
 .fps {
   position: absolute; left: max(16px, env(safe-area-inset-left)); bottom: max(12px, env(safe-area-inset-bottom)); z-index: 2;
@@ -1280,6 +1283,7 @@ body {
   .hud-lives { padding: 6px 8px; }
   .heart { width: 20px; height: 20px; }
   .round-button { width: 42px; height: 42px; }
+  .speed-value { font-size: 0.9rem; }
   .round-badge { padding: 4px 12px; gap: 8px; }
   .round-title { font-size: 0.95rem; }
   .round-number { font-size: 1.1rem; }
@@ -1292,6 +1296,18 @@ body {
   /* zoom y no transform: la carta elegida anima el transform del icono. */
   .seed-tray { --card-w: 76px; --card-icon-zoom: 0.68; }
   .hud-balance-value { min-width: 0; }
+  /*
+   * Con el boton de velocidad (T-048), a 568 px con cuatro cartas y un saldo de cinco cifras la pausa se salia por la
+   * derecha: menos separacion (la columna de la ronda suele ir vacia, que baja debajo de los corazones) y los marcadores
+   * algo mas pequenos y juntos.
+   */
+  .hud { column-gap: 4px; }
+  .hud-right { gap: 4px; }
+  .hud-lives { padding: 6px 6px; }
+  .hud-lives .heart { width: 17px; height: 17px; }
+  .hud-balance { font-size: 1.05rem; padding: 5px 10px 5px 6px; gap: 5px; }
+  .hud-balance .coin { width: 20px; height: 20px; }
+  .round-button { width: 40px; height: 40px; }
   /* Cuatro cartas (T-024, el escudo): a 568 px no cabian con vidas, saldo y pausa. Solo cuando hay cuatro: con tres no cambia. */
   .seed-tray:has(> .card-slot:nth-child(4)) { --card-w: 59px; --card-icon-zoom: 0.57; gap: 4px; padding: 5px; }
   .seed-tray:has(> .card-slot:nth-child(4)) .card { column-gap: 3px; padding: 3px 4px 3px 3px; }

@@ -122,6 +122,11 @@ export const GameEvents = {
    */
   tourHold: 'tour-hold',
   /**
+   * React -> Phaser. Payload: GameSpeed. Velocidad del juego (T-048): la del boton del HUD o la V. React la guarda (toda
+   * partida empieza a ×1, VJ-05) y la repite al arrancar la escena (`sceneReady`), asi sobrevive al cambio de calidad.
+   */
+  speedChanged: 'speed-changed',
+  /**
    * Phaser -> React. Payload: TourBoard. Mientras dura un tour: lo que se puede senalar en el tablero, ya en coordenadas
    * de la pagina. Solo se manda si cambia (tambien si cambia la ventana).
    */

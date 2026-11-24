@@ -22,8 +22,11 @@ export interface BossOmen {
   zap(lane: number): void;
   /** Grita al mandar a su escolta. */
   command(text: string): void;
-  /** Empieza el combate: salta al agujero de su carril. */
-  leapTo(foot: BoardPoint): void;
+  /**
+   * Empieza el combate: salta al agujero de su carril. Tarda `durationMs` (sin el, `OMEN_LEAP_MS`): menos a mas velocidad
+   * del juego (T-048), para que caiga donde ya va el jefe.
+   */
+  leapTo(foot: BoardPoint, durationMs?: number): void;
   /** Deja de verse sin combate. */
   vanish(): void;
 }

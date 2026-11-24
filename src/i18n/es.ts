@@ -302,6 +302,10 @@ export const es = {
     lives: (lives: number, max: number) => `Vidas: ${lives} de ${max}`,
     pause: 'Pausa',
     pauseTitle: 'Pausa (Esc o P)',
+    /** Velocidad del juego (T-048): lo que dice el boton ("×1,5"), su nombre para el lector de pantalla y su ayuda. */
+    speedValue: (speed: string) => `×${speed}`,
+    speed: (speed: string) => `Velocidad del juego: ×${speed}`,
+    speedTitle: 'Velocidad del juego (V)',
     /**
      * La barra de sobrecarga (T-042) del brote 4: su rotulo, encendida y la linea que la explica la primera vez que sale. Si
      * se llena, todos corren mas (MR-03) hasta que baja bastante (MR-04).

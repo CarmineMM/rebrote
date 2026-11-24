@@ -239,6 +239,9 @@ export const en: Dictionary = {
     lives: (lives, max) => `Lives: ${lives} of ${max}`,
     pause: 'Pause',
     pauseTitle: 'Pause (Esc or P)',
+    speedValue: (speed: string) => `×${speed}`,
+    speed: (speed: string) => `Game speed: ×${speed}`,
+    speedTitle: 'Game speed (V)',
     overload: {
       label: 'Overload',
       full: 'Overload!',

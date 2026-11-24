@@ -164,6 +164,8 @@ Cómo se pinta y se anima Rebrote, para que todo lo nuevo (enemigos, mundos, efe
 | `enemyKilled` de Elk Cloner (T-026) | Se deshace como un gusano (la cornamenta sale volando), con muchas notas, píxeles y destellos, dos anillos (dorado y granate) y un temblor fuerte. Caen todos a la vez y los versos en vuelo se apagan (`verseGone`). Sale "¡Elk Cloner, silenciado!" |
 | `enemyEscaped` de Elk Cloner (T-026) | Dice "Fin del poema y del jardín. Firmado: Elk Cloner.", se mete bajo tierra y sale "¡Se escapó!". La derrota dice "¡Elk Cloner cruzó el jardín!" |
 
+- **Velocidad del juego (T-048).** A ×1,5 y ×2 la escena da a las reglas más tiempo de juego por fotograma; lo que sale del estado (pasos, saltos, cuentas atrás, avisos, barras) se acelera solo. Las animaciones de cada evento, el decorado, los bocadillos y las monedas del suelo van con el reloj de la escena, en tiempo real. Una animación fija que tenga que durar lo que una regla se divide por la velocidad (`this.speed` en `BoardScene`): el salto del jefe desde donde se prepara (`leapTo(foot, OMEN_LEAP_MS / speed)` y la espera de su vista) y el bocadillo del poema de Elk Cloner (`poemWarn(warnMs / speed)`). Un efecto nuevo atado a una duración de las reglas hace lo mismo, o mejor, se pinta desde el estado.
+
 - **Lo que dura, sale del estado, no de un evento.** La quemadura (`enemy.burn`), la ralentización (`enemy.slow`), la cuenta atrás de la mina (`mine.fuseMs`) y, desde T-021, la curva de la granada (`grenade.flightMs`), su cuenta atrás (`grenade.fuseMs`) y el hielo que se derrite (`ice.ms`) se leen en `sync`. Así una partida que se continúa (cambio de calidad) se pinta igual sin repetir eventos.
 
 - **Varios efectos en el mismo sitio.** Varias plantas pueden dar a la vez al mismo gusano. Los efectos que se repiten mucho (impactos) van pequeños y translúcidos para no tapar la cara del enemigo.
@@ -380,6 +382,7 @@ Orden de dibujo, de atrás hacia delante (`DEPTH` en `layout.ts`):
   - La bandeja y el saldo caen al empezar.
   - **Cartas de tamaño fijo (T-010):** todas miden lo mismo (`--card-w` × `--card-h` en `.seed-tray`: 141 × 44 px, o 82 × 42 en el HUD compacto), para poder cambiar en el futuro las que se llevan sin que la bandeja baile. El nombre se corta con puntos suspensivos si no cabe; el precio siempre cabe, también el de infundir ("×3 = 225"), que en el HUD compacto baja de tamaño y parte en dos líneas. Las ranuras vacías no se pintan: la bandeja solo enseña las cartas que hay.
   - Con menos de 860 px de ancho o 560 de alto, las cartas pierden el nombre y el HUD se aprieta para que quepan tres cartas, vidas, saldo y pausa (probado hasta 568 px).
+  - **Velocidad del juego (T-048):** botón redondo entre el saldo y la pausa con la velocidad de ahora ("×1", "×1,5", "×2"); acelerado, el número y el borde van en amarillo. Por debajo de 600 px de ancho, para que quepan cuatro cartas, vidas, un saldo de cinco cifras, velocidad y pausa, el HUD junta sus columnas y los marcadores (corazones, moneda y botones) son algo más pequeños.
   - La carta elegida flota.
   - El saldo da un salto dorado al subir y rojo al bajar.
   - Los corazones de las vidas laten por turnos. El que se pierde se rompe y se apaga.

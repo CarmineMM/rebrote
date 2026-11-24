@@ -5,6 +5,7 @@ import { baseLevelFromParam } from './game/core/baseLevel';
 import { powersFromParam, type PowerId } from './game/core/powers';
 import { carriedLoadout } from './game/core/shop';
 import { isGreenhouseOpen } from './game/core/route';
+import { NORMAL_SPEED, nextSpeed, type GameSpeed } from './game/core/speed';
 import type { GameScreen } from './game/createGame';
 import {
   EventBus,
@@ -44,6 +45,7 @@ import { RoundHud } from './ui/RoundHud';
 import { TitleMenu, TitleScreen } from './ui/TitleScreen';
 import { UnlockModal } from './ui/UnlockModal';
 import { NO_AUTO_FULLSCREEN, useFullscreen } from './ui/useFullscreen';
+import { SpeedButton } from './ui/SpeedButton';
 import { useHudFit } from './ui/useHudFit';
 import { useKeyboardArea } from './ui/useKeyboardArea';
 import { useNeedsLandscape } from './ui/useLandscapeOnly';
@@ -159,6 +161,10 @@ export function App() {
   const acceptedRound = useRef<number | null>(null);
   const hudRef = useRef<HTMLElement>(null);
   const [paused, setPaused] = useState(false);
+  /** Velocidad del juego (T-048). No se guarda: toda partida, nueva o continuada, empieza a ×1 (VJ-05). */
+  const [speed, setSpeed] = useState<GameSpeed>(NORMAL_SPEED);
+  const speedRef = useRef(speed);
+  speedRef.current = speed;
   const [lost, setLost] = useState(false);
   const [won, setWon] = useState(false);
   const onBoard = screen === 'board';
@@ -368,6 +374,7 @@ export function App() {
     setLost(false);
     setWon(false);
     setPaused(false);
+    setSpeed(NORMAL_SPEED);
   }, []);
 
   /** Desde el menu de inicio: partida nueva o la guardada. El clic es un gesto valido para la pantalla completa. */
@@ -458,6 +465,24 @@ export function App() {
     if (settings.fullscreen) fullscreen.enter();
   }, [settings.fullscreen, fullscreen]);
 
+  /** El boton de velocidad o la V (T-048): pasa a la siguiente; despues de ×2, otra vez ×1. */
+  const nextGameSpeed = useCallback(() => setSpeed((current) => nextSpeed(current)), []);
+
+  // La escena guarda la velocidad que le manda React (T-048). Al arrancar (partida nueva, cambio de calidad o de idioma)
+  // empieza en ×1 y pide la de ahora con `sceneReady`, como `tourHold`.
+  useEffect(() => {
+    EventBus.emit(GameEvents.speedChanged, speed);
+  }, [speed]);
+  useEffect(() => {
+    const onReady = (key: string) => {
+      if (key === SCENES.board) EventBus.emit(GameEvents.speedChanged, speedRef.current);
+    };
+    EventBus.on(GameEvents.sceneReady, onReady);
+    return () => {
+      EventBus.off(GameEvents.sceneReady, onReady);
+    };
+  }, []);
+
   /** El jugador acepta el aviso de lo desbloqueado: el juego sigue. */
   const acceptUnlock = useCallback(() => {
     if (!unlock) return;
@@ -501,11 +526,14 @@ export function App() {
       } else if (event.key === 'p' || event.key === 'P') {
         if (paused) resume();
         else setPaused(true);
+      } else if ((event.key === 'v' || event.key === 'V') && !paused && !event.ctrlKey && !event.metaKey && !event.altKey) {
+        // La V hace lo mismo que el boton de velocidad (T-048, VJ-04); con la pausa abierta, nada.
+        nextGameSpeed();
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [onBoard, paused, selected, selectedPower, plantPanel, over, resume, fullscreen, unlock, acceptUnlock, info, closeInfo, needsLandscape]);
+  }, [onBoard, paused, selected, selectedPower, plantPanel, over, resume, fullscreen, unlock, acceptUnlock, info, closeInfo, needsLandscape, nextGameSpeed]);
 
   // Si el jugador cambia de pestana, minimiza o cierra, la partida se guarda en ese momento (T-011) y al volver encuentra
   // el juego en pausa.
@@ -595,6 +623,7 @@ export function App() {
           <div className="hud-right">
             <Lives lives={lives} />
             <Balance balance={balance} />
+            <SpeedButton speed={speed} onNext={nextGameSpeed} />
             <button
               type="button"
               className="round-button"
