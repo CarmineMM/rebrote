@@ -8,6 +8,7 @@ import { SupportButtons, SupportStatus, useSupport } from './beta/SupportButtons
 import { bossName, outbreakTitle } from './outbreakName';
 import { layoutRoute, routeSegment, type RouteBox, type RoutePoint } from './routeLayout';
 import { NO_AUTO_FULLSCREEN } from './useFullscreen';
+import { useDragScroll } from './useDragScroll';
 import { useText } from './useText';
 
 interface RouteMapProps {
@@ -80,6 +81,8 @@ export function RouteMap({ progress, summary, art, onPlay, onResume, onClose }: 
   const layout = useMemo(() => layoutRoute(stops.length, box), [stops.length, box]);
   const chosen = choices.find((stop) => choiceOf(stop) === selected) ?? null;
   const measured = box.width > 0 && box.height > 0;
+  // Con muchos lugares, el camino se mueve arrastrando con el raton o con la rueda (sin barra).
+  useDragScroll(mapRef, measured && layout.scrolls);
 
   // El foco empieza en el lugar elegido (en cuanto el mapa esta medido y sus lugares existen); en la confirmacion, en
   // "Mejor no". Solo al abrir y al entrar o salir de la confirmacion: elegir con el raton no mueve el foco.

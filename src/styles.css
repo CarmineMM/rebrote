@@ -2088,13 +2088,18 @@ body {
 .route-head .pause-title.is-small { flex: 1; min-width: 0; }
 .route-tally { font-size: 0.75rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: #9fd88a; white-space: nowrap; }
 
-/* El mapa: cielo arriba y loma abajo. Si los lugares no caben, se desplaza en horizontal con una barra fina. */
+/* El mapa: cielo arriba y loma abajo. Si los lugares no caben, se desplaza en horizontal sin barra: arrastrando (raton
+   o dedo), con la rueda o con las flechas (useDragScroll). */
 .route-map {
   position: relative; min-height: 0; overflow-x: auto; overflow-y: hidden; border-radius: 16px;
   border: 2px solid rgba(0, 0, 0, 0.35); background: #bfe6ff;
   box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.1);
-  scrollbar-width: thin; scrollbar-color: rgba(159, 216, 138, 0.6) transparent;
+  scrollbar-width: none; -webkit-user-select: none; user-select: none;
 }
+.route-map::-webkit-scrollbar { display: none; }
+.route-map.is-scrolling { cursor: grab; }
+.route-map.is-dragging { cursor: grabbing; }
+.route-map.is-dragging button.route-stop-body { cursor: grabbing; pointer-events: none; }
 /* El cielo se enturbia de morado pasado lo recorrido, como el suelo. */
 .route-track {
   position: relative;
