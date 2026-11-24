@@ -4,6 +4,7 @@ Una línea por task cerrada, lo más nuevo arriba. Cómo se numera: `docs/adr/00
 
 | Versión | Fecha | Task | Qué cambia |
 |---|---|---|---|
+| 0.17.3 | 24 nov 2026 | — | Ruta de brotes: el camino se mueve arrastrando con el ratón o con la rueda, y ya no tiene barra de desplazamiento |
 | 0.17.2 | 24 nov 2026 | — | HUD del móvil sin solapes: la ronda va al lado de los corazones (o debajo si no cabe), la sobrecarga debajo de la pausa y la barra del jefe en la segunda fila, sin tapar el césped ni recoger toques. Las cartas de las plantas, un 5 % más pequeñas. En un móvil grande en horizontal las cartas pierden el nombre para que quepa el HUD |
 | 0.17.1 | 24 nov 2026 | T-047 | El brote 1 pasa de 10 rondas a 9: se quita la de repaso, Creeper se prepara en la 7 y la 8 y se le combate en la 9. Para no perder semillas, la ronda 1 del brote 1 da un premio de estreno con el doble. Las partidas guardadas de antes se descartan |
 | 0.17.0 | 23 nov 2026 | T-046 | Arrancar: desde la ronda 4 del brote 3 (y antes, con el brote 3 vencido) una disparadora o un muro se arrancan desde su panel con dos toques y devuelven la mitad de lo gastado en ellos. Además, Carmine eligió de oído los sonidos de arrancar, del gusano que suelta Morris y de la sobrecarga al encenderse y al apagarse |
