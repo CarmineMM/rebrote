@@ -4,6 +4,7 @@ Una línea por task cerrada, lo más nuevo arriba. Cómo se numera: `docs/adr/00
 
 | Versión | Fecha | Task | Qué cambia |
 |---|---|---|---|
+| 0.17.6 | 25 nov 2026 | — | Logo nuevo en la portada y en el Invernadero: letras de tallo que brotan del suelo y se mecen, la "O" es una semilla de la que sale el brote, con hojas y flores en las puntas y una mariposa que ronda el nombre. Ya no depende de la fuente del aparato. Además, el juego ya no arranca a pantalla completa: se enciende en Opciones |
 | 0.17.5 | 25 nov 2026 | T-049 | Al vencer a Creeper, la historia se cuenta con una cinemática de motion comic en dos escenas, con música heroica: cómo la IA saca los virus al mundo, los refugios y las plantas. Primera aparición de la IA, en silueta |
 | 0.17.4 | 24 nov 2026 | T-048 | Velocidad del juego: un botón junto a la pausa (o la V) pasa de ×1 a ×1,5 y a ×2; acelera la ronda, el goteo y el combate sin cambiar ninguna regla, y cada partida empieza a ×1. En el móvil pequeño el HUD se aprieta un poco para que quepa |
 | 0.17.3 | 24 nov 2026 | — | Ruta de brotes: el camino se mueve arrastrando con el ratón o con la rueda, y ya no tiene barra de desplazamiento |

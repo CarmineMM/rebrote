@@ -57,8 +57,8 @@ const LOOK = {
   tileRadius: 0.2,
 } as const;
 
-/** Colores del brote del logo (`.title-sprout` en `styles.css`) y de las letras del titulo. */
-const INK = {
+/** Colores del brote del logo (`TitleLogo`) y de las letras del titulo. */
+export const INK = {
   outline: '#1d4a17',
   stem: '#2f8a28',
   leafLeft: '#9be564',
@@ -201,8 +201,8 @@ type Detail = 'full' | 'simple';
 // ---------------------------------------------------------------------------
 // El brote
 
-/** Caminos del brote del logo (`Sprout` en `TitleScreen.tsx`), en su caja de 48 x 40. */
-const SPROUT = {
+/** Caminos del brote del logo (el que sale de la semilla de `TitleLogo`), en su caja de 48 x 40. */
+export const SPROUT = {
   stem: 'M24 40 C24 33 23 27 24 19',
   leafLeft: 'M24 23 C14 25 5 19 3 8 C14 6 22 12 24 23 Z',
   leafRight: 'M24 19 C29 9 38 3 46 5 C45 15 35 22 24 19 Z',

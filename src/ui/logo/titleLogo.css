@@ -1,0 +1,35 @@
+/* Logo del titulo (`TitleLogo`): la caja es la de las letras; el brote, las hojas y la mariposa se salen por arriba. */
+.title-logo-svg { display: block; height: 1.1em; width: auto; overflow: visible; }
+
+/* Brotan del suelo una tras otra y luego se mecen por turnos desde su base. */
+.tl-grow { transform-box: fill-box; transform-origin: 50% 100%; animation: tl-grow 0.7s cubic-bezier(0.2, 1.5, 0.4, 1) both; }
+@keyframes tl-grow { from { opacity: 0; transform: scale(0.6, 0); } 40% { opacity: 1; } to { transform: none; } }
+.tl-sway { transform-box: fill-box; transform-origin: 50% 100%; animation: tl-sway 3.6s ease-in-out infinite; }
+@keyframes tl-sway { 0%, 100% { transform: none; } 25% { transform: rotate(2deg); } 75% { transform: rotate(-2deg); } }
+/* Hojas, flores y el brote salen con un saltito; despues las hojas aletean, las flores giran y el brote se balancea. */
+.tl-pop { animation: tl-pop 0.5s cubic-bezier(0.2, 1.6, 0.4, 1) both; }
+@keyframes tl-pop { from { transform: scale(0); } to { transform: none; } }
+.tl-flutter { animation: tl-flutter 2.6s ease-in-out infinite; }
+@keyframes tl-flutter { 0%, 100% { transform: none; } 50% { transform: rotate(-14deg); } }
+.tl-sprout { animation: tl-sprout 2.4s ease-in-out infinite; }
+@keyframes tl-sprout { 0%, 100% { transform: none; } 25% { transform: rotate(8deg); } 75% { transform: rotate(-8deg); } }
+.tl-spin { animation: tl-spin 9s linear infinite; }
+@keyframes tl-spin { to { transform: rotate(360deg); } }
+/* La mariposa cruza el nombre cada 16 s (`--w` es su ancho) aleteando. */
+.tl-butterfly { opacity: 0; animation: tl-fly 16s 2s linear infinite; }
+.tl-wings { animation: tl-flap 0.2s ease-in-out infinite alternate; }
+@keyframes tl-flap { to { transform: scaleX(0.25); } }
+@keyframes tl-fly {
+  0% { opacity: 0; transform: translate(calc(var(--w) * -0.04px), -30px); }
+  5%, 92% { opacity: 1; }
+  20% { transform: translate(calc(var(--w) * 0.18px), -60px) rotate(8deg); }
+  40% { transform: translate(calc(var(--w) * 0.4px), -36px) rotate(-6deg); }
+  55% { transform: translate(calc(var(--w) * 0.58px), -64px) rotate(10deg); }
+  75% { transform: translate(calc(var(--w) * 0.8px), -42px) rotate(-4deg); }
+  100% { opacity: 0; transform: translate(calc(var(--w) * 1.04px), -58px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .title-logo-svg * { animation: none !important; }
+  .tl-butterfly { display: none; }
+}

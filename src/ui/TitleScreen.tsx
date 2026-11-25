@@ -10,6 +10,7 @@ import type { InstallOffer } from '../pwa/policy';
 import { BetaPanel } from './beta/BetaNotice';
 import { Credits } from './Credits';
 import { InstallHelp } from './InstallHelp';
+import { TitleLogo, logoFit } from './logo/TitleLogo';
 import { outbreakTitle } from './outbreakName';
 import { PlayerChip, PlayerNameSetting, PlayersPanel, RemovePlayer } from './Players';
 import { playerName, type PlayerCard } from './playerCards';
@@ -47,46 +48,27 @@ interface TitleMenuProps {
 
 type View = 'main' | 'options' | 'credits' | 'confirm' | 'players' | 'remove' | 'install' | 'beta';
 
-/** Brote que sale de la "O" del titulo: tallo y dos hojas con el contorno oscuro de las plantas del juego. */
-function Sprout() {
-  return (
-    <svg className="title-sprout" viewBox="0 0 48 40">
-      <path className="title-sprout-stem" d="M24 40 C24 33 23 27 24 19" />
-      <path className="title-sprout-leaf is-left" d="M24 23 C14 25 5 19 3 8 C14 6 22 12 24 23 Z" />
-      <path className="title-sprout-leaf is-right" d="M24 19 C29 9 38 3 46 5 C45 15 35 22 24 19 Z" />
-    </svg>
-  );
-}
-
-/** El nombre del juego no se traduce (I-08). Cada letra salta por su cuenta; de la "O" sale un brote. */
+/** El nombre del juego no se traduce (I-08). */
 const NAME = 'REBROTE';
-/** Letras para las que esta pensado el tamano del titulo: una palabra mas larga encoge para no meterse bajo el panel. */
-const FIT_LETTERS = 8.5;
 
 /**
  * Menu de inicio (T-011): el titulo arriba a la izquierda, con la portada animada debajo (la pinta Phaser, `TitleScene`),
  * y a la derecha el panel que toque: el menu de la portada (`TitleMenu`) o el Invernadero (`Greenhouse`, T-019). En el
- * Invernadero el titulo dice "INVERNADERO" en vez de "REBROTE": sus letras vuelven a caer al cambiar, y encoge si la
- * palabra es larga. El brote sale de su primera "O". Debajo, el lema o, en el Invernadero, el saludo al jugador por su
- * nombre (T-033).
+ * Invernadero el titulo dice "INVERNADERO" en vez de "REBROTE": sus letras vuelven a brotar al cambiar, y encoge si la
+ * palabra es larga (`logoFit`). El logo es `TitleLogo`: la semilla con el brote es su primera "O". Debajo, el lema o, en
+ * el Invernadero, el saludo al jugador por su nombre (T-033).
  */
 export function TitleScreen({ greenhouse = false, player, inert = false, children }: { greenhouse?: boolean; player: string; inert?: boolean; children: ReactNode }) {
   const t = useText();
   const word = greenhouse ? t.greenhouse.logo : NAME;
   const tagline = greenhouse ? t.greenhouse.hello(player) : t.title.tagline;
-  const sprout = word.indexOf('O');
-  const fit = Math.min(1, FIT_LETTERS / word.length);
+  const fit = logoFit(word);
   return (
     // Con una viñeta de la historia encima (T-031), el menu no recibe el foco ni los clics.
     <div className={`title-screen${greenhouse ? ' is-greenhouse' : ''}`} inert={inert}>
       <header className="title-brand">
         <h1 key={word} className="title-logo" aria-label={greenhouse ? t.greenhouse.title : 'Rebrote'} style={{ '--logo-fit': fit } as CSSProperties}>
-          {[...word].map((letter, i) => (
-            <span key={i} className="title-letter" style={{ animationDelay: `${0.06 * i}s, ${0.9 + 0.15 * i}s` }} aria-hidden="true">
-              {letter}
-              {i === sprout && <Sprout />}
-            </span>
-          ))}
+          <TitleLogo word={word} butterfly={!greenhouse} />
         </h1>
         <p key={tagline} className="title-tagline">
           {tagline}

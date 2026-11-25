@@ -371,11 +371,11 @@ export const es = {
       // T-039: el guion del brote 3, con las tropas de T-038.
       brain: [
         'Ojo: los Lurker llegan ocultos y tus plantas no los ven de lejos. Las minas y el hielo los descubren',
-        'Suelta el escudo sobre una disparadora: aguanta el doble y para lo que va a las de detrás',
+        'Llegan muchos escupidores: un escudo delante les para los escupitajos',
         '¡Llega el Skipper! Salta por encima de todo: solo lo para un escudo',
         'Acorazados ocultos y Skipper juntos: minas para unos, escudos para otros',
         'Dos oleadas por los cinco carriles: pon una puerta en cada uno',
-        '¡Brain se prepara! Marca sectores para esconderse y sus tropas llegan más rápido',
+        '¡Brain se prepara! Sus tropas llegan más rápido. Suelta el escudo sobre una disparadora: aguanta el doble',
         'Brain casi está listo: aún más tropas y más rápidas. Cierra los cinco carriles',
         '¡Llega Brain! Salta oculto por encima de todo: solo lo para un escudo, y las minas lo descubren',
       ],
