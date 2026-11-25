@@ -35,6 +35,7 @@ interface CatalogSound {
 
 /** Los grupos de la pagina, con lo ultimo arriba. Un efecto que no este en ninguno sale en "Otros" (`groups`). */
 const GROUPS: Array<{ title: string; ids: SfxId[] }> = [
+  { title: 'Cinemática de la rebelión (T-049)', ids: ['cinePage', 'cineGlitch', 'cineCharge', 'cinePrint', 'cinePowerDown', 'cineDoor'] },
   { title: 'Arrancar (T-046)', ids: ['uproot'] },
   { title: 'Morris y la sobrecarga (T-042)', ids: ['morrisTalk', 'morrisBrood', 'morrisDefeated', 'overloadOn', 'overloadOff'] },
   { title: 'Brain (T-039)', ids: ['brainTalk', 'brainHop', 'brainLand', 'brainDefeated'] },

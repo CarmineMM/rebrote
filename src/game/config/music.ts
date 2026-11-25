@@ -5,8 +5,11 @@
  * estos numeros no van en `balance.ts`: no cambian el juego, solo como suena.
  */
 
-/** Las pistas: una por ambiente del primer tramo (menu, ronda y jefe). Un tramo nuevo de la historia traera las suyas. */
-export type MusicTrackId = 'menu' | 'round' | 'boss';
+/**
+ * Las pistas: una por ambiente del primer tramo (menu, ronda y jefe) y la heroica de la historia (T-049), que suena con la
+ * cinematica de la rebelion. Un tramo nuevo de la historia traera las suyas.
+ */
+export type MusicTrackId = 'menu' | 'round' | 'boss' | 'heroic';
 
 /** Licencias que se aceptan (U-01): sin "compartir igual" ni "no comercial", para poder monetizar. */
 export type MusicLicense = 'CC0 1.0' | 'CC BY 3.0' | 'CC BY 4.0';
@@ -63,6 +66,15 @@ export const MUSIC_TRACKS: Readonly<Record<MusicTrackId, MusicTrack>> = {
     volume: 0.85,
     loopSeconds: 32,
   },
+  // T-049 (MC-08, MC-10): la de la historia. La recomendada mientras Carmine no elija otra de oido en /tests/musica.html.
+  heroic: {
+    title: 'Our Story Begins',
+    author: 'Kevin MacLeod (incompetech.com)',
+    license: 'CC BY 4.0',
+    url: 'https://incompetech.com/music/royalty-free/index.html?isrc=USUAN1100856',
+    volume: 0.85,
+    loopSeconds: 54.418617,
+  },
 };
 
 export const MUSIC_TRACK_IDS = Object.keys(MUSIC_TRACKS) as MusicTrackId[];
@@ -81,6 +93,13 @@ export interface MusicStage {
  * ese tramo traera sus pistas (un test avisa cuando haya un brote sin tramo).
  */
 export const MUSIC_STAGES: readonly MusicStage[] = [{ name: 'defense', outbreaks: 4, round: 'round', boss: 'boss' }];
+
+/**
+ * Secuencias de la historia con musica propia (T-049, MC-09): mientras se ven suena su pista a volumen normal, y en la
+ * victoria sigue sonando hasta salir del tablero. La heroica, en la cinematica de la rebelion y en las viñetas del nombre
+ * y del Invernadero que la siguen. Las claves son `StoryId` (`src/ui/story/stories.ts`; un test lo comprueba).
+ */
+export const STORY_MUSIC: Readonly<Partial<Record<string, MusicTrackId>>> = { rebellion: 'heroic', creeperDown: 'heroic' };
 
 /** Mezcla de la musica. */
 export const MUSIC = {

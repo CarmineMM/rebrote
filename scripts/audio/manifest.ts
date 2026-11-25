@@ -419,6 +419,37 @@ export const MANIFEST: Readonly<Record<SfxId, SoundEntry>> = {
     pick: jingle('jingles_STEEL10'),
     alternatives: [jingle('jingles_SAX10'), jingle('jingles_STEEL16')],
   },
+  // Cinematica de la rebelion (T-049). Las elegidas, por lo que dicen sus nombres; la ultima palabra es de Carmine, de oido.
+  cinePage: {
+    about: 'Cinemática (T-049): se pasa la página al cambiar de escena, como en un tebeo',
+    pick: rpg('bookFlip2'),
+    alternatives: [rpg('bookFlip1'), rpg('bookFlip3')],
+  },
+  cineGlitch: {
+    about: 'Cinemática (T-049): la pantalla falla cuando ella saca a Creeper, y la pared de pantallas se enciende',
+    pick: ui('glitch_002'),
+    alternatives: [ui('glitch_001'), ui('glitch_004')],
+  },
+  cineCharge: {
+    about: 'Cinemática (T-049): los cables de su pelo se encienden y ella abre los ojos',
+    pick: scifi('forceField_001', { lengthMs: 1400, fadeOutMs: 400 }),
+    alternatives: [digital('phaserUp3'), scifi('forceField_003', { lengthMs: 1400, fadeOutMs: 400 })],
+  },
+  cinePrint: {
+    about: 'Cinemática (T-049): sus impresoras fabrican un gusano capa a capa',
+    pick: scifi('computerNoise_001', { lengthMs: 2400, fadeOutMs: 500 }),
+    alternatives: [scifi('computerNoise_002', { lengthMs: 2400, fadeOutMs: 500 }), scifi('engineCircular_001', { lengthMs: 2000, fadeOutMs: 500 })],
+  },
+  cinePowerDown: {
+    about: 'Cinemática (T-049): la ciudad se apaga barrio a barrio',
+    pick: [digital('phaserDown2'), scifi('lowFrequency_explosion_000', { gainDb: -14, lengthMs: 900, fadeOutMs: 300 })],
+    alternatives: [digital('phaserDown1'), digital('lowDown')],
+  },
+  cineDoor: {
+    about: 'Cinemática (T-049): la puerta de madera del refugio se cierra',
+    pick: rpg('doorClose_2'),
+    alternatives: [rpg('doorClose_1'), rpg('doorClose_4')],
+  },
   voiceBoxer: {
     about: 'Boxer habla en una viñeta (T-031): un pluc grave por cada pocas letras',
     pick: ui('pluck_001', { rate: 0.78, fadeOutMs: 40 }),
@@ -658,6 +689,60 @@ export const MUSIC_MANIFEST: Readonly<Record<MusicTrackId, MusicEntry>> = {
         about: 'Sintetizadores con aire de fallo de vídeo de 8 bits: le pega a un virus. Larga (3:39). 512 tiempos a 140 BPM',
         loopEnd: 219.428571,
         fold: true,
+      },
+    ],
+  },
+  heroic: {
+    about:
+      'La historia (T-049): la cinemática de la rebelión y las viñetas que la siguen. Heroica pero amable: de orquesta, con metales y algo de madera, que pegue con la marimba del menú',
+    // Candidatas bajadas el 25 nov 2026 de Incompetech, elegidas por lo que dicen sus fichas, sin oirlas. Los bucles se
+    // buscaron por parecido entre compases (cromas cada 23 ms) con el tempo de su ficha; la ultima palabra es de Carmine,
+    // de oido (MC-10, U-02).
+    pick: {
+      file: 'our-story-begins.mp3',
+      title: 'Our Story Begins',
+      author: KEVIN,
+      license: 'CC BY 4.0',
+      url: incompetech('USUAN1100856'),
+      about:
+        'Orquesta épica y esperanzada en 3/4, a 129 BPM: las maderas y las cuerdas se pasan una figura de cinco notas. No es un bucle: se recortan los compases 9 a 47, antes del acelerando del final',
+      loopStart: 11.162791,
+      loopEnd: 65.581395,
+      seamMs: 300,
+    },
+    alternatives: [
+      {
+        file: 'adventures-in-adventureland.mp3',
+        title: 'Adventures in Adventureland',
+        author: KEVIN,
+        license: 'CC BY 4.0',
+        url: incompetech('USUAN2100029'),
+        about: 'Orquesta de aventura con marimba, glockenspiel y metales, a 135 BPM: luminosa y con empuje. Larga: 64 compases (1:54)',
+        loopStart: 10.888889,
+        loopEnd: 124.666667,
+        seamMs: 300,
+      },
+      {
+        file: 'americana.mp3',
+        title: 'Americana',
+        author: KEVIN,
+        license: 'CC BY 4.0',
+        url: incompetech('USUAN1200092'),
+        about: 'Empieza sencilla, con chelos y maderas, y crece hasta lo grandioso, a 104 BPM. Larga: 51 compases (1:58)',
+        loopStart: 10.673077,
+        loopEnd: 128.365385,
+        seamMs: 300,
+      },
+      {
+        file: 'call-to-adventure.mp3',
+        title: 'Call to Adventure',
+        author: KEVIN,
+        license: 'CC BY 4.0',
+        url: incompetech('USUAN1300022'),
+        about: 'Orquesta enorme, de aventura y con humor, a 178 BPM. Muy larga: 123 compases (2:46); el empalme se parece menos',
+        loopStart: 10.11236,
+        loopEnd: 175.955056,
+        seamMs: 300,
       },
     ],
   },

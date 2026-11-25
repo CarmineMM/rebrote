@@ -183,6 +183,26 @@ export function bossCutouts(scene: Phaser.Scene): Partial<Record<OutbreakId, str
   return art;
 }
 
+/**
+ * Lo que la cinematica de la rebelion (T-049) necesita del juego: Creeper, un gusano y la disparadora, recortados sobre
+ * transparente con sus texturas, como los jefes de la ruta. React los pinta en sus planos (regla 3 de `CLAUDE.md`).
+ */
+export function cinematicCutouts(scene: Phaser.Scene): CinematicCutouts {
+  const enemy = (kind: EnemyKind) => portraitUrl(scene, { kind: 'enemy', enemy: kind, level: 1, enraged: false, hasted: false }, { backdrop: false });
+  return {
+    creeper: enemy('creeper'),
+    worm: enemy('worm'),
+    shooter: portraitUrl(scene, { kind: 'shooter', cannons: 1, element: null, level: 1 }, { backdrop: false }),
+  };
+}
+
+/** Los recortes para la cinematica (data URL), con el lado de la foto (`PORTRAIT_SIZE`). */
+export interface CinematicCutouts {
+  readonly creeper: string;
+  readonly worm: string;
+  readonly shooter: string;
+}
+
 function paintBackdrop(ctx: CanvasRenderingContext2D, subject: PortraitSubject): void {
   const size = PORTRAIT_SIZE;
   const sky = ctx.createLinearGradient(0, 0, 0, size);

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { OUTBREAKS } from '../config/balance';
-import { MUSIC, MUSIC_STAGES, MUSIC_TRACKS, MUSIC_TRACK_IDS } from '../config/music';
+import { MUSIC, MUSIC_STAGES, MUSIC_TRACKS, MUSIC_TRACK_IDS, STORY_MUSIC } from '../config/music';
 import { hasMusicStage, musicFor, musicStage, type MusicRound, type MusicSituation } from './musicCues';
 
 const board = (round: MusicRound | null, extra: Partial<MusicSituation> = {}): MusicSituation => ({
@@ -89,5 +89,33 @@ describe('musica de fondo (T-015)', () => {
       expect(track.volume, id).toBeGreaterThan(0);
       expect(track.volume, id).toBeLessThanOrEqual(1);
     }
+  });
+});
+
+describe('la musica de la historia (T-049)', () => {
+  const heroic = (covered = false) => ({ track: 'heroic' as const, covered });
+
+  it('con la cinematica en pantalla suena la heroica a volumen normal, aunque la partida acabo y el juego espera', () => {
+    expect(musicFor(board(creeper(10), { over: true, halted: true, story: heroic() }))).toEqual({ track: 'heroic', next: null, level: 1 });
+    expect(musicFor({ screen: 'title', round: null, halted: false, over: false, story: heroic() })).toEqual({ track: 'heroic', next: null, level: 1 });
+  });
+
+  it('tapada por la pausa o el aviso de girar, baja como en pausa', () => {
+    expect(musicFor(board(creeper(10), { over: true, story: heroic(true) })).level).toBe(MUSIC.haltedLevel);
+  });
+
+  it('se prepara en la ronda del jefe si su secuencia puede salir al vencerlo; si no, nada', () => {
+    expect(musicFor(board(creeper(10), { storyAhead: 'heroic' }))).toMatchObject({ track: 'boss', next: 'heroic' });
+    expect(musicFor(board(creeper(10))).next).toBeNull();
+  });
+
+  it('en la portada, si toca verla al entrar al Invernadero, se prepara ella en vez de la de ronda', () => {
+    expect(musicFor({ screen: 'title', round: null, halted: false, over: false, storyAhead: 'heroic' }).next).toBe('heroic');
+  });
+
+  it('la heroica es de la cinematica de la rebelion y de las viñetas que la siguen, y tiene sus creditos', () => {
+    expect(STORY_MUSIC).toEqual({ rebellion: 'heroic', creeperDown: 'heroic' });
+    expect(MUSIC_TRACK_IDS).toContain('heroic');
+    expect(MUSIC_TRACKS.heroic.license).toMatch(/^CC/);
   });
 });

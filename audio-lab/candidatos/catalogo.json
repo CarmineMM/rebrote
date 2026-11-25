@@ -2512,6 +2512,210 @@
       ]
     },
     {
+      "id": "cinePage",
+      "about": "Cinemática (T-049): se pasa la página al cambiar de escena, como en un tebeo",
+      "spec": {
+        "bus": "ui",
+        "volume": 0.6,
+        "maxVoices": 1,
+        "minGapMs": 0,
+        "burst": 0,
+        "pitchJitter": 0,
+        "variants": 1
+      },
+      "pick": [
+        {
+          "url": "audio/cinePage",
+          "source": "Kenney RPG Audio: `bookFlip2.ogg`",
+          "seconds": 0.375
+        }
+      ],
+      "alternatives": [
+        {
+          "url": "audio-lab/candidatos/cinePage/1",
+          "source": "Kenney RPG Audio: `bookFlip1.ogg`",
+          "seconds": 0.64,
+          "recipes": []
+        },
+        {
+          "url": "audio-lab/candidatos/cinePage/2",
+          "source": "Kenney RPG Audio: `bookFlip3.ogg`",
+          "seconds": 0.222,
+          "recipes": []
+        }
+      ]
+    },
+    {
+      "id": "cineGlitch",
+      "about": "Cinemática (T-049): la pantalla falla cuando ella saca a Creeper, y la pared de pantallas se enciende",
+      "spec": {
+        "bus": "ui",
+        "volume": 0.5,
+        "maxVoices": 1,
+        "minGapMs": 0,
+        "burst": 0,
+        "pitchJitter": 0,
+        "variants": 1
+      },
+      "pick": [
+        {
+          "url": "audio/cineGlitch",
+          "source": "Kenney Interface Sounds: `glitch_002.ogg`",
+          "seconds": 0.027
+        }
+      ],
+      "alternatives": [
+        {
+          "url": "audio-lab/candidatos/cineGlitch/1",
+          "source": "Kenney Interface Sounds: `glitch_001.ogg`",
+          "seconds": 0.017,
+          "recipes": []
+        },
+        {
+          "url": "audio-lab/candidatos/cineGlitch/2",
+          "source": "Kenney Interface Sounds: `glitch_004.ogg`",
+          "seconds": 0.02,
+          "recipes": []
+        }
+      ]
+    },
+    {
+      "id": "cineCharge",
+      "about": "Cinemática (T-049): los cables de su pelo se encienden y ella abre los ojos",
+      "spec": {
+        "bus": "ui",
+        "volume": 0.55,
+        "maxVoices": 1,
+        "minGapMs": 0,
+        "burst": 0,
+        "pitchJitter": 0,
+        "variants": 1
+      },
+      "pick": [
+        {
+          "url": "audio/cineCharge",
+          "source": "Kenney Sci-Fi Sounds: `forceField_001.ogg` (recortado 0-1400 ms)",
+          "seconds": 0.817
+        }
+      ],
+      "alternatives": [
+        {
+          "url": "audio-lab/candidatos/cineCharge/1",
+          "source": "Kenney Digital Audio: `phaserUp3.ogg`",
+          "seconds": 0.409,
+          "recipes": []
+        },
+        {
+          "url": "audio-lab/candidatos/cineCharge/2",
+          "source": "Kenney Sci-Fi Sounds: `forceField_003.ogg` (recortado 0-1400 ms)",
+          "seconds": 0.819,
+          "recipes": []
+        }
+      ]
+    },
+    {
+      "id": "cinePrint",
+      "about": "Cinemática (T-049): sus impresoras fabrican un gusano capa a capa",
+      "spec": {
+        "bus": "ui",
+        "volume": 0.45,
+        "maxVoices": 1,
+        "minGapMs": 0,
+        "burst": 0,
+        "pitchJitter": 0,
+        "variants": 1
+      },
+      "pick": [
+        {
+          "url": "audio/cinePrint",
+          "source": "Kenney Sci-Fi Sounds: `computerNoise_001.ogg` (recortado 0-2400 ms)",
+          "seconds": 2.398
+        }
+      ],
+      "alternatives": [
+        {
+          "url": "audio-lab/candidatos/cinePrint/1",
+          "source": "Kenney Sci-Fi Sounds: `computerNoise_002.ogg` (recortado 0-2400 ms)",
+          "seconds": 2.397,
+          "recipes": []
+        },
+        {
+          "url": "audio-lab/candidatos/cinePrint/2",
+          "source": "Kenney Sci-Fi Sounds: `engineCircular_001.ogg` (recortado 0-2000 ms)",
+          "seconds": 1.997,
+          "recipes": []
+        }
+      ]
+    },
+    {
+      "id": "cinePowerDown",
+      "about": "Cinemática (T-049): la ciudad se apaga barrio a barrio",
+      "spec": {
+        "bus": "ui",
+        "volume": 0.6,
+        "maxVoices": 1,
+        "minGapMs": 0,
+        "burst": 0,
+        "pitchJitter": 0,
+        "variants": 1
+      },
+      "pick": [
+        {
+          "url": "audio/cinePowerDown",
+          "source": "Kenney Digital Audio: `phaserDown2.ogg` + Kenney Sci-Fi Sounds: `lowFrequency_explosion_000.ogg` (recortado 0-900 ms, -14 dB)",
+          "seconds": 0.85
+        }
+      ],
+      "alternatives": [
+        {
+          "url": "audio-lab/candidatos/cinePowerDown/1",
+          "source": "Kenney Digital Audio: `phaserDown1.ogg`",
+          "seconds": 0.406,
+          "recipes": []
+        },
+        {
+          "url": "audio-lab/candidatos/cinePowerDown/2",
+          "source": "Kenney Digital Audio: `lowDown.ogg`",
+          "seconds": 0.647,
+          "recipes": []
+        }
+      ]
+    },
+    {
+      "id": "cineDoor",
+      "about": "Cinemática (T-049): la puerta de madera del refugio se cierra",
+      "spec": {
+        "bus": "ui",
+        "volume": 0.7,
+        "maxVoices": 1,
+        "minGapMs": 0,
+        "burst": 0,
+        "pitchJitter": 0,
+        "variants": 1
+      },
+      "pick": [
+        {
+          "url": "audio/cineDoor",
+          "source": "Kenney RPG Audio: `doorClose_2.ogg`",
+          "seconds": 0.571
+        }
+      ],
+      "alternatives": [
+        {
+          "url": "audio-lab/candidatos/cineDoor/1",
+          "source": "Kenney RPG Audio: `doorClose_1.ogg`",
+          "seconds": 0.631,
+          "recipes": []
+        },
+        {
+          "url": "audio-lab/candidatos/cineDoor/2",
+          "source": "Kenney RPG Audio: `doorClose_4.ogg`",
+          "seconds": 0.595,
+          "recipes": []
+        }
+      ]
+    },
+    {
       "id": "button",
       "about": "Botón de un menú",
       "spec": {

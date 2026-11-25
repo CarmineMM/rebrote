@@ -4,6 +4,7 @@ Una línea por task cerrada, lo más nuevo arriba. Cómo se numera: `docs/adr/00
 
 | Versión | Fecha | Task | Qué cambia |
 |---|---|---|---|
+| 0.17.5 | 25 nov 2026 | T-049 | Al vencer a Creeper, la historia se cuenta con una cinemática de motion comic en dos escenas, con música heroica: cómo la IA saca los virus al mundo, los refugios y las plantas. Primera aparición de la IA, en silueta |
 | 0.17.4 | 24 nov 2026 | T-048 | Velocidad del juego: un botón junto a la pausa (o la V) pasa de ×1 a ×1,5 y a ×2; acelera la ronda, el goteo y el combate sin cambiar ninguna regla, y cada partida empieza a ×1. En el móvil pequeño el HUD se aprieta un poco para que quepa |
 | 0.17.3 | 24 nov 2026 | — | Ruta de brotes: el camino se mueve arrastrando con el ratón o con la rueda, y ya no tiene barra de desplazamiento |
 | 0.17.2 | 24 nov 2026 | — | HUD del móvil sin solapes: la ronda va al lado de los corazones (o debajo si no cabe), la sobrecarga debajo de la pausa y la barra del jefe en la segunda fila, sin tapar el césped ni recoger toques. Las cartas de las plantas, un 5 % más pequeñas. En un móvil grande en horizontal las cartas pierden el nombre para que quepa el HUD |

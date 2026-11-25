@@ -25,6 +25,13 @@ export interface MusicSituation {
   readonly halted: boolean;
   /** Partida acabada, ganada o perdida: la musica baja para dejar oir su efecto (T-014). */
   readonly over: boolean;
+  /**
+   * Una secuencia de la historia con musica propia (`STORY_MUSIC`, T-049): la que se ve o, en la victoria, la ultima que se
+   * vio. Manda sobre todo lo demas y suena a volumen normal, salvo tapada (la pausa o el aviso de girar). Sin decir, ninguna.
+   */
+  readonly story?: { readonly track: MusicTrackId; readonly covered: boolean } | null;
+  /** La musica de una secuencia que puede salir pronto (la cinematica al vencer al jefe): se prepara. Sin decir, ninguna. */
+  readonly storyAhead?: MusicTrackId | null;
 }
 
 export interface MusicCue {
@@ -65,14 +72,19 @@ const isBossRound = (round: MusicRound) => round.bossRound !== null && round.num
  * - Tablero: la de ronda de su tramo y, desde la ronda del jefe (tambien su preparacion), la del jefe. La del jefe se
  *   prepara una ronda antes.
  * - Pausa, aviso, ficha o viñeta: baja a `MUSIC.haltedLevel`. Partida acabada: a `MUSIC.overLevel`.
+ * - Una secuencia de la historia con musica propia (T-049): la suya, a volumen normal (baja solo tapada), y en la victoria
+ *   sigue hasta salir del tablero. La de la que puede salir al vencer al jefe se prepara en su ronda, y en la portada en vez
+ *   de la de ronda.
  */
 export function musicFor(situation: MusicSituation, current: MusicTrackId | null = null): MusicCue {
+  const { story, storyAhead = null } = situation;
+  if (story) return { track: story.track, next: null, level: story.covered ? MUSIC.haltedLevel : 1 };
   const level = Math.min(situation.halted ? MUSIC.haltedLevel : 1, situation.over ? MUSIC.overLevel : 1);
-  if (situation.screen === 'title') return { track: 'menu', next: musicStage(OUTBREAKS[0].id).round, level };
+  if (situation.screen === 'title') return { track: 'menu', next: storyAhead ?? musicStage(OUTBREAKS[0].id).round, level };
   const { round } = situation;
   if (!round) return { track: current, next: null, level };
   const stage = musicStage(round.outbreak);
-  if (isBossRound(round)) return { track: stage.boss, next: null, level };
+  if (isBossRound(round)) return { track: stage.boss, next: storyAhead, level };
   const bossSoon = round.bossRound !== null && round.number >= round.bossRound - MUSIC.prepareBossRounds;
   return { track: stage.round, next: bossSoon ? stage.boss : null, level };
 }

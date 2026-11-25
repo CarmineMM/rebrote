@@ -7,6 +7,7 @@ import type { RoundEvent } from '../core/rounds';
 import { isPowerMilestone, type PowerId } from '../core/powers';
 import type { PlayerAction } from '../EventBus';
 import type { CharacterId } from '../view/characters/design';
+import type { CinematicBeat, Transition } from '../view/cinematic/shots';
 import { panAt } from './voices';
 
 /**
@@ -300,4 +301,32 @@ export function keystrokeCue(text: string, from: number, to: number): SfxCue | n
     keys++;
   }
   return null;
+}
+
+/**
+ * Lo que suena en cada momento de una cinematica (T-049): los suyos (pasar pagina, el fallo de la pantalla, los cables,
+ * la impresora, el apagon y la puerta) y, para lo que ya tiene sonido en el juego, el de siempre: el teclado de los
+ * tours, el salto de los bichos, sembrar, subir de nivel y el disparo.
+ */
+export function cinematicCue(beat: CinematicBeat): SfxCue {
+  return centered(CINEMATIC_SOUNDS[beat]);
+}
+
+const CINEMATIC_SOUNDS: Readonly<Record<CinematicBeat, SfxId>> = {
+  type: 'keystroke',
+  hop: 'hop',
+  glitch: 'cineGlitch',
+  charge: 'cineCharge',
+  print: 'cinePrint',
+  roll: 'hop',
+  powerDown: 'cinePowerDown',
+  door: 'cineDoor',
+  sprout: 'sow',
+  pop: 'levelUp',
+  shot: 'shot',
+};
+
+/** Al entrar en un plano: pasar pagina al cambiar de escena; entre planos de la misma escena, nada. */
+export function cinematicTransitionCue(transition: Transition): SfxCue | null {
+  return transition === 'page' ? centered('cinePage') : null;
 }

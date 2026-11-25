@@ -2886,6 +2886,70 @@ button.route-stop-body:focus-visible .route-ring { outline-color: #ffe066; }
   .story-name { border-width: 1.5px; }
 }
 
+/* Cinematica de la historia (T-049, ADR-0027): el lienzo a pantalla completa con los planos de motion comic, el titulo de
+   la escena arriba como el rotulo de un tebeo y, abajo, la franja con la narracion de Boxer (MC-07): su retrato redondo,
+   su nombre y el texto. Va donde las viñetas: encima del HUD y debajo de la pausa y del aviso de girar. */
+.cinematic {
+  position: absolute; inset: 0; z-index: 3; overflow: hidden; container-type: size; background: #000;
+  pointer-events: auto; cursor: pointer; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent;
+  animation: story-in 0.5s ease both;
+}
+.cinematic.is-hidden { visibility: hidden; pointer-events: none; }
+.cinematic.is-leaving { animation: story-out 0.32s ease both; pointer-events: none; }
+.cinematic-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.cinematic-caption {
+  position: absolute; top: max(clamp(10px, 3.2cqh, 30px), env(safe-area-inset-top)); left: max(clamp(10px, 2.4cqw, 34px), env(safe-area-inset-left));
+  margin: 0; padding: 0.3em 0.85em 0.36em; border: 3px solid #2b2418; border-radius: 4px; background: #fff6df; color: #2b2418;
+  font-size: clamp(0.85rem, 3.4cqh, 1.6rem); font-weight: 900; letter-spacing: 0.06em; text-transform: uppercase;
+  box-shadow: 5px 5px 0 rgba(0, 0, 0, 0.55); transform: rotate(-1.5deg);
+  animation: cinematic-caption 3.2s ease both; pointer-events: none;
+}
+@keyframes cinematic-caption {
+  0% { opacity: 0; transform: translateY(-10px) rotate(-1.5deg); }
+  12%, 82% { opacity: 1; transform: translateY(0) rotate(-1.5deg); }
+  100% { opacity: 0; transform: translateY(-4px) rotate(-1.5deg); }
+}
+.cinematic-strip {
+  position: absolute; left: 0; right: 0; bottom: 0; display: grid; grid-template-columns: auto 1fr; grid-template-rows: auto auto;
+  column-gap: clamp(8px, 1.8cqw, 22px); align-items: center;
+  padding: clamp(14px, 5cqh, 46px) max(clamp(10px, 3cqw, 48px), env(safe-area-inset-right)) max(clamp(6px, 2.2cqh, 20px), env(safe-area-inset-bottom)) max(clamp(10px, 3cqw, 48px), env(safe-area-inset-left));
+  background: linear-gradient(180deg, rgba(4, 6, 10, 0) 0%, rgba(4, 6, 10, 0.78) 38%, rgba(4, 6, 10, 0.92) 100%);
+  color: #f7f2e4;
+}
+.cinematic-cameo { --cameo: clamp(40px, 11cqh, 96px); grid-row: 1 / span 2; align-self: end; margin-bottom: clamp(2px, 1cqh, 10px); }
+.cinematic-say { min-width: 0; max-width: 1080px; }
+.cinematic-name {
+  display: inline-block; margin: 0 0 clamp(2px, 0.8cqh, 8px); padding: 0.08em 0.75em 0.14em; border-radius: 999px; border: 2px solid var(--tone-dark);
+  background: linear-gradient(180deg, var(--tone-mid), var(--tone-dark)); color: #fff;
+  font-size: clamp(0.72rem, 2.4cqh, 1.15rem); font-weight: 900; letter-spacing: 0.04em; text-shadow: 0 2px 0 rgba(0, 0, 0, 0.3);
+}
+.cinematic-text {
+  margin: 0; font-size: clamp(13px, calc(2.6cqh + 3px), 27px); font-weight: 800; line-height: 1.3; overflow-wrap: anywhere;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+}
+.cinematic-foot { grid-column: 2; display: flex; align-items: center; justify-content: flex-end; gap: 10px; min-height: 1.5em; margin-top: clamp(0px, 0.6cqh, 6px); }
+.cinematic-dots { display: flex; gap: 6px; margin-right: auto; }
+.cinematic-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255, 255, 255, 0.25); transition: transform 0.2s ease, background 0.2s ease; }
+.cinematic-dot.is-done { background: var(--tone-light); }
+.cinematic-dot.is-current { background: #fff; transform: scale(1.35); }
+.cinematic-skip, .cinematic-next {
+  padding: 2px 6px; border: 0; border-radius: 8px; background: none; font: inherit; font-weight: 900; cursor: pointer;
+}
+.cinematic-skip { color: #d9d2bf; opacity: 0.85; font-size: clamp(0.72rem, 2.1cqh, 0.98rem); text-decoration: underline dotted; text-underline-offset: 3px; }
+.cinematic-skip:hover { opacity: 1; color: #fff; }
+.cinematic-next { color: #fff; font-size: clamp(0.78rem, 2.4cqh, 1.1rem); opacity: 0.45; transition: opacity 0.2s ease; }
+.cinematic-next.is-ready { opacity: 1; }
+.cinematic-next.is-ready .story-arrow { animation: story-nudge 0.9s ease-in-out infinite; }
+.cinematic-skip:focus-visible, .cinematic-next:focus-visible { outline: 3px solid #e0a92a; outline-offset: 1px; }
+/* Movil en horizontal: la franja mas baja, el texto en tres lineas como mucho. */
+@container (max-height: 420px) {
+  .cinematic-strip { padding-top: 18px; }
+  .cinematic-caption { border-width: 2px; box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.55); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cinematic, .cinematic-caption { animation-duration: 0.01s; }
+}
+
 /* Boxer pregunta el nombre (T-033): el campo y "¡Listo!" dentro del bocadillo cuando el texto ya salio entero, y
    "Prefiero no decirlo" al pie, junto a "Saltar". Un toque fuera del campo no pasa de viñeta. */
 .story.is-asking { cursor: default; }

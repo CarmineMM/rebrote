@@ -143,6 +143,11 @@ export const GameEvents = {
    * pantalla de las plantas del Invernadero. Lo manda la portada con `routeArt`.
    */
   nurseryArt: 'nursery-art',
+  /**
+   * Phaser -> React. Payload: CinematicCutouts (`view/portrait.ts`). Creeper, el gusano y la disparadora recortados con sus
+   * texturas, para los planos de la cinematica de la rebelion (T-049). Lo mandan la portada y el tablero al arrancar.
+   */
+  cinematicArt: 'cinematic-art',
   /** Phaser -> React. Payload: PlayerAction. El jugador acaba de hacer algo que un tour puede estar ensenando (T-013). */
   playerAction: 'player-action',
   /**

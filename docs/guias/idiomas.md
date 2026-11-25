@@ -111,6 +111,12 @@ Cómo se escriben los textos de Rebrote para que salgan en español y en inglés
 - [ ] Si nombra al jugador, es una función que recibe su nombre o null, y sin nombre se lee bien (trato neutro).
 - [ ] Los nombres de los personajes (Boxer, Patty) no se traducen.
 
+### Cinemática nueva (T-049)
+- [ ] El texto de cada plano está en `story.lines.<secuencia>.<plano>` en los dos idiomas, con la misma clave que el paso de `STORIES` y que el plano de su tabla (los tests lo comprueban), y la secuencia tiene su título en `story.titles`.
+- [ ] Cada texto cabe en la franja a 568 × 320 en cuatro líneas como mucho: dos o tres frases.
+- [ ] Los títulos de sus escenas, en `story.cinematic.scenes`, cortos: salen como el rótulo de un tebeo.
+- [ ] Lo que sale escrito dentro del dibujo (el mensaje de Creeper en la pantalla de 1971) es una cita y no se traduce.
+
 ### Comentario nuevo (T-043)
 - [ ] Su frase está en `story.remarks.<brote>.<frase>` en los dos idiomas, con la misma clave que en `REMARKS` (el test lo comprueba).
 - [ ] Es una sola frase corta, de 80 caracteres como mucho (el test lo comprueba): se lee en unos 5 s y cabe en la esquina a 568 × 320 en tres líneas.

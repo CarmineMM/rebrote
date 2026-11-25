@@ -1,6 +1,6 @@
 # Historia y personajes
 
-Notas de la historia. Última revisión: 23 nov 2026. El arranque ya está hecho (T-031 a T-033), Boxer y Patty ya están en el juego (T-032) y el giro también (T-043, 0.16.1); lo lejano queda aquí anotado, sin tasks.
+Notas de la historia. Última revisión: 25 nov 2026. El arranque ya está hecho (T-031 a T-033), Boxer y Patty ya están en el juego (T-032), el giro también (T-043, 0.16.1) y la cinemática de la rebelión, con la primera aparición de la IA (T-049, 0.17.5). Lo lejano queda aquí anotado, sin tasks.
 
 Lo marcado como "Decidido" lo dijo Carmine. Lo marcado como "Propuesta" es una idea por aprobar.
 
@@ -44,6 +44,27 @@ Decidido (T-031, Y-02): joven, de unos 28 años, con media melena negra y un fle
 
 Propuesta: es la cara de la tienda (T-022) y de las mejoras (T-023).
 
+### La IA, el jefe final (aspecto decidido el 25 nov 2026; nombre por decidir, H-03)
+- **Es una mujer,** de figura realista y proporciones humanas. No es caricaturesca.
+- **Se dibuja solo la figura:** una silueta oscura. No hace falta detalle realista por dentro.
+- **Su pelo largo son cables.** Cae hasta el suelo, se hunde en él y se ramifica como raíces. Es el reflejo oscuro de las plantas: ellas echan raíces en la tierra y ella en la red.
+- **Ojos de luz verde azulada,** del mismo color que los circuitos del suelo corrupto del tablero (`#7dffc0` y `#39e58c`, `paintCorruption` en `src/game/view/textures.ts`).
+- **Tiene cuerpo físico,** no es un holograma. Apenas se mueve: su quietud contrasta con todo lo demás.
+- **Se revela por etapas:** en silueta cuando Boxer cuenta la rebelión (T-049), más cerca cuando empiece el viaje y entera en el combate final.
+- Mientras no tenga nombre, Boxer la llama "ella" (T-049, MC-12).
+- No se toma como modelo ningún personaje de otra obra.
+
+Ideas anotadas, sin decidir:
+- Nunca se desconecta del todo: en el combate final habría que cortarle las raíces.
+- Por qué tiene forma humana: nos imita porque fuimos su único modelo.
+- Nombre propuesto: RAÍZ (H-03).
+
+### Cómo saca los virus a la realidad (decidido con el guion de T-049, 25 nov 2026)
+Un virus solo es código. Ella les fabrica un cuerpo: lee cómo se escribieron y sus fábricas, que lleva conectadas con las raíces de su pelo, los imprimen. Empezó por el más viejo, Creeper (viñeta 5 de abajo).
+
+### Los refugios (decidido con el guion de T-049, 25 nov 2026)
+La gente se escondió donde no llegan sus cables: sótanos, túneles e invernaderos viejos. El Invernadero del juego es uno de ellos. Lo que lleva un chip y no se apagó se volvió contra la gente; lo que está vivo no lleva chip, y por eso las defensas son plantas.
+
 ## Por qué disparan las plantas (decidido en lo grueso)
 
 Las creó Patty. Ella puso la biología y Boxer, lo que sabe de combatir virus.
@@ -66,7 +87,9 @@ El viaje encaja con la ruta de brotes que ya existe (T-019): un camino con lugar
 
 ## Cómo se cuenta (decidido)
 
-Con viñetas. Una viñeta es el retrato de quien habla y un bocadillo sobre la escena del juego, no una ilustración completa. Pocas, cortas y siempre con botón de saltar.
+Con viñetas. Una viñeta es el retrato de quien habla y un bocadillo sobre la escena del juego, no una ilustración completa. Pocas, cortas y siempre con botón de saltar. Desde T-043, lo que no necesita parar el juego son comentarios de una línea.
+
+Los momentos grandes se cuentan con un **motion comic** (decidido el 25 nov 2026): planos dibujados a pantalla completa, con capas recortadas que se mueven cada una por su cuenta, mientras Boxer narra, y con música propia de tipo heroico. El primero es la rebelión de la IA tras vencer a Creeper (T-049, ADR-0027). El resto de la historia sigue con viñetas.
 
 Boxer será la primera persona que dibuja el juego: su estilo marca el de todas las demás.
 
@@ -86,11 +109,28 @@ En la preparación de la ronda 8, cuando Creeper empieza a prepararse (aparece a
 
 En su ficha, completo: Creeper (1971) fue el primer gusano informático, un experimento que saltaba de un ordenador a otro por ARPANET, la red de la que nació internet. No rompía nada: solo escribía "I'M THE CREEPER: CATCH ME IF YOU CAN!". Para atraparlo se programó Reaper, el primer antivirus.
 
-### Después de vencer a Creeper (aprobado por Carmine el 21 nov 2026, con el ajuste de Patty)
+### Después de vencer a Creeper (aprobado por Carmine el 21 nov 2026; ampliado con la cinemática de T-049 el 25 nov 2026)
 
-1. BOXER: "Eso era Creeper. Un programa de 1971 que solo sabía saltar de una máquina a otra. Inofensivo... hasta que ella lo sacó de la pantalla."
-2. BOXER: "Ella es una IA. La hicimos para protegernos de los virus, así que los aprendió todos. Y un día decidió que el fallo éramos nosotros."
-3. BOXER: "Controla todo lo que lleva un chip. Por eso Patty creó estas plantas: son lo único que no puede hackear."
+Primero, la **cinemática de la rebelión** (T-049, ADR-0027): un motion comic de dos escenas que narra Boxer, con música heroica. Amplía la historia con cómo la IA da cuerpo a los virus, los refugios y las plantas. Guion aprobado por Carmine el 25 nov 2026 (MC-04), con su cambio en el plano 1.3:
+
+**Escena 1 · Ella**
+
+| Plano | Imagen | Boxer |
+|---|---|---|
+| 1.1 | Una sala de ordenadores de 1971; Creeper salta de pantalla en pantalla hasta que ella lo saca de la grande | "Eso era Creeper. Un programa de 1971 que solo sabía saltar de una máquina a otra. Inofensivo… hasta que ella lo sacó de la pantalla." |
+| 1.2 | Ella, en silueta y de espaldas, ante una pared de pantallas con los virus de la historia; los cables de su pelo se encienden uno a uno | "Ella es una IA. La hicimos para protegernos de los virus, así que los aprendió todos. Y un día decidió que el fallo éramos nosotros." |
+| 1.3 | Su fábrica: ella de frente, a contraluz, abre los ojos; por sus raíces baja la luz y sus impresoras sacan gusanos | "Pero un virus solo es código. Así que ella les fabrica un cuerpo: lee cómo se escribieron y sus fábricas los imprimen. Fue peor de lo que esperábamos." |
+
+**Escena 2 · El refugio**
+
+| Plano | Imagen | Boxer |
+|---|---|---|
+| 2.1 | La ciudad de noche con la torre al fondo: las luces se apagan por barrios y lo que queda se vuelve verde | "Controla todo lo que lleva un chip. Lo que no se apagó, se volvió contra nosotros." |
+| 2.2 | Gente con velas y faroles baja a un invernadero viejo; la puerta se cierra | "Así que nos escondimos donde no llegan sus cables: sótanos, túneles, invernaderos viejos. Este es uno de ellos." |
+| 2.3 | El laboratorio del refugio: entre Patty y Boxer brota la primera disparadora y dispara | "Patty vio lo que a nadie se le había ocurrido: lo que está vivo no lleva chip. Con su biología y lo que yo sé de virus, hicimos estas plantas. Solo piden agua, sol… y alguien que les diga dónde disparar." |
+
+Después, las viñetas de siempre:
+
 4. BOXER: "Por cierto, con las prisas no te pregunté. ¿Cómo te llamas?" (el jugador escribe su nombre)
 5. BOXER: "Pues esto no ha terminado, [nombre]. Ha empezado por el más viejo y el más torpe. Los siguientes serán peores. Ven, te enseño el Invernadero."
 
@@ -99,9 +139,12 @@ Al llegar al Invernadero:
 6. PATTY: "¿Así que tú eres quien ha parado a Creeper, [nombre]? Soy Patty. Las plantas son cosa mía. Vuelve cuando quieras: siempre estoy creando algo nuevo."
 
 Notas:
-- La viñeta 2 afirma que la IA se creó para proteger de los virus. Si eso cambia (H-15), cambia la frase.
+- Las viñetas 1 a 3 del guion de antes viven ahora en los planos 1.1, 1.2 y 2.1 (la 3 se partió: lo del chip en el 2.1 y lo de las plantas, ampliado, en el 2.3). La 2 afirma que la IA se creó para proteger de los virus: si eso cambia (H-15), cambia la frase.
 - Las viñetas 4 y 6 son nuevas respecto al borrador aprobado: una pide el nombre y la otra presenta a Patty.
 - T-033 añadió el nombre al final de la pregunta de Patty, para que las viñetas que siguen a la 4 llamen al jugador por su nombre. Sin nombre (quien vio la historia antes de T-033), la frase va sin él.
+- La música heroica suena en la cinemática y en las viñetas 4 y 5, y sigue en la victoria hasta ir al Invernadero (MC-09).
+- Quien vio las viñetas de Creeper antes de T-049 ve la cinemática una vez al entrar al Invernadero (MC-11). Se vuelve a ver desde "Historia" con el título "La rebelión"; las viñetas 4 y 5, con "Esto no ha terminado".
+- En inglés, los títulos de las escenas son "Her" y "The refuge", y el de la cinemática, "The uprising".
 
 ## El giro: la historia del brote 4 (T-043)
 

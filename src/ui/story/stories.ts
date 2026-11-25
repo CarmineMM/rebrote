@@ -1,4 +1,5 @@
 import { OUTBREAKS } from '../../game/config/balance';
+import { STORY_MUSIC, type MusicTrackId } from '../../game/config/music';
 import { FIRST_OUTBREAK, isOutbreakId, type OutbreakId } from '../../game/core/outbreaks';
 import { isGreenhouseOpen } from '../../game/core/route';
 import { bossFirstSeenRound, bossRoundIndex, type RoundPhase } from '../../game/core/rounds';
@@ -14,7 +15,7 @@ import { bossName } from '../outbreakName';
  */
 
 /** Las secuencias del guion, cada una con sus viñetas en `STORIES`. */
-export type ScriptedStoryId = 'opening' | 'creeperDown' | 'pattyGreenhouse' | 'morrisOpening' | 'morrisDebate' | 'morrisDown';
+export type ScriptedStoryId = 'opening' | 'rebellion' | 'creeperDown' | 'pattyGreenhouse' | 'morrisOpening' | 'morrisDebate' | 'morrisDown';
 
 /**
  * Lo que cuenta Boxer del virus de verdad antes de cada jefe (T-032, VT-04): una secuencia por brote, `lore:<brote>`, con
@@ -44,11 +45,21 @@ export interface StoryStep {
 export const STORIES = {
   /** Antes del brote 1: Boxer, con prisa. Despues, el tour de la ronda 1. */
   opening: [{ id: 'noTime', speaker: 'boxer', expression: 'hurried' }],
-  /** Al caer Creeper por primera vez (viñetas 1 a 5 del guion). */
-  creeperDown: [
+  /**
+   * Al caer Creeper por primera vez: la cinematica de la rebelion (T-049), un motion comic de dos escenas que narra Boxer.
+   * Cada paso es un plano: sus capas y su movimiento estan en `CINEMATICS` (`src/game/view/cinematic/shots.ts`), y su
+   * texto, como el de las viñetas, en `story.lines.rebellion`.
+   */
+  rebellion: [
     { id: 'creeper', speaker: 'boxer', expression: 'normal' },
     { id: 'ai', speaker: 'boxer', expression: 'hurried' },
+    { id: 'factory', speaker: 'boxer', expression: 'hurried' },
     { id: 'chips', speaker: 'boxer', expression: 'normal' },
+    { id: 'refuge', speaker: 'boxer', expression: 'normal' },
+    { id: 'plants', speaker: 'boxer', expression: 'happy' },
+  ],
+  /** Despues de la cinematica (viñetas 4 y 5 del guion): Boxer pregunta el nombre y le invita al Invernadero. */
+  creeperDown: [
     { id: 'name', speaker: 'boxer', expression: 'happy', prompt: 'name' },
     { id: 'onward', speaker: 'boxer', expression: 'happy' },
   ],
@@ -94,8 +105,22 @@ export function storyScript(id: StoryId): readonly StoryStep[] {
   return loreOutbreak(id) ? LORE_STEPS : STORIES[id as ScriptedStoryId];
 }
 
-/** La secuencia que sale al vencer por primera vez al jefe de cada brote. */
-export const STORY_AFTER_BOSS: Readonly<Partial<Record<OutbreakId, StoryId>>> = { creeper: 'creeperDown', morris: 'morrisDown' };
+/**
+ * Las secuencias que salen al vencer por primera vez al jefe de cada brote, en orden. Tras Creeper, la cinematica de la
+ * rebelion y luego las viñetas del nombre y del Invernadero (T-049).
+ */
+export const STORY_AFTER_BOSS: Readonly<Partial<Record<OutbreakId, readonly StoryId[]>>> = {
+  creeper: ['rebellion', 'creeperDown'],
+  morris: ['morrisDown'],
+};
+
+/**
+ * Las secuencias que son una cinematica (T-049, ADR-0027) y no viñetas: la pinta `CinematicOverlay` con los planos de
+ * `CINEMATICS`, cada paso un plano.
+ */
+export const CINEMATIC_STORIES: readonly StoryId[] = ['rebellion'];
+
+export const isCinematic = (id: StoryId): boolean => CINEMATIC_STORIES.includes(id);
 
 /**
  * Las secuencias que salen en la preparacion de una ronda concreta de un brote (desde 0), solo en esa ronda: la apertura
@@ -121,8 +146,8 @@ function roundStories(outbreak: OutbreakId): { round: number; id: StoryId }[] {
 export const STORY_ORDER: readonly StoryId[] = OUTBREAKS.flatMap(({ id }): StoryId[] => {
   const lore = bossFirstSeenRound(id);
   const during = [...roundStories(id), ...(lore === null ? [] : [{ round: lore + 0.5, id: loreStory(id) }])].sort((a, b) => a.round - b.round);
-  const after = STORY_AFTER_BOSS[id];
-  return [...during.map((story) => story.id), ...(after ? [after] : []), ...(id === FIRST_OUTBREAK ? (['pattyGreenhouse'] as const) : [])];
+  const after = STORY_AFTER_BOSS[id] ?? [];
+  return [...during.map((story) => story.id), ...after, ...(id === FIRST_OUTBREAK ? (['pattyGreenhouse'] as const) : [])];
 });
 
 /** Cuando puede salir sola una secuencia. */
@@ -141,8 +166,10 @@ export type StoryMoment =
  * - en la preparacion de la ronda en que se ve por primera vez al jefe (T-032, VT-04: la 8 del brote 1, cuando Creeper se
  *   prepara), lo que cuenta Boxer del virus de verdad; si no se vio entonces (una partida guardada antes), en la
  *   preparacion de las siguientes hasta la del combate;
- * - al vencer a un jefe, lo que sale tras el (lo que cuenta Boxer de Creeper; el final del giro con Morris, T-043);
- * - en el Invernadero, lo de Boxer que quedo sin ver (quien vencio a Creeper sin verlo, Y-06) y despues Patty.
+ * - al vencer a un jefe, lo que sale tras el (la cinematica de la rebelion y lo que cuenta Boxer tras Creeper, T-049; el
+ *   final del giro con Morris, T-043);
+ * - en el Invernadero, lo de despues de un jefe que quedo sin ver (quien vencio a Creeper sin verlo, Y-06; quien vio las
+ *   viñetas de Creeper antes de T-049 ve una vez la cinematica, MC-11) y despues Patty.
  */
 export function storiesAt(moment: StoryMoment, seen: readonly string[]): StoryId[] {
   const due: StoryId[] = [];
@@ -155,13 +182,24 @@ export function storiesAt(moment: StoryMoment, seen: readonly string[]): StoryId
       due.push(loreStory(moment.outbreak));
     }
   } else if (moment.kind === 'victory') {
-    const after = STORY_AFTER_BOSS[moment.outbreak];
-    if (after) due.push(after);
+    due.push(...(STORY_AFTER_BOSS[moment.outbreak] ?? []));
   } else if (isGreenhouseOpen(moment.defeated)) {
-    for (const [outbreak, story] of Object.entries(STORY_AFTER_BOSS)) if (story && moment.defeated.includes(outbreak)) due.push(story);
+    for (const [outbreak, stories] of Object.entries(STORY_AFTER_BOSS)) if (stories && moment.defeated.includes(outbreak)) due.push(...stories);
     due.push('pattyGreenhouse');
   }
   return due.filter((id) => !seen.includes(id));
+}
+
+/**
+ * La musica propia de la primera de estas secuencias que la tenga (`STORY_MUSIC`, T-049), o null. Con lo que saldria al
+ * vencer al jefe o al entrar al Invernadero, dice que pista preparar por adelantado.
+ */
+export function storyMusicOf(ids: readonly StoryId[]): MusicTrackId | null {
+  for (const id of ids) {
+    const track = STORY_MUSIC[id];
+    if (track) return track;
+  }
+  return null;
 }
 
 /** Las viñetas que se ven de una secuencia: las que piden algo que aun nadie pide (el nombre sin T-033) se saltan. */

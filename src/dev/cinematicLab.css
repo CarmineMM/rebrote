@@ -1,0 +1,89 @@
+/* Propuestas de la cinematica (T-049): solo en desarrollo. */
+.cin-rows {
+  display: grid;
+  gap: 18px;
+  padding: 16px;
+}
+
+.cin-note {
+  max-width: 980px;
+  margin: 0;
+  color: #cfe6b8;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.cin-card {
+  padding: 12px 14px 14px;
+  border: 2px solid #3f5a2f;
+  border-radius: 14px;
+  background: #18241a;
+}
+
+.cin-card.is-chosen {
+  border-color: #ffd23f;
+}
+
+.cin-card h2 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 4px;
+  font-size: 17px;
+}
+
+.cin-card header p {
+  margin: 0 0 10px;
+  color: #cfe6b8;
+  font-size: 13px;
+}
+
+.cin-views {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+.cin-views figure {
+  margin: 0;
+}
+
+.cin-views figcaption {
+  margin-top: 4px;
+  color: #b9d99a;
+  font-size: 12px;
+}
+
+.cin-canvas {
+  display: block;
+  border-radius: 10px;
+}
+
+.cin-frames {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.cin-frame {
+  position: relative;
+  overflow: hidden;
+  border: 2px solid #3f5a2f;
+  border-radius: 8px;
+  background: #000;
+  transform-origin: top left;
+}
+
+.cin-frame-box {
+  overflow: hidden;
+}
+
+.cin-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  align-items: center;
+  font-size: 13px;
+}
