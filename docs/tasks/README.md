@@ -80,3 +80,7 @@ Al cerrar una task se sube la versión del juego (ADR-0017). Mientras el juego e
 Al cerrar T-006 hay que parar y jugar 10 minutos. Si sembrar y fusionar no divierte, se revisa el diseño antes de seguir.
 
 Las decisiones D-xx están en `../specs/01-mecanicas.md`. Desde T-008, cada task lleva las suyas con su propia letra.
+
+## Template
+
+Para la creacion de Task nuevas usar /docs/tasks/0000-template.md
