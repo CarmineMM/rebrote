@@ -2,7 +2,7 @@
 
 <!-- Estado: "En curso" al empezar; "Completada (fecha, versión)" al cerrar (CLAUDE.md). Se cambia también en la tabla de README.md. -->
 
-- **Estado:** Pendiente
+- **Estado:** En curso
 - **Prioridad:** Media
 - **Tamaño estimado:** L (orientativo)
 - **Depende de:** T-031 (viñetas y personajes), T-015 (música de fondo)
@@ -64,7 +64,7 @@ Hoy (comprobado el 25 nov 2026, en 0.17.4):
 
 ## 4. Decisiones
 
-### 4.1. Propuesta de escenas, planos y guion (borrador por aprobar, MC-04)
+### 4.1. Escenas, planos y guion (aprobado por Carmine el 25 nov 2026, MC-04)
 
 Boxer narra todo. Las frases 1, 2 y la primera mitad de la 6 son las del guion de siempre. El resto es nuevo, sobre los tres temas que pidió Carmine.
 
@@ -88,22 +88,22 @@ Después vuelven las viñetas de siempre: `name` (Boxer pregunta el nombre) y `o
 
 Tono: se apagan ciudades y se cierran puertas, pero no se ve morir a nadie ni a nadie herido (`04-historia.md`, "Tono").
 
-### 4.2. Decisiones pendientes
+### 4.2. Decisiones
 
 | # | Pregunta | Opciones | Recomendación | Decide |
 |---|---|---|---|---|
 | MC-01 | ¿Dónde va la cinemática? | **Cerrada (25 nov 2026):** ilustra las viñetas que cuentan la historia (antes 1 a 3, ahora ampliadas) y después siguen las viñetas normales del nombre y de la invitación al Invernadero | Cerrada | Carmine |
 | MC-02 | ¿Qué estilo? | **Cerrada (25 nov 2026):** motion comic, con capas recortadas que se mueven cada una por su cuenta. Boxer y Patty salen como recortes de los bustos que ya tienen | Cerrada | Carmine |
 | MC-03 | ¿Cuánto se amplía la historia? | **Cerrada (25 nov 2026):** se cuenta cómo la IA crea los virus y los saca a la realidad, los refugios y las plantas. Al menos dos escenas | Cerrada | Carmine |
-| MC-04 | ¿Valen los planos y el guion de la sección 4.1? | a) Tal cual; b) con cambios | a). Seis planos en dos escenas, uno por idea; las frases de siempre se mantienen | Carmine |
-| MC-05 | ¿Qué silueta de la IA? | Propuestas en `/proposals/cinematica.html` | Tres variantes de la misma idea: cambian la postura y cuánto pelo de cable llega al suelo | Carmine |
-| MC-06 | ¿El plano avanza solo o con un toque? | a) Solo, con un tiempo por plano; b) como las viñetas: el texto sale letra a letra y un toque pasa al siguiente plano, mientras el plano sigue moviéndose | b). Cada uno lee a su ritmo, en los dos idiomas y en el móvil; por eso la música va en bucle. Cuando el texto ya salió, el plano sigue con un movimiento lento y no se queda quieto | Carmine |
-| MC-07 | ¿Dónde va el texto de Boxer? | a) En una franja al pie, con su retrato redondo (`Cameo`) y su nombre; b) en un bocadillo dentro del plano | a). El plano queda limpio y la franja se lee igual a 568 × 320 | Carmine |
+| MC-04 | ¿Valen los planos y el guion de la sección 4.1? | **Cerrada (25 nov 2026):** b), con los cambios de Carmine en el plano 1.3 ("Fue peor de lo que esperábamos.") | Cerrada | Carmine |
+| MC-05 | ¿Qué silueta de la IA? | **Cerrada (25 nov 2026):** la recomendada: tres variantes de la misma idea en `/proposals/cinematica.html` (cambian la postura y cuánto pelo de cable llega al suelo). El juego usa la que se recomiende en la página mientras Carmine no elija otra | Cerrada | Carmine |
+| MC-06 | ¿El plano avanza solo o con un toque? | **Cerrada (25 nov 2026):** b), como las viñetas: el texto sale letra a letra y un toque pasa de plano; cuando el texto ya salió, el plano sigue con un movimiento lento | Cerrada | Carmine |
+| MC-07 | ¿Dónde va el texto de Boxer? | **Cerrada (25 nov 2026):** a), en una franja al pie con su retrato redondo (`Cameo`) y su nombre | Cerrada | Carmine |
 | MC-08 | ¿Qué música suena? | **Cerrada (25 nov 2026):** una pista nueva de tipo heroico, en bucle, a volumen normal (no baja como con una viñeta) | Cerrada | Carmine |
-| MC-09 | ¿Hasta cuándo suena la música heroica? | a) Solo en la cinemática; b) en toda la secuencia, también en las viñetas del nombre y de la invitación, y en el Invernadero funde con la del menú | b). La historia acaba con "te enseño el Invernadero"; cortarla a mitad de la secuencia corta el momento | Carmine |
-| MC-10 | ¿Qué pista? | Tres o cuatro candidatas CC0 o CC BY (U-01) de OpenGameArt o Incompetech, en `/tests/musica.html` | Que suene heroica pero amable, de orquesta o de metales con algo de madera: que pegue con la marimba del menú y no con el combate. La elige Carmine de oído (U-02) | Carmine |
-| MC-11 | ¿Quien ya vio las viñetas de Creeper ve la cinemática? | a) Sí, una vez, al entrar en el Invernadero; b) no, solo desde "Historia" | a). Es la parte más vistosa de la historia. Para eso la cinemática va como secuencia propia (`rebellion`), antes de lo que queda de `creeperDown` (el nombre y la invitación), y sale sola si no se vio | Carmine |
-| MC-12 | ¿Cómo se llama a la IA mientras no tenga nombre (H-03)? | "Ella" u otro | "Ella", como ya dice Boxer | Carmine |
+| MC-09 | ¿Hasta cuándo suena la música heroica? | **Cerrada (25 nov 2026):** b), en toda la secuencia (cinemática, nombre e invitación); en el Invernadero funde con la del menú | Cerrada | Carmine |
+| MC-10 | ¿Qué pista? | **Cerrada (25 nov 2026):** la recomendada: heroica pero amable, de orquesta o de metales con algo de madera, CC0 o CC BY (U-01). El juego usa la que se recomiende entre las candidatas de `/tests/musica.html` mientras Carmine no elija otra de oído (U-02) | Cerrada | Carmine |
+| MC-11 | ¿Quien ya vio las viñetas de Creeper ve la cinemática? | **Cerrada (25 nov 2026):** a), sí, una vez, al entrar en el Invernadero. La cinemática es una secuencia propia (`rebellion`), antes de lo que queda de `creeperDown` | Cerrada | Carmine |
+| MC-12 | ¿Cómo se llama a la IA mientras no tenga nombre (H-03)? | **Cerrada (25 nov 2026):** "ella", como ya dice Boxer | Cerrada | Carmine |
 
 ## 5. Criterios de aceptación
 
