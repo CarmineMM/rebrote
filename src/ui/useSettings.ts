@@ -37,7 +37,7 @@ function browserLanguages(): readonly string[] {
 const defaults = (): Settings => ({
   quality: 'auto',
   showFps: false,
-  fullscreen: true,
+  fullscreen: false,
   language: detectLanguage(browserLanguages()),
   help: true,
   sfxVolume: AUDIO.defaultSfxVolume,
@@ -55,7 +55,7 @@ function load(): Settings {
     return {
       quality: parseQualitySetting(data.quality),
       showFps: data.showFps === true,
-      fullscreen: data.fullscreen !== false,
+      fullscreen: data.fullscreen === true,
       language: parseLanguage(data.language) ?? detectLanguage(browserLanguages()),
       help: data.help !== false,
       sfxVolume: parseVolume(data.sfxVolume),
