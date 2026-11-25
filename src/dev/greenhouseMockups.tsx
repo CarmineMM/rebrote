@@ -11,6 +11,7 @@ import { portraitUrl } from '../game/view/characters/portraitImage';
 import { SHOOTER } from '../game/view/shooterShape';
 import { formatAmount, formatHpBonus, formatPercent } from '../i18n';
 import { outbreakTitle } from '../ui/outbreakName';
+import { TitleLogo } from '../ui/logo/TitleLogo';
 import { PowerIcon } from '../ui/PowerPanel';
 import { SeedIcon } from '../ui/SeedIcon';
 import { SeedBalance } from '../ui/SeedsEarned';
@@ -144,15 +145,11 @@ function PattyBust({ className = '' }: { className?: string }) {
   );
 }
 
-/** "INVERNADERO" con las letras del titulo de la portada, mas pequeno. */
+/** "INVERNADERO" con el logo de la portada (`TitleLogo`), mas pequeno. */
 function Logo({ word }: { word: string }) {
   return (
     <h1 className="gh-logo" aria-label={word}>
-      {[...word].map((letter, i) => (
-        <span key={i} className="title-letter" style={{ animationDelay: `${i * 0.05}s, ${0.8 + i * 0.12}s` }} aria-hidden="true">
-          {letter}
-        </span>
-      ))}
+      <TitleLogo word={word} butterfly={false} />
     </h1>
   );
 }

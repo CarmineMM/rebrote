@@ -1362,32 +1362,9 @@ body {
   position: absolute; left: max(28px, 4vw, env(safe-area-inset-left)); top: max(34px, 6vh, env(safe-area-inset-top));
   display: grid; justify-items: start; gap: 4px;
 }
-/* Letras gordas de hoja verde con contorno oscuro; caen una tras otra y luego se mecen. De la "O" sale un brote. */
+/* El logo (`TitleLogo`, con su CSS en `src/ui/logo/titleLogo.css`) mide 1.1em de alto: aqui solo se le da el tamano. */
 /* `--logo-fit` encoge una palabra larga ("INVERNADERO", T-019) para que no se meta bajo el panel. */
-.title-logo { margin: 0; display: flex; font-size: calc(clamp(3rem, 8.2vw, 8rem) * var(--logo-fit, 1)); font-weight: 900; line-height: 1; letter-spacing: 0.01em; }
-.title-letter {
-  --tilt: -3deg;
-  position: relative; display: inline-block; padding: 0 0.01em;
-  background: linear-gradient(180deg, #f6ffd8 0%, #c2f285 26%, #74cc48 58%, #3a8f2b 100%);
-  -webkit-background-clip: text; background-clip: text; color: transparent;
-  -webkit-text-stroke: 0.035em #1d4a17; paint-order: stroke fill;
-  filter: drop-shadow(0 0.055em 0 #143515) drop-shadow(0 0.1em 0.1em rgba(0, 0, 0, 0.35));
-  animation: letter-drop 0.7s cubic-bezier(0.2, 1.5, 0.4, 1) both, letter-bob 3.4s ease-in-out infinite;
-}
-.title-letter:nth-child(even) { --tilt: 3deg; }
-.title-letter:nth-child(3n) { --tilt: -1deg; }
-@keyframes letter-drop { from { opacity: 0; transform: translateY(-0.7em) scale(0.5) rotate(var(--tilt)); } to { opacity: 1; transform: rotate(var(--tilt)); } }
-@keyframes letter-bob { 0%, 100% { transform: rotate(var(--tilt)); } 50% { transform: translateY(-0.045em) rotate(calc(var(--tilt) * -0.5)); } }
-.title-sprout {
-  position: absolute; left: 50%; top: -0.4em; width: 0.6em; height: 0.5em; margin-left: -0.27em; overflow: visible;
-  transform-origin: 50% 100%; animation: sprout-pop 0.6s 1.1s cubic-bezier(0.2, 1.6, 0.4, 1) both, sprout-sway 2.4s 1.7s ease-in-out infinite;
-}
-.title-sprout-stem { fill: none; stroke: #2f8a28; stroke-width: 4.5; stroke-linecap: round; }
-.title-sprout-leaf { stroke: #1d4a17; stroke-width: 2.4; stroke-linejoin: round; }
-.title-sprout-leaf.is-left { fill: #9be564; }
-.title-sprout-leaf.is-right { fill: #74cc48; }
-@keyframes sprout-pop { from { transform: scale(0); } to { transform: none; } }
-@keyframes sprout-sway { 0%, 100% { transform: rotate(-7deg); } 50% { transform: rotate(7deg); } }
+.title-logo { margin: 0; font-size: calc(clamp(3rem, 8.2vw, 8rem) * var(--logo-fit, 1)); line-height: 1; }
 .title-tagline {
   margin: 0 0 0 0.6em; padding: 5px 16px; border-radius: 12px; overflow-wrap: anywhere;
   font-size: clamp(0.85rem, 1.45vw, 1.2rem); font-weight: 900; color: #fff6dc; letter-spacing: 0.02em;
