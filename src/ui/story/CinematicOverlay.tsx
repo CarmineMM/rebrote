@@ -98,7 +98,7 @@ interface Clock {
 /**
  * Una cinematica de la historia (T-049, ADR-0027): planos de motion comic a pantalla completa que pinta un lienzo
  * (`CinematicRenderer`), con la narracion de Boxer en una franja abajo (MC-07): su retrato redondo, su nombre y el texto
- * letra a letra con su voz. Cada paso de la secuencia es un plano; como en las viñetas (MC-06), un toque, un clic, Espacio
+ * letra a letra, sin voz: solo suena la musica. Cada paso de la secuencia es un plano; como en las viñetas (MC-06), un toque, un clic, Espacio
  * o Intro completa el texto y el siguiente pasa de plano, mientras el plano sigue moviendose. "Saltar" (o Esc) la cierra
  * entera. Con movimiento reducido, los planos salen quietos y solo cambian con fundidos.
  */
@@ -112,7 +112,7 @@ export function CinematicOverlay({ story, step, index, count, cinematic, name, q
   const [caption, setCaption] = useState<string | null>(null);
   const images = useCinematicImages(art);
   const text = stepText(t, story, step, name);
-  const speech = useSpeech({ speaker: step.speaker, text, delayMs: index === 0 ? 900 : 450, sound: 'voice', paused: hidden || leaving, replay: `${story}:${step.id}` });
+  const speech = useSpeech({ speaker: step.speaker, text, delayMs: index === 0 ? 900 : 450, paused: hidden || leaving, replay: `${story}:${step.id}` });
   const last = index + 1 >= count;
 
   const renderer = useRef<CinematicRenderer | null>(null);
