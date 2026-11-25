@@ -593,13 +593,32 @@ export const es = {
     /** Pista bajo el bocadillo cuando el texto ya salio entero. */
     hint: 'Toca para seguir',
     stepOf: (step: number, count: number) => `Viñeta ${step} de ${count}`,
+    /**
+     * Cinematica de la rebelion (T-049): el titulo de cada escena, que sale arriba al entrar en ella como el rotulo de un
+     * tebeo, y los puntos de los planos (lectores de pantalla).
+     */
+    cinematic: {
+      scenes: { her: 'Ella', refuge: 'El refugio' },
+      shotOf: (shot: number, count: number) => `Plano ${shot} de ${count}`,
+      /**
+       * Lo que se lee en las pantallas de 1971 (plano 1.1). Es una cita: el mensaje de verdad de Creeper y la red de
+       * entonces, en ingles en los dos idiomas.
+       */
+      screen: {
+        creeper: ["I'M THE CREEPER :", 'CATCH ME IF YOU CAN!'] as readonly [string, string],
+        network: 'ARPANET',
+        node: (node: number) => `NODE ${node}  OK`,
+      },
+    },
     /** En el Invernadero, para volver a verlas (Y-05). */
     replay: 'Historia',
     replayDetail: 'Vuelve a ver las viñetas',
     replayTitle: 'La historia hasta ahora',
     titles: {
       opening: 'El rescate',
-      creeperDown: 'Lo que pasó',
+      // T-049: la cinematica de la rebelion; despues, el nombre y la invitacion al Invernadero.
+      rebellion: 'La rebelión',
+      creeperDown: 'Esto no ha terminado',
       pattyGreenhouse: 'Patty, la botánica',
       // T-043: el giro, en el brote 4.
       morrisOpening: 'Más que nunca',
@@ -638,10 +657,19 @@ export const es = {
       opening: {
         noTime: '¡No hay tiempo para explicarte! Toma esa planta y sígueme el juego.',
       },
-      creeperDown: {
+      /**
+       * La cinematica de la rebelion (T-049): un texto por plano, narrado por Boxer en la franja de abajo. Caben en tres
+       * lineas a 568 × 320.
+       */
+      rebellion: {
         creeper: 'Eso era Creeper. Un programa de 1971 que solo sabía saltar de una máquina a otra. Inofensivo… hasta que ella lo sacó de la pantalla.',
         ai: 'Ella es una IA. La hicimos para protegernos de los virus, así que los aprendió todos. Y un día decidió que el fallo éramos nosotros.',
-        chips: 'Controla todo lo que lleva un chip. Por eso Patty creó estas plantas: son lo único que no puede hackear.',
+        factory: 'Pero un virus solo es código. Así que ella les fabrica un cuerpo: lee cómo se escribieron y sus fábricas los imprimen. Fue peor de lo que esperábamos.',
+        chips: 'Controla todo lo que lleva un chip. Lo que no se apagó, se volvió contra nosotros.',
+        refuge: 'Así que nos escondimos donde no llegan sus cables: sótanos, túneles, invernaderos viejos. Este es uno de ellos.',
+        plants: 'Patty vio lo que a nadie se le había ocurrido: lo que está vivo no lleva chip. Con su biología y lo que yo sé de virus, hicimos estas plantas. Solo piden agua, sol… y alguien que les diga dónde disparar.',
+      },
+      creeperDown: {
         name: 'Por cierto, con las prisas no te pregunté. ¿Cómo te llamas?',
         onward: (name: string | null) =>
           `Pues esto no ha terminado${name ? `, ${name}` : ''}. Ha empezado por el más viejo y el más torpe. Los siguientes serán peores. Ven, te enseño el Invernadero.`,
@@ -1174,7 +1202,7 @@ export const es = {
     music: 'Música',
     musicTitle: (title: string) => `«${title}»`,
     musicBy: (author: string) => `de ${author}`,
-    musicFor: { menu: 'menús', round: 'rondas', boss: 'jefes' },
+    musicFor: { menu: 'menús', round: 'rondas', boss: 'jefes', heroic: 'historia' },
     tech: 'Hecho con',
     thanks: '¡Gracias por jugar!',
     legal:

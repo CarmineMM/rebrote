@@ -1,6 +1,6 @@
 # ADR-0022: Música de fondo en bucle con Web Audio
 
-- **Estado:** Aceptada
+- **Estado:** Aceptada. Ampliada el 2026-11-25 por el ADR-0027 (música de la historia, T-049)
 - **Fecha:** 2026-11-22
 
 ## Contexto
@@ -38,3 +38,7 @@ Cómo está hecho:
 - Solo los originales elegidos van al repositorio (`audio-lab/musica/`); las alternativas se quedan en el equipo que las bajó (`.gitignore`).
 - La música adaptativa por capas y una pista por brote quedan para más adelante (fuera de T-015).
 - Pendiente de comprobar en un iPhone de verdad, como los efectos: que suena tras el primer toque y que el bucle empalma.
+
+## Historial
+
+- **2026-11-25, música de la historia (T-049, ADR-0027):** una cuarta pista, la heroica (`heroic`), que no va por tramos sino con la historia: suena con las secuencias de `STORY_MUSIC` (la cinemática de la rebelión y las viñetas que la siguen) a volumen normal y, en la victoria, hasta salir del tablero. `musicFor` recibe la de la historia en pantalla (`story`) y la que puede salir pronto (`storyAhead`), que se prepara en la ronda del jefe. La elegida, «Our Story Begins» de Kevin MacLeod (CC BY 4.0), es la recomendada mientras Carmine no elija otra de oído; sus alternativas están en `MUSIC_MANIFEST`.

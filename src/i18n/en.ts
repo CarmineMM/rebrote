@@ -475,12 +475,22 @@ export const en: Dictionary = {
     next: 'Next',
     hint: 'Tap to continue',
     stepOf: (step, count) => `Scene ${step} of ${count}`,
+    cinematic: {
+      scenes: { her: 'Her', refuge: 'The refuge' },
+      shotOf: (shot, count) => `Shot ${shot} of ${count}`,
+      screen: {
+        creeper: ["I'M THE CREEPER :", 'CATCH ME IF YOU CAN!'],
+        network: 'ARPANET',
+        node: (node) => `NODE ${node}  OK`,
+      },
+    },
     replay: 'Story',
     replayDetail: 'Watch the scenes again',
     replayTitle: 'The story so far',
     titles: {
       opening: 'The rescue',
-      creeperDown: 'What happened',
+      rebellion: 'The uprising',
+      creeperDown: "This isn't over",
       pattyGreenhouse: 'Patty, the botanist',
       morrisOpening: 'More than ever',
       morrisDebate: 'What if we go?',
@@ -509,10 +519,15 @@ export const en: Dictionary = {
       opening: {
         noTime: 'No time to explain! Grab that plant and follow my lead.',
       },
-      creeperDown: {
+      rebellion: {
         creeper: 'That was Creeper. A program from 1971 that could only hop from one machine to another. Harmless… until she pulled it out of the screen.',
         ai: "She's an AI. We built her to protect us from viruses, so she learned every last one. And one day she decided the bug was us.",
-        chips: "She controls everything with a chip in it. That's why Patty made these plants: they're the only thing she can't hack.",
+        factory: 'But a virus is just code. So she builds them a body: she reads how each one was written and her factories print it. It was worse than we expected.',
+        chips: "She controls everything with a chip in it. Whatever didn't shut down turned against us.",
+        refuge: "So we hid where her cables can't reach: basements, tunnels, old greenhouses. This is one of them.",
+        plants: 'Patty saw what nobody else had: living things have no chips. With her biology and what I know about viruses, we made these plants. All they need is water, sun… and someone to tell them where to shoot.',
+      },
+      creeperDown: {
         name: "By the way, in all the rush I never asked. What's your name?",
         onward: (name) =>
           `Well, this isn't over${name ? `, ${name}` : ''}. She started with the oldest, clumsiest one. The next ones will be worse. Come on, I'll show you the Greenhouse.`,
@@ -940,7 +955,7 @@ export const en: Dictionary = {
     music: 'Music',
     musicTitle: (title) => `“${title}”`,
     musicBy: (author) => `by ${author}`,
-    musicFor: { menu: 'menus', round: 'rounds', boss: 'bosses' },
+    musicFor: { menu: 'menus', round: 'rounds', boss: 'bosses', heroic: 'story' },
     tech: 'Built with',
     thanks: 'Thanks for playing!',
     legal: 'Plants vs. Zombies is a trademark of Electronic Arts Inc. Rebrote is a personal project not affiliated with PopCap Games or Electronic Arts.',

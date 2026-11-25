@@ -90,6 +90,12 @@ Cada efecto va en OGG Vorbis y en MP3, en mono, con el volumen igualado y sin si
 | `keystroke-1` | Kenney Interface Sounds: `switch_002.ogg` (recortado 0-60 ms, sin agudos por encima de 5000 Hz) | CC0 1.0 (Kenney, www.kenney.nl) |
 | `keystroke-2` | Kenney Interface Sounds: `switch_005.ogg` (recortado 0-60 ms, sin agudos por encima de 5000 Hz) | CC0 1.0 (Kenney, www.kenney.nl) |
 | `keystroke-3` | Kenney Interface Sounds: `switch_007.ogg` (recortado 0-60 ms, sin agudos por encima de 5000 Hz) | CC0 1.0 (Kenney, www.kenney.nl) |
+| `cinePage` | Kenney RPG Audio: `bookFlip2.ogg` | CC0 1.0 (Kenney, www.kenney.nl) |
+| `cineGlitch` | Kenney Interface Sounds: `glitch_002.ogg` | CC0 1.0 (Kenney, www.kenney.nl) |
+| `cineCharge` | Kenney Sci-Fi Sounds: `forceField_001.ogg` (recortado 0-1400 ms) | CC0 1.0 (Kenney, www.kenney.nl) |
+| `cinePrint` | Kenney Sci-Fi Sounds: `computerNoise_001.ogg` (recortado 0-2400 ms) | CC0 1.0 (Kenney, www.kenney.nl) |
+| `cinePowerDown` | Kenney Digital Audio: `phaserDown2.ogg` + Kenney Sci-Fi Sounds: `lowFrequency_explosion_000.ogg` (recortado 0-900 ms, -14 dB) | CC0 1.0 (Kenney, www.kenney.nl) |
+| `cineDoor` | Kenney RPG Audio: `doorClose_2.ogg` | CC0 1.0 (Kenney, www.kenney.nl) |
 | `button` | Kenney Interface Sounds: `select_001.ogg` | CC0 1.0 (Kenney, www.kenney.nl) |
 | `purchase` | Kenney RPG Audio: `handleCoins.ogg` (recortado 0-520 ms, -2 dB) + Kenney Interface Sounds: `confirmation_002.ogg` (+160 ms) | CC0 1.0 (Kenney, www.kenney.nl) |
 | `powerUpgrade` | Kenney Interface Sounds: `maximize_008.ogg` + Kenney RPG Audio: `handleCoins2.ogg` (-8 dB) | CC0 1.0 (Kenney, www.kenney.nl) |

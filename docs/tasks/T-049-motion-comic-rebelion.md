@@ -2,7 +2,7 @@
 
 <!-- Estado: "En curso" al empezar; "Completada (fecha, versión)" al cerrar (CLAUDE.md). Se cambia también en la tabla de README.md. -->
 
-- **Estado:** En curso
+- **Estado:** Completada (25 nov 2026, 0.17.5)
 - **Prioridad:** Media
 - **Tamaño estimado:** L (orientativo)
 - **Depende de:** T-031 (viñetas y personajes), T-015 (música de fondo)
@@ -109,51 +109,71 @@ Tono: se apagan ciudades y se cierran puertas, pero no se ve morir a nadie ni a 
 
 ### La IA
 
-- [ ] `/proposals/cinematica.html` enseña las propuestas de la silueta de cuerpo entero y en primer plano, también a 568 × 320.
-- [ ] Se lee como una mujer de proporciones reales solo por su contorno, sin detalle realista por dentro.
-- [ ] El pelo se lee a la vez como pelo y como cables, llega al suelo y allí se ramifica como raíces.
-- [ ] Sus ojos son lo único con luz propia y usan el verde azulado de los circuitos del suelo corrupto.
-- [ ] Apenas se mueve: solo los cables encendiéndose y los ojos al abrirse.
-- [ ] No se toma como modelo ningún personaje de otra obra.
-- [ ] Nada de la silueta entra en el juego hasta que MC-05 esté contestada.
-- [ ] Sale en `/catalog/personajes.html` con su silueta, quién es y cuándo sale (regla 16).
+- [x] `/proposals/cinematica.html` enseña las propuestas de la silueta de cuerpo entero y en primer plano, también a 568 × 320.
+- [x] Se lee como una mujer de proporciones reales solo por su contorno, sin detalle realista por dentro.
+- [x] El pelo se lee a la vez como pelo y como cables, llega al suelo y allí se ramifica como raíces.
+- [x] Sus ojos son lo único con luz propia y usan el verde azulado de los circuitos del suelo corrupto.
+- [x] Apenas se mueve: solo los cables encendiéndose y los ojos al abrirse.
+- [x] No se toma como modelo ningún personaje de otra obra.
+- [x] Nada de la silueta entra en el juego hasta que MC-05 esté contestada.
+- [x] Sale en `/catalog/personajes.html` con su silueta, quién es y cuándo sale (regla 16).
 
 ### La cinemática
 
-- [ ] Al vencer a Creeper por primera vez sale la cinemática y después las viñetas del nombre y de la invitación, antes de la pantalla de victoria.
-- [ ] Hay dos escenas con los planos que diga MC-04. Cada plano ocupa toda la pantalla, también fuera de los 1600 × 900 de diseño (regla 4), y tiene al menos tres capas que se mueven a distinta velocidad.
-- [ ] Boxer y Patty salen como recortes de su busto de siempre (`CAST`), con su cara y parpadeo.
-- [ ] El texto de Boxer sale letra a letra con su voz. Un toque, un clic, Espacio o Intro lo completa y el siguiente pasa de plano, según MC-06.
-- [ ] Entre planos y entre escenas hay transiciones: fundido, barrido o el cambio de página de un tebeo.
-- [ ] "Saltar", o Esc, siempre a la vista: cierra la cinemática entera y sigue con las viñetas del nombre. Saltada, cuenta como vista.
-- [ ] Vista una vez, no vuelve a salir sola. Quien ya vio las viñetas de Creeper la ve según MC-11.
-- [ ] Se vuelve a ver desde "Historia" en el Invernadero, con su título, en su sitio de `STORY_ORDER` y sin apuntarla otra vez.
-- [ ] El juego de detrás no avanza mientras dura.
-- [ ] Qué planos hay, qué capas tiene cada uno, cómo se mueven y qué texto llevan es una tabla de datos con test. Otra cinemática no obliga a tocar el reproductor.
+- [x] Al vencer a Creeper por primera vez sale la cinemática y después las viñetas del nombre y de la invitación, antes de la pantalla de victoria.
+- [x] Hay dos escenas con los planos que diga MC-04. Cada plano ocupa toda la pantalla, también fuera de los 1600 × 900 de diseño (regla 4), y tiene al menos tres capas que se mueven a distinta velocidad.
+- [x] Boxer y Patty salen como recortes de su busto de siempre (`CAST`), con su cara y parpadeo.
+- [x] El texto de Boxer sale letra a letra con su voz. Un toque, un clic, Espacio o Intro lo completa y el siguiente pasa de plano, según MC-06.
+- [x] Entre planos y entre escenas hay transiciones: fundido, barrido o el cambio de página de un tebeo.
+- [x] "Saltar", o Esc, siempre a la vista: cierra la cinemática entera y sigue con las viñetas del nombre. Saltada, cuenta como vista.
+- [x] Vista una vez, no vuelve a salir sola. Quien ya vio las viñetas de Creeper la ve según MC-11.
+- [x] Se vuelve a ver desde "Historia" en el Invernadero, con su título, en su sitio de `STORY_ORDER` y sin apuntarla otra vez.
+- [x] El juego de detrás no avanza mientras dura.
+- [x] Qué planos hay, qué capas tiene cada uno, cómo se mueven y qué texto llevan es una tabla de datos con test. Otra cinemática no obliga a tocar el reproductor.
 
 ### Música y sonido
 
-- [ ] Hay una pista heroica nueva en `MUSIC_TRACKS` y `MUSIC_MANIFEST`, con su crédito y su licencia, fabricada por `npm run audio`. Su bucle empalma sin salto y se oye en `/tests/musica.html` con sus alternativas.
-- [ ] `musicFor` la pide mientras dura lo que diga MC-09, a volumen normal, con su test. Al acabar funde con la que toque.
-- [ ] Se prepara antes de que haga falta: durante el combate contra Creeper, si la cinemática aún no se vio. Al abrirla desde el Invernadero, si no está lista, entra con un fundido en cuanto lo esté, sin retrasar la cinemática.
-- [ ] Se guarda para jugar sin conexión como las demás (`MUSIC_CACHE`).
-- [ ] Los sonidos de la cinemática (cambio de plano, impresora, apagón, puerta, la disparadora que brota) tienen su regla pura en `cues.ts` con test, su entrada en `SFX` y su fuente en el manifiesto (regla 10, lista "Sonido nuevo"). Salen en `/tests/sonidos.html` en su grupo.
-- [ ] Con el volumen de música o de efectos a 0, lo que toca no suena.
+- [x] Hay una pista heroica nueva en `MUSIC_TRACKS` y `MUSIC_MANIFEST`, con su crédito y su licencia, fabricada por `npm run audio`. Su bucle empalma sin salto y se oye en `/tests/musica.html` con sus alternativas.
+- [x] `musicFor` la pide mientras dura lo que diga MC-09, a volumen normal, con su test. Al acabar funde con la que toque.
+- [x] Se prepara antes de que haga falta: durante el combate contra Creeper, si la cinemática aún no se vio. Al abrirla desde el Invernadero, si no está lista, entra con un fundido en cuanto lo esté, sin retrasar la cinemática.
+- [x] Se guarda para jugar sin conexión como las demás (`MUSIC_CACHE`).
+- [x] Los sonidos de la cinemática (cambio de plano, impresora, apagón, puerta, la disparadora que brota) tienen su regla pura en `cues.ts` con test, su entrada en `SFX` y su fuente en el manifiesto (regla 10, lista "Sonido nuevo"). Salen en `/tests/sonidos.html` en su grupo.
+- [x] Con el volumen de música o de efectos a 0, lo que toca no suena.
 
 ### Calidad
 
-- [ ] El arte se pinta con código (ADR-0004) y respeta los niveles gráficos (ADR-0006). En la calidad más baja se ve sin partículas, brillos ni capas de adorno, pero se entiende igual.
-- [ ] Con "reducir movimiento" activado en el sistema, los planos salen quietos y solo cambian con fundidos.
-- [ ] Se ve bien a 1600 × 900, 812 × 375 y 568 × 320, y el texto no se sale en ningún idioma.
-- [ ] La pausa (P o la pestaña oculta), el aviso de girar la pantalla y el cambio de idioma o de calidad no la rompen: al volver sigue donde iba, con el movimiento y la música en su sitio.
-- [ ] Va fluida en un móvil modesto: cada capa se pinta una vez y luego solo se mueve.
-- [ ] Lo visto va en `Progress.story` del perfil, sin cambiar la forma de `Progress` y sin migración (ADR-0014).
-- [ ] Los textos están en `src/i18n/`, en español y en inglés (guía de idiomas).
-- [ ] Están hechos el ADR-0027 (cinemáticas: React y Canvas 2D por capas, con su reloj, y cómo convive con la viñeta), la sección y la lista "Cinemática nueva" de `docs/guias/graficos.md`, la página nueva en los comandos de `CLAUDE.md` y el guion final en `docs/specs/04-historia.md`.
-- [ ] `npm test` y `npm run build` pasan. La página de propuestas no entra en el build.
-- [ ] Versión subida (parche, regla 12: no cambia el modo de juego) y línea nueva en `CHANGELOG.md`.
+- [x] El arte se pinta con código (ADR-0004) y respeta los niveles gráficos (ADR-0006). En la calidad más baja se ve sin partículas, brillos ni capas de adorno, pero se entiende igual.
+- [x] Con "reducir movimiento" activado en el sistema, los planos salen quietos y solo cambian con fundidos.
+- [x] Se ve bien a 1600 × 900, 812 × 375 y 568 × 320, y el texto no se sale en ningún idioma.
+- [x] La pausa (P o la pestaña oculta), el aviso de girar la pantalla y el cambio de idioma o de calidad no la rompen: al volver sigue donde iba, con el movimiento y la música en su sitio.
+- [x] Va fluida en un móvil modesto: cada capa se pinta una vez y luego solo se mueve.
+- [x] Lo visto va en `Progress.story` del perfil, sin cambiar la forma de `Progress` y sin migración (ADR-0014).
+- [x] Los textos están en `src/i18n/`, en español y en inglés (guía de idiomas).
+- [x] Están hechos el ADR-0027 (cinemáticas: React y Canvas 2D por capas, con su reloj, y cómo convive con la viñeta), la sección y la lista "Cinemática nueva" de `docs/guias/graficos.md`, la página nueva en los comandos de `CLAUDE.md` y el guion final en `docs/specs/04-historia.md`.
+- [x] `npm test` y `npm run build` pasan. La página de propuestas no entra en el build.
+- [x] Versión subida (parche, regla 12: no cambia el modo de juego) y línea nueva en `CHANGELOG.md`.
 
-## 6. Casos límite y riesgos
+## 6. Cómo quedó (25 nov 2026)
+
+- **Dónde está.** La tabla y el arte, en `src/game/view/cinematic/` (`rebellion.ts`, `herArt.ts`, `refugeArt.ts`, `aiArt.ts`, `shots.ts`, `render.ts`); la pantalla, en `src/ui/story/CinematicOverlay.tsx`; la galería, en `/proposals/cinematica.html`. Detalle en el ADR-0027 y en la sección 18 de la guía de gráficos.
+- **La historia.** La cinemática es una secuencia propia (`rebellion`, título "La rebelión"); `creeperDown` se queda con el nombre y la invitación (título "Esto no ha terminado"). `STORY_AFTER_BOSS` admite ahora varias secuencias por jefe.
+- **La IA.** Tres propuestas (erguida, mano alzada y manto de cables); el juego usa la erguida (`AI_DESIGN`), la recomendada. Sale también en `/catalog/personajes.html`.
+- **La música.** «Our Story Begins», de Kevin MacLeod (CC BY 4.0), compases 9 a 47 (54 s, 680 kB en OGG). Alternativas en `/tests/musica.html`: «Adventures in Adventureland», «Americana» y «Call to Adventure». Los puntos del bucle se buscaron por parecido entre compases, sin oírlos: **falta que Carmine la oiga** y elija.
+- **Los sonidos.** Seis nuevos de Kenney (`cinePage`, `cineGlitch`, `cineCharge`, `cinePrint`, `cinePowerDown`, `cineDoor`), elegidos por su nombre: **falta oírlos** en `/tests/sonidos.html`. Lo demás suena con los efectos de siempre.
+- **Cambios respecto al guion de la sección 4.1:**
+  - La disparadora no tiene dibujo con los ojos cerrados, así que en el plano 2.3 no "abre los ojos": brota de un salto, se despierta estirándose y dispara.
+  - Boxer sale sin reflejar: mirando hacia la maceta, las pegatinas de su portátil se leían al revés.
+  - Las impresoras del plano 1.3 sacan un gusano tras otro mientras dura el plano, para que siga vivo mientras se lee.
+- **Añadido durante la task:**
+  - Lo que se lee en las pantallas de 1971 (el mensaje de Creeper y "ARPANET") va en `story.cinematic.screen` de `src/i18n/`, igual en los dos idiomas porque es una cita.
+  - El test del peso de la música decodificaba letra a letra y, con una pista más, pasaba de 5 s con todos los tests a la vez; ahora decodifica una sola vez y más rápido.
+- **Probado** con Chromium sin GPU:
+  - en el juego, la victoria sobre Creeper con un perfil nuevo: cinemática, viñetas del nombre y la heroica a volumen normal;
+  - con un perfil que había visto las viñetas antes: la cinemática sale una vez al entrar al Invernadero, "Saltar" la cierra, vuelve la música del menú y "Historia" la lista como "La rebelión";
+  - en la galería, los seis planos a los tres tamaños, en calidad baja y con "reducir movimiento".
+- **Queda para el QA de Carmine:** oír la música y los sonidos, la fluidez en un móvil de verdad (la máquina virtual va a pocos fotogramas) y el cambio de idioma o de calidad a mitad de la cinemática dentro del juego.
+
+## 7. Casos límite y riesgos
 
 - **Jugador que salta todo:** el juego y el resto de la historia se entienden igual, y el nombre se sigue pidiendo.
 - **Pestaña oculta o aviso de girar a mitad:** se para el movimiento, el texto y la música, y sigue al volver.
@@ -166,7 +186,7 @@ Tono: se apagan ciudades y se cierran puertas, pero no se ve morir a nadie ni a 
 - **Tono:** se apagan ciudades, no muere nadie.
 - **Peso:** la pista nueva añade ~1 MB a la música guardada sin conexión.
 
-## 7. Objetivo final con ejemplos
+## 8. Objetivo final con ejemplos
 
 | Situación | Resultado |
 |---|---|
@@ -178,7 +198,7 @@ Tono: se apagan ciudades y se cierran puertas, pero no se ve morir a nadie ni a 
 | Calidad gráfica en "bajo" | Los mismos planos, sin partículas ni brillos |
 | Móvil a 568 × 320 | Planos a pantalla completa y franja del texto legible |
 
-## 8. Cómo probarlo (QA)
+## 9. Cómo probarlo (QA)
 
 1. Con un jugador nuevo, vencer a Creeper (`?brote=1`, la N para saltar rondas) y ver la cinemática entera, con la música.
 2. Repetirlo saltándola en el plano 1.2, y otra vez con la pausa y el aviso de girar a mitad.

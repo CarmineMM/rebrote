@@ -35,7 +35,7 @@ interface CatalogTrack {
   options: CatalogOption[];
 }
 
-const NAMES: Record<MusicTrackId, string> = { menu: 'Menú', round: 'Ronda', boss: 'Jefe' };
+const NAMES: Record<MusicTrackId, string> = { menu: 'Menú', round: 'Ronda', boss: 'Jefe', heroic: 'Historia (heroica)' };
 const CHOICES_KEY = 'rebrote.musica.elecciones';
 /** Cuanto antes del final empieza "Empalme": se oyen esos segundos, la vuelta y lo que sigue. */
 const SEAM_LEAD_S = 5;

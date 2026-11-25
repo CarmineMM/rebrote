@@ -1,7 +1,9 @@
-import { useState, type CSSProperties } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { createRoot } from 'react-dom/client';
 import { OUTBREAKS } from '../../game/config/balance';
 import { CAST } from '../../game/view/characters/cast';
+import { AI_COLORS, AI_DESIGN, AI_HEIGHT, paintAiEyes, type AiView } from '../../game/view/cinematic/aiArt';
+import { REBELLION } from '../../game/view/cinematic/rebellion';
 import { EXPRESSIONS, type CharacterId, type Expression } from '../../game/view/characters/design';
 import { portraitUrl } from '../../game/view/characters/portraitImage';
 import { setLanguage, text } from '../../i18n';
@@ -142,6 +144,95 @@ function Person({ id }: { id: CharacterId }) {
   );
 }
 
+/**
+ * La IA (T-049): no habla en viñetas, asi que no es un `CharacterId` ni tiene retrato; sale en la cinematica de la
+ * rebelion, en silueta. Aqui, su silueta de espaldas y de frente con la propuesta que usa el juego (`AI_DESIGN`).
+ */
+const AI_PERSON = {
+  role: 'La IA, el jefe final',
+  facts: [
+    'Una IA que se creó para proteger de los virus, los aprendió todos y decidió que el fallo era la humanidad. Recrea en el mundo real los virus de la historia.',
+    'Una mujer de figura realista, dibujada solo como silueta oscura. Su pelo largo son cables que caen hasta el suelo y echan raíces: el reflejo oscuro de las plantas.',
+    'Ojos de luz verde azulada, el color de los circuitos del suelo corrupto. Tiene cuerpo físico y apenas se mueve.',
+    'Se revela por etapas: en silueta cuando Boxer cuenta la rebelión; más cerca cuando empiece el viaje; entera en el combate final.',
+    'Aún no tiene nombre (H-03): Boxer la llama «ella».',
+  ],
+} as const;
+
+function AiSilhouette({ view }: { view: AiView }) {
+  const canvas = useRef<HTMLCanvasElement>(null);
+  useEffect(() => {
+    const element = canvas.current;
+    const ctx = element?.getContext('2d');
+    if (!element || !ctx) return;
+    const width = 150;
+    const height = 240;
+    element.width = width * 2;
+    element.height = height * 2;
+    ctx.scale(2, 2);
+    const back = ctx.createRadialGradient(width / 2, height * 0.4, 4, width / 2, height * 0.4, height * 0.7);
+    back.addColorStop(0, '#2f6a58');
+    back.addColorStop(1, '#0b1216');
+    ctx.fillStyle = back;
+    ctx.fillRect(0, 0, width, height);
+    const scale = (height * 0.86) / AI_HEIGHT;
+    ctx.translate(width / 2, height * 0.93);
+    ctx.scale(scale, scale);
+    const look = { rim: true, glows: true };
+    AI_DESIGN.paint(ctx, view, look);
+    if (view === 'front') paintAiEyes(ctx, 1, look);
+  }, [view]);
+  return <canvas ref={canvas} style={{ width: 150, height: 240, borderRadius: 12 }} />;
+}
+
+function AiEntry() {
+  const shots = REBELLION.shots.filter((shot) => shot.layers.some((layer) => layer.art.startsWith('ai')));
+  return (
+    <article className="cat-person" id="ai" style={{ '--person': AI_COLORS.light } as CSSProperties}>
+      <div className="cat-person-photo" style={{ display: 'flex', gap: 10 }}>
+        <AiSilhouette view="back" />
+        <AiSilhouette view="front" />
+      </div>
+      <div className="cat-detail">
+        <h2>
+          La IA
+          <small>{AI_PERSON.role}</small>
+        </h2>
+        <ul>
+          {AI_PERSON.facts.map((fact) => (
+            <li key={fact}>{fact}</li>
+          ))}
+        </ul>
+        <h3>Ficha técnica</h3>
+        <dl className="cat-facts">
+          <dt>Dibujo</dt>
+          <dd>
+            {AI_DESIGN.label} (<code>{AI_DESIGN.id}</code>, en <code>AI_DESIGN</code>)
+          </dd>
+          <dt>Colores</dt>
+          <dd>
+            {(['body', 'cable', 'light'] as const).map((key) => (
+              <span key={key}>
+                <span className="cat-swatch" style={{ background: AI_COLORS[key] }} />
+                <code>{AI_COLORS[key]}</code>{' '}
+              </span>
+            ))}
+          </dd>
+          <dt>Sale</dt>
+          <dd>
+            En la cinemática de la rebelión, al vencer a Creeper por primera vez (T-049): planos {shots.map((shot) => shot.id).join(' y ')}.
+          </dd>
+          <dt>Habla</dt>
+          <dd>No: no tiene viñetas ni voz.</dd>
+        </dl>
+        <p className="cat-dim">
+          Sus tres propuestas y la cinemática entera a 1600 × 900, 812 × 375 y 568 × 320, en <a href="/proposals/cinematica.html">proposals/cinematica</a>.
+        </p>
+      </div>
+    </article>
+  );
+}
+
 function CharacterCatalog() {
   const ids = Object.keys(CAST) as CharacterId[];
   return (
@@ -155,6 +246,7 @@ function CharacterCatalog() {
         {ids.map((id) => (
           <Person key={id} id={id} />
         ))}
+        <AiEntry />
       </main>
     </div>
   );

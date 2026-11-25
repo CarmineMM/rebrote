@@ -8,7 +8,18 @@ const FILES = Object.fromEntries(
   ).map(([path, data]) => [path.split('/').pop() ?? path, data]),
 );
 
-const bytesOf = (data: string) => Uint8Array.from(atob(data.split(',')[1]), (c) => c.charCodeAt(0));
+/** Los bytes de un archivo, decodificados una vez (con todos los tests a la vez, decodificar letra a letra pasaba de 5 s). */
+const decoded = new Map<string, Uint8Array>();
+const bytesOf = (data: string): Uint8Array => {
+  let bytes = decoded.get(data);
+  if (!bytes) {
+    const raw = atob(data.split(',')[1]);
+    bytes = new Uint8Array(raw.length);
+    for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
+    decoded.set(data, bytes);
+  }
+  return bytes;
+};
 
 /**
  * Muestras de un OGG Vorbis: la posicion ("granule") de su ultima pagina. Cada pagina empieza por "OggS" y lleva la

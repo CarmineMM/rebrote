@@ -2,7 +2,7 @@ import * as Phaser from 'phaser';
 import { EventBus, GameEvents, type MatchRequest, type MenuPlace } from '../EventBus';
 import { createAmbience, type Ambience } from '../view/ambience';
 import { Effects } from '../view/effects';
-import { bossCutouts, nurseryPortraits } from '../view/portrait';
+import { bossCutouts, cinematicCutouts, nurseryPortraits } from '../view/portrait';
 import { QUALITY_PROFILES, type QualityLevel, type QualityProfile } from '../view/quality';
 import { createRefuge } from '../view/refuge';
 import { registerRefugeTextures, registerTextures } from '../view/textures';
@@ -110,6 +110,8 @@ export class TitleScene extends Phaser.Scene {
     const onStateRequested = () => {
       EventBus.emit(GameEvents.routeArt, bossCutouts(this));
       EventBus.emit(GameEvents.nurseryArt, nurseryPortraits(this));
+      // Y lo que sale en la cinematica de la rebelion (T-049), que se vuelve a ver desde el Invernadero.
+      EventBus.emit(GameEvents.cinematicArt, cinematicCutouts(this));
     };
     EventBus.on(GameEvents.stateRequested, onStateRequested);
     // Portada <-> Invernadero (T-019): fundido, y la escena vuelve a empezar en el otro sitio.

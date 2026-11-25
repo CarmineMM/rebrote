@@ -95,6 +95,14 @@ export type SfxId =
   | 'voicePatty'
   // Tours (T-013): el teclado que suena mientras sale la frase del bocadillo
   | 'keystroke'
+  // Cinematica de la rebelion (T-049): pasar pagina, la pantalla que falla, los cables que se encienden, la impresora,
+  // el apagon y la puerta del refugio
+  | 'cinePage'
+  | 'cineGlitch'
+  | 'cineCharge'
+  | 'cinePrint'
+  | 'cinePowerDown'
+  | 'cineDoor'
   // Menus
   | 'button';
 
@@ -221,6 +229,13 @@ export const SFX: Readonly<Record<SfxId, SfxSpec>> = {
   voiceBoxer: voice(0.4),
   voicePatty: voice(0.36),
   keystroke: keys(0.16),
+  // La cinematica para el juego: van por el canal de los menus, como las voces de las viñetas.
+  cinePage: ui(0.6),
+  cineGlitch: ui(0.5),
+  cineCharge: ui(0.55),
+  cinePrint: ui(0.45),
+  cinePowerDown: ui(0.6),
+  cineDoor: ui(0.7),
   button: ui(0.45, 2, 40),
   purchase: ui(0.65, 1, 120),
   powerUpgrade: ui(0.6, 1, 120),

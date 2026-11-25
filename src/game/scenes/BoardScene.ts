@@ -120,7 +120,7 @@ import { medalTier, showsMedal } from '../view/levelMedal';
 import { MineView, mineAreaColor, mineScale } from '../view/mineView';
 import { WallView, wallScale } from '../view/wallView';
 import { PlantView, plantPlacement } from '../view/plantView';
-import { portraitUrl, type PortraitSubject } from '../view/portrait';
+import { cinematicCutouts, portraitUrl, type PortraitSubject } from '../view/portrait';
 import { QUALITY_PROFILES, type QualityLevel, type QualityProfile } from '../view/quality';
 import { SpitView } from '../view/spitView';
 import { VerseView } from '../view/verseView';
@@ -526,6 +526,8 @@ export class BoardScene extends Phaser.Scene {
       this.applyPause(this.wantPaused);
     });
 
+    // Lo que sale en la cinematica de la rebelion, al vencer a Creeper (T-049): recortado con las texturas del tablero.
+    EventBus.emit(GameEvents.cinematicArt, cinematicCutouts(this));
     EventBus.emit(GameEvents.sceneReady, this.scene.key);
     // Partida nueva: aviso de lo que trae la ronda 1 (T-009). Una partida que se continua ya lo dio; una cargada (T-011)
     // vuelve a sacar el que no se habia aceptado.

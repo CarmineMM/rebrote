@@ -1,11 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import { LANGUAGES, text } from '../../i18n';
 import { NICKNAME } from '../../game/playerName';
+import { STORY_MUSIC } from '../../game/config/music';
 import {
+  CINEMATIC_STORIES,
   STORIES,
+  STORY_AFTER_BOSS,
   STORY_ORDER,
   STORY_PROMPTS,
   asksName,
+  isCinematic,
   loreOutbreak,
   loreStory,
   nameAfterStory,
@@ -13,6 +17,7 @@ import {
   stepText,
   storiesAt,
   storyScript,
+  storyMusicOf,
   storySteps,
   storyTitle,
   type StoryId,
@@ -30,18 +35,23 @@ describe('cuando salen las viñetas (T-031)', () => {
     expect(storiesAt({ kind: 'match', outbreak: 'creeper', round: 0, phase: 'attack' }, [])).toEqual([]);
   });
 
-  it('al vencer a Creeper por primera vez, Boxer cuenta lo que pasa; la segunda vez, nada', () => {
-    expect(storiesAt({ kind: 'victory', outbreak: 'creeper' }, ['opening'])).toEqual(['creeperDown']);
-    expect(storiesAt({ kind: 'victory', outbreak: 'creeper' }, ['opening', 'creeperDown', 'pattyGreenhouse'])).toEqual([]);
+  it('al vencer a Creeper por primera vez, la cinematica de la rebelion y despues lo que cuenta Boxer; la segunda vez, nada', () => {
+    expect(storiesAt({ kind: 'victory', outbreak: 'creeper' }, ['opening'])).toEqual(['rebellion', 'creeperDown']);
+    expect(storiesAt({ kind: 'victory', outbreak: 'creeper' }, ['opening', 'rebellion', 'creeperDown', 'pattyGreenhouse'])).toEqual([]);
   });
 
   it('en el Invernadero sale Patty la primera vez', () => {
-    expect(storiesAt({ kind: 'greenhouse', defeated: ['creeper'] }, ['creeperDown'])).toEqual(['pattyGreenhouse']);
-    expect(storiesAt({ kind: 'greenhouse', defeated: ['creeper'] }, ['creeperDown', 'pattyGreenhouse'])).toEqual([]);
+    expect(storiesAt({ kind: 'greenhouse', defeated: ['creeper'] }, ['rebellion', 'creeperDown'])).toEqual(['pattyGreenhouse']);
+    expect(storiesAt({ kind: 'greenhouse', defeated: ['creeper'] }, ['rebellion', 'creeperDown', 'pattyGreenhouse'])).toEqual([]);
   });
 
   it('quien vencio a Creeper sin ver lo de Boxer lo ve al entrar al Invernadero, antes de Patty (Y-06)', () => {
-    expect(storiesAt({ kind: 'greenhouse', defeated: ['creeper'] }, [])).toEqual(['creeperDown', 'pattyGreenhouse']);
+    expect(storiesAt({ kind: 'greenhouse', defeated: ['creeper'] }, [])).toEqual(['rebellion', 'creeperDown', 'pattyGreenhouse']);
+  });
+
+  it('quien vio las viñetas de Creeper antes de la cinematica la ve una vez al entrar al Invernadero (T-049, MC-11)', () => {
+    expect(storiesAt({ kind: 'greenhouse', defeated: ['creeper'] }, ['creeperDown', 'pattyGreenhouse'])).toEqual(['rebellion']);
+    expect(storiesAt({ kind: 'greenhouse', defeated: ['creeper'] }, ['rebellion', 'creeperDown', 'pattyGreenhouse'])).toEqual([]);
   });
 
   it('sin el Invernadero abierto no sale nada', () => {
@@ -82,7 +92,7 @@ describe('Boxer cuenta que fue cada jefe antes de su combate (T-032, VT-04)', ()
     expect(stepText(text('en'), 'lore:creeper', step, 'Ana')).toBe(text('en').story.lore.creeper.line);
     expect(storyTitle(text('es'), 'lore:creeper')).toBe('El Creeper de verdad');
     expect(storyTitle(text('en'), 'lore:creeper')).toBe('The real Creeper');
-    expect(storyTitle(text('es'), 'creeperDown')).toBe('Lo que pasó');
+    expect(storyTitle(text('es'), 'creeperDown')).toBe('Esto no ha terminado');
   });
 });
 
@@ -109,7 +119,7 @@ describe('el giro: la historia del brote 4 (T-043)', () => {
   it('al vencer a Morris por primera vez sale el final; la segunda vez, nada; si quedo sin ver, en el Invernadero', () => {
     expect(storiesAt({ kind: 'victory', outbreak: 'morris' }, [])).toEqual(['morrisDown']);
     expect(storiesAt({ kind: 'victory', outbreak: 'morris' }, ['morrisDown'])).toEqual([]);
-    const seen = ['creeperDown', 'pattyGreenhouse'];
+    const seen = ['rebellion', 'creeperDown', 'pattyGreenhouse'];
     expect(storiesAt({ kind: 'greenhouse', defeated: ['creeper', 'elkCloner', 'brain', 'morris'] }, seen)).toEqual(['morrisDown']);
     expect(storiesAt({ kind: 'greenhouse', defeated: ['creeper', 'elkCloner', 'brain'] }, seen)).toEqual([]);
   });
@@ -118,7 +128,7 @@ describe('el giro: la historia del brote 4 (T-043)', () => {
     const order = [...STORY_ORDER];
     expect(order.slice(-4)).toEqual(['morrisOpening', 'morrisDebate', 'lore:morris', 'morrisDown']);
     expect(order.indexOf('morrisOpening')).toBeGreaterThan(order.indexOf('lore:brain'));
-    expect(order.slice(0, 4)).toEqual(['opening', 'lore:creeper', 'creeperDown', 'pattyGreenhouse']);
+    expect(order.slice(0, 5)).toEqual(['opening', 'lore:creeper', 'rebellion', 'creeperDown', 'pattyGreenhouse']);
   });
 
   it('Boxer y Patty hablan en las tres; en la de mitad Patty duda', () => {
@@ -151,13 +161,14 @@ describe('el giro: la historia del brote 4 (T-043)', () => {
 describe('las viñetas de cada secuencia (T-031)', () => {
   it('el guion del arranque: Boxer abre y cuenta, y Patty se presenta en el Invernadero', () => {
     expect(STORIES.opening.map((step) => step.speaker)).toEqual(['boxer']);
-    expect(STORIES.creeperDown.map((step) => step.speaker)).toEqual(['boxer', 'boxer', 'boxer', 'boxer', 'boxer']);
+    expect(STORIES.rebellion.map((step) => step.speaker)).toEqual(['boxer', 'boxer', 'boxer', 'boxer', 'boxer', 'boxer']);
+    expect(STORIES.creeperDown.map((step) => step.speaker)).toEqual(['boxer', 'boxer']);
     expect(STORIES.pattyGreenhouse.map((step) => step.speaker)).toEqual(['patty']);
   });
 
   it('sin nadie que pida el nombre (T-033), la viñeta que lo pregunta se salta y la secuencia sigue', () => {
-    expect(storySteps('creeperDown', []).map((step) => step.id)).toEqual(['creeper', 'ai', 'chips', 'onward']);
-    expect(storySteps('creeperDown', ['name']).map((step) => step.id)).toEqual(['creeper', 'ai', 'chips', 'name', 'onward']);
+    expect(storySteps('creeperDown', []).map((step) => step.id)).toEqual(['onward']);
+    expect(storySteps('creeperDown', ['name']).map((step) => step.id)).toEqual(['name', 'onward']);
   });
 
   it('en el Invernadero se pueden volver a ver las ya vistas, en el orden de la historia (Y-05)', () => {
@@ -169,8 +180,9 @@ describe('las viñetas de cada secuencia (T-031)', () => {
 });
 
 describe('Boxer pregunta el nombre (T-033)', () => {
-  it('lo pregunta en la viñeta 4 de la caida de Creeper, despues de explicar el mundo (NJ-01)', () => {
-    expect(storySteps('creeperDown', STORY_PROMPTS).map((step) => step.id)).toEqual(['creeper', 'ai', 'chips', 'name', 'onward']);
+  it('lo pregunta tras la caida de Creeper, despues de explicar el mundo en la cinematica (NJ-01, T-049)', () => {
+    expect(storySteps('creeperDown', STORY_PROMPTS).map((step) => step.id)).toEqual(['name', 'onward']);
+    expect(STORY_ORDER.indexOf('rebellion')).toBe(STORY_ORDER.indexOf('creeperDown') - 1);
     expect(storySteps('creeperDown', STORY_PROMPTS).find((step) => step.prompt === 'name')?.id).toBe('name');
     expect(STORY_ORDER.filter(asksName)).toEqual(['creeperDown']);
   });
@@ -242,5 +254,47 @@ describe('el texto sale letra a letra (T-031, Y-07)', () => {
     expect(glyphs('ñandú 🌱')).toHaveLength(7);
     expect(typingDuration('🌱🌱')).toBe(TYPEWRITER.msPerChar);
     expect(typingDuration('')).toBe(0);
+  });
+});
+
+describe('la cinematica de la rebelion (T-049)', () => {
+  it('es una secuencia propia, la unica cinematica, y va justo antes de las viñetas del nombre', () => {
+    expect(CINEMATIC_STORIES).toEqual(['rebellion']);
+    expect(isCinematic('rebellion')).toBe(true);
+    expect(isCinematic('creeperDown')).toBe(false);
+    expect(STORY_AFTER_BOSS.creeper).toEqual(['rebellion', 'creeperDown']);
+  });
+
+  it('la narra Boxer entera, plano a plano, y no pregunta nada', () => {
+    expect(new Set(STORIES.rebellion.map((step) => step.speaker))).toEqual(new Set(['boxer']));
+    expect(asksName('rebellion')).toBe(false);
+  });
+
+  it('cada plano tiene su texto en los dos idiomas, y las frases de siempre siguen igual', () => {
+    for (const language of LANGUAGES) {
+      for (const step of STORIES.rebellion) expect(stepText(text(language), 'rebellion', step, null).length).toBeGreaterThan(20);
+      expect(storyTitle(text(language), 'rebellion').length).toBeGreaterThan(0);
+    }
+    const [creeper, ai] = STORIES.rebellion;
+    expect(stepText(text('es'), 'rebellion', creeper, null)).toMatch(/hasta que ella lo sacó de la pantalla\.$/);
+    expect(stepText(text('es'), 'rebellion', ai, null)).toMatch(/^Ella es una IA\./);
+  });
+});
+
+describe('la musica de la historia (T-049, MC-09)', () => {
+  it('cada secuencia con musica propia existe', () => {
+    for (const id of Object.keys(STORY_MUSIC)) expect(STORY_ORDER).toContain(id);
+  });
+
+  it('suena la heroica en la cinematica y en las viñetas del nombre y del Invernadero, no en las demas', () => {
+    expect(storyMusicOf(['rebellion'])).toBe('heroic');
+    expect(storyMusicOf(['creeperDown'])).toBe('heroic');
+    expect(storyMusicOf(['pattyGreenhouse', 'morrisDown', 'opening'])).toBeNull();
+  });
+
+  it('lo que saldria al vencer a Creeper por primera vez dice que se prepare la heroica; ya visto, nada', () => {
+    expect(storyMusicOf(storiesAt({ kind: 'victory', outbreak: 'creeper' }, ['opening']))).toBe('heroic');
+    expect(storyMusicOf(storiesAt({ kind: 'victory', outbreak: 'creeper' }, ['rebellion', 'creeperDown']))).toBeNull();
+    expect(storyMusicOf(storiesAt({ kind: 'victory', outbreak: 'morris' }, []))).toBeNull();
   });
 });

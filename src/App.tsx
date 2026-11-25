@@ -60,7 +60,11 @@ import { CoinHint } from './ui/tour/CoinHint';
 import { TourOverlay } from './ui/tour/TourOverlay';
 import { useTours } from './ui/tour/useTours';
 import { RemarkBubble } from './ui/story/RemarkBubble';
-import { nameAfterStory, type StoryId } from './ui/story/stories';
+import { isCinematic, nameAfterStory, storiesAt, storyMusicOf, type StoryId } from './ui/story/stories';
+import { CinematicOverlay } from './ui/story/CinematicOverlay';
+import { CINEMATICS } from './game/view/cinematic/rebellion';
+import type { CinematicCutouts } from './game/view/portrait';
+import { STORY_MUSIC, type MusicTrackId } from './game/config/music';
 import { StoryOverlay } from './ui/story/StoryOverlay';
 import { useRemark } from './ui/story/useRemark';
 import { useStory } from './ui/story/useStory';
@@ -138,6 +142,8 @@ export function App() {
   /** Jefes recortados por la portada para la ruta de brotes (T-019). */
   const [routeArt, setRouteArt] = useState<RouteArt | null>(null);
   const [nurseryArt, setNurseryArt] = useState<NurseryArt | null>(null);
+  /** Creeper, el gusano y la disparadora recortados por la escena para la cinematica de la rebelion (T-049). */
+  const [cinematicArt, setCinematicArt] = useState<CinematicCutouts | null>(null);
   const [balance, setBalance] = useState<number | null>(null);
   const [lives, setLives] = useState<number | null>(null);
   const [selected, setSelected] = useState<CardId | null>(null);
@@ -231,13 +237,41 @@ export function App() {
   // Efectos de sonido (T-014): el volumen del jugador y el sonido de los botones de los menus.
   useEffect(() => sfx.setVolume(settings.sfxVolume), [settings.sfxVolume]);
   useButtonSounds();
-  // Musica de fondo (T-015): la del menu, la de ronda o la del jefe; baja en pausa, con una viñeta y al acabar.
-  useMusic({ screen, round, halted: halted || storyOn, over: onBoard && over, volume: settings.musicVolume });
   const pause = useCallback(() => {
     if (pausable.current) setPaused(true);
   }, []);
   const fullscreen = useFullscreen(settings.fullscreen, pause);
   const needsLandscape = useNeedsLandscape();
+  /** La historia esta tapada por la pausa o por el aviso de girar: no avanza (y su musica baja). */
+  const storyCovered = (onBoard && paused && !over) || needsLandscape;
+  // La musica de la historia (T-049, MC-09): la heroica suena con la cinematica de la rebelion y las viñetas que la siguen
+  // y, en la victoria, hasta salir del tablero; en el Invernadero vuelve la del menu. Se prepara en la ronda del jefe, o al
+  // entrar al Invernadero, si lo que va a salir la lleva.
+  const storyTrack = story.story ? (STORY_MUSIC[story.story] ?? null) : null;
+  const [storyTheme, setStoryTheme] = useState<MusicTrackId | null>(null);
+  useEffect(() => {
+    if (storyTrack) setStoryTheme(storyTrack);
+    else if (!onBoard) setStoryTheme(null);
+  }, [storyTrack, onBoard]);
+  const themeTrack = storyTrack ?? (onBoard && over ? storyTheme : null);
+  const inBossRound = round !== null && round.bossRound !== null && round.number >= round.bossRound;
+  const storyAhead = onBoard
+    ? inBossRound && round
+      ? storyMusicOf(storiesAt({ kind: 'victory', outbreak: round.outbreak }, progress.story))
+      : null
+    : screen === 'title' && inGreenhouse
+      ? storyMusicOf(storiesAt({ kind: 'greenhouse', defeated: progress.defeated }, progress.story))
+      : null;
+  // Musica de fondo (T-015): la del menu, la de ronda o la del jefe; baja en pausa, con una viñeta y al acabar.
+  useMusic({
+    screen,
+    round,
+    halted: halted || storyOn,
+    over: onBoard && over,
+    volume: settings.musicVolume,
+    story: themeTrack ? { track: themeTrack, covered: storyCovered } : null,
+    storyAhead,
+  });
   // Tours de ayuda (T-013): esperan debajo de cualquier cosa que tape el juego.
   const tours = useTours({ player: playerList.active, onBoard, round, help: settings.help, covered: halted || needsLandscape, over });
   // Comentarios de la historia (T-043): una frase en la preparacion, sin parar el juego. Esperan a que no haya nada encima,
@@ -298,6 +332,7 @@ export function App() {
     EventBus.on(GameEvents.entityInfo, setInfo);
     EventBus.on(GameEvents.routeArt, setRouteArt);
     EventBus.on(GameEvents.nurseryArt, setNurseryArt);
+    EventBus.on(GameEvents.cinematicArt, setCinematicArt);
     // Si la escena arranco antes que el HUD, que reenvie el estado.
     EventBus.emit(GameEvents.stateRequested);
     return () => {
@@ -318,6 +353,7 @@ export function App() {
       EventBus.off(GameEvents.entityInfo, setInfo);
       EventBus.off(GameEvents.routeArt, setRouteArt);
       EventBus.off(GameEvents.nurseryArt, setNurseryArt);
+      EventBus.off(GameEvents.cinematicArt, setCinematicArt);
     };
   }, []);
 
@@ -671,7 +707,24 @@ export function App() {
         />
       )}
 
-      {story.story && story.step && (
+      {story.story && story.step && isCinematic(story.story) && (
+        <CinematicOverlay
+          key={story.storyKey}
+          story={story.story}
+          step={story.step}
+          index={story.stepIndex}
+          count={story.stepCount}
+          cinematic={CINEMATICS.rebellion}
+          name={player.name}
+          quality={level}
+          art={cinematicArt}
+          hidden={storyCovered}
+          onNext={story.next}
+          onSkip={story.skip}
+        />
+      )}
+
+      {story.story && story.step && !isCinematic(story.story) && (
         <StoryOverlay
           key={story.storyKey}
           story={story.story}
@@ -681,7 +734,7 @@ export function App() {
           name={player.name}
           onAnswer={story.replaying ? undefined : answerName}
           initialName={player.name ?? ''}
-          hidden={(onBoard && paused && !over) || needsLandscape}
+          hidden={storyCovered}
           onNext={story.next}
           onSkip={story.skip}
         />
