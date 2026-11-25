@@ -296,11 +296,11 @@ export const en: Dictionary = {
       ],
       brain: [
         "Watch out: Lurkers arrive hidden and your plants can't see them from afar. Mines and ice give them away",
-        'Drop the shield on a shooter: it lasts twice as long and stops what heads for the ones behind',
+        'Lots of spitters incoming: a shield in front stops their spit',
         'Here comes the Skipper! It hops over everything: only a shield stops it',
         'Hidden armored bugs and Skippers together: mines for some, shields for others',
         'Two waves across all five lanes: put a gate in each one',
-        'Brain is getting ready! It marks sectors to hide in, and its troops come faster',
+        'Brain is getting ready! Its troops come faster. Drop the shield on a shooter: it lasts twice as long',
         'Brain is almost ready: even more troops, and even faster. Close all five lanes',
         'Brain is here! It hops over everything, hidden: only a shield stops it, and mines give it away',
       ],
