@@ -12,6 +12,7 @@ import type { FloorDesign } from './design';
  */
 export const LEGACY_FLOOR: FloorDesign = {
   id: 'legacy',
+  swatch: { light: '#9ad874', dark: '#5aa642' },
   paint(ctx, rand) {
     paintLawn(ctx, rand);
   },

@@ -6,6 +6,7 @@ import type { CannonCount, ElementType, MineElement } from '../core/plants';
 import { GARDEN, gardenSpots, gardenTier } from './gardenArt';
 import { MEDAL, MEDAL_SPROUT, showsMedal, showsSprout } from './levelMedal';
 import { SHOOTER } from './shooterShape';
+import { FLOOR } from './boardFloor';
 import {
   FLOPPY_SIZE,
   GRENADE_SIZE,
@@ -81,12 +82,13 @@ const DENSITY = 2;
 /** Donde apoyan los pies en la foto, y cuanto puede ocupar lo fotografiado (ancho y alto). */
 const FRAME = { groundY: 170, maxWidth: 182, maxHeight: 150 } as const;
 
-/** Fondo por tono: cielo arriba, una loma de cesped abajo y un halo suave del color de lo fotografiado. */
+/**
+ * Fondo por tono: cielo arriba, una loma del suelo del tablero abajo (sus colores en pequeno, `FLOOR.swatch`, T-050) y un
+ * halo suave del color de lo fotografiado.
+ */
 const BACKDROP = {
   skyTop: '#bfe6ff',
   skyBottom: '#eef9ff',
-  lawnLight: '#9ad874',
-  lawnDark: '#5aa642',
   corruptLight: '#6b4f8f',
   corruptDark: '#2b2034',
   halo: { plant: '#fff3b0', fire: '#ffc48a', ice: '#c9ecff', shield: '#f6dcae', enemy: '#c7ffd9' },
@@ -219,12 +221,13 @@ function paintBackdrop(ctx: CanvasRenderingContext2D, subject: PortraitSubject):
   ctx.fillStyle = halo;
   ctx.fillRect(0, 0, size, size);
 
-  // Loma de cesped (o de suelo corrupto, para los enemigos, que vienen de ahi).
+  // Loma del suelo del tablero (o de suelo corrupto, para los enemigos, que vienen de ahi).
   const enemy = subject.kind === 'enemy';
-  const lawn = ctx.createLinearGradient(0, FRAME.groundY - 30, 0, size);
-  lawn.addColorStop(0, enemy ? BACKDROP.corruptLight : BACKDROP.lawnLight);
-  lawn.addColorStop(1, enemy ? BACKDROP.corruptDark : BACKDROP.lawnDark);
-  ctx.fillStyle = lawn;
+  const { swatch } = FLOOR;
+  const ground = ctx.createLinearGradient(0, FRAME.groundY - 30, 0, size);
+  ground.addColorStop(0, enemy ? BACKDROP.corruptLight : swatch.light);
+  ground.addColorStop(1, enemy ? BACKDROP.corruptDark : swatch.dark);
+  ctx.fillStyle = ground;
   ctx.beginPath();
   ctx.moveTo(0, FRAME.groundY - 8);
   ctx.quadraticCurveTo(size / 2, FRAME.groundY - 34, size, FRAME.groundY - 8);
@@ -232,6 +235,21 @@ function paintBackdrop(ctx: CanvasRenderingContext2D, subject: PortraitSubject):
   ctx.lineTo(0, size);
   ctx.closePath();
   ctx.fill();
+  if (!enemy && swatch.line) {
+    // La linea del suelo (en las raices, una raiz) cruza la loma por delante de los pies.
+    ctx.lineCap = 'round';
+    for (const [color, width] of [
+      [swatch.line.outline, 7],
+      [swatch.line.body, 4],
+    ] as const) {
+      ctx.beginPath();
+      ctx.moveTo(-4, FRAME.groundY + 14);
+      ctx.bezierCurveTo(size * 0.3, FRAME.groundY + 4, size * 0.62, FRAME.groundY + 24, size + 4, FRAME.groundY + 12);
+      ctx.strokeStyle = color;
+      ctx.lineWidth = width;
+      ctx.stroke();
+    }
+  }
   if (enemy) {
     // Unas lucecitas verde neon en el suelo corrupto.
     ctx.fillStyle = 'rgba(57, 255, 136, 0.55)';

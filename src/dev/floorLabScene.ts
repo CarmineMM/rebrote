@@ -154,8 +154,8 @@ export class FloorLabScene extends Phaser.Scene {
   create(): void {
     registerTextures(this, this.quality.renderScale);
     const floor = FLOOR_DESIGNS.find((f) => f.id === this.data$.floor) ?? FLOOR_DESIGNS[0];
-    // El de siempre no cambia con las columnas: es la textura del juego.
-    const land = floor.id === 'legacy' ? TEX.land : registerFloorLand(this, floor, this.data$.grid);
+    // El de siempre no cambia con las columnas; el del juego, con las suyas, es la textura del juego (`TEX.land`).
+    const land = registerFloorLand(this, floor, floor.id === 'legacy' ? 'hinted' : this.data$.grid);
     // Los terrenos de otros suelos ya no hacen falta: fuera, que pesan.
     for (const key of this.textures.getTextureKeys()) if (key.startsWith(`${TEX.land}~`) && key !== land) this.textures.remove(key);
     const fit = () => fitCamera(this, this.quality.renderScale);

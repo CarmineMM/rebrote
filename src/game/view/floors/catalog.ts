@@ -2,14 +2,15 @@ import { BEDS_FLOOR } from './beds';
 import type { FloorDesign } from './design';
 import { LEGACY_FLOOR } from './legacy';
 import { PATIO_FLOOR } from './patio';
-import { ROOTS_FLOOR } from './roots';
+import { RECLAIMED_FLOOR } from './reclaimed';
+import { ROOTS_FLOOR, SUNNY_ROOTS_FLOOR } from './roots';
 
 /**
- * Todos los suelos del tablero (T-050): el de siempre y las tres propuestas. Solo lo usan la galeria de desarrollo
+ * Todos los suelos del tablero (T-050): el de siempre y las propuestas. Solo lo usan la galeria de desarrollo
  * (`/proposals/suelo.html`) y los tests: el juego importa solo el suyo (`FLOOR` en `boardFloor.ts`), asi que los demas no
  * entran en `npm run build`.
  */
-export const FLOOR_DESIGNS: readonly FloorDesign[] = [LEGACY_FLOOR, BEDS_FLOOR, PATIO_FLOOR, ROOTS_FLOOR];
+export const FLOOR_DESIGNS: readonly FloorDesign[] = [LEGACY_FLOOR, BEDS_FLOOR, PATIO_FLOOR, ROOTS_FLOOR, SUNNY_ROOTS_FLOOR, RECLAIMED_FLOOR];
 
 /** Nombre corto y letra de cada suelo en la galeria, y la idea en una frase. */
 export const FLOOR_NAMES: Record<string, { letter: string; name: string; idea: string }> = {
@@ -32,5 +33,15 @@ export const FLOOR_NAMES: Record<string, { letter: string; name: string; idea: s
     letter: 'C',
     name: 'Raíces',
     idea: 'Tierra lisa con la red de raíces de las plantas de Patty: una raíz por cada línea entre carriles, que se para antes de los circuitos, y un nudo en cada columna.',
+  },
+  sunnyRoots: {
+    letter: 'D',
+    name: 'Raíces al sol',
+    idea: 'La red de C con otros colores: tierra clara de arena dorada y raíces de un verde vivo, algo más gruesas, que se leen también en miniatura.',
+  },
+  reclaimed: {
+    letter: 'E',
+    name: 'Placa reconquistada',
+    idea: 'Una placa de circuito vieja tirada en el jardín y cubierta de musgo: barniz verde, un bus de cobre por cada línea entre carriles y serigrafía blanca. Lo contrario de la corrupción: aquí el jardín se come la tecnología.',
   },
 };

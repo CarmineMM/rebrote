@@ -54,11 +54,11 @@ Las tres quitan el damero y el brillo de "césped recién cortado". Ninguna camb
 | # | Pregunta | Opciones | Recomendación | Decisión |
 |---|---|---|---|---|
 | SU-01 | ¿Valen estas tres propuestas para la galería? | a) Sí; b) cambiar alguna | a) Sí. Si se cambia una, que la sustituta tampoco sea un césped con franjas: se parecería demasiado a lo de hoy | a) Sí, las tres (Carmine, 26 nov 2026) |
-| SU-02 | ¿Cuál pasa a la fase 2? | A, B, C, una mezcla o ninguna | Se decide con la galería delante. De partida, A es la más segura y C la más propia | Pendiente: con la galería delante (Carmine) |
-| SU-03 | ¿Cuánto se dibuja la casilla en el suelo? | a) Carriles y columnas, siempre a la vista; b) carriles claros y columnas apenas insinuadas | b) La casilla exacta ya se resalta al sembrar (`drawCell`). Menos cuadrícula es menos parecido | Con la galería delante: cada propuesta se pinta de las dos maneras, con un interruptor ("Columnas"), y se decide junto con SU-02. De entrada, b) (Carmine, 26 nov 2026) |
+| SU-02 | ¿Cuál pasa a la fase 2? | A, B, C, una mezcla o ninguna | Se decide con la galería delante. De partida, A es la más segura y C la más propia | D, raíces al sol: la red de C con otros colores, pedida por Carmine al ver la galería (Carmine, 26 nov 2026) |
+| SU-03 | ¿Cuánto se dibuja la casilla en el suelo? | a) Carriles y columnas, siempre a la vista; b) carriles claros y columnas apenas insinuadas | b) La casilla exacta ya se resalta al sembrar (`drawCell`). Menos cuadrícula es menos parecido | Con la galería delante: cada propuesta se pinta de las dos maneras, con un interruptor ("Columnas"). Al elegir D se quedó la de entrada, b), insinuadas (`FLOOR_GRID`); cambiarla es una línea (Carmine, 26 nov 2026) |
 | SU-04 | ¿La portada cambia a la vez? | Sí o no | Sí: es lo primero que se ve y lo que se comparte | Sí (Carmine, 26 nov 2026). Además, la portada y el tablero comparten la textura del terreno (`TEX.land`) |
 | SU-05 | ¿El Invernadero cambia? | a) Se queda con su césped liso; b) pasa al suelo nuevo | a) Ya no tiene damero. Solo se toca si desentona con la elegida | No aplica: desde T-036 el Invernadero es el refugio de noche, con suelo de tablas, y no enseña el suelo del tablero (comprobado el 26 nov 2026) |
-| SU-06 | Si el suelo elegido obliga a retocar efectos, ¿cómo se aprueba? | a) Se retoca sobre la marcha; b) lista de retoques antes de empezar la fase 2 | b) Así Carmine sabe cuánto crece la task antes de aceptarla | Pendiente: se pregunta al cerrar la fase 1, con la lista delante (Carmine) |
+| SU-06 | Si el suelo elegido obliga a retocar efectos, ¿cómo se aprueba? | a) Se retoca sobre la marcha; b) lista de retoques antes de empezar la fase 2 | b) Así Carmine sabe cuánto crece la task antes de aceptarla | Carmine pidió el reemplazo directamente al elegir D, sin lista previa. Los retoques que hicieron falta van en el seguimiento (26 nov 2026) |
 | SU-07 | ¿Se deja la pieza para un suelo por brote? | Sí o no | Sí, solo la pieza (elegir el suelo en un sitio). Los suelos de otros brotes son otra task | Sí, solo la pieza (Carmine, 26 nov 2026) |
 
 ## 5. Criterios de aceptación
@@ -72,30 +72,30 @@ Las tres quitan el damero y el brillo de "césped recién cortado". Ninguna camb
 - [x] Se puede activar el resalte de sembrar sobre una casilla, para comprobar que se lee.
 - [x] Cada propuesta se ve también en una captura reducida, del tamaño de una miniatura al compartir el juego.
 - [x] La partida, la portada y los tours siguen usando el suelo actual.
-- [ ] La fase 2 no empieza hasta que SU-02 esté respondida.
+- [x] La fase 2 no empieza hasta que SU-02 esté respondida.
 
 ### Fase 2: sustitución
 
-- [ ] El tablero de los brotes 1 a 4 usa el suelo elegido.
-- [ ] La portada lo usa también (SU-04).
-- [ ] No queda damero de dos tonos ni brillo por casilla en ninguna pantalla del juego.
-- [ ] Se distinguen de un vistazo los 5 carriles, y se sabe en qué casilla cae una planta al sembrarla.
+- [x] El tablero de los brotes 1 a 4 usa el suelo elegido.
+- [x] La portada lo usa también (SU-04).
+- [x] No queda damero de dos tonos ni brillo por casilla en ninguna pantalla del juego.
+- [x] Se distinguen de un vistazo los 5 carriles, y se sabe en qué casilla cae una planta al sembrarla.
 - [ ] Todo lo que se pinta sobre el suelo se lee igual o mejor que antes: plantas y sus variantes, minas, muro, tropas con y sin tinte, enemigos ocultos, proyectiles, sombras, marcas en el suelo, monedas, textos flotantes y resaltes de casilla.
-- [ ] Los tours siguen señalando bien las casillas.
-- [ ] Las fotos de la ficha de información y las imágenes de los tours no enseñan el suelo antiguo.
-- [ ] El camino de la izquierda, el corte delantero y el suelo corrupto de la derecha empalman con el suelo nuevo sin costuras.
+- [x] Los tours siguen señalando bien las casillas.
+- [x] Las fotos de la ficha de información y las imágenes de los tours no enseñan el suelo antiguo.
+- [x] El camino de la izquierda, el corte delantero y el suelo corrupto de la derecha empalman con el suelo nuevo sin costuras.
 
 ### Regla
 
 - [x] El suelo se elige en un solo sitio, como la forma de la disparadora, y el antiguo queda guardado para poder comparar.
-- [ ] Las reglas, las medidas del tablero, el balance y las partidas guardadas no cambian.
+- [x] Las reglas, las medidas del tablero, el balance y las partidas guardadas no cambian.
 
 ### Calidad
 
 - [ ] El arte se pinta por código (ADR-0004) y respeta los niveles gráficos (ADR-0006): en la calidad más baja el suelo se ve sin adornos y se juega igual.
-- [ ] El suelo sigue siendo una textura fija: no se añade nada que se pinte en cada fotograma.
+- [x] El suelo sigue siendo una textura fija: no se añade nada que se pinte en cada fotograma.
 - [ ] Prueba de la captura: se enseña una captura del tablero a alguien ajeno al proyecto y se le pregunta a qué juego le recuerda. Se anota la respuesta en la task.
-- [ ] `docs/guias/graficos.md` al día: cómo es el suelo, cómo se añade otro y qué hay que comprobar al cambiarlo.
+- [x] `docs/guias/graficos.md` al día: cómo es el suelo, cómo se añade otro y qué hay que comprobar al cambiarlo.
 - [x] `/proposals/suelo.html` apuntada en `CLAUDE.md`, como las demás páginas de propuestas.
 - [ ] `npm test` y `npm run build` pasan.
 - [ ] Versión subida (regla 12) y línea nueva en `CHANGELOG.md`.
@@ -148,4 +148,16 @@ Las tres quitan el damero y el brillo de "césped recién cortado". Ninguna camb
 - **Las cuatro:** las matas y flores del jardincito de los niveles con premio (T-027) se pensaron para el césped. Sobre tierra o piedra se leen bien, pero quedan como un parterre: decidir si es lo que se quiere.
 - Sin probar aún con GPU de verdad: el viento (una franja de luz que barre el suelo) y el rocío de `ambience.ts` sobre tierra y piedra, en Alto y Ultra.
 
-**Pendiente para empezar la fase 2:** SU-02 (cuál pasa), SU-03 (columnas insinuadas o a la vista) y SU-06 (cómo se aprueban los retoques), con la galería delante.
+**Propuesta D (26 nov 2026).** A Carmine le gusta C pero no sus colores: D es la misma red de raíces (`SUNNY_ROOTS_FLOOR`, la paleta en `RootsPalette` de `roots.ts`) con tierra clara de arena dorada, de una claridad parecida al césped de antes, y raíces de un verde vivo y saturado, un 30 % más gruesas. En la galería se leen bien los carriles, el resalte de sembrar, la planta fantasma, las llamas y la escarcha.
+
+**Propuesta E (26 nov 2026).** Carmine pidió una quinta, distinta de las demás, con libertad creativa: la placa reconquistada (`reclaimed.ts`). El tablero es una placa de circuito vieja tirada en el jardín, que las plantas han hecho suya: barniz verde, un bus de cobre dorado por cada línea entre carriles (los dibuja, también por claridad), una vía donde lo cruza cada columna, pistas finas detrás de lo que se apoya, serigrafía blanca y musgo, hiedra y florecillas por encima. Encaja con la historia (los virus de ordenadores antiguos) y es lo contrario del suelo corrupto: el jardín se come la tecnología, sin neón ni morado. Riesgo: que, al ser también un circuito, se confunda la parte sana con la corrupta; en la galería se distinguen por el color (verde y cobre frente a morado y neón).
+
+**Pendiente para empezar la fase 2:** SU-02 (cuál pasa: A, B, C, D o E), SU-03 (columnas insinuadas o a la vista) y SU-06 (cómo se aprueban los retoques), con la galería delante.
+
+### Fase 2 (26 nov 2026)
+
+- **D en el juego.** `FLOOR` es `SUNNY_ROOTS_FLOOR` y `FLOOR_GRID`, `hinted` (`src/game/view/boardFloor.ts`). Como el suelo va en la textura del terreno, lo usan a la vez el tablero de los cuatro brotes, la portada, el catálogo y las galerías. El césped a cuadros queda guardado en `floors/legacy.ts` y se ve en la galería.
+- **Retoques.** La foto de la ficha pintaba una loma de césped: ahora sale del suelo del juego (`swatch` de cada suelo, en `FloorDesign`), arena con una raíz verde que la cruza. El dibujo de los bocadillos de los tours (`.tour-pic`) pasa a arena con una raíz. En la galería, el terreno del juego ya no es el de siempre: cada suelo pinta el suyo (`registerFloorLand`).
+- **Comprobado en la VM sin GPU:** la portada, el tablero de una partida nueva con la historia y el primer tour (la mano señala bien la casilla), la foto de la ficha y la galería con todo encima (efectos, resaltes, 812 × 375 en Bajo). Nada más hizo falta retocar: el resalte de sembrar, las plantas, la escarcha, las llamas y el Lurker oculto se leen.
+
+**Falta para cerrar la task:** la prueba de la captura con alguien ajeno al proyecto; jugar el brote 1 entero y las tres primeras rondas del brote 3 en un equipo con GPU y en un móvil en horizontal con la calidad más baja (QA, puntos 4 a 6); mirar el viento y el rocío en Alto y Ultra; y, al cerrarla, subir la versión (parche) con su línea en `CHANGELOG.md`.

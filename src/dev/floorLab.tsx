@@ -12,12 +12,12 @@ import './shooterLab.css';
 
 /**
  * Galeria de los suelos del tablero (T-050, fase 1): `npm run dev` y abrir `/proposals/suelo.html`. El suelo de siempre y las
- * tres propuestas (A bancales, B patio y C raices) en el jardin de verdad, con lo que mas depende del suelo encima y botones
+ * propuestas (A bancales, B patio, C raices, D, C con otros colores, y E, la placa reconquistada) en el jardin de verdad, con lo que mas depende del suelo encima y botones
  * para los efectos; con las columnas insinuadas o a la vista (SU-03), a 1600 x 900, 812 x 375 y 568 x 320, y en miniatura,
  * como se ve al compartir una captura. No la ve el jugador (`npm run build` no la incluye), asi que sus textos van en
  * espanol sin `src/i18n/`.
  *
- * En la direccion: `?suelo=beds` (o `patio`, `roots`, `legacy`), `&columnas=shown`, `&tam=812` (o `568`, `1600`) y
+ * En la direccion: `?suelo=beds` (o `patio`, `roots`, `sunnyRoots`, `reclaimed`, `legacy`), `&columnas=shown`, `&tam=812` (o `568`, `1600`) y
  * `&calidad=low` (o `medium`, `high`, `ultra`) abren la galeria asi.
  */
 
@@ -209,7 +209,7 @@ function FloorLab() {
             </button>
           ))}
           <button onClick={takeThumbs} disabled={busy}>
-            {busy ? 'Haciendo miniaturas…' : 'Miniaturas de los cuatro'}
+            {busy ? 'Haciendo miniaturas…' : 'Miniaturas de todos'}
           </button>
         </div>
       </header>
@@ -239,7 +239,7 @@ function FloorLab() {
           </div>
         )}
         <p className="lab-ask">
-          SU-02: ¿cuál pasa a la fase 2 (A, B, C, una mezcla o ninguna)? SU-03: ¿columnas insinuadas o a la vista? Qué mirar: que los cinco carriles se
+          SU-02: ¿cuál pasa a la fase 2 (A, B, C, D, E, una mezcla o ninguna)? SU-03: ¿columnas insinuadas o a la vista? Qué mirar: que los cinco carriles se
           distingan de un vistazo (también en «Bajo» y a 568 × 320), que se sepa en qué casilla cae una planta con el resalte de sembrar, y que la llamarada y
           el chamuscado, la escarcha, el escupitajo, el verso, la moneda, el Lurker oculto, la sombra del Skipper y la tropa teñida se lean igual o mejor que
           sobre el césped. Las miniaturas son la prueba de la captura: enseñarlas a alguien ajeno al proyecto y preguntarle a qué juego le recuerdan.

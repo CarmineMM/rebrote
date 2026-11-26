@@ -29,4 +29,10 @@ export interface FloorDesign {
   paint(ctx: Ctx, rand: () => number, grid: FloorGrid): void;
   /** Lo que el suelo pinta sobre el corte de tierra, delante del tablero (despues de `paintFrontCut`). */
   paintFront?(ctx: Ctx, rand: () => number, grid: FloorGrid): void;
+  /**
+   * El suelo en pequeno, donde no cabe el dibujo entero: la loma de la foto de la ficha (`portrait.ts`, T-010). Claro
+   * arriba y oscuro abajo y, si lo lleva, una linea que la cruza (la raiz de las raices) con su contorno. Los dibujos de los
+   * tours (`.tour-pic` en `styles.css`) repiten a mano los colores del suelo del juego.
+   */
+  readonly swatch: { readonly light: string; readonly dark: string; readonly line?: { readonly body: string; readonly outline: string } };
 }

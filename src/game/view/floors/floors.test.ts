@@ -4,6 +4,7 @@ import { BEDS, bedBand, bedStakes } from './beds';
 import { FLOOR_DESIGNS, FLOOR_NAMES } from './catalog';
 import { FLOOR_GRIDS } from './design';
 import { PATIO, patioSlabs, slabBand } from './patio';
+import { RECLAIMED, busLineY, reclaimedTraces } from './reclaimed';
 import { ROOTS, laneLineY, rootKnots, rootNetwork } from './roots';
 
 /**
@@ -142,5 +143,35 @@ describe('C: raices', () => {
     const knots = rootKnots();
     expect(knots).toHaveLength((BOARD.lanes + 1) * inner.length);
     for (const knot of knots) expect(inner.some((col) => Math.abs(knot.x - col) <= 0.03)).toBe(true);
+  });
+});
+
+describe('E: placa reconquistada', () => {
+  it('sale siempre igual', () => {
+    expect(reclaimedTraces()).toEqual(reclaimedTraces());
+  });
+
+  it('el bus de cada linea entre carriles no pisa lo que se apoya en los carriles', () => {
+    for (let line = 0; line <= BOARD.lanes; line++) {
+      const y = busLineY(line);
+      for (const edge of [y - RECLAIMED.bus, y + RECLAIMED.bus]) {
+        const lane = Math.floor(edge);
+        if (lane >= 0 && lane < BOARD.lanes) expect(edge - lane < FEET.from || edge - lane > FEET.to).toBe(true);
+      }
+    }
+  });
+
+  it('las pistas finas van por la franja de atras de su carril, dentro del tablero y antes del suelo corrupto', () => {
+    const traces = reclaimedTraces();
+    expect(traces.length).toBeGreaterThan(BOARD.lanes);
+    for (const trace of traces) {
+      const lane = Math.floor(trace[0].y);
+      for (const point of trace) {
+        expect(point.y - lane).toBeGreaterThanOrEqual(RECLAIMED.traces.from - 1e-9);
+        expect(point.y - lane).toBeLessThanOrEqual(RECLAIMED.traces.to + 1e-9);
+        expect(point.x).toBeGreaterThan(0);
+        expect(point.x).toBeLessThan(BOARD.columns);
+      }
+    }
   });
 });

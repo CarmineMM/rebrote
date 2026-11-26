@@ -112,6 +112,7 @@ const STONE_OUTLINE = 'rgba(110, 98, 74, 0.75)';
 
 export const PATIO_FLOOR: FloorDesign = {
   id: 'patio',
+  swatch: { light: '#e0dcd0', dark: '#bdb7a8', line: { body: '#93c25a', outline: '#4d7a31' } },
   paint(ctx, _rand, grid) {
     const rand = seededRandom(7301);
     const { lanes, columns } = BOARD;

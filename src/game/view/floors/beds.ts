@@ -51,6 +51,7 @@ const GRASS = { base: '#69b447', dark: '#4f9a3c' };
 
 export const BEDS_FLOOR: FloorDesign = {
   id: 'beds',
+  swatch: { light: '#b07c4b', dark: '#8a5c36', line: { body: '#69b447', outline: '#3c7a2f' } },
   paint(ctx, _rand, grid) {
     const rand = seededRandom(5101);
     const { lanes, columns } = BOARD;
