@@ -2442,13 +2442,16 @@ button.route-stop-body:focus-visible .route-ring { outline-color: #ffe066; }
 .tour-head { margin-top: 2px; }
 
 /*
- * Dibujo del bocadillo: un trocito de jardin (cielo y cesped) de 128 x 92 donde pasa el paso en bucle de 2,8 s. Plantas,
+ * Dibujo del bocadillo: un trocito de jardin (cielo y el suelo del tablero, T-050: arena dorada con una raiz verde, los
+ * colores de `SUNNY_ROOTS_FLOOR`; si cambia el suelo, se cambian aqui a mano) de 128 x 92 donde pasa el paso en bucle de 2,8 s. Plantas,
  * minas y gusanos son imagenes de la escena de 60 x 60 con los pies a 9 px de su borde de abajo.
  */
 .tour-pic {
   position: relative; overflow: hidden; display: block; width: 128px; height: 92px; border-radius: 14px;
   border: 2px solid rgba(255, 255, 255, 0.18); box-shadow: inset 0 -6px 12px rgba(0, 0, 0, 0.12);
-  background: linear-gradient(180deg, #bfe6ff 0%, #eef9ff 56%, #9ad874 56%, #5aa642 100%);
+  background:
+    linear-gradient(180deg, transparent 77%, #245a17 77%, #245a17 78.5%, #5cc23a 78.5%, #5cc23a 81.5%, #245a17 81.5%, #245a17 83%, transparent 83%),
+    linear-gradient(180deg, #bfe6ff 0%, #eef9ff 56%, #dcb47a 56%, #c99a5e 100%);
 }
 .tour-pic > * { position: absolute; }
 .pic-art { width: 60px; height: 60px; bottom: 9px; display: grid; place-items: end center; user-select: none; -webkit-user-select: none; }
