@@ -44,13 +44,23 @@ function breathe(scene: Phaser.Scene, target: Phaser.GameObjects.GameObject, pro
 /** Cantidad de cosas segun el nivel, sin bajar de `min`. */
 const amount = (base: number, factor: number, min = 1) => Math.max(min, Math.round(base * factor));
 
-export function createAmbience(scene: Phaser.Scene, quality: QualityProfile): Ambience {
+/** Lo que cambia el escenario de siempre. */
+export interface AmbienceOptions {
+  /**
+   * Textura del terreno: sin ella, la del juego (`TEX.land`). La galeria de los suelos (T-050, `/proposals/suelo.html`)
+   * pone la del suelo que ensena (`registerFloorLand`).
+   */
+  land?: string;
+}
+
+export function createAmbience(scene: Phaser.Scene, quality: QualityProfile, options: AmbienceOptions = {}): Ambience {
   scene.add.image(WORLD.left, WORLD.top, TEX.sky).setOrigin(0).setScale(artInvOf(TEX.sky)).setDepth(DEPTH.sky);
   addSun(scene, quality);
   const drifters = addClouds(scene, quality);
   scheduleBirds(scene, quality);
 
-  scene.add.image(WORLD.left, LAND_TOP, TEX.land).setOrigin(0).setScale(artInvOf(TEX.land)).setDepth(DEPTH.land);
+  const land = options.land ?? TEX.land;
+  scene.add.image(WORLD.left, LAND_TOP, land).setOrigin(0).setScale(artInvOf(land)).setDepth(DEPTH.land);
   addCanopy(scene);
   addSkylineLights(scene, quality);
   addCorruption(scene, quality);

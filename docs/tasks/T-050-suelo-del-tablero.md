@@ -1,6 +1,6 @@
 # [Arte] Suelo del tablero: adiós al césped a cuadros
 
-- **Estado:** Pendiente
+- **Estado:** En curso (fase 1 desde el 26 nov 2026)
 - **Prioridad:** Alta
 - **Tamaño estimado:** M (orientativo)
 - **Depende de:** ninguna
@@ -19,7 +19,7 @@ Hoy (comprobado el 25 nov 2026, en 0.17.5):
 - Forma parte de una textura fija, `TEX.land`, que `paintLand` pinta una sola vez (`textures.ts:868`) junto con las colinas, el seto, el bancal, el camino, el suelo corrupto y el corte de tierra. Cambiar el suelo no cuesta rendimiento.
 - El tablero mide 5 carriles por 9 columnas y su forma en pantalla es `LAWN` (`src/game/view/layout.ts:51`), con la cámara inclinada (ADR-0005). Alrededor están el camino a la izquierda y el suelo corrupto a la derecha (`SCENERY`, `layout.ts:61`).
 - Al sembrar, infundir o fusionar, la casilla se resalta por encima del suelo (`drawCell`, `src/game/view/boardMarks.ts:12`). Es decir: el jugador ya ve la casilla cuando la necesita, aunque el suelo no la dibuje.
-- El Invernadero ya usa otro terreno, un césped liso sin tablero a cuadros (ADR-0016, "El escenario del Invernadero").
+- El Invernadero no enseña el suelo del tablero: desde T-036 es el refugio de noche, con suelo de tablas (`src/game/view/refuge.ts`). El césped liso que describe ADR-0016 ("El escenario del Invernadero", `TEX.gardenLand`) ya no está en el código (comprobado el 26 nov 2026).
 - Mucho arte está afinado para leerse sobre césped claro. La guía de gráficos lo repite: llamas y copos con mezcla normal, escupitajo y verso con contorno oscuro, sombra del Skipper "solo sobre el césped", plantas que se oscurecen en vez de transparentarse (`docs/guias/graficos.md`, secciones 5 a 7).
 - Cada vez que hubo que elegir un diseño se compararon propuestas en una página de desarrollo: `/proposals/disparadoras.html`, `/proposals/invernadero.html`, `/proposals/jefes.html`, `/proposals/bichos.html` y `/proposals/variantes.html`.
 - Desde el brote 5 cambia el escenario (`docs/specs/03-ruta-de-brotes.md`): habrá más de un suelo.
@@ -51,27 +51,27 @@ Las tres quitan el damero y el brillo de "césped recién cortado". Ninguna camb
 
 ## 4. Decisiones pendientes
 
-| # | Pregunta | Opciones | Recomendación | Decide |
+| # | Pregunta | Opciones | Recomendación | Decisión |
 |---|---|---|---|---|
-| SU-01 | ¿Valen estas tres propuestas para la galería? | a) Sí; b) cambiar alguna | a) Sí. Si se cambia una, que la sustituta tampoco sea un césped con franjas: se parecería demasiado a lo de hoy | Carmine |
-| SU-02 | ¿Cuál pasa a la fase 2? | A, B, C, una mezcla o ninguna | Se decide con la galería delante. De partida, A es la más segura y C la más propia | Carmine |
-| SU-03 | ¿Cuánto se dibuja la casilla en el suelo? | a) Carriles y columnas, siempre a la vista; b) carriles claros y columnas apenas insinuadas | b) La casilla exacta ya se resalta al sembrar (`drawCell`). Menos cuadrícula es menos parecido | Carmine |
-| SU-04 | ¿La portada cambia a la vez? | Sí o no | Sí: es lo primero que se ve y lo que se comparte | Carmine |
-| SU-05 | ¿El Invernadero cambia? | a) Se queda con su césped liso; b) pasa al suelo nuevo | a) Ya no tiene damero. Solo se toca si desentona con la elegida | Carmine |
-| SU-06 | Si el suelo elegido obliga a retocar efectos, ¿cómo se aprueba? | a) Se retoca sobre la marcha; b) lista de retoques antes de empezar la fase 2 | b) Así Carmine sabe cuánto crece la task antes de aceptarla | Carmine |
-| SU-07 | ¿Se deja la pieza para un suelo por brote? | Sí o no | Sí, solo la pieza (elegir el suelo en un sitio). Los suelos de otros brotes son otra task | Carmine |
+| SU-01 | ¿Valen estas tres propuestas para la galería? | a) Sí; b) cambiar alguna | a) Sí. Si se cambia una, que la sustituta tampoco sea un césped con franjas: se parecería demasiado a lo de hoy | a) Sí, las tres (Carmine, 26 nov 2026) |
+| SU-02 | ¿Cuál pasa a la fase 2? | A, B, C, una mezcla o ninguna | Se decide con la galería delante. De partida, A es la más segura y C la más propia | Pendiente: con la galería delante (Carmine) |
+| SU-03 | ¿Cuánto se dibuja la casilla en el suelo? | a) Carriles y columnas, siempre a la vista; b) carriles claros y columnas apenas insinuadas | b) La casilla exacta ya se resalta al sembrar (`drawCell`). Menos cuadrícula es menos parecido | Con la galería delante: cada propuesta se pinta de las dos maneras, con un interruptor ("Columnas"), y se decide junto con SU-02. De entrada, b) (Carmine, 26 nov 2026) |
+| SU-04 | ¿La portada cambia a la vez? | Sí o no | Sí: es lo primero que se ve y lo que se comparte | Sí (Carmine, 26 nov 2026). Además, la portada y el tablero comparten la textura del terreno (`TEX.land`) |
+| SU-05 | ¿El Invernadero cambia? | a) Se queda con su césped liso; b) pasa al suelo nuevo | a) Ya no tiene damero. Solo se toca si desentona con la elegida | No aplica: desde T-036 el Invernadero es el refugio de noche, con suelo de tablas, y no enseña el suelo del tablero (comprobado el 26 nov 2026) |
+| SU-06 | Si el suelo elegido obliga a retocar efectos, ¿cómo se aprueba? | a) Se retoca sobre la marcha; b) lista de retoques antes de empezar la fase 2 | b) Así Carmine sabe cuánto crece la task antes de aceptarla | Pendiente: se pregunta al cerrar la fase 1, con la lista delante (Carmine) |
+| SU-07 | ¿Se deja la pieza para un suelo por brote? | Sí o no | Sí, solo la pieza (elegir el suelo en un sitio). Los suelos de otros brotes son otra task | Sí, solo la pieza (Carmine, 26 nov 2026) |
 
 ## 5. Criterios de aceptación
 
 ### Fase 1: propuestas
 
-- [ ] `/proposals/suelo.html` enseña el suelo actual y las tres propuestas, con la cámara inclinada del juego y el decorado de alrededor.
-- [ ] Cada propuesta se ve a 1600 × 900, 812 × 375 y 568 × 320.
-- [ ] Sobre cada una hay, como mínimo: las cuatro variantes de la disparadora con 1 y 3 cañones, una mina de fuego y una de hielo, un muro, un gusano, un acorazado, un Lurker oculto, un Skipper con su sombra y una tropa con el tinte del brote 4.
-- [ ] Unos botones lanzan sobre cada propuesta los efectos que más dependen del suelo: explosión de fuego con su chamuscado, estallido de hielo con su escarcha, un escupitajo, un verso y una moneda soltada.
-- [ ] Se puede activar el resalte de sembrar sobre una casilla, para comprobar que se lee.
-- [ ] Cada propuesta se ve también en una captura reducida, del tamaño de una miniatura al compartir el juego.
-- [ ] La partida, la portada y los tours siguen usando el suelo actual.
+- [x] `/proposals/suelo.html` enseña el suelo actual y las tres propuestas, con la cámara inclinada del juego y el decorado de alrededor.
+- [x] Cada propuesta se ve a 1600 × 900, 812 × 375 y 568 × 320.
+- [x] Sobre cada una hay, como mínimo: las cuatro variantes de la disparadora con 1 y 3 cañones, una mina de fuego y una de hielo, un muro, un gusano, un acorazado, un Lurker oculto, un Skipper con su sombra y una tropa con el tinte del brote 4.
+- [x] Unos botones lanzan sobre cada propuesta los efectos que más dependen del suelo: explosión de fuego con su chamuscado, estallido de hielo con su escarcha, un escupitajo, un verso y una moneda soltada.
+- [x] Se puede activar el resalte de sembrar sobre una casilla, para comprobar que se lee.
+- [x] Cada propuesta se ve también en una captura reducida, del tamaño de una miniatura al compartir el juego.
+- [x] La partida, la portada y los tours siguen usando el suelo actual.
 - [ ] La fase 2 no empieza hasta que SU-02 esté respondida.
 
 ### Fase 2: sustitución
@@ -87,7 +87,7 @@ Las tres quitan el damero y el brillo de "césped recién cortado". Ninguna camb
 
 ### Regla
 
-- [ ] El suelo se elige en un solo sitio, como la forma de la disparadora, y el antiguo queda guardado para poder comparar.
+- [x] El suelo se elige en un solo sitio, como la forma de la disparadora, y el antiguo queda guardado para poder comparar.
 - [ ] Las reglas, las medidas del tablero, el balance y las partidas guardadas no cambian.
 
 ### Calidad
@@ -96,7 +96,7 @@ Las tres quitan el damero y el brillo de "césped recién cortado". Ninguna camb
 - [ ] El suelo sigue siendo una textura fija: no se añade nada que se pinte en cada fotograma.
 - [ ] Prueba de la captura: se enseña una captura del tablero a alguien ajeno al proyecto y se le pregunta a qué juego le recuerda. Se anota la respuesta en la task.
 - [ ] `docs/guias/graficos.md` al día: cómo es el suelo, cómo se añade otro y qué hay que comprobar al cambiarlo.
-- [ ] `/proposals/suelo.html` apuntada en `CLAUDE.md`, como las demás páginas de propuestas.
+- [x] `/proposals/suelo.html` apuntada en `CLAUDE.md`, como las demás páginas de propuestas.
 - [ ] `npm test` y `npm run build` pasan.
 - [ ] Versión subida (regla 12) y línea nueva en `CHANGELOG.md`.
 
@@ -130,3 +130,22 @@ Las tres quitan el damero y el brillo de "césped recién cortado". Ninguna camb
 4. Tras la fase 2, jugar el brote 1 entero y las tres primeras rondas del brote 3 (ocultos y Skipper).
 5. Mirar la portada, un tour, la ficha de una planta y la cinemática de la rebelión.
 6. Repetir en un móvil en horizontal con la calidad más baja.
+
+## 9. Seguimiento
+
+### Fase 1 (26 nov 2026)
+
+- **La pieza.** El suelo es un `FloorDesign` en `src/game/view/floors/`, como la forma de la disparadora, y el juego usa el que elige `FLOOR` en `src/game/view/boardFloor.ts` (SU-07). El de siempre se guardó tal cual en `floors/legacy.ts` (era `paintLawn` de `textures.ts`). Sigue en el juego: la textura del terreno sale idéntica píxel a píxel (comparada antes y después del cambio, 2900 × 1063 en Alto).
+- **Las propuestas.** A, bancales (`beds.ts`); B, patio (`patio.ts`); C, raíces (`roots.ts`). Cada una se pinta con las columnas insinuadas o a la vista (SU-03). Su geometría (bancales, losas, red de raíces) sale de funciones puras con test (`floors.test.ts`): lo que se apoya en un carril cae en su carril, las losas no cruzan columnas con las columnas a la vista y las raíces se paran antes del suelo corrupto.
+- **La galería.** `/proposals/suelo.html` (`src/dev/floorLab.tsx` y `floorLabScene.ts`), con todo lo que piden los criterios. Detalle en `docs/guias/graficos.md` (sección 10 y lista "Suelo nuevo o cambiado") y en `CLAUDE.md`.
+
+**Primeras observaciones** (en la VM sin GPU, a confirmar con la galería delante; son la base de la lista de retoques de SU-06):
+
+- Los cinco carriles se leen en las tres propuestas, también en Bajo y a 568 × 320. A, por los pasillos de hierba y la tabla de cada bancal; B, por los bordillos; C, por las raíces. En miniatura, A se lee como un huerto a rayas de tierra, B como un patio gris con hoyos, y en C las raíces casi desaparecen a 160 × 90.
+- **B (piedra clara):** el resalte de sembrar (crema, `highlightOk`) casi no se ve sobre la piedra. Habría que retocarlo si se elige B. La escarcha de la mina de hielo (un brillo azul claro) también se pierde algo; los cristales y los copos, con su borde azul, sí se leen.
+- **A y C (tierra):** el chamuscado de la mina de fuego (una sombra marrón oscura) apenas se ve sobre tierra; las llamas, sí. Sobre tierra se leen mejor que sobre el césped las plantas verdes (también la planta fantasma del resalte de sembrar, que sobre el césped casi se pierde) y la escarcha, sobre todo en C.
+- El Lurker oculto (silueta morada oscura) se lee en los cuatro suelos: mejor sobre los claros (césped y piedra) que sobre tierra.
+- **Las cuatro:** las matas y flores del jardincito de los niveles con premio (T-027) se pensaron para el césped. Sobre tierra o piedra se leen bien, pero quedan como un parterre: decidir si es lo que se quiere.
+- Sin probar aún con GPU de verdad: el viento (una franja de luz que barre el suelo) y el rocío de `ambience.ts` sobre tierra y piedra, en Alto y Ultra.
+
+**Pendiente para empezar la fase 2:** SU-02 (cuál pasa), SU-03 (columnas insinuadas o a la vista) y SU-06 (cómo se aprueban los retoques), con la galería delante.

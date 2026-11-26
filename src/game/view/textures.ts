@@ -3,7 +3,11 @@ import { BOARD, LIMITS } from '../config/balance';
 import type { BoardPoint } from '../core/board';
 import type { ElementType, MineElement } from '../core/plants';
 import type { ScreenPoint } from './perspective';
-import { SCENERY, VIEW, WORLD, perspective } from './layout';
+import { SCENERY, VIEW, WORLD } from './layout';
+import { P, boardRect, cwAt } from './boardCanvas';
+import { pick, seededRandom } from './random';
+import { FLOOR, FLOOR_GRID } from './boardFloor';
+import type { FloorDesign, FloorGrid } from './floors/design';
 import { GARDEN, GARDEN_PARTS, GARDEN_TIERS, paintGardenPiece, type GardenPart } from './gardenArt';
 import { MEDAL, MEDAL_SPROUT, MEDAL_TIERS, medalTier } from './levelMedal';
 import { AURA_LOOK, AURA_TIERS, paintAuraVeil } from './wormAuraArt';
@@ -509,6 +513,24 @@ export function variantTexture(scene: Phaser.Scene, key: string, variant: Outbre
   return tinted;
 }
 
+/** Clave de la textura del terreno con el suelo `floor` (T-050): la del juego es `TEX.land`. */
+export const landTexture = (floor: FloorDesign, grid: FloorGrid): string =>
+  floor.id === FLOOR.id && grid === FLOOR_GRID ? TEX.land : `${TEX.land}~${floor.id}~${grid}`;
+
+/**
+ * El terreno con otro suelo del tablero (T-050): tan grande como el del juego, asi que no se pinta al arrancar sino la
+ * primera vez que se pide (llamar despues de `registerTextures`). Lo usa la galeria de los suelos (`/proposals/suelo.html`);
+ * la imagen del terreno la pone `createAmbience` con su opcion `land`. Devuelve la clave.
+ */
+export function registerFloorLand(scene: Phaser.Scene, floor: FloorDesign, grid: FloorGrid): string {
+  const key = landTexture(floor, grid);
+  paintTexture(scene, artScale, key, WORLD.width, WORLD.bottom - LAND_TOP, (ctx) => {
+    ctx.translate(-WORLD.left, -LAND_TOP);
+    paintLand(ctx, floor, grid);
+  });
+  return key;
+}
+
 /**
  * Refugio del Invernadero (T-036, `refugeArt.ts`). Fuera y la sala son tan grandes como el mundo, asi que no se pintan
  * con las demas: solo la primera vez que se entra en el Invernadero (llamar despues de `registerTextures`).
@@ -673,44 +695,9 @@ export function registerTextures(scene: Phaser.Scene, scale = 1): void {
 }
 
 // ---------------------------------------------------------------------------
-// Utilidades
+// Utilidades: el aleatorio con semilla (`random.ts`) y pintar en casillas (`boardCanvas.ts`).
 
-/** Aleatorio con semilla: el decorado sale igual en cada partida. */
-export function seededRandom(seed: number): () => number {
-  let s = seed | 0;
-  return () => {
-    s = (s + 0x6d2b79f5) | 0;
-    let t = Math.imul(s ^ (s >>> 15), 1 | s);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
-const P = (x: number, y: number): ScreenPoint => perspective.toScreen({ x, y });
-const cwAt = (x: number, y: number) => perspective.cellWidthAt({ x, y });
-
-function boardPolygon(ctx: Ctx, points: Array<[number, number]>): void {
-  ctx.beginPath();
-  points.forEach(([x, y], i) => {
-    const p = P(x, y);
-    if (i === 0) ctx.moveTo(p.x, p.y);
-    else ctx.lineTo(p.x, p.y);
-  });
-  ctx.closePath();
-}
-
-function boardRect(ctx: Ctx, x0: number, y0: number, x1: number, y1: number): void {
-  boardPolygon(ctx, [
-    [x0, y0],
-    [x1, y0],
-    [x1, y1],
-    [x0, y1],
-  ]);
-}
-
-function pick<T>(rand: () => number, list: readonly T[]): T {
-  return list[Math.floor(rand() * list.length)];
-}
+export { seededRandom } from './random';
 
 // ---------------------------------------------------------------------------
 // Cielo
@@ -864,8 +851,11 @@ export const SKYLINE_LIGHTS: ScreenPoint[] = BUILDINGS.filter((b) => b.antenna).
   y: b.top - 18,
 }));
 
-/** Todo el terreno, en coordenadas del mundo (de WORLD.left a WORLD.right y hasta WORLD.bottom). */
-function paintLand(ctx: Ctx): void {
+/**
+ * Todo el terreno, en coordenadas del mundo (de WORLD.left a WORLD.right y hasta WORLD.bottom), con el suelo del tablero
+ * `floor` (T-050; el del juego, `FLOOR`) y sus columnas como diga `grid` (SU-03).
+ */
+function paintLand(ctx: Ctx, floor: FloorDesign = FLOOR, grid: FloorGrid = FLOOR_GRID): void {
   const rand = seededRandom(42);
   paintHills(ctx, rand);
   paintMeadow(ctx);
@@ -873,8 +863,9 @@ function paintLand(ctx: Ctx): void {
   paintFlowerBed(ctx, rand);
   paintPath(ctx, rand);
   paintCorruption(ctx, rand);
-  paintLawn(ctx, rand);
+  floor.paint(ctx, rand, grid);
   paintFrontCut(ctx, rand);
+  floor.paintFront?.(ctx, rand, grid);
   paintTrunk(ctx);
 }
 
@@ -1185,84 +1176,6 @@ function paintCorruptionGlow(ctx: Ctx, _w: number, _h: number, scale: number): v
     ctx.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2);
     ctx.stroke();
   }
-}
-
-function paintLawn(ctx: Ctx, rand: () => number): void {
-  const { lanes, columns } = BOARD;
-  for (let lane = 0; lane < lanes; lane++) {
-    for (let col = 0; col < columns; col++) {
-      boardRect(ctx, col, lane, col + 1, lane + 1);
-      ctx.fillStyle = (lane + col) % 2 === 0 ? '#7fce5d' : '#70c051';
-      ctx.fill();
-      // Brillo suave en el centro de cada casilla: cesped recien cortado.
-      const c = P(col + 0.5, lane + 0.5);
-      const r = cwAt(col + 0.5, lane + 0.5) * 0.55;
-      const sheen = ctx.createRadialGradient(c.x, c.y, 0, c.x, c.y, r);
-      sheen.addColorStop(0, 'rgba(255, 255, 210, 0.10)');
-      sheen.addColorStop(1, 'rgba(255, 255, 210, 0)');
-      ctx.fillStyle = sheen;
-      boardRect(ctx, col, lane, col + 1, lane + 1);
-      ctx.fill();
-    }
-  }
-
-  // Profundidad: el fondo un poco mas oscuro.
-  boardRect(ctx, 0, 0, columns, lanes);
-  const depth = ctx.createLinearGradient(0, P(0, 0).y, 0, P(0, lanes).y);
-  depth.addColorStop(0, 'rgba(20, 70, 30, 0.22)');
-  depth.addColorStop(1, 'rgba(255, 255, 200, 0.04)');
-  ctx.fillStyle = depth;
-  ctx.fill();
-
-  ctx.lineCap = 'round';
-  for (let i = 0; i < 3400; i++) {
-    const x = 0.02 + rand() * (columns - 0.04);
-    const y = 0.04 + rand() * (lanes - 0.06);
-    const p = P(x, y);
-    const cw = cwAt(x, y);
-    const len = cw * (0.03 + rand() * 0.035);
-    const a = -Math.PI / 2 + (rand() - 0.5) * 0.7;
-    ctx.strokeStyle = pick(rand, ['rgba(170, 230, 120, 0.55)', 'rgba(70, 140, 50, 0.45)', 'rgba(120, 200, 90, 0.5)']);
-    ctx.lineWidth = cw * 0.011;
-    ctx.beginPath();
-    ctx.moveTo(p.x, p.y);
-    ctx.lineTo(p.x + Math.cos(a) * len, p.y + Math.sin(a) * len);
-    ctx.stroke();
-  }
-  for (let i = 0; i < 22; i++) {
-    const x = 0.1 + rand() * (columns - 0.2);
-    const y = 0.1 + rand() * (lanes - 0.2);
-    const p = P(x, y);
-    smallFlower(ctx, p.x, p.y, cwAt(x, y) * 0.016, '#ffffff', '#f6c343');
-  }
-
-  ctx.strokeStyle = 'rgba(30, 80, 30, 0.13)';
-  ctx.lineWidth = 1.5;
-  for (let col = 1; col < columns; col++) {
-    const a = P(col, 0);
-    const b = P(col, lanes);
-    ctx.beginPath();
-    ctx.moveTo(a.x, a.y);
-    ctx.lineTo(b.x, b.y);
-    ctx.stroke();
-  }
-  for (let lane = 1; lane < lanes; lane++) {
-    const a = P(0, lane);
-    const b = P(columns, lane);
-    ctx.beginPath();
-    ctx.moveTo(a.x, a.y);
-    ctx.lineTo(b.x, b.y);
-    ctx.stroke();
-  }
-
-  boardRect(ctx, 0, 0, columns, lanes);
-  ctx.strokeStyle = '#3c7a2f';
-  ctx.lineWidth = 5;
-  ctx.stroke();
-  boardRect(ctx, 0.02, 0.02, columns - 0.02, lanes - 0.02);
-  ctx.strokeStyle = 'rgba(210, 255, 170, 0.25)';
-  ctx.lineWidth = 2;
-  ctx.stroke();
 }
 
 /** Linea donde empieza el corte de tierra (borde delantero del terreno). */
