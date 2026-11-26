@@ -53,7 +53,7 @@ Una task por archivo. El tamaño es orientativo.
 | T-047 | [Rondas] Brote 1 en 9 rondas: Creeper se prepara desde la 7 | Completada (24 nov 2026, 0.17.1) | S | Ninguna | Ninguna (R9-01 a R9-05 cerradas) |
 | T-048 | [Interfaz] Velocidad del juego: ×1,5 y ×2 | Completada (24 nov 2026, 0.17.4) | S | Ninguna | Ninguna (VJ-01 a VJ-07 cerradas) |
 | T-049 | [Historia] Motion comic: la rebelión de la IA, los refugios y las plantas | Completada (25 nov 2026, 0.17.5) | L | T-031, T-015 | Ninguna (MC-01 a MC-12 cerradas) |
-| T-050 | [Arte] Suelo del tablero: adiós al césped a cuadros | En curso | M | Ninguna | SU-02 y SU-06 (entre la fase 1 y la 2); SU-03, con la galería |
+| T-050 | [Arte] Suelo del tablero: adiós al césped a cuadros | En espera | M | Ninguna | Ninguna (SU-01 a SU-07 cerradas); faltan la prueba de la captura y el QA en GPU y móvil |
 
 ## Estados
 
@@ -61,6 +61,7 @@ Una task por archivo. El tamaño es orientativo.
 |---|---|
 | Pendiente | Nadie la ha empezado. |
 | En curso | Alguien la está haciendo. |
+| En espera | Hecha y unida a `main`, pero sin cerrar: le faltan comprobaciones que no se pueden hacer en el momento (T-050, excepción pedida por Carmine). No sube la versión hasta cerrarse. |
 | Completada | Todos sus criterios de aceptación están marcados y comprobados, y `npm test` y `npm run build` pasan. Lleva la fecha de cierre. |
 
 El estado se escribe en dos sitios: en esta tabla y en la cabecera de la task (`**Estado:**`). Al empezar o cerrar una task se cambian los dos en el mismo commit.
@@ -73,7 +74,7 @@ Las ideas que aún no se han confirmado contra el código van en `tentative/`, c
 
 T-001, T-002, T-006, T-004, T-005, T-003, T-007, T-008, T-009, T-010, T-011, T-012, T-013. Después, T-014 a T-034; luego T-015 (música), T-035 (curva de niveles), T-036 (Invernadero refugio), T-037 (escudo en dos pasos), T-038 (tropas del brote 3) T-039 (Brain y las 8 rondas del brote 3), T-040 (catálogo de unidades), T-041 (tropas reutilizadas), T-042 (Morris y la sobrecarga), T-043 (el giro, la historia del brote 4), T-044 (el aviso de beta), T-045 (soltar la carta en el móvil), T-046 (arrancar plantas, 23 nov 2026) T-047 (el brote 1 en 9 rondas, 24 nov 2026) T-048 (la velocidad del juego, 24 nov 2026) y T-049 (la cinemática de la rebelión, 25 nov 2026), la última.
 
-En curso (26 nov 2026): T-050, el suelo del tablero. Es la primera de la diferenciación visual; después vendrán la bandeja de cartas, la mina y el muro, aún sin task. El aviso de beta (T-044) sale tras el final del último brote, hoy el 4, que ya está entero (T-041 a T-043): su diseño está en `../specs/07-brote-4-morris.md` y su historia en `../specs/04-historia.md`.
+En espera (26 nov 2026): T-050, el suelo del tablero. Ya está en el juego (raíces al sol); falta la prueba de la captura y el QA en GPU y móvil para cerrarla. Es la primera de la diferenciación visual; después vendrán la bandeja de cartas, la mina y el muro, aún sin task. El aviso de beta (T-044) sale tras el final del último brote, hoy el 4, que ya está entero (T-041 a T-043): su diseño está en `../specs/07-brote-4-morris.md` y su historia en `../specs/04-historia.md`.
 
 Al cerrar una task se sube la versión del juego (ADR-0017). Mientras el juego esté en desarrollo, ninguna task migra datos guardados (ADR-0014).
 

@@ -1,6 +1,6 @@
 # [Arte] Suelo del tablero: adiós al césped a cuadros
 
-- **Estado:** En curso (fase 1 desde el 26 nov 2026)
+- **Estado:** En espera (26 nov 2026): el suelo nuevo ya está en el juego (en `main`); faltan las comprobaciones de "Falta para cerrar la task" (sección 9). Excepción pedida por Carmine: se une a `main` sin cerrarla ni subir la versión
 - **Prioridad:** Alta
 - **Tamaño estimado:** M (orientativo)
 - **Depende de:** ninguna
