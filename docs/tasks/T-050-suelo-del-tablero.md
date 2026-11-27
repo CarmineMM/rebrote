@@ -1,6 +1,6 @@
 # [Arte] Suelo del tablero: adiós al césped a cuadros
 
-- **Estado:** En espera (26 nov 2026): el suelo nuevo ya está en el juego (en `main`); faltan las comprobaciones de "Falta para cerrar la task" (sección 9). Excepción pedida por Carmine: se une a `main` sin cerrarla ni subir la versión
+- **Estado:** En espera (26 nov 2026; el 27 nov Carmine vuelve al césped a cuadros de siempre, ver SU-02): el suelo nuevo estuvo en el juego (en `main`); faltan las comprobaciones de "Falta para cerrar la task" (sección 9). Excepción pedida por Carmine: se une a `main` sin cerrarla ni subir la versión
 - **Prioridad:** Alta
 - **Tamaño estimado:** M (orientativo)
 - **Depende de:** ninguna
@@ -54,7 +54,7 @@ Las tres quitan el damero y el brillo de "césped recién cortado". Ninguna camb
 | # | Pregunta | Opciones | Recomendación | Decisión |
 |---|---|---|---|---|
 | SU-01 | ¿Valen estas tres propuestas para la galería? | a) Sí; b) cambiar alguna | a) Sí. Si se cambia una, que la sustituta tampoco sea un césped con franjas: se parecería demasiado a lo de hoy | a) Sí, las tres (Carmine, 26 nov 2026) |
-| SU-02 | ¿Cuál pasa a la fase 2? | A, B, C, una mezcla o ninguna | Se decide con la galería delante. De partida, A es la más segura y C la más propia | D, raíces al sol: la red de C con otros colores, pedida por Carmine al ver la galería (Carmine, 26 nov 2026) |
+| SU-02 | ¿Cuál pasa a la fase 2? | A, B, C, una mezcla o ninguna | Se decide con la galería delante. De partida, A es la más segura y C la más propia | D, raíces al sol: la red de C con otros colores, pedida por Carmine al ver la galería (Carmine, 26 nov 2026). Deshecha el 27 nov 2026: Carmine vuelve al césped a cuadros de siempre (`LEGACY_FLOOR`) |
 | SU-03 | ¿Cuánto se dibuja la casilla en el suelo? | a) Carriles y columnas, siempre a la vista; b) carriles claros y columnas apenas insinuadas | b) La casilla exacta ya se resalta al sembrar (`drawCell`). Menos cuadrícula es menos parecido | Con la galería delante: cada propuesta se pinta de las dos maneras, con un interruptor ("Columnas"). Al elegir D se quedó la de entrada, b), insinuadas (`FLOOR_GRID`); cambiarla es una línea (Carmine, 26 nov 2026) |
 | SU-04 | ¿La portada cambia a la vez? | Sí o no | Sí: es lo primero que se ve y lo que se comparte | Sí (Carmine, 26 nov 2026). Además, la portada y el tablero comparten la textura del terreno (`TEX.land`) |
 | SU-05 | ¿El Invernadero cambia? | a) Se queda con su césped liso; b) pasa al suelo nuevo | a) Ya no tiene damero. Solo se toca si desentona con la elegida | No aplica: desde T-036 el Invernadero es el refugio de noche, con suelo de tablas, y no enseña el suelo del tablero (comprobado el 26 nov 2026) |
